@@ -260,6 +260,18 @@ probe:
 	$(MAKE) -f Makefile.dc test AUTOSTART=1 PROBE=1
 	$(MAKE) -f Makefile.dc cdi  AUTOSTART=1 PROBE=1
 
+# Say what a built ELF actually is. Flags that silently fail to take effect have
+# cost several hardware test rounds, so variant is reported from the binary's
+# marker symbols rather than from which command was typed.
+verify:
+	@echo "$(TARGET):"
+	@$(KOS_BASE)/../sh-elf/bin/sh-elf-nm $(TARGET) | grep -q dc_autostart_active \
+		&& echo "  menu      : NO  (boots straight into a new game)" \
+		|| echo "  menu      : YES (starts at the main menu)"
+	@$(KOS_BASE)/../sh-elf/bin/sh-elf-nm $(TARGET) | grep -q dc_render_probe_active \
+		&& echo "  3D view   : MAGENTA PROBE (not the real renderer)" \
+		|| echo "  3D view   : real renderer"
+
 # 'open -a' rather than running the binary directly. Flycast reserves a large
 # contiguous virtual address range for its 16MB guest RAM (nvmem); launched from
 # some shell contexts that reservation fails and it aborts on an internal assert
@@ -277,4 +289,4 @@ rm-elf:
 clean: rm-elf
 	-rm -f $(OBJS)
 
-.PHONY: all bin run rm-elf clean one cdi test gdi flycast autostart probe
+.PHONY: all bin run rm-elf clean one cdi test gdi flycast autostart probe verify

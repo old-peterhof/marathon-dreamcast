@@ -47,6 +47,12 @@ void free_and_unlock_memory(void);
 #ifdef DC
 #include "dc_input.h"
 #endif
+#ifdef DC_AUTOSTART
+// See main(). Exists purely so an autostart image is identifiable with nm.
+// Defined here, below the __MVCPP__ block, because anything declared up there
+// is dead on every compiler but Visual C++.
+volatile int dc_autostart_active = 0;
+#endif
 #include "resource_manager.h"
 #include "sdl_dialogs.h"
 
@@ -205,6 +211,13 @@ int main(int argc, char **argv)
 		initialize_application();
 
 #ifdef DC_AUTOSTART
+		// Marker so a built image can be identified as autostart from the
+		// binary: sh-elf-nm alephone.elf | grep dc_autostart_active
+		// Checking for a do_menu_item_command call does NOT work -- static
+		// main_event_loop() is inlined into main at -O2 and calls it anyway for
+		// ordinary menu selections.
+		dc_autostart_active = 1;
+
 		// Skip the main menu and drop straight into a new game. This is the
 		// exact call the menu itself makes for "Begin New Game"
 		// (interface.cpp:819), so nothing is being faked -- the menu is simply

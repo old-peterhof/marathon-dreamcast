@@ -10,3 +10,5 @@ disc/AlephOne/Images
 *.o
 romdisk.img
 .deps/
+alephone-menu.cdi
+alephone-autostart.cdi
