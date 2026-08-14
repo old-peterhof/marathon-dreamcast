@@ -31,6 +31,15 @@ ifeq ($(strip $(KOS_BASE)),)
     source /opt/toolchains/dc/kos/environ.sh)
 endif
 
+# Header dependency tracking. KOS's Makefile.rules only emits -MD when
+# KOS_DEPDIR is set; with it unset it silently falls back to rules that track
+# nothing, so editing a header rebuilds none of the objects that include it.
+# That shipped stale key bindings to hardware: key_definitions.h was edited at
+# 13:07 and vbl.o was still the 08:29 build, so the remapped movement keys
+# never made it into the binary while unchanged bindings worked fine.
+KOS_DEPDIR := .deps
+$(shell mkdir -p $(KOS_DEPDIR))
+
 TARGET     = alephone.elf
 TARGET_BIN = 1ST_READ.BIN
 
@@ -168,6 +177,14 @@ OBJS = $(patsubst %.c,%.o,$(patsubst %.cpp,%.o,$(SRCS))) romdisk.o
 all: rm-elf $(TARGET)
 
 include $(KOS_BASE)/Makefile.rules
+
+# Makefile.rules ends with '-include $(wildcard $(KOS_DEPDIR)/*.md)', but names
+# each dep file with $(patsubst %.c,%.md,...). That pattern does not match .cpp,
+# so a C++ source yields a dep file still ending in .cpp -- generated correctly,
+# listing the right headers, and then never included. With 93 of our 97 sources
+# being C++, that is effectively no header tracking at all. Pick them up here.
+# Worth reporting upstream to KallistiOS.
+-include $(wildcard $(KOS_DEPDIR)/*.cpp)
 
 # shell.cpp #includes shell_sdl.cpp -- 2001-style unity build, kept as-is.
 $(MI)/shell.o: $(MI)/shell.cpp $(MI)/shell_sdl.cpp

@@ -9,3 +9,4 @@ disc/AlephOne/Images
 1ST_READ.BIN
 *.o
 romdisk.img
+.deps/
