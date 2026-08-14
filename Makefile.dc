@@ -111,6 +111,13 @@ ifdef PROBE
   KOS_CFLAGS += -DDC_RENDER_PROBE
 endif
 
+# OLDKEYS=1 reverts to the stock keypad bindings. Bisects the black-menu
+# regression: those bindings are the only change that had never actually been
+# compiled in before the header-dependency fix. Use the 'oldkeys' target.
+ifdef OLDKEYS
+  KOS_CFLAGS += -DDC_OLDKEYS
+endif
+
 # -lGL is NOT conditional on GL=1. kos-ports' SDL_dcvideo.c references glKosInit,
 # glKosSwapBuffers and the whole glfuncs table unconditionally, so libSDL.a needs
 # GLdc present at link time even for a pure software-renderer build. This is why
@@ -277,6 +284,16 @@ autostart:
 	cp alephone.cdi alephone-autostart.cdi
 	@echo "OK: alephone-autostart.cdi skips the menu, real renderer"
 
+# Menu build with the stock keypad bindings. Pair with alephone-menu.cdi to
+# find out whether the Dreamcast key remap is what blacks out the menu.
+oldkeys:
+	-rm -f $(MI)/shell.o $(MI)/screen_sdl.o $(MI)/vbl.o $(TARGET) alephone.cdi alephone-oldkeys.cdi
+	$(MAKE) -f Makefile.dc cdi OLDKEYS=1
+	@$(NM) $(TARGET) | grep -q dc_autostart_active \
+		&& { echo "BUILD ERROR: oldkeys build contains autostart marker"; exit 1; } || true
+	cp alephone.cdi alephone-oldkeys.cdi
+	@echo "OK: alephone-oldkeys.cdi is a menu build with stock keypad bindings"
+
 # Autostart + magenta 3D view. Answers whether the presentation path works at
 # all, independently of what the renderer produces.
 probe:
@@ -313,4 +330,4 @@ rm-elf:
 clean: rm-elf
 	-rm -f $(OBJS)
 
-.PHONY: all bin run rm-elf clean one cdi test gdi flycast menu autostart probe verify
+.PHONY: all bin run rm-elf clean one cdi test gdi flycast menu autostart oldkeys probe verify

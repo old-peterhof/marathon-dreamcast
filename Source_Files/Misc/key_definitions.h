@@ -59,7 +59,12 @@ struct key_definition
 	RETURN with menu confirm. One button then means "yes" in either context.
 	The pad-to-key mapping is in dc_input.cpp; these two must agree.
 */
-#if defined(SDL) && defined(DC)
+// DC_OLDKEYS builds with the stock keypad bindings instead of the Dreamcast
+// arrow-key ones, to bisect a regression: the menu went black on the first
+// build where this header was actually compiled in. Every earlier build had a
+// stale vbl.o, so these bindings had never taken effect. Built by ./build.sh
+// oldkeys -- if that image reaches the menu, the fault is here.
+#if defined(SDL) && defined(DC) && !defined(DC_OLDKEYS)
 	#define A1_KEY_FORWARD		SDLK_UP
 	#define A1_KEY_BACKWARD		SDLK_DOWN
 	#define A1_KEY_TURN_LEFT	SDLK_LEFT
