@@ -1,0 +1,11 @@
+disc/AlephOne/Map
+disc/AlephOne/Shapes
+disc/AlephOne/Sounds
+disc/AlephOne/Images
+*.cdi
+*.gdi
+*.elf
+*.bin
+1ST_READ.BIN
+*.o
+romdisk.img

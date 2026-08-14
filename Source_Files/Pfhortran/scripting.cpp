@@ -46,8 +46,12 @@ int current_instruction = 0;
 float variable_lookup[MAX_VARS];
 int variable_count = 0;
 
-int script_stack[MAX_DEPTH];
-int stack_top = 0;
+// static: GLdc also exports a global 'stack_top' (from its own stack.c), and
+// linking both gives "multiple definition of stack_top". Pfhortran's copy is
+// only touched inside this file, so internal linkage fixes the collision with
+// no behavioural change. script_stack gets the same treatment pre-emptively.
+static int script_stack[MAX_DEPTH];
+static int stack_top = 0;
 bool is_startup = false;
 
 short camera_count = 0;

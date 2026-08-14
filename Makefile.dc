@@ -42,29 +42,49 @@ MV = Source_Files/ModelView
 # Flags
 # ---------------------------------------------------------------------------
 
-A1_INCS = -I$(CS) -I$(EP) -I$(MI) -I$(NW) -I$(PF) -I$(MV)
-A1_DEFS = -DSDL -DHAVE_UNISTD_H -DPACKAGE='"AlephOne"' -DVERSION='"0.12.0"' -DDC
+# Aleph One includes SDL headers flat (<SDL_endian.h>, not <SDL/SDL_endian.h>),
+# but kos-ports installs them under include/SDL, so that dir goes on the path.
+A1_INCS = -I$(CS) -I$(EP) -I$(MI) -I$(NW) -I$(PF) -I$(MV) -I$(KOS_PORTS)/include/SDL
+# Deliberately NOT defining HAVE_SDL_NET_H or HAVE_SDL_IMAGE_H: neither port
+# exists for KOS, and every use of them in the tree is guarded by those macros.
+# Networking comes from network_dummy.cpp instead.
+# PACKAGE/VERSION use plain double quotes, NOT BERO's '"..."'. These flags reach
+# the compiler through the exported KOS_CFLAGS environment variable, and the
+# kos-c++ wrapper expands it unquoted -- word-splitting happens but quotes are
+# not reprocessed. So '"0.12.0"' arrives with the single quotes still attached
+# and the preprocessor reads it as a multi-character constant.
+A1_DEFS = -DSDL -DHAVE_UNISTD_H -DPACKAGE="AlephOne" -DVERSION="0.12.0" -DDC
 
 A1_LEGACY = -fpermissive -Wno-register -Wno-write-strings -Wno-deprecated \
             -Wno-narrowing -Wno-conversion-null -Wno-invalid-offsetof
 
 KOS_CFLAGS   += -O2 -fomit-frame-pointer $(A1_INCS) $(A1_DEFS)
-KOS_CPPFLAGS += -std=gnu++17 $(A1_LEGACY)
+# gnu++14, NOT gnu++17, and this is load-bearing. C++17 added std::byte, and
+# Aleph One has its own ::byte typedef. BERO added 'using namespace std;' to
+# FileHandler.h, resource_manager.h and sdl_dialogs.h to satisfy GCC 3, which
+# drags std::byte into scope -- so under C++17 every 'byte' reference is
+# ambiguous. That was 270 of 591 errors on the first build, plus a long tail of
+# parse cascades behind it. C++14 has no std::byte, so the conflict vanishes
+# without touching a single source file. Exceptions, RTTI and the STL are all
+# still available.
+KOS_CPPFLAGS += -std=gnu++14 $(A1_LEGACY)
 
-# SDL 1.2 comes from kos-ports. Verify the archive name after kos-ports is
-# built -- it has historically been libSDL_1213.a, hence -lSDL_1213.
-SDL_LIBS = -lSDL_1213
+# kos-ports installs SDL 1.2 as libSDL.a (verified after building the port).
+SDL_LIBS = -lSDL
 
 # GLdc gives OpenGL 1.x on the PowerVR2. BERO had no hardware GL at all and
 # compiled the renderer out; this is the single biggest win available here.
 # Start with the software renderer (GL unset), then flip GL=1.
 ifdef GL
   KOS_CFLAGS += -DHAVE_OPENGL
-  GL_LIBS     = -lGL
   TARGET      = alephone_gl.elf
 endif
 
-LIBS = $(SDL_LIBS) $(GL_LIBS) -lm
+# -lGL is NOT conditional on GL=1. kos-ports' SDL_dcvideo.c references glKosInit,
+# glKosSwapBuffers and the whole glfuncs table unconditionally, so libSDL.a needs
+# GLdc present at link time even for a pure software-renderer build. This is why
+# the SDL port declares libGL as a hard dependency. -lGLU follows for gluScaleImage.
+LIBS = $(SDL_LIBS) -lGL -lGLU -lm
 
 # ---------------------------------------------------------------------------
 # Sources
@@ -113,7 +133,9 @@ SRCS = \
   \
   $(NW)/network_dummy.cpp $(NW)/network_games.cpp \
   \
-  $(PF)/script_instructions.cpp $(PF)/script_parser.cpp $(PF)/scripting.cpp
+  $(PF)/script_instructions.cpp $(PF)/script_parser.cpp $(PF)/scripting.cpp \
+  \
+  $(MI)/dc_compat.c
 
 OBJS = $(patsubst %.c,%.o,$(patsubst %.cpp,%.o,$(SRCS))) romdisk.o
 
@@ -127,6 +149,17 @@ include $(KOS_BASE)/Makefile.rules
 
 # shell.cpp #includes shell_sdl.cpp -- 2001-style unity build, kept as-is.
 $(MI)/shell.o: $(MI)/shell.cpp $(MI)/shell_sdl.cpp
+
+# weapons.cpp must be built at -O1. At -O2, GCC 15.2's SH backend emits
+#     mov     #38,r1
+#     mul.l   r1,r8
+#     mov.w   r0,@(10,macl)
+# using MACL -- the multiply-accumulate result register -- as the base register
+# of a displacement address. SH-4 allows only R0-R15 there, so binutils rejects
+# it with "syntax error in @(disp,[Rn, gbr, pc])". The result should be moved
+# out with 'sts macl,rN' first. This is a compiler bug, not a source problem:
+# -O1, -Os and -O0 all assemble cleanly. Verified as the only affected file.
+$(MI)/weapons.o: KOS_CFLAGS := $(subst -O2,-O1,$(KOS_CFLAGS))
 
 $(TARGET): $(OBJS)
 	kos-c++ -o $(TARGET) $(OBJS) $(LIBS)

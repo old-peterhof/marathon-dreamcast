@@ -402,7 +402,7 @@ public:
 protected:
 	void draw_items(SDL_Surface *s) const
 	{
-		vector<T>::const_iterator i = items.begin() + top_item;
+		typename vector<T>::const_iterator i = items.begin() + top_item;
 		int x = rect.x + get_dialog_space(LIST_L_SPACE);
 		int y = rect.y + get_dialog_space(LIST_T_SPACE);
 		int width = rect.w - get_dialog_space(LIST_L_SPACE) - get_dialog_space(LIST_R_SPACE);
@@ -413,7 +413,11 @@ protected:
 	const vector<T> &items;	// List of items
 
 private:
-	virtual void draw_item(vector<T>::const_iterator i, SDL_Surface *s, int x, int y, int width, bool selected) const = 0;
+	// 'typename' is required: vector<T>::const_iterator is a dependent type.
+	// Without it GCC parses this parameter as int, so the derived classes'
+	// draw_item(vector<X>::const_iterator, ...) never overrides this pure
+	// virtual and every w_list subclass stays abstract. GCC 3 let it slide.
+	virtual void draw_item(typename vector<T>::const_iterator i, SDL_Surface *s, int x, int y, int width, bool selected) const = 0;
 };
 
 #endif
