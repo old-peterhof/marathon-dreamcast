@@ -96,6 +96,12 @@ ifdef AUTOSTART
   KOS_CFLAGS += -DDC_AUTOSTART
 endif
 
+# PROBE=1 replaces the 3D view with solid magenta to bisect the black-screen
+# bug. See update_screen() in screen_sdl.cpp. Use the 'probe' target.
+ifdef PROBE
+  KOS_CFLAGS += -DDC_RENDER_PROBE
+endif
+
 # -lGL is NOT conditional on GL=1. kos-ports' SDL_dcvideo.c references glKosInit,
 # glKosSwapBuffers and the whole glfuncs table unconditionally, so libSDL.a needs
 # GLdc present at link time even for a pure software-renderer build. This is why
@@ -230,6 +236,13 @@ autostart:
 	$(MAKE) -f Makefile.dc test AUTOSTART=1
 	$(MAKE) -f Makefile.dc cdi  AUTOSTART=1
 
+# Autostart + magenta 3D view. Answers whether the presentation path works at
+# all, independently of what the renderer produces.
+probe:
+	-rm -f $(MI)/shell.o $(MI)/screen_sdl.o $(TARGET) alephone-test.cdi alephone.cdi
+	$(MAKE) -f Makefile.dc test AUTOSTART=1 PROBE=1
+	$(MAKE) -f Makefile.dc cdi  AUTOSTART=1 PROBE=1
+
 # 'open -a' rather than running the binary directly. Flycast reserves a large
 # contiguous virtual address range for its 16MB guest RAM (nvmem); launched from
 # some shell contexts that reservation fails and it aborts on an internal assert
@@ -247,4 +260,4 @@ rm-elf:
 clean: rm-elf
 	-rm -f $(OBJS)
 
-.PHONY: all bin run rm-elf clean one cdi test gdi flycast autostart
+.PHONY: all bin run rm-elf clean one cdi test gdi flycast autostart probe

@@ -55,6 +55,12 @@ static SDL_Surface *main_surface;	// Main (display) surface
 // It is initialized to NULL so as to allow its initing to be lazy.
 SDL_Surface *world_pixels = NULL;
 
+#ifdef DC_RENDER_PROBE
+// See update_screen(). Exists purely so a probe build is identifiable from the
+// binary with nm.
+volatile int dc_render_probe_active = 0;
+#endif
+
 #ifdef DC
 // Filled in by change_screen_mode(), drawn on the main menu by
 // display_main_menu(). See the comment at SDL_SetVideoMode below for why this
@@ -602,6 +608,28 @@ static inline void quadruple_surface(const T *src, int src_pitch, T *dst, int ds
 
 static void update_screen(SDL_Rect &source, SDL_Rect &destination, bool hi_rez)
 {
+#ifdef DC_RENDER_PROBE
+	// Marker so the built binary can be checked for this code rather than the
+	// flag being assumed to have taken effect:
+	//   sh-elf-nm alephone.elf | grep dc_render_probe_active
+	{ extern volatile int dc_render_probe_active; dc_render_probe_active = 1; }
+
+	// Bisect the black-screen bug: fill the 3D view rect with solid magenta and
+	// present it, skipping the blit from world_pixels entirely.
+	//
+	//   magenta view area -> main_surface and SDL_UpdateRects work; the fault is
+	//                        upstream, in world_pixels or the renderer
+	//   still black       -> the presentation path itself is broken, and
+	//                        world_pixels content is irrelevant
+	//
+	// The HUD still draws normally, so its presence or absence is a second data
+	// point about which surfaces are reaching the screen.
+	SDL_FillRect(main_surface, &destination,
+		SDL_MapRGB(main_surface->format, 255, 0, 255));
+	SDL_UpdateRects(main_surface, 1, &destination);
+	return;
+#endif
+
 	if (hi_rez) {
 		SDL_BlitSurface(world_pixels, NULL, main_surface, &destination);
 	} else {
