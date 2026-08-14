@@ -1,0 +1,155 @@
+# Makefile.dc -- Aleph One 0.12.0 for Sega Dreamcast
+#
+# Rewritten against modern KallistiOS (2026) from BERO's 2002 original.
+# Build with:  source /opt/toolchains/dc/kos/environ.sh && make -f Makefile.dc
+#
+# What changed from BERO's version, and why:
+#
+#   * Uses kos-cc / kos-c++ and $(KOS_BASE)/Makefile.rules. BERO hard-coded
+#     sh-elf-c++ -ml -m4-single-only plus manual include paths; KOS now ships
+#     wrapper scripts that carry the correct arch flags, sysroot and libs.
+#   * Dropped -fno-exceptions -fno-rtti. GCC 3 on SH-4 could not do C++
+#     properly, which is why BERO rewrote try/catch as goto. Current dc-chain
+#     GCC handles both, so those hacks can be reverted in the source.
+#   * Dropped dc/syscalls.o and dc/fs_mem.o. KOS now has a real POSIX layer
+#     and a romdisk, so his hand-written newlib syscalls and in-RAM VFS are
+#     dead weight.
+#   * Dropped -nostartfiles -Wl,-Ttext=0x8c010000 and the explicit startup.o.
+#     Makefile.rules and the linker script handle load address and startup.
+#   * Dropped the KOS kernel patch (MAX_ISO_FILES 8 -> 16). Modern KOS does
+#     not carry that limit.
+#
+# -fpermissive and the -Wno-* set below are deliberate: this is 2001 C++ being
+# fed to a C++17 compiler. `register`, writable string literals and implicit
+# conversions are all over the tree. Tighten these later, not now.
+
+TARGET     = alephone.elf
+TARGET_BIN = 1ST_READ.BIN
+
+# Data shipped inside the binary (MML scripts, Themes, Fonts).
+# Game data (Map, Shapes, Sounds, Images) is far too big for this -- it stays
+# on the GD-ROM / SD card and is read through the normal VFS.
+KOS_ROMDISK_DIR = romdisk
+
+CS = Source_Files/CSeries
+EP = Source_Files/Expat
+MI = Source_Files/Misc
+NW = Source_Files/Network
+PF = Source_Files/Pfhortran
+MV = Source_Files/ModelView
+
+# ---------------------------------------------------------------------------
+# Flags
+# ---------------------------------------------------------------------------
+
+A1_INCS = -I$(CS) -I$(EP) -I$(MI) -I$(NW) -I$(PF) -I$(MV)
+A1_DEFS = -DSDL -DHAVE_UNISTD_H -DPACKAGE='"AlephOne"' -DVERSION='"0.12.0"' -DDC
+
+A1_LEGACY = -fpermissive -Wno-register -Wno-write-strings -Wno-deprecated \
+            -Wno-narrowing -Wno-conversion-null -Wno-invalid-offsetof
+
+KOS_CFLAGS   += -O2 -fomit-frame-pointer $(A1_INCS) $(A1_DEFS)
+KOS_CPPFLAGS += -std=gnu++17 $(A1_LEGACY)
+
+# SDL 1.2 comes from kos-ports. Verify the archive name after kos-ports is
+# built -- it has historically been libSDL_1213.a, hence -lSDL_1213.
+SDL_LIBS = -lSDL_1213
+
+# GLdc gives OpenGL 1.x on the PowerVR2. BERO had no hardware GL at all and
+# compiled the renderer out; this is the single biggest win available here.
+# Start with the software renderer (GL unset), then flip GL=1.
+ifdef GL
+  KOS_CFLAGS += -DHAVE_OPENGL
+  GL_LIBS     = -lGL
+  TARGET      = alephone_gl.elf
+endif
+
+LIBS = $(SDL_LIBS) $(GL_LIBS) -lm
+
+# ---------------------------------------------------------------------------
+# Sources
+# ---------------------------------------------------------------------------
+#
+# This list is BERO's, verified file-by-file against the SDL_release_0_12_0
+# tag: all 97 present, none renamed. It encodes real decisions -- note
+# network_dummy.cpp instead of the real networking stack, and no ModelView
+# sources. Do not replace it with a wildcard.
+
+SRCS = \
+  $(CS)/byte_swapping.cpp $(CS)/csalerts_sdl.cpp $(CS)/cscluts_sdl.cpp \
+  $(CS)/csmisc_sdl.cpp $(CS)/csstrings_sdl.cpp \
+  \
+  $(EP)/hashtable.c $(EP)/xmlparse.c $(EP)/xmlrole.c $(EP)/xmltok.c \
+  \
+  $(MI)/AnimatedTextures.cpp $(MI)/ChaseCam.cpp $(MI)/ColorParser.cpp \
+  $(MI)/Crosshairs_SDL.cpp $(MI)/DamageParser.cpp $(MI)/FileHandler_SDL.cpp \
+  $(MI)/FontHandler.cpp $(MI)/ImageLoader_SDL.cpp $(MI)/OGL_Render.cpp \
+  $(MI)/OGL_Setup.cpp $(MI)/OverheadMap_SDL.cpp \
+  $(MI)/OverheadMapRenderer.cpp $(MI)/PlayerName.cpp \
+  $(MI)/RenderPlaceObjs.cpp $(MI)/RenderRasterize.cpp \
+  $(MI)/RenderSortPoly.cpp $(MI)/RenderVisTree.cpp $(MI)/ShapesParser.cpp \
+  $(MI)/TextStrings.cpp $(MI)/ViewControl.cpp $(MI)/XML_Configure.cpp \
+  $(MI)/XML_DataBlock.cpp $(MI)/XML_ElementParser.cpp \
+  $(MI)/XML_LevelScript.cpp $(MI)/XML_MakeRoot.cpp $(MI)/XML_Loader_SDL.cpp \
+  $(MI)/computer_interface.cpp $(MI)/crc.cpp $(MI)/devices.cpp \
+  $(MI)/dynamic_limits.cpp $(MI)/effects.cpp $(MI)/fades.cpp \
+  $(MI)/find_files_sdl.cpp $(MI)/flood_map.cpp $(MI)/game_errors.cpp \
+  $(MI)/game_wad.cpp $(MI)/game_window.cpp $(MI)/game_window_sdl.cpp \
+  $(MI)/images.cpp $(MI)/import_definitions.cpp $(MI)/interface.cpp \
+  $(MI)/interface_sdl.cpp $(MI)/items.cpp $(MI)/lightsource.cpp \
+  $(MI)/map.cpp $(MI)/map_constructors.cpp $(MI)/marathon2.cpp \
+  $(MI)/media.cpp $(MI)/monsters.cpp $(MI)/motion_sensor.cpp \
+  $(MI)/mouse_sdl.cpp $(MI)/mysound.cpp $(MI)/overhead_map.cpp \
+  $(MI)/pathfinding.cpp $(MI)/physics.cpp $(MI)/placement.cpp \
+  $(MI)/platforms.cpp $(MI)/player.cpp $(MI)/preferences.cpp \
+  $(MI)/preprocess_map_sdl.cpp $(MI)/projectiles.cpp $(MI)/render.cpp \
+  $(MI)/resource_manager.cpp $(MI)/scenery.cpp $(MI)/scottish_textures.cpp \
+  $(MI)/screen_drawing.cpp $(MI)/screen_sdl.cpp $(MI)/sdl_dialogs.cpp \
+  $(MI)/sdl_fonts.cpp $(MI)/sdl_widgets.cpp $(MI)/shapes.cpp \
+  $(MI)/shell.cpp $(MI)/textures.cpp $(MI)/vbl.cpp $(MI)/vbl_sdl.cpp \
+  $(MI)/wad.cpp $(MI)/wad_sdl.cpp $(MI)/wad_prefs.cpp $(MI)/weapons.cpp \
+  $(MI)/world.cpp $(MI)/shell_misc.cpp $(MI)/HUDRenderer.cpp \
+  $(MI)/HUDRenderer_SW.cpp \
+  \
+  $(NW)/network_dummy.cpp $(NW)/network_games.cpp \
+  \
+  $(PF)/script_instructions.cpp $(PF)/script_parser.cpp $(PF)/scripting.cpp
+
+OBJS = $(patsubst %.c,%.o,$(patsubst %.cpp,%.o,$(SRCS))) romdisk.o
+
+# ---------------------------------------------------------------------------
+# Rules
+# ---------------------------------------------------------------------------
+
+all: rm-elf $(TARGET)
+
+include $(KOS_BASE)/Makefile.rules
+
+# shell.cpp #includes shell_sdl.cpp -- 2001-style unity build, kept as-is.
+$(MI)/shell.o: $(MI)/shell.cpp $(MI)/shell_sdl.cpp
+
+$(TARGET): $(OBJS)
+	kos-c++ -o $(TARGET) $(OBJS) $(LIBS)
+
+# Scratch build of a single file, for chasing one error at a time:
+#   make -f Makefile.dc one FILE=Source_Files/Misc/map.cpp
+one:
+	kos-c++ $(KOS_CFLAGS) $(KOS_CPPFLAGS) -c $(FILE) -o /dev/null
+
+$(TARGET_BIN): $(TARGET)
+	$(KOS_STRIP) $(TARGET)
+	kos-objcopy -O binary -R .stack $(TARGET) $(TARGET).bin
+	scramble $(TARGET).bin $(TARGET_BIN)
+
+bin: $(TARGET_BIN)
+
+run: $(TARGET)
+	$(KOS_LOADER) $(TARGET)
+
+rm-elf:
+	-rm -f $(TARGET) $(TARGET).bin $(TARGET_BIN) romdisk.*
+
+clean: rm-elf
+	-rm -f $(OBJS)
+
+.PHONY: all bin run rm-elf clean one

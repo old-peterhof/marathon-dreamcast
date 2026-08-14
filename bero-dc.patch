@@ -1,0 +1,701 @@
+Only in AlephOne-0.12.0: Makefile.dc
+Only in AlephOne-0.12.0: README.DC
+diff -u -r -x '*.o' AlephOne-0.12.0.orig/Source_Files/CSeries/cstypes.h AlephOne-0.12.0/Source_Files/CSeries/cstypes.h
+--- AlephOne-0.12.0.orig/Source_Files/CSeries/cstypes.h	2001-01-31 13:10:40.000000000 +0900
++++ AlephOne-0.12.0/Source_Files/CSeries/cstypes.h	2002-09-29 17:50:56.000000000 +0900
+@@ -65,7 +65,7 @@
+ 
+ // Make it compile on systems without OpenGL
+ #ifndef HAVE_OPENGL
+-#define GLfloat float
++typedef float GLfloat;
+ #endif
+ 
+ #endif
+diff -u -r -x '*.o' AlephOne-0.12.0.orig/Source_Files/Misc/FileHandler.h AlephOne-0.12.0/Source_Files/Misc/FileHandler.h
+--- AlephOne-0.12.0.orig/Source_Files/Misc/FileHandler.h	2001-05-14 03:47:06.000000000 +0900
++++ AlephOne-0.12.0/Source_Files/Misc/FileHandler.h	2002-09-19 22:11:51.000000000 +0900
+@@ -34,6 +34,7 @@
+ #include <string>
+ #include <vector>
+ #define fnfErr ENOENT
++using namespace std;
+ #endif
+ 
+ #ifdef __WIN32__
+Only in AlephOne-0.12.0/Source_Files/Misc: FileHandler_SDL.bak
+diff -u -r -x '*.o' AlephOne-0.12.0.orig/Source_Files/Misc/FileHandler_SDL.cpp AlephOne-0.12.0/Source_Files/Misc/FileHandler_SDL.cpp
+--- AlephOne-0.12.0.orig/Source_Files/Misc/FileHandler_SDL.cpp	2001-09-02 23:24:30.000000000 +0900
++++ AlephOne-0.12.0/Source_Files/Misc/FileHandler_SDL.cpp	2002-10-10 14:27:37.000000000 +0900
+@@ -399,11 +399,15 @@
+ {
+ 	struct stat st;
+ 	err = 0;
++#ifdef DC /* DC */
++	return 0;
++#else
+ 	if (stat(GetPath(), &st) < 0) {
+ 		err = errno;
+ 		return 0;
+ 	}
+ 	return st.st_mtime;
++#endif
+ }
+ 
+ // Determine file type
+@@ -679,9 +683,13 @@
+ 		if (de->d_name[0] != '.' || (de->d_name[1] && de->d_name[1] != '.')) {
+ 			FileSpecifier full_path = name;
+ 			full_path += de->d_name;
++#ifdef DC /* DC */
++			vec.push_back(dir_entry(de->d_name, de->size, de->size<0, false));
++#else
+ 			struct stat st;
+ 			if (stat(full_path.GetPath(), &st) == 0)
+ 				vec.push_back(dir_entry(de->d_name, st.st_size, S_ISDIR(st.st_mode), false));
++#endif
+ 		}
+ 		de = readdir(d);
+ 	}
+diff -u -r -x '*.o' AlephOne-0.12.0.orig/Source_Files/Misc/OGL_Setup.cpp AlephOne-0.12.0/Source_Files/Misc/OGL_Setup.cpp
+--- AlephOne-0.12.0.orig/Source_Files/Misc/OGL_Setup.cpp	2001-09-02 23:24:30.000000000 +0900
++++ AlephOne-0.12.0/Source_Files/Misc/OGL_Setup.cpp	2002-09-20 00:53:33.000000000 +0900
+@@ -454,67 +454,72 @@
+ 	FileSpecifier File;
+ 	
+ 	// Load the normal image with alpha channel
+-	try
++//	try
+ 	{
+ 		// Check to see if loading needs to be done;
+ 		// it does not need to be if an image is present.
+-		if (NormalImg.IsPresent()) throw 0;
++		if (NormalImg.IsPresent()) return;
+ 		NormalImg.Clear();
+ 		
+ 		// Load the normal image if it has a filename specified for it
+-		if (!StringPresent(NormalColors)) throw 0;
++		if (!StringPresent(NormalColors)) return;
+ #ifdef mac
+-		if (!File.SetToApp()) throw 0;
++		if (!File.SetToApp()) return;
+ #endif
+-		if (!File.SetNameWithPath(&NormalColors[0])) throw 0;
+-		if (!LoadImageFromFile(NormalImg,File,ImageLoader_Colors)) throw 0;
++		if (!File.SetNameWithPath(&NormalColors[0])) return;
++		if (!LoadImageFromFile(NormalImg,File,ImageLoader_Colors)) return;
+ 	}
+-	catch(...)
++//	catch(...)
++	if (0)
+ 	{
+ 		// A texture must have a normal colored part
+ 		return;
+ 	}
+ 	
+-	try
++//	try
++	do
+ 	{
+ 		// Load the normal mask if it has a filename specified for it
+-		if (!StringPresent(NormalMask)) throw 0;
++		if (!StringPresent(NormalMask)) break;
+ #ifdef mac
+-		if (!File.SetToApp()) throw 0;
++		if (!File.SetToApp()) break;
+ #endif
+-		if (!File.SetNameWithPath(&NormalMask[0])) throw 0;
+-		if (!LoadImageFromFile(NormalImg,File,ImageLoader_Opacity)) throw 0;
++		if (!File.SetNameWithPath(&NormalMask[0])) break;
++		if (!LoadImageFromFile(NormalImg,File,ImageLoader_Opacity)) break;
+ 	}
+-	catch(...)
+-	{}
++	while(0);
++//	catch(...)
++//	{}
+ 	
+ 	// Load the glow image with alpha channel
+-	try
++	//try
++	do
+ 	{
+ 		// Check to see if loading needs to be done;
+ 		// it does not need to be if an image is present.
+-		if (GlowImg.IsPresent()) throw 0;
++		if (GlowImg.IsPresent()) break;
+ 		GlowImg.Clear();
+ 		
+ 		// Load the glow image if it has a filename specified for it
+-		if (!StringPresent(GlowColors)) throw 0;
++		if (!StringPresent(GlowColors)) break;
+ #ifdef mac
+-		if (!File.SetToApp()) throw 0;
++		if (!File.SetToApp()) break;
+ #endif
+-		if (!File.SetNameWithPath(&GlowColors[0])) throw 0;
+-		if (!LoadImageFromFile(GlowImg,File,ImageLoader_Colors)) throw 0;
++		if (!File.SetNameWithPath(&GlowColors[0])) break;
++		if (!LoadImageFromFile(GlowImg,File,ImageLoader_Colors)) break;
+ 		
+ 		// Load the glow mask if it has a filename specified for it;
+ 		// only loaded if an image has been loaded for it
+-		if (!StringPresent(GlowMask)) throw 0;
++		if (!StringPresent(GlowMask)) break;
+ #ifdef mac
+-		if (!File.SetToApp()) throw 0;
++		if (!File.SetToApp()) break;
+ #endif
+-		if (!File.SetNameWithPath(&GlowMask[0])) throw 0;
+-		if (!LoadImageFromFile(GlowImg,File,ImageLoader_Opacity)) throw 0;
++		if (!File.SetNameWithPath(&GlowMask[0])) break;
++		if (!LoadImageFromFile(GlowImg,File,ImageLoader_Opacity)) break;
+ 	}
+-	catch(...)
+-	{}
++	while(0);
++	//catch(...)
++	//{}
+ 	
+ 	// The rest of the code is made simpler by these constraints:
+ 	// that the glow texture only be present if the normal texture is also present,
+@@ -540,7 +545,7 @@
+ }
+ 
+ // Any easy STL ways of doing this mapping of functions onto members of arrays?
+-
++#ifdef HAVE_OPENGL
+ void OGL_SkinManager::Load()
+ {
+ 	for (vector<OGL_SkinData>::iterator SkinIter = SkinData.begin(); SkinIter < SkinData.end(); SkinIter++)
+@@ -767,7 +772,7 @@
+ 	// Don't forget the skins
+ 	OGL_SkinManager::Unload();
+ }
+-
++#endif
+ 
+ 
+ // for managing the model and image loading and unloading
+@@ -775,6 +780,7 @@
+ {
+ 	assert(Collection >= 0 && Collection < MAXIMUM_COLLECTIONS);
+ 	
++#ifdef	HAVE_OPENGL
+ 	// For wall/sprite images
+ 	vector<TextureOptionsEntry>& TOL = TOList[Collection];
+ 	for (vector<TextureOptionsEntry>::iterator TOIter = TOL.begin(); TOIter < TOL.end(); TOIter++)
+@@ -797,12 +803,14 @@
+ 		else
+ 			MdlIter->ModelData.Unload();
+ 	}
++#endif
+ }
+ 
+ void OGL_UnloadModelsImages(int Collection)
+ {
+ 	assert(Collection >= 0 && Collection < MAXIMUM_COLLECTIONS);
+ 	
++#ifdef	HAVE_OPENGL
+ 	// For wall/sprite images
+ 	vector<TextureOptionsEntry>& TOL = TOList[Collection];
+ 	for (vector<TextureOptionsEntry>::iterator TOIter = TOL.begin(); TOIter < TOL.end(); TOIter++)
+@@ -816,12 +824,14 @@
+ 	{
+ 		MdlIter->ModelData.Unload();
+ 	}
++#endif
+ }
+ 
+ 
+ // Reset model skins; used in OGL_ResetTextures() in OGL_Textures.cpp
+ void OGL_ResetModelSkins(bool Clear_OGL_Txtrs)
+ {
++#ifdef	HAVE_OPENGL
+ 	for (int ic=0; ic<MAXIMUM_COLLECTIONS; ic++)
+ 	{
+ 		vector<ModelDataEntry>& ML = MdlList[ic];
+@@ -830,6 +840,7 @@
+ 			MdlIter->ModelData.Reset(Clear_OGL_Txtrs);
+ 		}
+ 	}
++#endif
+ }
+ 
+ 
+Only in AlephOne-0.12.0/Source_Files/Misc: OGL_Win32.h
+diff -u -r -x '*.o' AlephOne-0.12.0.orig/Source_Files/Misc/interface.cpp AlephOne-0.12.0/Source_Files/Misc/interface.cpp
+--- AlephOne-0.12.0.orig/Source_Files/Misc/interface.cpp	2001-07-31 23:06:30.000000000 +0900
++++ AlephOne-0.12.0/Source_Files/Misc/interface.cpp	2002-10-10 05:40:36.000000000 +0900
+@@ -470,6 +470,12 @@
+ 	set_keyboard_controller_status(true);
+ }
+ 
++void draw_menu_button(short index,bool pressed)
++{
++	short rectangle_index= index-1+_new_game_button_rect;
++	draw_button(rectangle_index, pressed);
++}
++
+ void draw_menu_button_for_command(
+ 	short index)
+ {
+@@ -631,6 +637,7 @@
+ 	return;
+ }
+ 
++int last_menu = iNewGame;
+ void display_main_menu(
+ 	void)
+ {
+@@ -642,6 +649,7 @@
+ 	game_state.flags= 0;
+ 	
+ 	display_screen(MAIN_MENU_BASE);
++	draw_menu_button(last_menu,true);
+ 	
+ 	/* Start up the song! */
+ 	if(!music_playing() && game_state.main_menu_display_count==0)
+@@ -798,6 +806,7 @@
+ 			break;
+ 			
+ 		case mInterface:
++			last_menu = menu_item;
+ 			switch(menu_item)
+ 			{
+ 				case iNewGame:
+@@ -1133,7 +1142,7 @@
+ }
+ 
+ /* The port is set.. */
+-static void draw_button(
++static void draw_button_sub(
+ 	short index, 
+ 	bool pressed)
+ {
+@@ -1150,6 +1159,16 @@
+ 
+ 	return;
+ }
++static void draw_button(short index,bool pressed)
++{
++	static short last_index;
++	if (pressed && index!=last_index) {
++		draw_button_sub(last_index,false);
++		last_index = index;
++	}
++	draw_button_sub(index,pressed);
++}
++
+ 					
+ static void handle_replay( /* This is gross. */
+ 	bool last_replay)
+diff -u -r -x '*.o' AlephOne-0.12.0.orig/Source_Files/Misc/motion_sensor.cpp AlephOne-0.12.0/Source_Files/Misc/motion_sensor.cpp
+--- AlephOne-0.12.0.orig/Source_Files/Misc/motion_sensor.cpp	2001-08-04 02:42:35.000000000 +0900
++++ AlephOne-0.12.0/Source_Files/Misc/motion_sensor.cpp	2002-09-19 23:12:14.000000000 +0900
+@@ -305,6 +305,7 @@
+ 	}
+ }
+ 
++#ifdef HAVE_OPENGL
+ void HUD_OGL_Class::render_motion_sensor(short ticks_elapsed)
+ {
+ 	// Draw background
+@@ -321,6 +322,7 @@
+ 		draw_network_compass();
+ 	draw_all_entity_blips();
+ }
++#endif
+ 
+ /* the interface code will call this function and only draw the motion sensor if we return true */
+ bool motion_sensor_has_changed(void)
+@@ -470,6 +472,7 @@
+ 		bitmap_window_copy(virgin_mount, mount, x, y, x+blip->width, y+blip->height);
+ }
+ 
++#ifdef	HAVE_OPENGL
+ void HUD_OGL_Class::draw_or_erase_unclipped_shape(short x, short y, shape_descriptor shape, bool draw)
+ {
+ 	if (draw) {
+@@ -477,6 +480,7 @@
+ 		DrawShapeAtXY(shape, x + r->left, y + r->top);
+ 	}
+ }
++#endif
+ 
+ void HUD_SW_Class::erase_entity_blip(point2d *location, shape_descriptor shape)
+ {
+@@ -510,6 +514,7 @@
+ 		location->y + (motion_sensor_side_length>>1) - (blip->height>>1));
+ }
+ 
++#ifdef HAVE_OPENGL
+ void HUD_OGL_Class::draw_entity_blip(point2d *location, shape_descriptor shape)
+ {
+ 	bitmap_definition *blip;
+@@ -527,6 +532,7 @@
+ 		true);
+ 	DisableClipPlane();
+ }
++#endif
+ 
+ /* if we find an entity that is being removed, we continue with the removal process and ignore
+ 	the new signal; the new entity will probably not be added to the sensor again for a full
+Only in AlephOne-0.12.0/Source_Files/Misc: preferences_sdl.bak
+diff -u -r -x '*.o' AlephOne-0.12.0.orig/Source_Files/Misc/preferences_sdl.cpp AlephOne-0.12.0/Source_Files/Misc/preferences_sdl.cpp
+--- AlephOne-0.12.0.orig/Source_Files/Misc/preferences_sdl.cpp	2001-09-02 23:24:30.000000000 +0900
++++ AlephOne-0.12.0/Source_Files/Misc/preferences_sdl.cpp	2002-10-10 14:30:16.000000000 +0900
+@@ -77,6 +77,8 @@
+ 	else
+ 		strcpy(name, "Bob User");
+ 
++#elif defined(DC)
++	strcpy(name,"Bob User");
+ #else
+ #error get_name_from_system() not implemented for this platform
+ #endif
+diff -u -r -x '*.o' AlephOne-0.12.0.orig/Source_Files/Misc/resource_manager.h AlephOne-0.12.0/Source_Files/Misc/resource_manager.h
+--- AlephOne-0.12.0.orig/Source_Files/Misc/resource_manager.h	2000-09-13 03:09:17.000000000 +0900
++++ AlephOne-0.12.0/Source_Files/Misc/resource_manager.h	2002-09-19 22:12:13.000000000 +0900
+@@ -9,6 +9,7 @@
+ 
+ #include <stdio.h>
+ #include <vector>
++using namespace std;
+ 
+ class FileSpecifier;
+ class LoadedResource;
+diff -u -r -x '*.o' AlephOne-0.12.0.orig/Source_Files/Misc/sdl_dialogs.h AlephOne-0.12.0/Source_Files/Misc/sdl_dialogs.h
+--- AlephOne-0.12.0.orig/Source_Files/Misc/sdl_dialogs.h	2001-06-24 08:12:25.000000000 +0900
++++ AlephOne-0.12.0/Source_Files/Misc/sdl_dialogs.h	2002-09-19 23:01:02.000000000 +0900
+@@ -8,6 +8,7 @@
+ #define SDL_DIALOGS_H
+ 
+ #include <vector>
++using namespace std;
+ 
+ class widget;
+ struct SDL_Surface;
+diff -u -r -x '*.o' AlephOne-0.12.0.orig/Source_Files/Misc/shapes.cpp AlephOne-0.12.0/Source_Files/Misc/shapes.cpp
+--- AlephOne-0.12.0.orig/Source_Files/Misc/shapes.cpp	2001-08-31 00:22:50.000000000 +0900
++++ AlephOne-0.12.0/Source_Files/Misc/shapes.cpp	2002-09-20 00:49:16.000000000 +0900
+@@ -306,10 +306,10 @@
+ 	byte *NewCollection = NULL;
+ 	int32 *OffsetTable = NULL;
+ 	
+-	try
++//	try
+ 	{
+ 		// First, unpack the header into a temporary area
+-		if (length < SIZEOF_collection_definition) throw 13666;
++		if (length < SIZEOF_collection_definition) goto err;
+ 		
+ 		collection_definition Definition;
+ 		uint8 *SBase = collection;
+@@ -347,8 +347,8 @@
+ 		NewSize += (sizeof(collection_definition) - SIZEOF_collection_definition) + POINTER_SIZE;
+ 		
+ 		// The colors:
+-		if (!(Definition.color_count >= 0)) throw 13666;
+-		if (!(Definition.clut_count >= 0)) throw 13666;
++		if (!(Definition.color_count >= 0)) goto err;
++		if (!(Definition.clut_count >= 0)) goto err;
+ 		int TotalColors = Definition.color_count * Definition.clut_count;
+ 		NewSize += TotalColors*(sizeof(rgb_color_value) - SIZEOF_rgb_color_value) + POINTER_SIZE;
+ 		
+@@ -356,7 +356,7 @@
+ 		NewSize += POINTER_SIZE;
+ 		
+ 		// The sequence data:
+-		if (!(Definition.high_level_shape_count >= 0)) throw 13666;
++		if (!(Definition.high_level_shape_count >= 0)) goto err;
+ 		NewSize += Definition.high_level_shape_count*
+ 			((sizeof(high_level_shape_definition) - SIZEOF_high_level_shape_definition) + POINTER_SIZE);
+ 		
+@@ -366,7 +366,7 @@
+ 			NewSize += POINTER_SIZE;
+ 			
+ 			// The frame data:
+-			if (!(Definition.low_level_shape_count >= 0)) throw 13666;
++			if (!(Definition.low_level_shape_count >= 0)) goto err;
+ 			NewSize += Definition.low_level_shape_count*
+ 				((sizeof(low_level_shape_definition) - SIZEOF_low_level_shape_definition) + POINTER_SIZE);
+ 			
+@@ -374,20 +374,20 @@
+ 			NewSize += POINTER_SIZE;
+ 			
+ 			// The bitmap data:
+-			if (!(Definition.bitmap_count >= 0)) throw 13666;
++			if (!(Definition.bitmap_count >= 0)) goto err;
+ 			NewSize += Definition.bitmap_count*
+ 				((sizeof(bitmap_definition) - SIZEOF_bitmap_definition) + POINTER_SIZE);
+ 			
+ 			// The bitmap pointers:
+-			if (!(Definition.bitmap_offset_table_offset >= 0)) throw 13666;
++			if (!(Definition.bitmap_offset_table_offset >= 0)) goto err;
+ 			if (!(Definition.bitmap_offset_table_offset +
+-				Definition.bitmap_count*sizeof(int32) <= length)) throw 13666;
++				Definition.bitmap_count*sizeof(int32) <= length)) goto err;
+ 			uint8 *OffsetStream = collection + Definition.bitmap_offset_table_offset;
+ 			for (int k=0; k<Definition.bitmap_count; k++)
+ 			{
+ 				int32 Offset;
+ 				StreamToValue(OffsetStream,Offset);
+-				if (!(Offset >= 0 && Offset < (length - SIZEOF_bitmap_definition))) throw 13666;
++				if (!(Offset >= 0 && Offset < (length - SIZEOF_bitmap_definition))) goto err;
+ 				uint8 *S = collection + Offset;
+ 				
+ 				bitmap_definition Bitmap;
+@@ -415,8 +415,8 @@
+ 		NewCollLocation += AdjustToPointerBoundary(sizeof(collection_definition));
+ 		
+ 		// Copy in the colors
+-		if (!(Definition.color_table_offset >= 0)) throw 13666;
+-		if (!(Definition.color_table_offset + TotalColors*SIZEOF_rgb_color_value <= length)) throw 13666;
++		if (!(Definition.color_table_offset >= 0)) goto err;
++		if (!(Definition.color_table_offset + TotalColors*SIZEOF_rgb_color_value <= length)) goto err;
+ 		rgb_color_value *Colors = (rgb_color_value *)(NewCollection + NewCollLocation);
+ 		SBase = S = collection + Definition.color_table_offset;
+ 		for (int k = 0; k < TotalColors; k++, Colors++)
+@@ -432,9 +432,9 @@
+ 		NewCollLocation += AdjustToPointerBoundary(TotalColors*sizeof(rgb_color_value));
+ 		
+ 		// Copy in the sequence offsets
+-		if (!(Definition.high_level_shape_offset_table_offset >= 0)) throw 13666;
++		if (!(Definition.high_level_shape_offset_table_offset >= 0)) goto err;
+ 		if (!(Definition.high_level_shape_offset_table_offset +
+-			Definition.high_level_shape_count*sizeof(int32) <= length)) throw 13666;
++			Definition.high_level_shape_count*sizeof(int32) <= length)) goto err;
+ 		OffsetTable = new int32[Definition.high_level_shape_count + 1];
+ 		
+ 		S = collection + Definition.high_level_shape_offset_table_offset;
+@@ -442,10 +442,10 @@
+ 		OffsetTable[Definition.high_level_shape_count] =
+ 			Definition.low_level_shape_offset_table_offset;
+ 		
+-		if (!(OffsetTable[0] >= 0)) throw 13666;
++		if (!(OffsetTable[0] >= 0)) goto err;
+ 		for (int k=0; k<Definition.high_level_shape_count; k++)
+-			if (!(OffsetTable[k+1] - OffsetTable[k] >= SIZEOF_high_level_shape_definition)) throw 13666;
+-		if (!(OffsetTable[Definition.high_level_shape_count] <= length)) throw 13666;
++			if (!(OffsetTable[k+1] - OffsetTable[k] >= SIZEOF_high_level_shape_definition)) goto err;
++		if (!(OffsetTable[Definition.high_level_shape_count] <= length)) goto err;
+ 		
+ 		NewDefinition.high_level_shape_offset_table_offset = NewCollLocation;
+ 		int32 *NewOffsetPtr = (int32 *)(NewCollection + NewCollLocation);
+@@ -508,20 +508,20 @@
+ 		else
+ 		{
+ 			// Copy in the frame offsets
+-			if (!(Definition.low_level_shape_count >= 0)) throw 13666;
+-			if (!(Definition.low_level_shape_offset_table_offset >= 0)) throw 13666;
++			if (!(Definition.low_level_shape_count >= 0)) goto err;
++			if (!(Definition.low_level_shape_offset_table_offset >= 0)) goto err;
+ 			if (!(Definition.low_level_shape_offset_table_offset +
+-				Definition.low_level_shape_count*sizeof(int32) <= length)) throw 13666;
++				Definition.low_level_shape_count*sizeof(int32) <= length)) goto err;
+ 			int32 *OffsetTable = new int32[Definition.low_level_shape_count + 1];
+ 			
+ 			S = collection + Definition.low_level_shape_offset_table_offset;
+ 			StreamToList(S,OffsetTable,Definition.low_level_shape_count);
+ 			OffsetTable[Definition.low_level_shape_count] = Definition.bitmap_offset_table_offset;
+ 			
+-			if (!(OffsetTable[0] >= 0)) throw 13666;
++			if (!(OffsetTable[0] >= 0)) goto err;
+ 			for (int k=0; k<Definition.low_level_shape_count; k++)
+-				if (!(OffsetTable[k+1] - OffsetTable[k] >= SIZEOF_low_level_shape_definition)) throw 13666;
+-			if (!(OffsetTable[Definition.low_level_shape_count] <= length)) throw 13666;
++				if (!(OffsetTable[k+1] - OffsetTable[k] >= SIZEOF_low_level_shape_definition)) goto err;
++			if (!(OffsetTable[Definition.low_level_shape_count] <= length)) goto err;
+ 		
+ 			NewDefinition.low_level_shape_offset_table_offset = NewCollLocation;
+ 			NewOffsetPtr = (int32 *)(NewCollection + NewCollLocation);
+@@ -568,20 +568,20 @@
+ 			OffsetTable = NULL;
+ 			
+ 			// Copy in the the bitmap offsets
+-			if (!(Definition.bitmap_count >= 0)) throw 13666;
+-			if (!(Definition.bitmap_offset_table_offset >= 0)) throw 13666;
++			if (!(Definition.bitmap_count >= 0)) goto err;
++			if (!(Definition.bitmap_offset_table_offset >= 0)) goto err;
+ 			if (!(Definition.bitmap_offset_table_offset +
+-				Definition.bitmap_count*sizeof(int32) <= length)) throw 13666;
++				Definition.bitmap_count*sizeof(int32) <= length)) goto err;
+ 			OffsetTable = new int32[Definition.bitmap_count + 1];
+ 			
+ 			S = collection + Definition.bitmap_offset_table_offset;
+ 			StreamToList(S,OffsetTable,Definition.bitmap_count);
+ 			OffsetTable[Definition.bitmap_count] = length;
+ 			
+-			if (!(OffsetTable[0] >= 0)) throw 13666;
++			if (!(OffsetTable[0] >= 0)) goto err;
+ 			for (int k=0; k<Definition.bitmap_count; k++)
+-				if (!(OffsetTable[k+1] - OffsetTable[k] >= SIZEOF_bitmap_definition)) throw 13666;
+-			if (!(OffsetTable[Definition.bitmap_count] <= length)) throw 13666;
++				if (!(OffsetTable[k+1] - OffsetTable[k] >= SIZEOF_bitmap_definition)) goto err;
++			if (!(OffsetTable[Definition.bitmap_count] <= length)) goto err;
+ 		
+ 			NewDefinition.bitmap_offset_table_offset = NewCollLocation;
+ 			NewOffsetPtr = (int32 *)(NewCollection + NewCollLocation);
+@@ -636,8 +636,9 @@
+ 			assert(NewCollLocation <= NewSize);
+ 		}	
+ 	}
+-	catch(int n)
+-	{
++//	catch(int n)
++	if (0) {
++err:
+ 		if (NewCollection) delete []NewCollection;
+ 	}
+ 	if (OffsetTable) delete []OffsetTable;
+Only in AlephOne-0.12.0/Source_Files/Misc: shapes_old.cpp
+diff -u -r -x '*.o' AlephOne-0.12.0.orig/Source_Files/Misc/shell_sdl.cpp AlephOne-0.12.0/Source_Files/Misc/shell_sdl.cpp
+--- AlephOne-0.12.0.orig/Source_Files/Misc/shell_sdl.cpp	2001-09-02 23:24:30.000000000 +0900
++++ AlephOne-0.12.0/Source_Files/Misc/shell_sdl.cpp	2002-10-10 09:10:57.000000000 +0900
+@@ -144,8 +144,15 @@
+ 	exit(0);
+ }
+ 
++extern "C" {
++extern int fs_mem_init(void);
++}
++
+ int main(int argc, char **argv)
+ {
++#ifdef DC
++	fs_mem_init();
++#endif
+ 	// Print banner (don't bother if this doesn't appear when started from a GUI)
+ 	printf(
+ 		"Aleph One " VERSION "\n"
+@@ -191,7 +198,7 @@
+ 		argc--; argv++;	
+ 	}
+ 
+-	try {
++//	try {
+ 
+ 		// Initialize everything
+ 		initialize_application();
+@@ -199,6 +206,7 @@
+ 		// Run the main loop
+ 		main_event_loop();
+ 
++#if 0
+ 	} catch (exception &e) {
+ 
+ 		fprintf(stderr, "Unhandled exception: %s\n", e.what());
+@@ -210,6 +218,7 @@
+ 		exit(1);
+ 
+ 	}
++#endif
+ 
+ 	return 0;
+ }
+@@ -274,6 +283,10 @@
+ 	local_data_dir.CreateDirectory();
+ 	local_data_dir += login;
+ 	 
++#elif defined(DC)
++	default_data_dir = "/cd/AlephOne";
++//	local_data_dir = "/pc/games/AlephOne/Pref/BERO";
++	local_data_dir = "/mem";
+ #else
+ #error Data file paths must be set for this platform.
+ #endif
+@@ -1066,6 +1079,44 @@
+ 			if (!interface_fade_finished())
+ 				stop_interface_fade();
+ 			int item = -1;
++#if 1
++/*
++	BEGIN NEW GAME
++	CONINUE SAVED GAME
++	GATHER NETWORK GAME	QUIT
++	JOIN NETWORK GAME	PREFERNCES
++	REPLAY SAVED FILM	SAVE_LAST_FILM
++		REPLAY LAST FILM
++*/
++			const static char menus[] = {
++	iNewGame,iLoadGame,iGatherGame,iJoinGame,iReplaySavedFilm,iReplayLastFilm,
++	iSaveLastFilm,iPreferences,iQuit,iCredits,
++			};
++#define	N_MENU	(sizeof(menus)/sizeof(menus[0]))
++			extern int last_menu;
++			int c_menu;
++
++			for(c_menu=0;c_menu<N_MENU && menus[c_menu]!=last_menu;c_menu++);
++
++			switch(event.key.keysym.sym) {
++				case SDLK_UP:
++					c_menu--;
++					if (c_menu<0) c_menu = N_MENU-1;
++					break;
++				case SDLK_DOWN:
++					c_menu++;
++					if (c_menu>=N_MENU) c_menu=0;
++					break;
++				case SDLK_RETURN:
++					item = last_menu;
++					break;
++			}
++			if (menus[c_menu]!=last_menu) {
++				last_menu = menus[c_menu];
++				draw_menu_button(last_menu,true);
++			}
++#endif
++
+ 			switch (event.key.keysym.sym) {
+ 				case SDLK_n: item = iNewGame; break;
+ 				case SDLK_o: item = iLoadGame; break;
+diff -u -r -x '*.o' AlephOne-0.12.0.orig/Source_Files/ModelView/Model3D.cpp AlephOne-0.12.0/Source_Files/ModelView/Model3D.cpp
+--- AlephOne-0.12.0.orig/Source_Files/ModelView/Model3D.cpp	2001-08-31 00:22:50.000000000 +0900
++++ AlephOne-0.12.0/Source_Files/ModelView/Model3D.cpp	2002-09-20 00:02:42.000000000 +0900
+@@ -69,7 +69,7 @@
+ 	}
+ }
+ 
+-
++#ifdef HAVE_OPENGL
+ // For debugging
+ void Model3D::RenderBoundingBox(const GLfloat *EdgeColor, const GLfloat *DiagonalColor)
+ {
+@@ -140,3 +140,4 @@
+ 		glDrawElements(GL_LINES,NumDiagVerts,GL_UNSIGNED_SHORT,DiagVerts);
+ 	}
+ }
++#endif
+diff -u -r -x '*.o' AlephOne-0.12.0.orig/Source_Files/ModelView/Model3D.h AlephOne-0.12.0/Source_Files/ModelView/Model3D.h
+--- AlephOne-0.12.0.orig/Source_Files/ModelView/Model3D.h	2001-08-31 00:22:50.000000000 +0900
++++ AlephOne-0.12.0/Source_Files/ModelView/Model3D.h	2002-09-27 00:43:12.000000000 +0900
+@@ -60,7 +60,11 @@
+ 	void Clear();
+ 	
+ 	// Constructor
+-	Model3D() {FindBoundingBox();}
++	Model3D() {
++#ifdef	HAVE_OPENGL
++		FindBoundingBox();
++#endif
++	}
+ };
+ 
+ 
+diff -u -r -x '*.o' AlephOne-0.12.0.orig/Source_Files/ModelView/ModelRenderer.cpp AlephOne-0.12.0/Source_Files/ModelView/ModelRenderer.cpp
+--- AlephOne-0.12.0.orig/Source_Files/ModelView/ModelRenderer.cpp	2001-09-02 23:24:31.000000000 +0900
++++ AlephOne-0.12.0/Source_Files/ModelView/ModelRenderer.cpp	2002-09-20 00:03:00.000000000 +0900
+@@ -5,7 +5,7 @@
+ */
+ 
+ #include <string.h>
+-#include <alloca.h>
++//#include <alloca.h>
+ #include "cseries.h"
+ #include "ModelRenderer.h"
+ 
+Only in AlephOne-0.12.0: alphaone
+Only in AlephOne-0.12.0: build2
+Only in AlephOne-0.12.0: dc
+Only in AlephOne-0.12.0: dist
