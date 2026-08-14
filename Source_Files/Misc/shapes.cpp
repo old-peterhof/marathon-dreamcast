@@ -306,10 +306,10 @@ byte *unpack_collection(byte *collection, int32 length, bool strip)
 	byte *NewCollection = NULL;
 	int32 *OffsetTable = NULL;
 	
-	try
+//	try
 	{
 		// First, unpack the header into a temporary area
-		if (length < SIZEOF_collection_definition) throw 13666;
+		if (length < SIZEOF_collection_definition) goto err;
 		
 		collection_definition Definition;
 		uint8 *SBase = collection;
@@ -347,8 +347,8 @@ byte *unpack_collection(byte *collection, int32 length, bool strip)
 		NewSize += (sizeof(collection_definition) - SIZEOF_collection_definition) + POINTER_SIZE;
 		
 		// The colors:
-		if (!(Definition.color_count >= 0)) throw 13666;
-		if (!(Definition.clut_count >= 0)) throw 13666;
+		if (!(Definition.color_count >= 0)) goto err;
+		if (!(Definition.clut_count >= 0)) goto err;
 		int TotalColors = Definition.color_count * Definition.clut_count;
 		NewSize += TotalColors*(sizeof(rgb_color_value) - SIZEOF_rgb_color_value) + POINTER_SIZE;
 		
@@ -356,7 +356,7 @@ byte *unpack_collection(byte *collection, int32 length, bool strip)
 		NewSize += POINTER_SIZE;
 		
 		// The sequence data:
-		if (!(Definition.high_level_shape_count >= 0)) throw 13666;
+		if (!(Definition.high_level_shape_count >= 0)) goto err;
 		NewSize += Definition.high_level_shape_count*
 			((sizeof(high_level_shape_definition) - SIZEOF_high_level_shape_definition) + POINTER_SIZE);
 		
@@ -366,7 +366,7 @@ byte *unpack_collection(byte *collection, int32 length, bool strip)
 			NewSize += POINTER_SIZE;
 			
 			// The frame data:
-			if (!(Definition.low_level_shape_count >= 0)) throw 13666;
+			if (!(Definition.low_level_shape_count >= 0)) goto err;
 			NewSize += Definition.low_level_shape_count*
 				((sizeof(low_level_shape_definition) - SIZEOF_low_level_shape_definition) + POINTER_SIZE);
 			
@@ -374,20 +374,20 @@ byte *unpack_collection(byte *collection, int32 length, bool strip)
 			NewSize += POINTER_SIZE;
 			
 			// The bitmap data:
-			if (!(Definition.bitmap_count >= 0)) throw 13666;
+			if (!(Definition.bitmap_count >= 0)) goto err;
 			NewSize += Definition.bitmap_count*
 				((sizeof(bitmap_definition) - SIZEOF_bitmap_definition) + POINTER_SIZE);
 			
 			// The bitmap pointers:
-			if (!(Definition.bitmap_offset_table_offset >= 0)) throw 13666;
+			if (!(Definition.bitmap_offset_table_offset >= 0)) goto err;
 			if (!(Definition.bitmap_offset_table_offset +
-				Definition.bitmap_count*sizeof(int32) <= length)) throw 13666;
+				Definition.bitmap_count*sizeof(int32) <= length)) goto err;
 			uint8 *OffsetStream = collection + Definition.bitmap_offset_table_offset;
 			for (int k=0; k<Definition.bitmap_count; k++)
 			{
 				int32 Offset;
 				StreamToValue(OffsetStream,Offset);
-				if (!(Offset >= 0 && Offset < (length - SIZEOF_bitmap_definition))) throw 13666;
+				if (!(Offset >= 0 && Offset < (length - SIZEOF_bitmap_definition))) goto err;
 				uint8 *S = collection + Offset;
 				
 				bitmap_definition Bitmap;
@@ -415,8 +415,8 @@ byte *unpack_collection(byte *collection, int32 length, bool strip)
 		NewCollLocation += AdjustToPointerBoundary(sizeof(collection_definition));
 		
 		// Copy in the colors
-		if (!(Definition.color_table_offset >= 0)) throw 13666;
-		if (!(Definition.color_table_offset + TotalColors*SIZEOF_rgb_color_value <= length)) throw 13666;
+		if (!(Definition.color_table_offset >= 0)) goto err;
+		if (!(Definition.color_table_offset + TotalColors*SIZEOF_rgb_color_value <= length)) goto err;
 		rgb_color_value *Colors = (rgb_color_value *)(NewCollection + NewCollLocation);
 		SBase = S = collection + Definition.color_table_offset;
 		for (int k = 0; k < TotalColors; k++, Colors++)
@@ -432,9 +432,9 @@ byte *unpack_collection(byte *collection, int32 length, bool strip)
 		NewCollLocation += AdjustToPointerBoundary(TotalColors*sizeof(rgb_color_value));
 		
 		// Copy in the sequence offsets
-		if (!(Definition.high_level_shape_offset_table_offset >= 0)) throw 13666;
+		if (!(Definition.high_level_shape_offset_table_offset >= 0)) goto err;
 		if (!(Definition.high_level_shape_offset_table_offset +
-			Definition.high_level_shape_count*sizeof(int32) <= length)) throw 13666;
+			Definition.high_level_shape_count*sizeof(int32) <= length)) goto err;
 		OffsetTable = new int32[Definition.high_level_shape_count + 1];
 		
 		S = collection + Definition.high_level_shape_offset_table_offset;
@@ -442,10 +442,10 @@ byte *unpack_collection(byte *collection, int32 length, bool strip)
 		OffsetTable[Definition.high_level_shape_count] =
 			Definition.low_level_shape_offset_table_offset;
 		
-		if (!(OffsetTable[0] >= 0)) throw 13666;
+		if (!(OffsetTable[0] >= 0)) goto err;
 		for (int k=0; k<Definition.high_level_shape_count; k++)
-			if (!(OffsetTable[k+1] - OffsetTable[k] >= SIZEOF_high_level_shape_definition)) throw 13666;
-		if (!(OffsetTable[Definition.high_level_shape_count] <= length)) throw 13666;
+			if (!(OffsetTable[k+1] - OffsetTable[k] >= SIZEOF_high_level_shape_definition)) goto err;
+		if (!(OffsetTable[Definition.high_level_shape_count] <= length)) goto err;
 		
 		NewDefinition.high_level_shape_offset_table_offset = NewCollLocation;
 		int32 *NewOffsetPtr = (int32 *)(NewCollection + NewCollLocation);
@@ -508,20 +508,20 @@ byte *unpack_collection(byte *collection, int32 length, bool strip)
 		else
 		{
 			// Copy in the frame offsets
-			if (!(Definition.low_level_shape_count >= 0)) throw 13666;
-			if (!(Definition.low_level_shape_offset_table_offset >= 0)) throw 13666;
+			if (!(Definition.low_level_shape_count >= 0)) goto err;
+			if (!(Definition.low_level_shape_offset_table_offset >= 0)) goto err;
 			if (!(Definition.low_level_shape_offset_table_offset +
-				Definition.low_level_shape_count*sizeof(int32) <= length)) throw 13666;
+				Definition.low_level_shape_count*sizeof(int32) <= length)) goto err;
 			int32 *OffsetTable = new int32[Definition.low_level_shape_count + 1];
 			
 			S = collection + Definition.low_level_shape_offset_table_offset;
 			StreamToList(S,OffsetTable,Definition.low_level_shape_count);
 			OffsetTable[Definition.low_level_shape_count] = Definition.bitmap_offset_table_offset;
 			
-			if (!(OffsetTable[0] >= 0)) throw 13666;
+			if (!(OffsetTable[0] >= 0)) goto err;
 			for (int k=0; k<Definition.low_level_shape_count; k++)
-				if (!(OffsetTable[k+1] - OffsetTable[k] >= SIZEOF_low_level_shape_definition)) throw 13666;
-			if (!(OffsetTable[Definition.low_level_shape_count] <= length)) throw 13666;
+				if (!(OffsetTable[k+1] - OffsetTable[k] >= SIZEOF_low_level_shape_definition)) goto err;
+			if (!(OffsetTable[Definition.low_level_shape_count] <= length)) goto err;
 		
 			NewDefinition.low_level_shape_offset_table_offset = NewCollLocation;
 			NewOffsetPtr = (int32 *)(NewCollection + NewCollLocation);
@@ -568,20 +568,20 @@ byte *unpack_collection(byte *collection, int32 length, bool strip)
 			OffsetTable = NULL;
 			
 			// Copy in the the bitmap offsets
-			if (!(Definition.bitmap_count >= 0)) throw 13666;
-			if (!(Definition.bitmap_offset_table_offset >= 0)) throw 13666;
+			if (!(Definition.bitmap_count >= 0)) goto err;
+			if (!(Definition.bitmap_offset_table_offset >= 0)) goto err;
 			if (!(Definition.bitmap_offset_table_offset +
-				Definition.bitmap_count*sizeof(int32) <= length)) throw 13666;
+				Definition.bitmap_count*sizeof(int32) <= length)) goto err;
 			OffsetTable = new int32[Definition.bitmap_count + 1];
 			
 			S = collection + Definition.bitmap_offset_table_offset;
 			StreamToList(S,OffsetTable,Definition.bitmap_count);
 			OffsetTable[Definition.bitmap_count] = length;
 			
-			if (!(OffsetTable[0] >= 0)) throw 13666;
+			if (!(OffsetTable[0] >= 0)) goto err;
 			for (int k=0; k<Definition.bitmap_count; k++)
-				if (!(OffsetTable[k+1] - OffsetTable[k] >= SIZEOF_bitmap_definition)) throw 13666;
-			if (!(OffsetTable[Definition.bitmap_count] <= length)) throw 13666;
+				if (!(OffsetTable[k+1] - OffsetTable[k] >= SIZEOF_bitmap_definition)) goto err;
+			if (!(OffsetTable[Definition.bitmap_count] <= length)) goto err;
 		
 			NewDefinition.bitmap_offset_table_offset = NewCollLocation;
 			NewOffsetPtr = (int32 *)(NewCollection + NewCollLocation);
@@ -636,8 +636,9 @@ byte *unpack_collection(byte *collection, int32 length, bool strip)
 			assert(NewCollLocation <= NewSize);
 		}	
 	}
-	catch(int n)
-	{
+//	catch(int n)
+	if (0) {
+err:
 		if (NewCollection) delete []NewCollection;
 	}
 	if (OffsetTable) delete []OffsetTable;

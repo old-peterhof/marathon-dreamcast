@@ -8,6 +8,7 @@
 #define SDL_DIALOGS_H
 
 #include <vector>
+using namespace std;
 
 class widget;
 struct SDL_Surface;

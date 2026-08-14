@@ -144,8 +144,15 @@ static void usage(const char *prg_name)
 	exit(0);
 }
 
+extern "C" {
+extern int fs_mem_init(void);
+}
+
 int main(int argc, char **argv)
 {
+#ifdef DC
+	fs_mem_init();
+#endif
 	// Print banner (don't bother if this doesn't appear when started from a GUI)
 	printf(
 		"Aleph One " VERSION "\n"
@@ -191,7 +198,7 @@ int main(int argc, char **argv)
 		argc--; argv++;	
 	}
 
-	try {
+//	try {
 
 		// Initialize everything
 		initialize_application();
@@ -199,6 +206,7 @@ int main(int argc, char **argv)
 		// Run the main loop
 		main_event_loop();
 
+#if 0
 	} catch (exception &e) {
 
 		fprintf(stderr, "Unhandled exception: %s\n", e.what());
@@ -210,6 +218,7 @@ int main(int argc, char **argv)
 		exit(1);
 
 	}
+#endif
 
 	return 0;
 }
@@ -274,6 +283,10 @@ static void initialize_application(void)
 	local_data_dir.CreateDirectory();
 	local_data_dir += login;
 	 
+#elif defined(DC)
+	default_data_dir = "/cd/AlephOne";
+//	local_data_dir = "/pc/games/AlephOne/Pref/BERO";
+	local_data_dir = "/mem";
 #else
 #error Data file paths must be set for this platform.
 #endif
@@ -1066,6 +1079,44 @@ static void process_game_key(const SDL_Event &event)
 			if (!interface_fade_finished())
 				stop_interface_fade();
 			int item = -1;
+#if 1
+/*
+	BEGIN NEW GAME
+	CONINUE SAVED GAME
+	GATHER NETWORK GAME	QUIT
+	JOIN NETWORK GAME	PREFERNCES
+	REPLAY SAVED FILM	SAVE_LAST_FILM
+		REPLAY LAST FILM
+*/
+			const static char menus[] = {
+	iNewGame,iLoadGame,iGatherGame,iJoinGame,iReplaySavedFilm,iReplayLastFilm,
+	iSaveLastFilm,iPreferences,iQuit,iCredits,
+			};
+#define	N_MENU	(sizeof(menus)/sizeof(menus[0]))
+			extern int last_menu;
+			int c_menu;
+
+			for(c_menu=0;c_menu<N_MENU && menus[c_menu]!=last_menu;c_menu++);
+
+			switch(event.key.keysym.sym) {
+				case SDLK_UP:
+					c_menu--;
+					if (c_menu<0) c_menu = N_MENU-1;
+					break;
+				case SDLK_DOWN:
+					c_menu++;
+					if (c_menu>=N_MENU) c_menu=0;
+					break;
+				case SDLK_RETURN:
+					item = last_menu;
+					break;
+			}
+			if (menus[c_menu]!=last_menu) {
+				last_menu = menus[c_menu];
+				draw_menu_button(last_menu,true);
+			}
+#endif
+
 			switch (event.key.keysym.sym) {
 				case SDLK_n: item = iNewGame; break;
 				case SDLK_o: item = iLoadGame; break;

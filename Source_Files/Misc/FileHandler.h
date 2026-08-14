@@ -34,6 +34,7 @@ Dec 7, 2000 (Loren Petrich):
 #include <string>
 #include <vector>
 #define fnfErr ENOENT
+using namespace std;
 #endif
 
 #ifdef __WIN32__
