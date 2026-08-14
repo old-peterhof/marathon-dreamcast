@@ -248,10 +248,34 @@ gdi: $(TARGET)
 # Straight-to-level build, for testing rendering and controls in isolation.
 # Removes shell.o first: adding -DDC_AUTOSTART does not by itself make the
 # object stale, so without this the flag would silently have no effect.
+# Variant targets. Each one removes the objects the variant's -D affects,
+# because a changed -D does NOT make an object stale -- 'make cdi' straight
+# after 'make autostart' silently reuses the autostart shell.o and produces a
+# mislabelled image. Each target then asserts on the built binary that it got
+# what it asked for, so a mix-up fails the build instead of reaching hardware.
+
+NM = $(KOS_BASE)/../sh-elf/bin/sh-elf-nm
+
+menu:
+	-rm -f $(MI)/shell.o $(MI)/screen_sdl.o $(TARGET) alephone.cdi alephone-menu.cdi
+	$(MAKE) -f Makefile.dc cdi
+	@$(NM) $(TARGET) | grep -q dc_autostart_active \
+		&& { echo "BUILD ERROR: menu build contains autostart marker"; exit 1; } || true
+	@$(NM) $(TARGET) | grep -q dc_render_probe_active \
+		&& { echo "BUILD ERROR: menu build contains render probe"; exit 1; } || true
+	cp alephone.cdi alephone-menu.cdi
+	@echo "OK: alephone-menu.cdi is a menu build, real renderer"
+
 autostart:
-	-rm -f $(MI)/shell.o $(TARGET) alephone-test.cdi alephone.cdi
+	-rm -f $(MI)/shell.o $(MI)/screen_sdl.o $(TARGET) alephone-test.cdi alephone.cdi alephone-autostart.cdi
 	$(MAKE) -f Makefile.dc test AUTOSTART=1
 	$(MAKE) -f Makefile.dc cdi  AUTOSTART=1
+	@$(NM) $(TARGET) | grep -q dc_autostart_active \
+		|| { echo "BUILD ERROR: autostart build lacks autostart marker"; exit 1; }
+	@$(NM) $(TARGET) | grep -q dc_render_probe_active \
+		&& { echo "BUILD ERROR: autostart build contains render probe"; exit 1; } || true
+	cp alephone.cdi alephone-autostart.cdi
+	@echo "OK: alephone-autostart.cdi skips the menu, real renderer"
 
 # Autostart + magenta 3D view. Answers whether the presentation path works at
 # all, independently of what the renderer produces.
@@ -289,4 +313,4 @@ rm-elf:
 clean: rm-elf
 	-rm -f $(OBJS)
 
-.PHONY: all bin run rm-elf clean one cdi test gdi flycast autostart probe verify
+.PHONY: all bin run rm-elf clean one cdi test gdi flycast menu autostart probe verify
