@@ -9,6 +9,7 @@
 
 #ifdef DC
 
+void DC_InitVideo(void);	// call before the first SDL_SetVideoMode
 void DC_InitInput(void);
 void DC_ShutdownInput(void);
 

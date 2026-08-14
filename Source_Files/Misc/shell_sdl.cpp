@@ -250,9 +250,11 @@ static void initialize_application(void)
 	atexit(shutdown_application);
 
 #ifdef DC
-	// Dreamcast controller. Must follow SDL_Init: it brings up the joystick
-	// subsystem itself and opens the pad, without which the SDL DC driver
-	// never polls it. See dc_input.cpp for the control scheme.
+	// Both must follow SDL_Init and precede the first change_screen_mode():
+	// DC_InitVideo suppresses the driver's "Press Y for 60Hz" prompt, which is
+	// consumed by SDL_SetVideoMode, and DC_InitInput brings up the joystick
+	// subsystem and opens the pad. See dc_input.cpp.
+	DC_InitVideo();
 	DC_InitInput();
 #endif
 

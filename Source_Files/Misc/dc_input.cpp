@@ -30,6 +30,23 @@
 static SDL_Joystick *dc_joystick = NULL;
 
 /*
+	Video setup. Must run before the first SDL_SetVideoMode, i.e. before
+	change_screen_mode(), which is why it is called from
+	initialize_application() right after SDL_Init rather than from
+	screen_sdl.cpp.
+
+	By default the SDL DC driver puts up a "Press Y for 60Hz" prompt and waits.
+	Marathon runs at 30 ticks/second and the console is NTSC, so 60Hz is simply
+	the right answer -- there is nothing for the player to decide, and the
+	prompt just blocks startup on a question with one correct response.
+*/
+void DC_InitVideo(void)
+{
+	SDL_DC_Default60Hz(SDL_TRUE);
+	SDL_DC_ShowAskHz(SDL_FALSE);
+}
+
+/*
 	Control scheme
 	--------------
 	  D-pad up/down     forward / backward      (menu: move selection)
