@@ -238,7 +238,28 @@ static void change_screen_mode(int width, int height, int depth, bool nogl)
 #else
 	flags |= SDL_HWSURFACE | SDL_HWPALETTE;
 #endif
+
+#ifdef DC
+	// A console has no windows, and the flag is load-bearing here rather than
+	// cosmetic. Without SDL_FULLSCREEN the DC video driver takes its textured
+	// path (see DC_SetVideoMode in SDL_dcvideo.c), which only accepts 16bpp and,
+	// in strided mode, widths that are a multiple of 32 -- returning NULL
+	// otherwise. Menu drawing is plain 2D blits and survives a degraded surface;
+	// the 3D view, which needs world_pixels built from this surface's format,
+	// does not, and renders black.
+	flags |= SDL_FULLSCREEN;
+#endif
+
 	main_surface = SDL_SetVideoMode(width, height, depth, flags);
+#ifdef DC
+	// Report what we actually got, not what we asked for. Aleph One's printf
+	// goes to KOS's dbgio, so this is visible over serial or dcload.
+	if (main_surface)
+		fprintf(stderr, "DC video: %dx%d %dbpp flags=0x%08x (requested %dx%d %dbpp)\n",
+			main_surface->w, main_surface->h,
+			main_surface->format->BitsPerPixel,
+			(unsigned)main_surface->flags, width, height, depth);
+#endif
 	if (main_surface == NULL) {
 		fprintf(stderr, "Can't open video display (%s)\n", SDL_GetError());
 		exit(1);

@@ -214,8 +214,13 @@ test: $(TARGET)
 gdi: $(TARGET)
 	$(MKDCDISC) -F gdi -e $(TARGET) -d $(DISC_DIR) -o alephone.gdi $(DISC_META)
 
+# 'open -a' rather than running the binary directly. Flycast reserves a large
+# contiguous virtual address range for its 16MB guest RAM (nvmem); launched from
+# some shell contexts that reservation fails and it aborts on an internal assert
+# -- "&mem_b[0] == sq_buffer + sizeof(Sh4Context) + 0x0C000000" in driver.cpp.
+# Going through LaunchServices gives it a clean process environment.
 flycast: test
-	/Applications/Flycast.app/Contents/MacOS/Flycast alephone-test.cdi
+	open -a Flycast --args "$(CURDIR)/alephone-test.cdi"
 
 run: $(TARGET)
 	$(KOS_LOADER) $(TARGET)
