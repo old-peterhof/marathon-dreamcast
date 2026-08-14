@@ -144,15 +144,8 @@ static void usage(const char *prg_name)
 	exit(0);
 }
 
-extern "C" {
-extern int fs_mem_init(void);
-}
-
 int main(int argc, char **argv)
 {
-#ifdef DC
-	fs_mem_init();
-#endif
 	// Print banner (don't bother if this doesn't appear when started from a GUI)
 	printf(
 		"Aleph One " VERSION "\n"
@@ -198,7 +191,7 @@ int main(int argc, char **argv)
 		argc--; argv++;	
 	}
 
-//	try {
+	try {
 
 		// Initialize everything
 		initialize_application();
@@ -206,7 +199,6 @@ int main(int argc, char **argv)
 		// Run the main loop
 		main_event_loop();
 
-#if 0
 	} catch (exception &e) {
 
 		fprintf(stderr, "Unhandled exception: %s\n", e.what());
@@ -218,7 +210,6 @@ int main(int argc, char **argv)
 		exit(1);
 
 	}
-#endif
 
 	return 0;
 }
@@ -284,9 +275,13 @@ static void initialize_application(void)
 	local_data_dir += login;
 	 
 #elif defined(DC)
+	// Game data (Map, Shapes, Sounds, Images) lives on the disc. Unchanged
+	// from BERO -- /cd is still where KOS mounts the GD-ROM.
 	default_data_dir = "/cd/AlephOne";
-//	local_data_dir = "/pc/games/AlephOne/Pref/BERO";
-	local_data_dir = "/mem";
+	// BERO used "/mem", his own in-RAM VFS, so nothing survived a power cycle.
+	// /ram is KOS's ramdisk: still volatile, but standard. Writable prefs move
+	// to the VMU once vmufs writes are wired up -- see the VMU work item.
+	local_data_dir = "/ram";
 #else
 #error Data file paths must be set for this platform.
 #endif
