@@ -171,10 +171,43 @@ one:
 
 $(TARGET_BIN): $(TARGET)
 	$(KOS_STRIP) $(TARGET)
-	kos-objcopy -O binary -R .stack $(TARGET) $(TARGET).bin
-	scramble $(TARGET).bin $(TARGET_BIN)
+	kos-objcopy -O binary -R .stack $(TARGET) $(TARGET_BIN).unscrambled
+	scramble $(TARGET_BIN).unscrambled $(TARGET_BIN)
 
 bin: $(TARGET_BIN)
+
+# ---------------------------------------------------------------------------
+# Disc images
+# ---------------------------------------------------------------------------
+#
+# mkdcdisc handles the ELF -> scrambled 1ST_READ.BIN -> IP.BIN -> image chain
+# that BERO's README did by hand with mkisofs -l -J plus cdi4dc.
+#
+#   make -f Makefile.dc cdi   -> padded .cdi, burn or feed to GDEMU
+#   make -f Makefile.dc test  -> unpadded .cdi, ~20MB, for Flycast iteration
+#   make -f Makefile.dc gdi   -> .gdi, GDEMU's native format
+#
+# disc/AlephOne must hold both the engine data (MML, Themes, Fonts) and the
+# scenario (Map, Shapes, Sounds, Images). -d adds the tree root included, so it
+# lands at /AlephOne, matching default_data_dir = "/cd/AlephOne".
+
+MKDCDISC   = /opt/toolchains/dc/mkdcdisc/build/mkdcdisc
+DISC_DIR   = disc/AlephOne
+DISC_META  = -n "Aleph One" -a "Aleph One" -V "ALEPHONE"
+
+cdi: $(TARGET)
+	$(MKDCDISC) -e $(TARGET) -d $(DISC_DIR) -o alephone.cdi $(DISC_META)
+
+# -N drops the track padding. Padding speeds real-hardware loading but inflates
+# the image from ~21MB to ~740MB, which is intolerable for a build-test loop.
+test: $(TARGET)
+	$(MKDCDISC) -e $(TARGET) -d $(DISC_DIR) -o alephone-test.cdi $(DISC_META) -N
+
+gdi: $(TARGET)
+	$(MKDCDISC) -F gdi -e $(TARGET) -d $(DISC_DIR) -o alephone.gdi $(DISC_META)
+
+flycast: test
+	/Applications/Flycast.app/Contents/MacOS/Flycast alephone-test.cdi
 
 run: $(TARGET)
 	$(KOS_LOADER) $(TARGET)
@@ -185,4 +218,4 @@ rm-elf:
 clean: rm-elf
 	-rm -f $(OBJS)
 
-.PHONY: all bin run rm-elf clean one
+.PHONY: all bin run rm-elf clean one cdi test gdi flycast
