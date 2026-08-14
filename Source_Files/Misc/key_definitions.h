@@ -49,14 +49,38 @@ struct key_definition
  */
 
 #define NUMBER_OF_STANDARD_KEY_DEFINITIONS (sizeof(standard_key_definitions)/sizeof(struct key_definition))
+/*
+	set_default_keys() copies these positionally -- keycodes[i] = definitions[i].offset
+	-- so every key setup must keep the same entries in the same order. Only the
+	key itself may differ per platform, which is what these macros are for.
+
+	On Dreamcast the d-pad has to drive menus and movement both, so movement sits
+	on the arrow keys that BERO's menu navigation already reads, and action shares
+	RETURN with menu confirm. One button then means "yes" in either context.
+	The pad-to-key mapping is in dc_input.cpp; these two must agree.
+*/
+#if defined(SDL) && defined(DC)
+	#define A1_KEY_FORWARD		SDLK_UP
+	#define A1_KEY_BACKWARD		SDLK_DOWN
+	#define A1_KEY_TURN_LEFT	SDLK_LEFT
+	#define A1_KEY_TURN_RIGHT	SDLK_RIGHT
+	#define A1_KEY_ACTION		SDLK_RETURN
+#elif defined(SDL)
+	#define A1_KEY_FORWARD		SDLK_KP8
+	#define A1_KEY_BACKWARD		SDLK_KP5
+	#define A1_KEY_TURN_LEFT	SDLK_KP4
+	#define A1_KEY_TURN_RIGHT	SDLK_KP6
+	#define A1_KEY_ACTION		SDLK_TAB
+#endif
+
 static struct key_definition standard_key_definitions[]=
 {
 #ifdef SDL
-	/* keypad */
-	{SDLK_KP8, _moving_forward},
-	{SDLK_KP5, _moving_backward},
-	{SDLK_KP4, _turning_left},
-	{SDLK_KP6, _turning_right},
+	/* keypad (arrow keys on Dreamcast) */
+	{A1_KEY_FORWARD, _moving_forward},
+	{A1_KEY_BACKWARD, _moving_backward},
+	{A1_KEY_TURN_LEFT, _turning_left},
+	{A1_KEY_TURN_RIGHT, _turning_right},
 	
 	/* zx translation */
 	{SDLK_z, _sidestepping_left},
@@ -84,8 +108,8 @@ static struct key_definition standard_key_definitions[]=
 	{SDLK_LCTRL, _run_dont_walk},
 	{SDLK_LMETA, _look_dont_turn},
 	
-	/* tab for action */
-	{SDLK_TAB, _action_trigger_state},
+	/* tab for action (RETURN on Dreamcast, shared with menu confirm) */
+	{A1_KEY_ACTION, _action_trigger_state},
 
 	/* m for toggle between normal and overhead map view */
 	{SDLK_m, _toggle_map},

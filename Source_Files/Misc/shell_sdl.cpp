@@ -40,6 +40,13 @@ void free_and_unlock_memory(void);
 #endif
 
 #include "XML_Loader_SDL.h"
+// Note: this must stay OUTSIDE the #ifdef __MVCPP__ block above. Everything
+// from line 7 to the #endif is Visual C++ only -- shell.cpp has already
+// included those headers by the time it #includes this file -- so an include
+// placed up there is silently skipped on every other compiler.
+#ifdef DC
+#include "dc_input.h"
+#endif
 #include "resource_manager.h"
 #include "sdl_dialogs.h"
 #include "sdl_fonts.h"
@@ -228,6 +235,13 @@ static void initialize_application(void)
 	}
 	SDL_WM_SetCaption("Aleph One", "Aleph One");
 	atexit(shutdown_application);
+
+#ifdef DC
+	// Dreamcast controller. Must follow SDL_Init: it brings up the joystick
+	// subsystem itself and opens the pad, without which the SDL DC driver
+	// never polls it. See dc_input.cpp for the control scheme.
+	DC_InitInput();
+#endif
 
 #ifdef HAVE_SDL_NET
 	// Initialize SDL_net
