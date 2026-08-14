@@ -50,18 +50,6 @@ void free_and_unlock_memory(void);
 #include "resource_manager.h"
 #include "sdl_dialogs.h"
 
-// NB: defined out here, not up beside the other forward declarations -- those
-// sit inside the #ifdef __MVCPP__ block above and are dead on this compiler.
-//
-// True when a main-menu item actually has a button drawn for it. Scenarios zero
-// out the rects of buttons they do not use, as Marathon 2 does for Credits, and
-// menu navigation must skip those or the selection lands somewhere invisible
-// and appears stuck. Mirrors the index arithmetic in draw_menu_button().
-static bool menu_item_is_visible(short menu_item)
-{
-	screen_rectangle *r = get_interface_rectangle(menu_item - 1 + _new_game_button_rect);
-	return r != NULL && r->right > r->left && r->bottom > r->top;
-}
 #include "sdl_fonts.h"
 #include "sdl_widgets.h"
 
@@ -1122,25 +1110,22 @@ static void process_game_key(const SDL_Event &event)
 
 			for(c_menu=0;c_menu<N_MENU && menus[c_menu]!=last_menu;c_menu++);
 
-			// A scenario need not provide every button -- Marathon 2 has no
-			// Credits button, and zeroes that rect in Interface_Rects.mml.
-			// Landing on one highlights nothing, so the selection appears to
-			// stop responding. Step over any button with an empty rect.
-			#define MENU_ITEM_VISIBLE(i) \
-				(menu_item_is_visible(menus[(i)]))
-
+			// NOTE: an earlier attempt here skipped menu entries whose interface
+			// rect looked empty, to step over Marathon 2's absent Credits
+			// button. It killed navigation outright: several real buttons carry
+			// degenerate rects in M2's Interface_Rects.mml (index 3 is
+			// top=338 left=17 bottom=0 right=0), so the test rejected valid
+			// entries, the search walked back round to the current item, and
+			// nothing ever moved. Do not reintroduce without checking against
+			// real scenario rect data.
 			switch(event.key.keysym.sym) {
 				case SDLK_UP:
-					do {
-						c_menu--;
-						if (c_menu<0) c_menu = N_MENU-1;
-					} while (!MENU_ITEM_VISIBLE(c_menu) && menus[c_menu]!=last_menu);
+					c_menu--;
+					if (c_menu<0) c_menu = N_MENU-1;
 					break;
 				case SDLK_DOWN:
-					do {
-						c_menu++;
-						if (c_menu>=N_MENU) c_menu=0;
-					} while (!MENU_ITEM_VISIBLE(c_menu) && menus[c_menu]!=last_menu);
+					c_menu++;
+					if (c_menu>=N_MENU) c_menu=0;
 					break;
 				case SDLK_RETURN:
 					item = last_menu;

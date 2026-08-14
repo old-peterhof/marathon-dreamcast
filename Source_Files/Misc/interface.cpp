@@ -651,20 +651,11 @@ void display_main_menu(
 	display_screen(MAIN_MENU_BASE);
 	draw_menu_button(last_menu,true);
 
-#ifdef DC
-	// Show what SDL_SetVideoMode actually returned, along the bottom of the
-	// menu. On a Dreamcast there is no console to print to: dbgio goes out the
-	// SCIF serial port, which needs a coder's cable, and a GDEMU offers no way
-	// to read anything back. The menu draws correctly even when the 3D view is
-	// black, so this is the one place a diagnostic is guaranteed to be seen.
-	{
-		extern char dc_video_info[128];
-		screen_rectangle info_rect = { 464, 0, 480, 640 };
-		_draw_screen_text(dc_video_info, &info_rect,
-			_center_horizontal | _center_vertical,
-			_interface_font, _white_color);
-	}
-#endif
+	// NOTE: an on-screen video diagnostic was drawn here with
+	// _draw_screen_text() and never appeared -- that call needs the drawing
+	// port established first, which display_screen() does for its own output
+	// but which is not left set up for callers. If reinstating, set the port
+	// explicitly and verify against a build known to render.
 	
 	/* Start up the song! */
 	if(!music_playing() && game_state.main_menu_display_count==0)
