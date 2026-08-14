@@ -23,6 +23,14 @@
 # fed to a C++17 compiler. `register`, writable string literals and implicit
 # conversions are all over the tree. Tighten these later, not now.
 
+# KOS_BASE and friends come from KallistiOS's environ.sh. Without it, the
+# include below resolves to /Makefile.rules and make dies unhelpfully, so fail
+# early with something actionable instead.
+ifeq ($(strip $(KOS_BASE)),)
+  $(error KOS_BASE is not set. Either run ./build.sh instead of make, or: \
+    source /opt/toolchains/dc/kos/environ.sh)
+endif
+
 TARGET     = alephone.elf
 TARGET_BIN = 1ST_READ.BIN
 
