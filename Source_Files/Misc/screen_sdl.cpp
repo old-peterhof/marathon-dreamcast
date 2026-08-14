@@ -54,6 +54,13 @@ static SDL_Surface *main_surface;	// Main (display) surface
 // The HUD has a separate buffer.
 // It is initialized to NULL so as to allow its initing to be lazy.
 SDL_Surface *world_pixels = NULL;
+
+#ifdef DC
+// Filled in by change_screen_mode(), drawn on the main menu by
+// display_main_menu(). See the comment at SDL_SetVideoMode below for why this
+// is on screen rather than a printf.
+char dc_video_info[128] = "video: not set yet";
+#endif
 SDL_Surface *HUD_Buffer = NULL;
 
 static bool PrevFullscreen = false;
@@ -252,13 +259,20 @@ static void change_screen_mode(int width, int height, int depth, bool nogl)
 
 	main_surface = SDL_SetVideoMode(width, height, depth, flags);
 #ifdef DC
-	// Report what we actually got, not what we asked for. Aleph One's printf
-	// goes to KOS's dbgio, so this is visible over serial or dcload.
+	// Record what we actually got, not what we asked for, and put it somewhere
+	// readable. printf goes to KOS's dbgio -> the SCIF serial port, which needs
+	// a coder's cable to read; a GDEMU gives no return channel at all. So stash
+	// it for display_main_menu() to draw on screen instead. 2D drawing works
+	// even when the 3D view does not, which is exactly the case being debugged.
 	if (main_surface)
-		fprintf(stderr, "DC video: %dx%d %dbpp flags=0x%08x (requested %dx%d %dbpp)\n",
+		snprintf(dc_video_info, sizeof(dc_video_info),
+			"video: got %dx%d %dbpp flags %08x / asked %dx%d %dbpp",
 			main_surface->w, main_surface->h,
 			main_surface->format->BitsPerPixel,
 			(unsigned)main_surface->flags, width, height, depth);
+	else
+		snprintf(dc_video_info, sizeof(dc_video_info),
+			"video: SetVideoMode FAILED for %dx%d %dbpp", width, height, depth);
 #endif
 	if (main_surface == NULL) {
 		fprintf(stderr, "Can't open video display (%s)\n", SDL_GetError());

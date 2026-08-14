@@ -5,7 +5,7 @@
 
 	Friday, July 8, 1994 2:32:44 PM (alain)
 		All old code in here is obsolete. This now has interface for the top-level
-		interface (Begin Game, etcÉ)
+		interface (Begin Game, etcï¿½)
 	Saturday, September 10, 1994 12:45:48 AM  (alain)
 		the interface gutted again. just the stuff that handles the menu though, the rest stayed
 		the same.
@@ -621,7 +621,7 @@ void idle_game_state(
 		game_state.last_ticks_on_idle= machine_tick_count();
 	}
 
-	/* if weÕre not paused and thereÕs something to draw (i.e., anything different from
+	/* if weï¿½re not paused and thereï¿½s something to draw (i.e., anything different from
 		last time), render a frame */
 	if(game_state.state==_game_in_progress)
 	{
@@ -650,6 +650,21 @@ void display_main_menu(
 	
 	display_screen(MAIN_MENU_BASE);
 	draw_menu_button(last_menu,true);
+
+#ifdef DC
+	// Show what SDL_SetVideoMode actually returned, along the bottom of the
+	// menu. On a Dreamcast there is no console to print to: dbgio goes out the
+	// SCIF serial port, which needs a coder's cable, and a GDEMU offers no way
+	// to read anything back. The menu draws correctly even when the 3D view is
+	// black, so this is the one place a diagnostic is guaranteed to be seen.
+	{
+		extern char dc_video_info[128];
+		screen_rectangle info_rect = { 464, 0, 480, 640 };
+		_draw_screen_text(dc_video_info, &info_rect,
+			_center_horizontal | _center_vertical,
+			_interface_font, _white_color);
+	}
+#endif
 	
 	/* Start up the song! */
 	if(!music_playing() && game_state.main_menu_display_count==0)
