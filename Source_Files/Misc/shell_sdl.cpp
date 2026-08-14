@@ -204,6 +204,15 @@ int main(int argc, char **argv)
 		// Initialize everything
 		initialize_application();
 
+#ifdef DC_AUTOSTART
+		// Skip the main menu and drop straight into a new game. This is the
+		// exact call the menu itself makes for "Begin New Game"
+		// (interface.cpp:819), so nothing is being faked -- the menu is simply
+		// not waited on. Lets rendering and controls be tested independently of
+		// menu behaviour. Build with: ./build.sh autostart
+		do_menu_item_command(mInterface, iNewGame, false);
+#endif
+
 		// Run the main loop
 		main_event_loop();
 
