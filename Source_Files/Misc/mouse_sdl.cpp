@@ -31,11 +31,15 @@ int dc_input_trigger_r(void);
 // nothing and the outer edge of the stick was pinned at maximum turn rate,
 // which is exactly how it felt on hardware.
 //
-// FIXED_ONE/2 puts full deflection at 100% right at the top of the usable
-// range, so the slider now maps linearly onto real turn rate across its whole
-// travel. Pitch stays half of yaw; Marathon's vertical range is small.
-#define DC_YAW_SCALE    (FIXED_ONE / 2)
-#define DC_PITCH_SCALE  (FIXED_ONE / 4)
+// FIXED_ONE/2 put full deflection at 100% exactly at the top of that usable
+// range. Reported on hardware as still about twice too fast at a 30% setting
+// once the catch-up-tick bug was fixed, so this is halved again to FIXED_ONE/4.
+// The engine's ceiling is then reached only above 100%, which the slider cannot
+// select -- deliberate, since nobody has asked for faster and the top of the
+// range was never usable anyway. Pitch stays half of yaw; Marathon's vertical
+// range is small.
+#define DC_YAW_SCALE    (FIXED_ONE / 4)
+#define DC_PITCH_SCALE  (FIXED_ONE / 8)
 #define DC_STICK_MAX    128
 // Deflection at or beyond this is treated as full. The outer part of the stick
 // travel then all maps to the same rate, instead of continuing to climb.

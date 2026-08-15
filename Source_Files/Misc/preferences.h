@@ -111,7 +111,7 @@ struct input_preferences_data
 // Reported still too fast at 50% once the scale was corrected, so default low
 // and let the player raise it. The slider now spans roughly 4 to 67 deg/sec at
 // full deflection, 67 being the engine's own ceiling.
-#define SENS_DEFAULT   50
+#define SENS_DEFAULT   30
 #define NUMBER_OF_SENS_LEVELS ((SENS_MAXIMUM - SENS_MINIMUM) / SENS_STEP + 1)
 
 #define MAXIMUM_PATCHES_PER_ENVIRONMENT (32)
