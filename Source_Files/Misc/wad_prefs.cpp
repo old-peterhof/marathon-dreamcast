@@ -58,7 +58,9 @@ bool w_open_preferences_file(
 
 	/* allocate space for our global structure to keep track of the prefs file */
 	prefInfo = NULL;
+#ifndef DC
 	try {
+#endif
 		prefInfo = new preferences_info;
 
 #if defined(mac)
@@ -98,10 +100,16 @@ bool w_open_preferences_file(
 				set_game_error(systemError, errNone);
 			}
 		}
+#ifndef DC
 	} catch (...) {
 		dprintf("In \"catch\"");
 		set_game_error(systemError, memory_error());
 	}
+#endif
+	// On Dreamcast the build runs -fno-exceptions (BERO's port replaced
+	// try/throw with goto elsewhere for the same reason), so the bad_alloc
+	// guard above is compiled out. A failed allocation here is fatal rather
+	// than recoverable, which is the honest outcome on a 16MB console.
 	
 	if (error)
 	{

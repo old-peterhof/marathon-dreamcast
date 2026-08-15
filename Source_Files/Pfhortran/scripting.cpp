@@ -47,7 +47,10 @@ float variable_lookup[MAX_VARS];
 int variable_count = 0;
 
 int script_stack[MAX_DEPTH];
-int stack_top = 0;
+// static: KallistiOS also defines a global `stack_top` (kernel/thread stack
+// setup), and the two collide at link time on Dreamcast. Pfhortran's copy is
+// only ever touched from this file, so internal linkage costs nothing.
+static int stack_top = 0;
 bool is_startup = false;
 
 short camera_count = 0;

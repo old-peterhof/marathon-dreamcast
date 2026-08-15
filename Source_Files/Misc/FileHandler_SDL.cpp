@@ -683,13 +683,14 @@ bool FileSpecifier::ReadDirectory(vector<dir_entry> &vec)
 		if (de->d_name[0] != '.' || (de->d_name[1] && de->d_name[1] != '.')) {
 			FileSpecifier full_path = name;
 			full_path += de->d_name;
-#ifdef DC /* DC */
-			vec.push_back(dir_entry(de->d_name, de->size, de->size<0, false));
-#else
+			// BERO's 2002 port read de->size here: KallistiOS 1.1.7 carried the
+			// entry size in struct dirent and flagged directories by making it
+			// negative. Modern KOS uses the standard newlib dirent, which has
+			// neither, but its iso9660 driver does implement stat(), so the
+			// generic path below now works on Dreamcast too.
 			struct stat st;
 			if (stat(full_path.GetPath(), &st) == 0)
 				vec.push_back(dir_entry(de->d_name, st.st_size, S_ISDIR(st.st_mode), false));
-#endif
 		}
 		de = readdir(d);
 	}

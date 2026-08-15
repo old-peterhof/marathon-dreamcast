@@ -286,7 +286,7 @@ static void initialize_application(void)
 #elif defined(DC)
 	default_data_dir = "/cd/AlephOne";
 //	local_data_dir = "/pc/games/AlephOne/Pref/BERO";
-	local_data_dir = "/mem";
+	local_data_dir = "/ram";	// KOS fs_ramdisk mounts here; BERO's 2002 fs_mem.c used /mem
 #else
 #error Data file paths must be set for this platform.
 #endif
