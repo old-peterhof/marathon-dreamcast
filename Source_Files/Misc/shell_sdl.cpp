@@ -802,11 +802,60 @@ static bool confirm_save_choice(FileSpecifier &file)
 
 const uint32 TICKS_BETWEEN_EVENT_POLL = 167;	// 6 Hz
 
+#ifdef DC
+extern "C" void dc_trace(int slot, const char *fmt, ...);
+
+/*
+ *	Unattended testing hook.
+ *
+ *	Starting a game normally needs someone to press Return at the main menu, and
+ *	under Flycast on macOS nothing can synthesise that keypress without
+ *	Accessibility permission. So when the disc carries a file named AUTOSTART,
+ *	the game selects "Begin New Game" by itself a couple of seconds in.
+ *
+ *	Gated on a file rather than a compile-time flag deliberately: it keeps one
+ *	binary for both images, and the hardware target simply does not stage the
+ *	marker. `make test` adds it, `make cdi` does not.
+ */
+static bool dc_autostart_wanted(void)
+{
+	static int checked = 0, wanted = 0;
+
+	if (!checked) {
+		checked = 1;
+		wanted = (access("/cd/AlephOne/AUTOSTART", 4) == 0);
+		dc_trace(1, "autostart marker %s", wanted ? "present" : "absent");
+	}
+
+	return wanted != 0;
+}
+#endif
+
 static void main_event_loop(void)
 {
 	uint32 last_event_poll = 0;
+#ifdef DC
+	uint32 dc_menu_since = 0;
+	bool dc_autostarted = false;
+#endif
 
 	while (get_game_state() != _quit_game) {
+
+#ifdef DC
+		if (!dc_autostarted && dc_autostart_wanted()
+		    && get_game_state() == _display_main_menu) {
+			if (dc_menu_since == 0)
+				dc_menu_since = SDL_GetTicks();
+			else if (SDL_GetTicks() - dc_menu_since > 3000) {
+				dc_autostarted = true;
+				dc_trace(2, "autostart: selecting iNewGame");
+				do_menu_item_command(mInterface, iNewGame, false);
+				dc_trace(3, "autostart: returned, state=%d", (int)get_game_state());
+				continue;
+			}
+		}
+#endif
+
 
 		bool yield_time = false;
 		bool poll_event = false;

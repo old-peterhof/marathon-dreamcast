@@ -137,6 +137,22 @@ Source_Files/Misc/weapons.o: CXXFLAGS += -O1
 %.o: %.c
 	$(KOS_CC) $(CFLAGS) -c $< -o $@
 
+# Aleph One 0.12.0 selects its platform layer by #including one .cpp from
+# another, so these files never get an object of their own and make cannot see
+# that they are inputs. Without these rules an edit to shell_sdl.cpp (or any of
+# the others) silently produces an unchanged binary -- which cost real time
+# before it was noticed. BERO's Makefile carried the shell.o line for exactly
+# this reason; the rest were missing there too.
+$(MI)/shell.o:              $(MI)/shell_sdl.cpp
+$(MI)/preferences.o:        $(MI)/preferences_sdl.cpp
+$(MI)/images.o:             $(MI)/images_sdl.cpp
+$(MI)/computer_interface.o: $(MI)/computer_interface_sdl.cpp
+$(MI)/screen_drawing.o:     $(MI)/screen_drawing_sdl.cpp
+$(MI)/shapes.o:             $(MI)/shapes_sdl.cpp
+$(MI)/mysound.o:            $(MI)/sound_sdl.cpp
+$(MI)/scottish_textures.o:  $(MI)/low_level_textures.cpp
+$(MI)/screen_sdl.o:         $(MI)/screen_shared.cpp
+
 # BERO's Makefile rebuilt Expat's name table via a host tool it called
 # genmtab.c. No such file exists in Aleph One 0.12.0 -- the generator here is
 # gennmtab.c, and nametab.h ships pre-generated (dated 2001) exactly as upstream
@@ -172,22 +188,32 @@ $(DISC)/.stamp: $(GAMEDATA)/Map
 		$(DISC)/AlephOne/
 	touch $@
 
+# Unattended testing: the presence of this marker makes the game select
+# "Begin New Game" by itself a few seconds after the menu appears, so a test run
+# needs no keypress at all. Staged only for `test`; `cdi` and `gdi` never see it,
+# so the hardware image always boots to a normal menu.
+autostart-marker: $(DISC)/.stamp
+	echo "auto" > $(DISC)/AlephOne/AUTOSTART
+
+no-autostart-marker: $(DISC)/.stamp
+	rm -f $(DISC)/AlephOne/AUTOSTART
+
 disc: $(DISC)/.stamp
 
 # Emulator image: -N skips data-track padding, so it is ~20MB instead of ~700MB.
 # Fine under Flycast. Do NOT burn this or put it on a GDEMU -- padding is what
 # makes the image boot on real hardware.
-test: $(TARGET) $(DISC)/.stamp
+test: $(TARGET) $(DISC)/.stamp autostart-marker
 	$(MKDCDISC) -e $(TARGET) -d $(DISC)/AlephOne -o alephone-test.cdi \
 		-n "$(DISCNAME)" -a "$(DISCAUTH)" -N
 
 # Hardware image: padded. Larger, but this is the one that actually boots on a
 # console or from GDEMU.
-cdi: $(TARGET) $(DISC)/.stamp
+cdi: $(TARGET) $(DISC)/.stamp no-autostart-marker
 	$(MKDCDISC) -e $(TARGET) -d $(DISC)/AlephOne -o alephone.cdi \
 		-n "$(DISCNAME)" -a "$(DISCAUTH)"
 
-gdi: $(TARGET) $(DISC)/.stamp
+gdi: $(TARGET) $(DISC)/.stamp no-autostart-marker
 	$(MKDCDISC) -F gdi -e $(TARGET) -d $(DISC)/AlephOne -o alephone.gdi \
 		-n "$(DISCNAME)" -a "$(DISCAUTH)"
 
@@ -202,4 +228,4 @@ clean:
 distclean: clean
 	rm -rf $(DISC) alephone-test.cdi alephone.cdi alephone.gdi
 
-.PHONY: all clean distclean disc test cdi gdi flycast
+.PHONY: all clean distclean disc test cdi gdi flycast autostart-marker no-autostart-marker

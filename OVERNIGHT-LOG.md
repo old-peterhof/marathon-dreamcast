@@ -239,3 +239,40 @@ and whether the overhead map (the `m` key, `_toggle_map`) draws. HUD or map
 visible means the display path is alive and only the 3D view is dead, which
 points hard at (1). Nothing visible at all points at the display path after the
 in-game mode switch.
+
+### 01:03 — IT RENDERS. Root cause: SDL_BlitSurface silently no-ops.
+
+The game draws. Textured walls and floor, a BOB and a security guard, the pistol
+in view. The bottom 160px (HUD area) is still black — next job.
+
+How it was found, because the wrong turns matter as much as the right one:
+
+1. **My own Makefile was hiding my edits.** `shell_sdl.o` does not exist —
+   Aleph One picks its platform layer by `#include`ing one .cpp from another,
+   so `shell_sdl.cpp` is compiled as part of `shell.cpp` and make cannot see it
+   as an input. BERO's Makefile carried `$(MI)/shell.o : $(MI)/shell_sdl.cpp`
+   for exactly this reason and I dropped that line when rewriting it. Every edit
+   I made to `shell_sdl.cpp` after the first full build produced an unchanged
+   binary. Nine files are affected; all now have explicit rules.
+
+2. **Tracing over serial.** Once Max enabled Flycast's serial console, KOS's
+   printf became visible, which beat drawing to the framebuffer. `dc_trace()`
+   now writes to both.
+
+3. **The evidence chain.** The mode was right (640x480x16, pixels at
+   `0xa5000000`, i.e. VRAM). `render_view` was running. Sampling the renderer's
+   own buffer showed **12389 of 12800 pixels non-zero, changing every frame** —
+   so a complete scene was being drawn. And `SDL_BlitSurface` returned **0, for
+   success**, with a full 640x480 clip rect, while the destination VRAM pixel
+   read `0x0000` both before and after the call.
+
+   The tell was that bfont text written to the same VRAM address survived
+   across frames. It could not have, if the blit were landing.
+
+**Fix:** copy the rows directly instead of calling `SDL_BlitSurface`. Both
+surfaces are 16-bit and 640 wide, so it is a plain `memcpy` per row. Whatever
+SDL 1.2's blit map does with a hardware destination on this driver, it does not
+copy, and it does not report an error either.
+
+Next: the HUD band at the bottom is black. Very likely the same cause in
+`HUDRenderer_SW` / `draw_interface`, which will use the same SDL blit path.

@@ -220,6 +220,14 @@ void exit_screen(void)
  *  Change screen mode
  */
 
+#ifdef DC
+// Draws straight into video RAM (dc/dc_compat.c). Used to diagnose the black
+// in-game screen: nothing else on this platform can report anything when the
+// display itself is the thing that is broken.
+extern "C" void dc_trace(int slot, const char *fmt, ...);
+static int dc_traced_mode = 0, dc_traced_render = 0, dc_traced_update = 0;
+#endif
+
 static void change_screen_mode(int width, int height, int depth, bool nogl)
 {
 	uint32 flags = (screen_mode.fullscreen ? SDL_FULLSCREEN : 0);
@@ -241,8 +249,21 @@ static void change_screen_mode(int width, int height, int depth, bool nogl)
 	main_surface = SDL_SetVideoMode(width, height, depth, flags);
 	if (main_surface == NULL) {
 		fprintf(stderr, "Can't open video display (%s)\n", SDL_GetError());
+#ifdef DC
+		dc_trace(0, "SetVideoMode FAILED %dx%dx%d", width, height, depth);
+		for (;;) { }
+#endif
 		exit(1);
 	}
+#ifdef DC
+	// Report every mode change; the in-game switch is the one under suspicion.
+	dc_trace(dc_traced_mode, "mode %d: %dx%dx%d -> surf %dx%dx%d px=%p flags=%08x",
+	         dc_traced_mode, width, height, depth,
+	         main_surface->w, main_surface->h,
+	         main_surface->format->BitsPerPixel,
+	         main_surface->pixels, (unsigned)main_surface->flags);
+	if (dc_traced_mode < 3) dc_traced_mode++;
+#endif
 	if (depth == 8) {
 		SDL_Color colors[256];
 		build_sdl_color_table(interface_color_table, colors);
@@ -477,7 +498,43 @@ void render_screen(short ticks_elapsed)
 #endif
 
 	// Render world view
+#ifdef DC
+	// Does the renderer even get called, and with what buffer?
+	if (!dc_traced_render) {
+		dc_traced_render = 1;
+		dc_trace(4, "render_view wp=%p %dx%d bpp=%d pitch=%d",
+		         world_pixels ? world_pixels->pixels : 0,
+		         world_pixels ? world_pixels->w : -1,
+		         world_pixels ? world_pixels->h : -1,
+		         world_pixels ? world_pixels->format->BitsPerPixel : -1,
+		         world_pixels ? world_pixels->pitch : -1);
+	}
+#endif
 	render_view(world_view, world_pixels_structure);
+#ifdef DC
+	// Settles the question the display trace cannot: did the renderer actually
+	// put anything in the buffer, or is it handing us a black frame? Sampled
+	// sparsely so this costs nothing, and only for the first few frames.
+	{
+		static int dc_sampled = 0;
+		if (dc_sampled < 3 && world_pixels && world_pixels->pixels) {
+			const uint16 *p = (const uint16 *)world_pixels->pixels;
+			int stride = world_pixels->pitch / 2;
+			int nonzero = 0, total = 0;
+			uint16 first = 0;
+			for (int y = 0; y < world_pixels->h; y += 4) {
+				for (int x = 0; x < world_pixels->w; x += 4) {
+					uint16 v = p[y * stride + x];
+					total++;
+					if (v) { if (!nonzero) first = v; nonzero++; }
+				}
+			}
+			dc_trace(6 + dc_sampled, "frame %d: %d/%d nonzero, first=%04x",
+			         dc_sampled, nonzero, total, (unsigned)first);
+			dc_sampled++;
+		}
+	}
+#endif
 
 	// Render crosshairs
 	if (!world_view->overhead_map_active && !world_view->terminal_mode_active)
@@ -567,8 +624,65 @@ static inline void quadruple_surface(const T *src, int src_pitch, T *dst, int ds
 
 static void update_screen(SDL_Rect &source, SDL_Rect &destination, bool hi_rez)
 {
+#ifdef DC
+	// Is the world ever actually blitted to the screen, and where to?
+	if (!dc_traced_update) {
+		dc_traced_update = 1;
+		dc_trace(5, "update dst %d,%d %dx%d hi_rez=%d wp=%p main=%p",
+		         destination.x, destination.y, destination.w, destination.h,
+		         (int)hi_rez, world_pixels ? world_pixels->pixels : 0,
+		         main_surface ? main_surface->pixels : 0);
+	}
+#endif
 	if (hi_rez) {
+#ifdef DC
+		// Does the blit run at all, does it succeed, and does the destination
+		// memory actually change? bfont text written to the same VRAM address
+		// survives across frames, which it could not if this blit landed.
+		static int dc_blits = 0;
+
+		// SDL_BlitSurface returns success here and writes nothing: reading the
+		// destination VRAM before and after gives 0x0000 both times, while the
+		// renderer's buffer is ~97% non-zero. Whatever SDL 1.2's blit map is
+		// doing with a hardware destination on this driver, it is not copying.
+		//
+		// Both surfaces are 16-bit and 640 pixels wide, so copy the rows
+		// ourselves. This is what actually puts the game on screen.
+		bool copied = false;
+		if (world_pixels && main_surface && main_surface->pixels
+		    && world_pixels->format->BytesPerPixel == 2
+		    && main_surface->format->BytesPerPixel == 2) {
+			const uint8 *src = (const uint8 *)world_pixels->pixels;
+			uint8 *dst = (uint8 *)main_surface->pixels
+			             + destination.y * main_surface->pitch
+			             + destination.x * 2;
+			int rows = world_pixels->h;
+			int bytes = world_pixels->w * 2;
+
+			if (destination.y + rows > main_surface->h)
+				rows = main_surface->h - destination.y;
+
+			for (int y = 0; y < rows; y++) {
+				memcpy(dst, src, bytes);
+				src += world_pixels->pitch;
+				dst += main_surface->pitch;
+			}
+			copied = true;
+		}
+
+		if (!copied)
+			SDL_BlitSurface(world_pixels, NULL, main_surface, &destination);
+
+		if (dc_blits < 3) {
+			uint16 v = ((const uint16 *)main_surface->pixels)
+			           [100 * (main_surface->pitch / 2) + 100];
+			dc_trace(9 + dc_blits, "blit #%d copied=%d vram now %04x",
+			         dc_blits, (int)copied, (unsigned)v);
+		}
+		dc_blits++;
+#else
 		SDL_BlitSurface(world_pixels, NULL, main_surface, &destination);
+#endif
 	} else {
 		switch (world_pixels->format->BytesPerPixel) {
 			case 1:

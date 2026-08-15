@@ -15,8 +15,48 @@
  *	So this file provides only the two things that are genuinely still missing.
  */
 
+#include <stdio.h>
+#include <stdarg.h>
 #include <sys/stat.h>
 #include <kos/fs_ramdisk.h>
+#include <dc/video.h>
+#include <dc/biosfont.h>
+
+/*
+ *	dc_trace -- draw a line of text straight into video RAM.
+ *
+ *	There is no serial console under Flycast and KOS here has no framebuffer
+ *	dbgio device, so printf goes nowhere we can see. This writes with bfont
+ *	directly to vram_s, which is the same memory SDL's Dreamcast driver uses as
+ *	its framebuffer in the non-textured path (current->pixels = vram_l).
+ *
+ *	That makes it useful precisely when the screen is black: whatever the game
+ *	failed to draw, this still lands on screen and can be screenshotted.
+ *
+ *	`slot` is a line number so successive calls stack rather than overwrite.
+ */
+void dc_trace(int slot, const char *fmt, ...)
+{
+	char buf[128];
+	va_list ap;
+	int y;
+
+	va_start(ap, fmt);
+	vsnprintf(buf, sizeof buf, fmt, ap);
+	va_end(ap);
+
+	// Serial first: KOS's printf goes out the SCIF port, which Flycast surfaces
+	// when "Serial Console" is enabled. That survives the screen being wrong,
+	// and unlike the framebuffer it cannot be overdrawn by the game.
+	printf("[dctrace %d] %s\n", slot, buf);
+	fflush(stdout);
+
+	y = 8 + slot * 24;
+	if(y < 0 || y > 456)
+		return;
+
+	bfont_draw_str(vram_s + y * 640 + 8, 640, 0, buf);
+}
 
 /*
  *	Aleph One needs somewhere writable for preferences, saved games and film
