@@ -609,3 +609,48 @@ padding, harmless because wad offsets are absolute. And a diagnostic gap of my
 own: the first version returned silently when no card was present, so the first
 test produced no output at all and looked like a failure — it was simply that a
 Dreamcast *keyboard* on port A has no VMU slots. Absence is now traced.
+
+### 02:40 — PowerVR / GL path: assessed, and it is a renderer rewrite
+
+Attempted, measured, and deliberately not pursued. Recording the specifics so
+nobody has to rediscover them.
+
+**The SDL side is fine.** kos-ports SDL *is* built with OpenGL support — the
+generic `SDL_config.h` has no `SDL_VIDEO_OPENGL`, which looked like a blocker
+until I checked the compiled object: `SDL_dcvideo.o` contains `DC_GL_LoadLibrary`
+and `DC_GL_SwapBuffers` and references `glKosInit`. A related false alarm:
+`nm` reports zero symbols in `libGL.a` because the archive is LTO-slim
+(`___gnu_lto_slim`, `.c.obj` members), not because it is empty.
+
+**The blocker is GLdc's feature set.** Building with `-DHAVE_OPENGL` compiles
+everything except `OGL_Render.cpp` and `FontHandler.cpp`, and every entry point
+those two need beyond GLdc's subset is absent:
+
+| missing | used for |
+|---|---|
+| `glClipPlane`, `GL_CLIP_PLANE0..4` | portal and liquid-surface clipping |
+| `glNewList` `glEndList` `glCallList` `glGenLists` `glDeleteLists` `GL_COMPILE` | display lists, for text |
+| `glPushAttrib` | attribute stack |
+| `glLoadMatrixd`, `glGetDoublev` | double-precision matrices |
+| `glVertex2s` | short vertices |
+| `GL_COLOR_LOGIC_OP` | logic-op blending |
+
+The small ones substitute in minutes — `glVertex2f` for `glVertex2s`,
+`glLoadMatrixf` for `glLoadMatrixd`. Display lists could be flattened into
+immediate mode.
+
+**Clip planes are the real problem.** `OGL_Render.cpp` enables five of them per
+frame for the view frustum edges and the liquid surface. They are not a garnish;
+they are how the renderer keeps geometry inside portals and below water. GLdc
+has no equivalent, so emulating them means clipping polygons against five planes
+in software before submitting them to the PowerVR. That is rewriting Aleph One's
+GL renderer, not porting it.
+
+Judgement: out of scope for an unattended session, and dishonest to half-start.
+`GL=1` stays in `Makefile.dc` as a documented, non-building option with the full
+list above in a comment, so anyone picking it up starts from the answer rather
+than the question. The default build is untouched and was re-verified after a
+full clean rebuild: 30.3 fps, rendering, playing.
+
+This also means the framerate question stays open. The software renderer is what
+we have, and whether it holds up on real 200MHz hardware is still unmeasured.

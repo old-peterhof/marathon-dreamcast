@@ -38,6 +38,28 @@ SDL_LIBS = -lSDL -lGL
 INCS    = $(SDL_INCS) -I$(CS) -I$(EP) -I$(MI) -I$(NW) -I$(PF) -I$(MV)
 DEFINES = -DSDL -DHAVE_UNISTD_H -DPACKAGE='"AlephOne"' -DVERSION='"0.12.0"' -DDC
 
+# GL=1 selects BERO's untested hardware-accelerated path. IT DOES NOT COMPILE,
+# and is kept only as a documented starting point for anyone who wants to try.
+#
+# KOS's GL (GLdc) is a subset, and every entry point Aleph One's GL renderer
+# needs from outside that subset is absent:
+#
+#   glClipPlane / GL_CLIP_PLANE0..4   portal and liquid-surface clipping
+#   glNewList glEndList glCallList    display lists, used for text
+#   glGenLists glDeleteLists GL_COMPILE
+#   glPushAttrib                      attribute stack
+#   glLoadMatrixd glGetDoublev        double-precision matrices
+#   glVertex2s                        short vertices
+#   GL_COLOR_LOGIC_OP
+#
+# The small ones substitute trivially (glVertex2f, glLoadMatrixf). The clip
+# planes do not: OGL_Render.cpp uses five of them for the core view frustum and
+# water surfaces, so emulating them means clipping geometry in software before
+# submission -- a renderer rewrite, not a port. See OVERNIGHT-LOG.md.
+ifdef GL
+DEFINES += -DHAVE_OPENGL
+endif
+
 COMPAT   = -fno-strict-aliasing -fpermissive -Wno-write-strings -Wno-narrowing
 CFLAGS   = $(KOS_CFLAGS) $(INCS) $(DEFINES) $(COMPAT)
 CXXFLAGS = $(CFLAGS) -std=gnu++98 -fno-rtti -fno-exceptions
