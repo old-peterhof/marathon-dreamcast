@@ -236,8 +236,13 @@ void dc_input_poll(void)
 	trig_r = st->rtrig;
 
 	if (padtest_wanted()) {
+		/* Pulse rather than hold: the first poll establishes the baseline, so a
+		   permanently-deflected stick never produces an edge and never injects
+		   a key. Two seconds on, two off, which is slow enough to read on
+		   screen and still gives a measurable turn rate while held. */
 		padtest_frames++;
-		analog_x = 127;		/* held hard right, so the turn rate is measurable */
+		if ((padtest_frames % 120) < 60)
+			analog_x = 127;
 	}
 
 	/* Deadzone, then treat the stick as a d-pad for menu navigation only. */

@@ -6,6 +6,13 @@
 
 #include "cseries.h"
 #include "sdl_dialogs.h"
+
+#ifdef DC
+extern "C" {
+void dc_input_poll(void);
+void dc_input_set_ingame(int yes);
+}
+#endif
 #include "sdl_fonts.h"
 #include "sdl_widgets.h"
 
@@ -1043,10 +1050,23 @@ int dialog::run(bool intro_exit_sounds)
 	// Enable unicode key translation
 	SDL_EnableUNICODE(true);
 
+#ifdef DC
+	// Dialogs run their own event loop, so main_event_loop is not running and
+	// nothing else polls the controller while one is open -- which is why the
+	// pad could reach Preferences from the main menu and then do nothing inside
+	// it. Force the menu binding table too, in case the dialog was opened from
+	// gameplay, where the pad is mapped for movement instead.
+	dc_input_set_ingame(0);
+#endif
+
 	// Dialog event loop
 	result = 0;
 	done = false;
 	while (!done) {
+
+#ifdef DC
+		dc_input_poll();
+#endif
 
 		// Get next event
 		SDL_Event e;
