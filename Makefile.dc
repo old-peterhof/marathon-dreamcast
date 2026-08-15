@@ -290,6 +290,16 @@ loadtest: $(TARGET) $(DISC)/.stamp
 	$(MKDCDISC) -e $(TARGET) -d $(DISC)/AlephOne -o alephone-$(BUILD_TAG)-loadtest.cdi \
 		-s $(DISCSERIAL) -n "$(DISCNAME) $(BUILD_TAG)" -a "$(DISCAUTH)" -N
 
+# Hands-on Flycast image: unpadded so it loads quickly, tracing on so the serial
+# log is readable, and nothing else. No AUTOSTART, so the main menu is reachable
+# and things like CONTINUE SAVED GAME can actually be driven by hand; no AUTOKEY,
+# so every keypress is the player's. This is the one to use when Max is testing.
+manual: $(TARGET) $(DISC)/.stamp
+	rm -f $(DISC)/AlephOne/AUTOSTART $(DISC)/AlephOne/PADTEST $(DISC)/AlephOne/DEBUG $(DISC)/AlephOne/PROFILE $(DISC)/AlephOne/AUTOKEY
+	echo on > $(DISC)/AlephOne/DEBUG
+	$(MKDCDISC) -e $(TARGET) -d $(DISC)/AlephOne -o alephone-$(BUILD_TAG)-manual.cdi \
+		-s $(DISCSERIAL) -n "$(DISCNAME) $(BUILD_TAG)" -a "$(DISCAUTH)" -N
+
 # Hardware image: padded. Larger, but this is the one that actually boots on a
 # console or from GDEMU.
 cdi: $(TARGET) $(DISC)/.stamp

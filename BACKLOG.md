@@ -67,28 +67,6 @@ GLdc lacking clip planes, which `OGL_Render.cpp` uses five of for portal and
 liquid-surface clipping. See the note in `Makefile.dc` under `GL=1`, which
 records the full list of missing entry points.
 
-## sh4zam store-queue blit — DONE in b24, effect unmeasured
-
-Implemented. `dc/dc_blit.c` uses `shz_sq_memcpy32`, falling back to `memcpy`
-when alignment or length does not qualify.
-
-Two things worth knowing for next time. It is **not** header-only: the symbol
-lives in hand-written assembly (`source/sh4/shz_mem_sh4.s`), vendored under
-`dc/vendor/sh4zam_src` because the kos-port needs cmake, which is not installed.
-And sh4zam's headers need C++11 and use asm string forms `-std=gnu++98` cannot
-parse, so the blit had to move into a C file — the rest of the port is pinned to
-gnu++98 for the 2002 code.
-
-Still to do: **measure it**. Flycast reports no change because it does not model
-store-queue timing. Boot `alephone-b23-flat-saves-profile.cdi` and then
-`alephone-b24-sq-blit-profile.cdi` and compare the FPS on the VMU.
-
-## Saved games on VMU
-
-Only preferences are mirrored today. Saved games far exceed a VMU's 128K, so
-this needs splitting across blocks or compressing, and is a real project rather
-than an afternoon.
-
 ## Get a saved game below 10 blocks
 
 Done in b29, most of the way: folding a save against its map level took it from
@@ -105,3 +83,27 @@ where it runs now.
 
 Worth maybe 6 blocks of the 23. Not obviously worth the complexity unless a card
 is very full. Doom 64 manages 10 blocks, but it has far less state to keep.
+
+## Which preferences and menu items to strip on console
+
+For discussion with Max, not to be actioned unilaterally.
+
+The UI still offers a lot that means nothing on a Dreamcast, and every item is
+one more thing to navigate past with a d-pad. Candidates, roughly in order of how
+obviously they should go:
+
+- Network: GATHER NETWORK GAME and JOIN NETWORK GAME. `network_dummy.cpp` is
+  linked, so these cannot work at all; they currently blink and return.
+- Films: REPLAY SAVED FILM, REPLAY LAST FILM, SAVE LAST FILM. Recordings are
+  written to the ramdisk and die at power-off, so a film cannot outlive the
+  session that made it.
+- QUIT. A console has no desktop to return to.
+- Preferences that describe hardware we know: resolution, colour depth, fullscreen
+  toggle, OpenGL options while the GL path is unbuilt.
+- Keyboard-only preferences: key bindings, mouse sensitivity as distinct from the
+  stick sensitivity already added.
+
+Against stripping: the main menu is a fixed 1990s bitmap with the buttons drawn
+into it, so removing an item means either editing artwork or leaving a dead
+region on screen. That argues for doing this as part of the controller-native UI
+work rather than before it.
