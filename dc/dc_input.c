@@ -129,6 +129,32 @@ static int trig_l = 0, trig_r = 0;
  *	Invisible under Flycast, which never shows the prompt -- this was found on
  *	real hardware in an earlier session and is ported back in here.
  */
+/*
+ *	List everything on the maple bus once, at startup. A peripheral in an
+ *	expansion slot -- a rumble pack, say -- is invisible to the code otherwise,
+ *	so if the presence of one changes behaviour this is what shows it.
+ */
+void dc_input_dump_maple(void)
+{
+	int port, unit, slot = 0;
+
+	for (port = 0; port < 4; port++) {
+		for (unit = 0; unit < 6; unit++) {
+			maple_device_t *d = maple_enum_dev(port, unit);
+
+			if (!d || !d->valid)
+				continue;
+
+			dc_trace(20 + (slot++ % 3), "maple %c%d: %s func=%08lx",
+			         'A' + port, unit, d->info.product_name,
+			         (unsigned long)d->info.functions);
+		}
+	}
+
+	if (!slot)
+		dc_trace(20, "maple: nothing enumerated");
+}
+
 void dc_input_init_video(void)
 {
 	SDL_DC_Default60Hz(SDL_TRUE);

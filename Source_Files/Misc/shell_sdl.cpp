@@ -153,6 +153,7 @@ extern int fs_mem_init(void);
 #ifdef DC
 void dc_input_init_video(void);		// suppress SDL's 60Hz prompt; see dc_input.c
 void dc_profiler_start(void);		// VMU Profiler, gated on a PROFILE marker
+void dc_input_dump_maple(void);		// lists the maple bus once, DEBUG builds only
 void dc_build_stamp(const char *tag);	// draws the build tag on the menu
 #endif
 }
@@ -253,6 +254,7 @@ static void initialize_application(void)
 	// inside SDL_SetVideoMode. Harmless under emulation, fatal to startup on a
 	// real console.
 	dc_input_init_video();
+	dc_input_dump_maple();
 	dc_profiler_start();
 #endif
 
