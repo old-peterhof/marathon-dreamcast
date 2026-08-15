@@ -44,3 +44,4 @@ to the engine clamp, and the VMU Profiler. Git history has the detail.
 | b30 | dialog-return | 717ac50 | Return selects a file in list dialogs, so saved games can be loaded |
 | b31 | start-pause-menu | 9d6a0ad | Start opens a pause menu: resume, save, preferences, quit |
 | b32 | menu-nav | 7caf9d9 | Main menu: no highlight trail, skips dead entries |
+| b33 | gl-links | a1cfca4 | GL renderer compiles and links against GLdc |

@@ -109,6 +109,11 @@ Dec 17, 2000 (Loren Petrich):
 # include <GL/glu.h>
 #endif
 
+#ifdef DC
+// GLdc provides 43 of the 61 entry points this file calls. The rest are here.
+#include "dc_gl_compat.h"
+#endif
+
 #ifdef mac
 #include <agl.h>
 #include "my32bqd.h"
@@ -2495,6 +2500,15 @@ bool OGL_RenderText(short BaseX, short BaseY, const char *Text)
 {
 	if (!OGL_IsActive()) return false;
 	
+#ifdef DC
+	// GLdc has no display lists, and this was Aleph One's only use of them:
+	// compile the string once, then draw it twice -- a drop shadow and the text
+	// itself. The seven other draws were commented out for speed back in 2002,
+	// so the list was being built to be called exactly twice. Calling the font
+	// renderer directly costs one extra glyph walk and removes the need for the
+	// list machinery entirely.
+#define DC_DRAW_TEXT()	GetOnScreenFont().OGL_Render(Text)
+#else
 	// Create display list for the current text string;
 	// use the "standard" text-font display list (display lists can be nested)
 	GLuint TextDisplayList;
@@ -2502,6 +2516,8 @@ bool OGL_RenderText(short BaseX, short BaseY, const char *Text)
 	glNewList(TextDisplayList,GL_COMPILE);
 	GetOnScreenFont().OGL_Render(Text);
 	glEndList();
+#define DC_DRAW_TEXT()	glCallList(TextDisplayList)
+#endif
 	
 	// Place the text in the foreground of the display
 	SetProjectionType(Projection_Screen);
@@ -2547,17 +2563,20 @@ bool OGL_RenderText(short BaseX, short BaseY, const char *Text)
 	
 	glLoadIdentity();
 	glTranslatef(BaseX+1,BaseY+1,Depth);
-	glCallList(TextDisplayList);
+	DC_DRAW_TEXT();
 	
 	// Foreground
 	glColor3f(1,1,1);
 
 	glLoadIdentity();
 	glTranslatef(BaseX,BaseY,Depth);
-	glCallList(TextDisplayList);
+	DC_DRAW_TEXT();
 		
 	// Clean up
+#ifndef DC
 	glDeleteLists(TextDisplayList,1);
+#endif
+#undef DC_DRAW_TEXT
 	glPopMatrix();
 	
 	return true;

@@ -47,29 +47,37 @@ SDL_INCS = -I$(KOS_PORTS)/include/SDL
 # renderer. Verified with nm: our own OGL_*.o reference zero gl symbols.
 SDL_LIBS = -lSDL -lGL -lz
 
-INCS    = $(SDL_INCS) -Idc/vendor -I$(CS) -I$(EP) -I$(MI) -I$(NW) -I$(PF) -I$(MV)
+INCS    = $(SDL_INCS) -Idc -Idc/vendor -I$(CS) -I$(EP) -I$(MI) -I$(NW) -I$(PF) -I$(MV)
 DEFINES = -DSDL -DHAVE_UNISTD_H -DPACKAGE='"AlephOne"' -DVERSION='"0.12.0"' -DDC
 
-# GL=1 selects BERO's untested hardware-accelerated path. IT DOES NOT COMPILE,
-# and is kept only as a documented starting point for anyone who wants to try.
+# GL=1 builds Aleph One's hardware renderer against GLdc, the OpenGL
+# implementation KallistiOS ships for the PowerVR. As of b33 this COMPILES AND
+# LINKS. Whether it draws anything is a separate question -- see README.DC.md.
 #
-# KOS's GL (GLdc) is a subset, and every entry point Aleph One's GL renderer
-# needs from outside that subset is absent:
+# The note that used to live here said this was blocked on clip planes and would
+# need a renderer rewrite. That was wrong, and worth recording why, because it
+# stopped the work for a long time.
 #
-#   glClipPlane / GL_CLIP_PLANE0..4   portal and liquid-surface clipping
-#   glNewList glEndList glCallList    display lists, used for text
-#   glGenLists glDeleteLists GL_COMPILE
-#   glPushAttrib                      attribute stack
-#   glLoadMatrixd glGetDoublev        double-precision matrices
-#   glVertex2s                        short vertices
-#   GL_COLOR_LOGIC_OP
+# Aleph One calls 61 GL entry points; GLdc has 43. The missing 17 are all in
+# OGL_Render.cpp and fall into four groups: double-precision matrix calls
+# (forward to the float versions), short-typed immediate mode (likewise), two
+# raster effects the PowerVR cannot do (dropped), and display lists, which were
+# used in exactly one function to draw a string twice. dc/dc_gl_compat.h covers
+# the lot.
 #
-# The small ones substitute trivially (glVertex2f, glLoadMatrixf). The clip
-# planes do not: OGL_Render.cpp uses five of them for the core view frustum and
-# water surfaces, so emulating them means clipping geometry in software before
-# submission -- a renderer rewrite, not a port. See OVERNIGHT-LOG.md.
+# The clip planes were never the obstacle. All six glClipPlane calls sit inside
+# RenderModelSetup(), reached only when rectangle_definition::ModelPtr is set --
+# the external-3D-model path. Stock Marathon 2 declares no models, so the
+# function is never entered. They are stubbed with a trace that fires if a model
+# ever does appear.
+#
 ifdef GL
 DEFINES += -DHAVE_OPENGL
+# The GL renderer pulls in the model loaders. Stock Marathon 2 declares no
+# models so none of this ever runs, but OGL_Render.cpp references it and the
+# whole subsystem is only 1800 lines, so it is built rather than stubbed --
+# a stub that lies is worse than code that is never called.
+GL_OBJS = $(MV)/Model3D.o $(MV)/StudioLoader.o $(MV)/WavefrontLoader.o
 endif
 
 # -MMD -MP emit a .d file per object listing the headers it used, pulled in at
@@ -136,7 +144,7 @@ DC_OBJS = dc/dc_compat.o dc/dc_input.o dc/dc_vmu.o dc/dc_profiler.o \
           dc/vendor/vmu_profiler.o
 
 OBJS0 = $(SRCS:.cpp=.o)
-OBJS  = $(OBJS0:.c=.o) $(DC_OBJS)
+OBJS  = $(OBJS0:.c=.o) $(DC_OBJS) $(GL_OBJS)
 
 # BERO's Makefile linked $(KOS_BASE)/kernel/arch/dreamcast/kernel/startup.o by
 # hand, as KOS 1.1.7 required. Modern KOS pulls startup in through libkallisti
