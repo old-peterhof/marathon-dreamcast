@@ -32,3 +32,4 @@ to the engine clamp, and the VMU Profiler. Git history has the detail.
 | b18 | tick-fix | 5b8fe35 | test_mouse now zeroes the delta after reading; catch-up ticks were each re-applying the full stick deflection, multiplying turn rate by how far behind the renderer was |
 | b19 | maple-probe | 4ba82d2 | b18's turn-rate fix plus a startup dump of the maple bus in debug builds, to characterise the suspected rumble-pack boot failure |
 | b20 | half-rate | e57d4ee | base yaw scale halved again (FIXED_ONE/4) after b18 was reported ~2x too fast at 30%; default sensitivity 30% |
+| b21 | fine-aim | dc15958 | dither the turn delta against the engine's quantiser so slow turns are possible (centre was twitchy); disable INIT_PURUPURU as an experiment to identify the rumble-pack boot hang |

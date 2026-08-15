@@ -51,6 +51,22 @@ int dc_input_trigger_r(void);
 // where a thumb has least precision. Saturating early flattens it.
 #define DC_STICK_SAT    100
 #define DC_TRIGGER_ON   64
+
+// The engine quantises the turn before using it:
+//   encoded = (delta_yaw >> (16 - ABSOLUTE_YAW_BITS)) + MAXIMUM_ABSOLUTE_YAW/2
+// so one step is 1 << (16 - 7) = 512 in _fixed, and at a 30% setting the whole
+// stick range spans only about nine of them. Nine discrete turn speeds is
+// plenty at the rim and far too coarse in the middle, which is where aiming
+// happens -- reported as twitchy near centre.
+//
+// Rather than fight the quantiser, feed it a dithered value: carry the
+// remainder from frame to frame and emit whole steps. A rate of a third of a
+// step becomes one step every third tick, which averages correctly and gives
+// genuinely fine control instead of nine notches. This also sidesteps a quirk
+// in the encoder, which rounds any positive delta below one step *up* to a full
+// step -- and asymmetrically, the matching line for negatives is commented out.
+#define DC_YAW_QUANT    (1 << (FIXED_FRACTIONAL_BITS - ABSOLUTE_YAW_BITS))
+#define DC_PITCH_QUANT  (1 << (FIXED_FRACTIONAL_BITS - ABSOLUTE_PITCH_BITS))
 #endif
 
 
@@ -59,6 +75,10 @@ static bool mouse_active = false;
 static uint8 button_mask = 0;		// Mask of enabled buttons
 static int center_x, center_y;		// X/Y center of screen
 static _fixed snapshot_delta_yaw, snapshot_delta_pitch, snapshot_delta_velocity;
+#ifdef DC
+// Sub-step remainders carried between frames, so slow turns are possible at all.
+static _fixed dc_yaw_accum = 0, dc_pitch_accum = 0;
+#endif
 
 
 /*
@@ -73,6 +93,7 @@ void enter_mouse(short type)
 	if (type != _keyboard_or_game_pad) {
 		mouse_active = true;
 		snapshot_delta_yaw = snapshot_delta_pitch = snapshot_delta_velocity = 0;
+		dc_yaw_accum = dc_pitch_accum = 0;
 		button_mask = 0;
 	}
 	return;
@@ -167,8 +188,18 @@ void mouse_idle(short type)
 		if (input_preferences->modifiers & _inputmod_invert_mouse)
 			vy = -vy;
 
-		snapshot_delta_yaw = vx;
-		snapshot_delta_pitch = vy;
+		// Dither against the engine's quantiser; see DC_YAW_QUANT above.
+		dc_yaw_accum += vx;
+		dc_pitch_accum += vy;
+
+		_fixed qx = (dc_yaw_accum / DC_YAW_QUANT) * DC_YAW_QUANT;
+		_fixed qy = (dc_pitch_accum / DC_PITCH_QUANT) * DC_PITCH_QUANT;
+
+		dc_yaw_accum -= qx;
+		dc_pitch_accum -= qy;
+
+		snapshot_delta_yaw = qx;
+		snapshot_delta_pitch = qy;
 		snapshot_delta_velocity = 0;	// movement is on the face buttons
 	}
 	return;
