@@ -276,3 +276,33 @@ copy, and it does not report an error either.
 
 Next: the HUD band at the bottom is black. Very likely the same cause in
 `HUDRenderer_SW` / `draw_interface`, which will use the same SDL blit path.
+
+### 01:07 — HUD renders. The game is visually complete.
+
+Motion sensor, weapons panel (".44 MAGNUM MEGA CLASS" with ammo pips), health
+and oxygen bars, all under the 3D view. Same cause and same fix as the world
+blit: `DrawHUD` (`screen_sdl.cpp`) blits `HUD_Buffer` to `main_surface` and that
+blit no-ops too.
+
+Refactored the one-off row copy into `dc_copy_to_screen()`, which now serves
+both the world view and the HUD. It clips against both surfaces rather than
+trusting the caller's rects, and returns false for anything not 16-bit so the
+caller can fall back to `SDL_BlitSurface`.
+
+Worth noting for whoever picks this up: not every blit to the screen is broken.
+The main menu's title screen goes through `images_sdl.cpp` straight to the video
+surface and has always worked. Only these same-format surface-to-display blits
+fail, which is why the menu looked fine while the game was black.
+
+- [x] **A. Error 4** — MacBinary I detection.
+- [ ] **B. DC controller driver** — still open, but far less urgent than it was:
+      Flycast emulates a DC keyboard (`device1 = 5`) and BERO's UP/DOWN/RETURN
+      navigation works, so the game is playable as-is with a keyboard. A real
+      controller is still the right thing for hardware.
+- [ ] **C. Cursor trails** — still open.
+- [x] **D. Input injection** — Accessibility granted, `osascript` key injection
+      confirmed working against Flycast. Also added the AUTOSTART marker so a
+      test run needs no input at all; both routes work.
+- [ ] **E. Gameplay** — renders and runs. Not yet checked: framerate, sound
+      beyond "it plays", whether the level is completable, whether saving works
+      given the ramdisk is wiped at power-off.

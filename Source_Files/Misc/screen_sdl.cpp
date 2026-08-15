@@ -226,6 +226,59 @@ void exit_screen(void)
 // display itself is the thing that is broken.
 extern "C" void dc_trace(int slot, const char *fmt, ...);
 static int dc_traced_mode = 0, dc_traced_render = 0, dc_traced_update = 0;
+
+/*
+ *	dc_copy_to_screen -- stand-in for SDL_BlitSurface when the destination is
+ *	the display.
+ *
+ *	SDL_BlitSurface returns 0 for success on this driver and copies nothing.
+ *	Verified by reading the destination VRAM immediately before and after the
+ *	call: 0x0000 both times, while the source buffer was ~97% non-zero. Text
+ *	drawn to the same VRAM address with bfont survived across frames, which it
+ *	could not have if the blit were landing.
+ *
+ *	Everything here is 16-bit once the mode is set (the Dreamcast SDL driver
+ *	rejects 8-bit outright), so a per-row memcpy is all that is needed. Returns
+ *	false when the surfaces are not both 16-bit, so callers can fall back.
+ */
+static bool dc_copy_to_screen(SDL_Surface *src, const SDL_Rect *src_rect,
+                              SDL_Surface *dst, const SDL_Rect *dst_rect)
+{
+	if (!src || !dst || !src->pixels || !dst->pixels)
+		return false;
+	if (src->format->BytesPerPixel != 2 || dst->format->BytesPerPixel != 2)
+		return false;
+
+	int sx = src_rect ? src_rect->x : 0;
+	int sy = src_rect ? src_rect->y : 0;
+	int w  = src_rect ? src_rect->w : src->w;
+	int h  = src_rect ? src_rect->h : src->h;
+	int dx = dst_rect ? dst_rect->x : 0;
+	int dy = dst_rect ? dst_rect->y : 0;
+
+	// Clip against both surfaces rather than trusting the caller's rects.
+	if (sx < 0) { w += sx; dx -= sx; sx = 0; }
+	if (sy < 0) { h += sy; dy -= sy; sy = 0; }
+	if (dx < 0) { w += dx; sx -= dx; dx = 0; }
+	if (dy < 0) { h += dy; sy -= dy; dy = 0; }
+	if (sx + w > src->w) w = src->w - sx;
+	if (sy + h > src->h) h = src->h - sy;
+	if (dx + w > dst->w) w = dst->w - dx;
+	if (dy + h > dst->h) h = dst->h - dy;
+	if (w <= 0 || h <= 0)
+		return true;
+
+	const uint8 *s = (const uint8 *)src->pixels + sy * src->pitch + sx * 2;
+	uint8 *d = (uint8 *)dst->pixels + dy * dst->pitch + dx * 2;
+
+	for (int y = 0; y < h; y++) {
+		memcpy(d, s, w * 2);
+		s += src->pitch;
+		d += dst->pitch;
+	}
+
+	return true;
+}
 #endif
 
 static void change_screen_mode(int width, int height, int depth, bool nogl)
@@ -639,47 +692,8 @@ static void update_screen(SDL_Rect &source, SDL_Rect &destination, bool hi_rez)
 		// Does the blit run at all, does it succeed, and does the destination
 		// memory actually change? bfont text written to the same VRAM address
 		// survives across frames, which it could not if this blit landed.
-		static int dc_blits = 0;
-
-		// SDL_BlitSurface returns success here and writes nothing: reading the
-		// destination VRAM before and after gives 0x0000 both times, while the
-		// renderer's buffer is ~97% non-zero. Whatever SDL 1.2's blit map is
-		// doing with a hardware destination on this driver, it is not copying.
-		//
-		// Both surfaces are 16-bit and 640 pixels wide, so copy the rows
-		// ourselves. This is what actually puts the game on screen.
-		bool copied = false;
-		if (world_pixels && main_surface && main_surface->pixels
-		    && world_pixels->format->BytesPerPixel == 2
-		    && main_surface->format->BytesPerPixel == 2) {
-			const uint8 *src = (const uint8 *)world_pixels->pixels;
-			uint8 *dst = (uint8 *)main_surface->pixels
-			             + destination.y * main_surface->pitch
-			             + destination.x * 2;
-			int rows = world_pixels->h;
-			int bytes = world_pixels->w * 2;
-
-			if (destination.y + rows > main_surface->h)
-				rows = main_surface->h - destination.y;
-
-			for (int y = 0; y < rows; y++) {
-				memcpy(dst, src, bytes);
-				src += world_pixels->pitch;
-				dst += main_surface->pitch;
-			}
-			copied = true;
-		}
-
-		if (!copied)
+		if (!dc_copy_to_screen(world_pixels, NULL, main_surface, &destination))
 			SDL_BlitSurface(world_pixels, NULL, main_surface, &destination);
-
-		if (dc_blits < 3) {
-			uint16 v = ((const uint16 *)main_surface->pixels)
-			           [100 * (main_surface->pitch / 2) + 100];
-			dc_trace(9 + dc_blits, "blit #%d copied=%d vram now %04x",
-			         dc_blits, (int)copied, (unsigned)v);
-		}
-		dc_blits++;
 #else
 		SDL_BlitSurface(world_pixels, NULL, main_surface, &destination);
 #endif
@@ -985,7 +999,13 @@ void DrawHUD(SDL_Rect &dest_rect)
 {
 	if (HUD_Buffer) {
 		SDL_Rect src_rect = {0, 320, 640, 160};
+#ifdef DC
+		// Same broken blit as the world view; see dc_copy_to_screen.
+		if (!dc_copy_to_screen(HUD_Buffer, &src_rect, main_surface, &dest_rect))
+			SDL_BlitSurface(HUD_Buffer, &src_rect, main_surface, &dest_rect);
+#else
 		SDL_BlitSurface(HUD_Buffer, &src_rect, main_surface, &dest_rect);
+#endif
 		SDL_UpdateRects(main_surface, 1, &dest_rect);
 	}
 }
