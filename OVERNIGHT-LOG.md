@@ -88,3 +88,39 @@ Next: instrument the real game. Add framebuffer tracing around
 `w_open_preferences_file` / `load_preferences` / `w_write_preferences_file` to
 see which branch actually sets error 4, rather than reasoning about it from the
 source.
+
+## Work queue
+
+Worked top to bottom. Tick items off in this file as they land, and note what
+was learned even when something is abandoned.
+
+- [ ] **A. Error 4.** Instrument `wad_prefs.cpp` with framebuffer tracing to see
+      which branch sets it. Suspect the flat ramdisk, but prove it. Candidate
+      fixes once known: make the subdirectory creation failures non-fatal, or
+      flatten the paths so nothing needs a subdirectory.
+- [ ] **B. DC controller driver.** `dc/dc_input.c`: poll
+      `maple_enum_type(0, MAPLE_FUNC_CONTROLLER)`, diff against the previous
+      state, inject with `SDL_PrivateKeyboard` — confirmed exported from
+      libSDL.a, and unlike `SDL_PushEvent` it updates the key-state array that
+      `vbl_sdl.cpp:98` reads via `SDL_GetKeyState`. Map the D-pad to **both**
+      arrows and the keypad, so it drives the menu (UP/DOWN/RETURN) and the game
+      (standard setup is KP8/KP5/KP4/KP6) without touching the default key
+      bindings. A -> RETURN + SPACE, B -> LALT, X -> TAB, Y -> M,
+      Start -> ESCAPE, triggers -> LSHIFT / LCTRL, analog stick -> arrows.
+- [ ] **C. Cursor trails.** Hide the SDL cursor on DC; the software cursor blits
+      without restoring the background.
+- [ ] **D. Input injection.** Drive Flycast from osascript so gameplay can be
+      verified, not just the menu. Unproven — if it does not work, say so and
+      fall back to verifying boot-and-menu only.
+- [ ] **E. Gameplay.** Once past the menu: does a level load, does it render,
+      does sound work, what is the framerate.
+
+## Rules for unattended work
+
+- Commit and push to `origin/dc-rebuild` after every green build.
+- Never delete, never force-push, never rewrite history.
+- If a change does not build, revert it fully rather than leaving it half-applied.
+- Prefer evidence from a booted probe over reasoning about 2002 source.
+- `${=VAR}` when passing KOS flags in this zsh shell.
+- Flycast fails to launch roughly half the time with a VMEM assertion; retry in
+  a loop rather than concluding the image is broken.
