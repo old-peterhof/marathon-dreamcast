@@ -118,6 +118,13 @@ ifdef OLDKEYS
   KOS_CFLAGS += -DDC_OLDKEYS
 endif
 
+# TRACE=1 paints the framebuffer a solid colour at fixed startup points using
+# KOS's vid_clear(), bypassing SDL entirely. The last colour seen says how far
+# startup got. See dc_trace.h for the colour order. Use the 'trace' target.
+ifdef TRACE
+  KOS_CFLAGS += -DDC_TRACE_ENABLED
+endif
+
 # -lGL is NOT conditional on GL=1. kos-ports' SDL_dcvideo.c references glKosInit,
 # glKosSwapBuffers and the whole glfuncs table unconditionally, so libSDL.a needs
 # GLdc present at link time even for a pure software-renderer build. This is why
@@ -173,7 +180,7 @@ SRCS = \
   \
   $(PF)/script_instructions.cpp $(PF)/script_parser.cpp $(PF)/scripting.cpp \
   \
-  $(MI)/dc_compat.c $(MI)/dc_input.cpp
+  $(MI)/dc_compat.c $(MI)/dc_input.cpp $(MI)/dc_trace.cpp
 
 OBJS = $(patsubst %.c,%.o,$(patsubst %.cpp,%.o,$(SRCS))) romdisk.o
 
@@ -298,6 +305,15 @@ oldkeys:
 	$(MAKE) -f Makefile.dc cdi OLDKEYS=1
 	@$(MAKE) -s -f Makefile.dc describe
 
+# Diagnostic variant: solid colours at startup checkpoints, drawn straight to
+# video memory so SDL cannot hide them.
+trace:
+	-rm -f $(MI)/shell.o $(MI)/screen_sdl.o $(MI)/dc_trace.o $(TARGET) alephone.cdi
+	$(MAKE) -f Makefile.dc cdi TRACE=1
+	@$(NM) $(TARGET) | grep -q DC_Trace \
+		|| { echo "BUILD ERROR: trace build lacks DC_Trace"; exit 1; }
+	@echo "OK: alephone.cdi is a TRACE build -- watch the colour sequence"
+
 # Debug variant: 3D view filled magenta, to test the presentation path alone.
 probe:
 	-rm -f $(MI)/shell.o $(MI)/screen_sdl.o $(MI)/vbl.o $(TARGET) alephone.cdi
@@ -389,4 +405,4 @@ rm-elf:
 clean: rm-elf
 	-rm -f $(OBJS)
 
-.PHONY: all bin run rm-elf clean one cdi cdi-emu test snapshot snapshots restore gdi flycast menu autostart oldkeys probe describe verify
+.PHONY: all bin run rm-elf clean one cdi cdi-emu test trace snapshot snapshots restore gdi flycast menu autostart oldkeys probe describe verify

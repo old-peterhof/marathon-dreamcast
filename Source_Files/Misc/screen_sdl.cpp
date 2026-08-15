@@ -55,6 +55,10 @@ static SDL_Surface *main_surface;	// Main (display) surface
 // It is initialized to NULL so as to allow its initing to be lazy.
 SDL_Surface *world_pixels = NULL;
 
+#ifdef DC
+#include "dc_trace.h"
+#endif
+
 #ifdef DC_RENDER_PROBE
 // See update_screen(). Exists purely so a probe build is identifiable from the
 // binary with nm.
@@ -264,6 +268,10 @@ static void change_screen_mode(int width, int height, int depth, bool nogl)
 #endif
 
 	main_surface = SDL_SetVideoMode(width, height, depth, flags);
+#ifdef DC_TRACE
+	// cyan -- only if a surface actually came back
+	if (main_surface) DC_TRACE(DC_TRACE_VIDEO_MODE_OK);
+#endif
 #ifdef DC
 	// Record what we actually got, not what we asked for, and put it somewhere
 	// readable. printf goes to KOS's dbgio -> the SCIF serial port, which needs

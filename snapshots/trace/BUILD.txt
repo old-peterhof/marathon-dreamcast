@@ -1,0 +1,5 @@
+saved   : 2026-08-14 21:43:15
+commit  : de88bbe Reconstruct the stale-object build; ignore .DS_Store
+dirty   : 6 files uncommitted
+start   : main menu
+3D view : real renderer

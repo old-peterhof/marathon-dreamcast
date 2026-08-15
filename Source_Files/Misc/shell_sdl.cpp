@@ -46,6 +46,7 @@ void free_and_unlock_memory(void);
 // placed up there is silently skipped on every other compiler.
 #ifdef DC
 #include "dc_input.h"
+#include "dc_trace.h"
 #endif
 #ifdef DC_AUTOSTART
 // See main(). Exists purely so an autostart image is identifiable with nm.
@@ -160,6 +161,7 @@ static void usage(const char *prg_name)
 
 int main(int argc, char **argv)
 {
+	DC_TRACE(DC_TRACE_MAIN_ENTERED);		// red
 	// Print banner (don't bother if this doesn't appear when started from a GUI)
 	printf(
 		"Aleph One " VERSION "\n"
@@ -205,10 +207,13 @@ int main(int argc, char **argv)
 		argc--; argv++;	
 	}
 
+	DC_TRACE(DC_TRACE_ARGS_PARSED);			// orange
+
 	try {
 
 		// Initialize everything
 		initialize_application();
+		DC_TRACE(DC_TRACE_APP_INIT_DONE);	// blue
 
 #ifdef DC_AUTOSTART
 		// Marker so a built image can be identified as autostart from the
@@ -225,6 +230,8 @@ int main(int argc, char **argv)
 		// menu behaviour. Build with: ./build.sh autostart
 		do_menu_item_command(mInterface, iNewGame, false);
 #endif
+
+		DC_TRACE(DC_TRACE_EVENT_LOOP);		// magenta
 
 		// Run the main loop
 		main_event_loop();
@@ -259,6 +266,8 @@ static void initialize_application(void)
 	SDL_WM_SetCaption("Aleph One", "Aleph One");
 	atexit(shutdown_application);
 
+	DC_TRACE(DC_TRACE_SDL_INIT_OK);			// yellow
+
 #ifdef DC
 	// Both must follow SDL_Init and precede the first change_screen_mode():
 	// DC_InitVideo suppresses the driver's "Press Y for 60Hz" prompt, which is
@@ -266,6 +275,7 @@ static void initialize_application(void)
 	// subsystem and opens the pad. See dc_input.cpp.
 	DC_InitVideo();
 	DC_InitInput();
+	DC_TRACE(DC_TRACE_DC_INIT_OK);			// green
 #endif
 
 #ifdef HAVE_SDL_NET
