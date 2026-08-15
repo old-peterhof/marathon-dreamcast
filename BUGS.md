@@ -7,6 +7,10 @@ that fixed them.
 
 | Since | Symptom | Notes |
 |---|---|---|
+| b23 | **Saved games do not survive a power cycle** | Working as built, not a crash. Saves live in `/ram`, the KOS ramdisk, which is volatile. After a reboot there is nothing to list, so "Continue Saved Game" finds an empty directory and returns — which presents as the menu flashing, the same as the network and film buttons that also have nothing to show. b25 confirmed saving itself now works. Making saves persist means mirroring them to the VMU as preferences already are, and that hinges on size: a card holds 131072 bytes total. **Unmeasured.** An in-game probe (`dc_list_ram`) was added to report the sizes and produced no output under Flycast despite demonstrably being called, which is unexplained. |
+
+| Since | Symptom | Notes |
+|---|---|---|
 | b23 | **Saving a game failed with "file system error ... error -22"** — fixed in b25 | Saving writes a temp file then calls `TempFile.Exchange(File)` (game_wad.cpp:1274), and `Exchange` uses `rename()`. The KOS ramdisk does not implement rename and returns EINVAL, which is errno 22. So every save failed at the very last step, after the data had already been written. `Exchange` now copies the contents across and deletes the temp on this platform. |
 | b23 | **Save dialog: D-pad could not reach the "new save game" option** — fixed in b25 | `w_list_base::event` deliberately swallows UP and DOWN ("Prevent selection of previous/next widget"), so once a list has focus the D-pad can never leave it. A keyboard escapes with TAB, which the controller had no binding for. Both triggers now send TAB in menus. |
 | b23 | Sensitivity appears to revert after upgrading builds | Not a code regression — the dithering and scale are intact. Preferences are restored from the VMU, and the base scale changed between builds (b20 halved it), so a percentage saved under an older build means a different turn rate under a newer one. Needs the preference versioning so a scale change resets the value rather than reinterpreting it. |

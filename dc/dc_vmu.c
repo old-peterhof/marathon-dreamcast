@@ -180,3 +180,44 @@ void dc_vmu_save_prefs(const char *ram_path)
 	fs_close(fd);
 	free(buf);
 }
+
+/*
+ *	dc_list_ram -- log what is in /ram and how big it is.
+ *
+ *	Saved games currently live there and vanish at power-off. Whether they can be
+ *	mirrored to a VMU depends entirely on their size against a 128K card, and
+ *	guessing at that is how you waste a day. Aleph One writes a "revert" save
+ *	when a level starts (game_wad.cpp), so a real save file appears without
+ *	anyone reaching a terminal, which makes this measurable unattended.
+ */
+void dc_list_ram(void)
+{
+	DIR *d = opendir("/ram");
+	struct dirent *de;
+	int slot = 26;
+	long total = 0;
+
+	if (!d) {
+		dc_trace(slot, "ram: cannot open");
+		return;
+	}
+
+	while ((de = readdir(d)) != NULL) {
+		char path[128];
+		struct stat st;
+
+		if (de->d_name[0] == '.')
+			continue;
+
+		snprintf(path, sizeof path, "/ram/%s", de->d_name);
+		if (stat(path, &st) == 0) {
+			total += st.st_size;
+			if (slot < 29)
+				dc_trace(slot++, "ram: %-16s %ld bytes",
+				         de->d_name, (long)st.st_size);
+		}
+	}
+
+	closedir(d);
+	dc_trace(29, "ram: total %ld bytes (VMU holds 131072)", total);
+}

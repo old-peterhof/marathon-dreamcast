@@ -226,6 +226,7 @@ void exit_screen(void)
 // display itself is the thing that is broken.
 extern "C" void dc_trace(int slot, const char *fmt, ...);
 extern "C" void dc_profiler_frame(void);
+extern "C" void dc_list_ram(void);
 // The row copy lives in dc/dc_blit.c, compiled as C: sh4zam's headers need C++11
 // and asm string forms this file cannot use under -std=gnu++98.
 extern "C" void dc_blit_rows(void *dst, const void *src, int bytes, int rows,
@@ -705,6 +706,7 @@ static void update_screen(SDL_Rect &source, SDL_Rect &destination, bool hi_rez)
 	// Is the world ever actually blitted to the screen, and where to?
 	if (!dc_traced_update) {
 		dc_traced_update = 1;
+		dc_list_ram();		// what is in /ram, and how big; see dc_vmu.c
 		dc_trace(5, "update dst %d,%d %dx%d hi_rez=%d wp=%p main=%p",
 		         destination.x, destination.y, destination.w, destination.h,
 		         (int)hi_rez, world_pixels ? world_pixels->pixels : 0,
