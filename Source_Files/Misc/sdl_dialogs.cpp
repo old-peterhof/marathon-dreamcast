@@ -1028,7 +1028,13 @@ int dialog::run(bool intro_exit_sounds)
 	draw();
 
 	// Show cursor
+#ifdef DC
+	// Kept hidden on Dreamcast; see show_cursor() in mouse_sdl.cpp. The software
+	// cursor leaves trails because it never restores the background.
+	bool cursor_was_visible = SDL_ShowCursor(SDL_QUERY) == SDL_ENABLE;
+#else
 	bool cursor_was_visible = SDL_ShowCursor(true);
+#endif
 
 	// Welcome sound
 	if (intro_exit_sounds)

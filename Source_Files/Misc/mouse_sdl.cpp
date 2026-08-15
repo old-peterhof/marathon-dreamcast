@@ -148,7 +148,15 @@ void hide_cursor(void)
 
 void show_cursor(void)
 {
+#ifdef DC
+	// SDL's software cursor smears on Dreamcast: it blits itself but never
+	// restores what was underneath, so every mouse movement leaves a trail of
+	// arrows across the menu. Nothing here needs a pointer anyway -- the menu
+	// is driven with UP/DOWN/RETURN -- so the cursor stays hidden.
+	SDL_ShowCursor(0);
+#else
 	SDL_ShowCursor(1);
+#endif
 }
 
 

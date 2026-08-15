@@ -306,3 +306,16 @@ fail, which is why the menu looked fine while the game was black.
 - [ ] **E. Gameplay** — renders and runs. Not yet checked: framerate, sound
       beyond "it plays", whether the level is completable, whether saving works
       given the ramdisk is wiped at power-off.
+
+### 01:11 — Cursor trails fixed (item C)
+
+`show_cursor()` in `mouse_sdl.cpp` is the single place the pointer is made
+visible, plus one direct `SDL_ShowCursor(true)` in `sdl_dialogs.cpp`. Both are
+now no-ops under `-DDC`, so the cursor never appears. SDL's software cursor on
+this driver blits itself without restoring the background, which is why every
+mouse movement smeared arrows across the menu.
+
+Nothing needs a pointer here: the menu is driven with UP/DOWN/RETURN.
+
+Verified with a menu-only image (`alephone-menu.cdi`, built without the AUTOSTART
+marker so it stays on the menu). Clean title screen, no smearing.
