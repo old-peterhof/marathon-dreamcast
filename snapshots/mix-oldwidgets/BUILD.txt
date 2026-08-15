@@ -1,0 +1,5 @@
+saved   : 2026-08-14 21:34:45
+commit  : 86b9ad7 Add build snapshots so a working build can be recovered
+dirty   : 3 files uncommitted
+start   : main menu
+3D view : real renderer

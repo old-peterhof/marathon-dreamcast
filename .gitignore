@@ -11,3 +11,4 @@ disc/AlephOne/Shapes
 disc/AlephOne/Sounds
 romdisk.img
 snapshots/*/alephone*.elf
+.DS_Store
