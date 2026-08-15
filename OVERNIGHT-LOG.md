@@ -654,3 +654,27 @@ full clean rebuild: 30.3 fps, rendering, playing.
 
 This also means the framerate question stays open. The software renderer is what
 we have, and whether it holds up on real 200MHz hardware is still unmeasured.
+
+### 02:45 — README rewritten; session complete
+
+`README.DC.md` rewritten rather than patched — it had accumulated enough that
+editing it would have left contradictions. It now covers the controller scheme
+and analog aim, the sensitivity sliders and why they cap at 100%, VMU
+preference saves, the four disc markers, both tools, and every fix from the
+`typename` through MacBinary I and the silent `SDL_BlitSurface`.
+
+Removed as no longer true: "keyboard required", "saves do not survive a power
+cycle", and the framerate claim.
+
+Added a "Working on this code" section for the two traps that cost the most time
+tonight: ugrep silently skipping 61 non-UTF-8 source files, and Flycast
+rewriting `emu.cfg` on quit.
+
+The Known Gaps section is deliberately blunt. Nothing has run on real hardware,
+the framerate there is unmeasured, the GL path is a renderer rewrite, the
+controller mapping has not met a real pad, and setting-level persistence is
+assumed rather than observed.
+
+**Stopping here.** Everything that can be done without hardware or a human is
+done. What remains needs a console, a controller, or someone to move a slider
+and reboot.
