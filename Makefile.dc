@@ -222,9 +222,13 @@ $(TARGET): $(OBJS)
 one:
 	kos-c++ $(KOS_CFLAGS) $(KOS_CPPFLAGS) -c $(FILE) -o /dev/null
 
+# Strips a COPY. The previous version ran $(KOS_STRIP) on $(TARGET) itself,
+# destroying the symbols in the very binary needed for diagnosis -- and it does
+# so silently, since the build still succeeds.
 $(TARGET_BIN): $(TARGET)
-	$(KOS_STRIP) $(TARGET)
-	kos-objcopy -O binary -R .stack $(TARGET) $(TARGET_BIN).unscrambled
+	cp $(TARGET) $(TARGET).stripped
+	$(KOS_STRIP) $(TARGET).stripped
+	kos-objcopy -O binary -R .stack $(TARGET).stripped $(TARGET_BIN).unscrambled
 	scramble $(TARGET_BIN).unscrambled $(TARGET_BIN)
 
 bin: $(TARGET_BIN)
@@ -248,12 +252,18 @@ MKDCDISC   = /opt/toolchains/dc/mkdcdisc/build/mkdcdisc
 DISC_DIR   = disc/AlephOne
 DISC_META  = -n "Aleph One" -a "Aleph One" -V "ALEPHONE"
 
-# Padding is REQUIRED, not an optimisation. mkdcdisc describes -N as disabling
-# a loading-speed optimisation, and on that basis it was used to shrink images
-# from 706MB to 20MB -- but an unpadded image does not boot on real hardware at
-# all. Every image that has ever booted on the Dreamcast was padded; both
-# unpadded ones failed to load. Flycast is happy either way, which is exactly
-# how this went unnoticed.
+# Padding is REQUIRED. SETTLED -- do not try -N again for hardware.
+#
+# mkdcdisc documents -N as disabling a loading-speed optimisation, which reads
+# as though it were optional. It is not: an unpadded image stops at the licence
+# screen and never reaches the executable.
+#
+# Tested three times. The first two were during a window when the SD card's
+# GDMENU was corrupt and nothing booted, so they proved nothing; the third was
+# on a verified-healthy card and failed the same way. 706MB per image is the
+# cost of booting on real hardware.
+#
+# Flycast boots either, which is why this is invisible in emulation.
 cdi: $(TARGET)
 	$(MKDCDISC) -e $(TARGET) -d $(DISC_DIR) -o alephone.cdi $(DISC_META)
 
