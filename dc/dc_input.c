@@ -69,6 +69,10 @@ extern void dc_trace(int slot, const char *fmt, ...);
 #define DCK_STICK_RIGHT	(1 << 25)
 #define DCK_STICK_UP	(1 << 26)
 #define DCK_STICK_DOWN	(1 << 27)
+/* Triggers drive fire on the analog path in game; in menus they are digital and
+   send TAB, which is the only way out of a focused list widget. */
+#define DCK_LTRIG	(1 << 28)
+#define DCK_RTRIG	(1 << 29)
 
 struct dc_binding {
 	int mask;
@@ -106,6 +110,12 @@ static const struct dc_binding menu_bindings[] = {
 	{ DCK_STICK_RIGHT,  SDLK_RIGHT },
 	{ CONT_A,           SDLK_RETURN },
 	{ CONT_START,       SDLK_ESCAPE },
+	/* w_list_base::event swallows UP and DOWN on purpose -- "Prevent selection
+	   of previous/next widget" -- so once a list has focus the D-pad can never
+	   leave it, which stranded the save dialog with no way to reach "new save
+	   game". TAB is how a keyboard escapes a list, so the triggers do that. */
+	{ DCK_LTRIG,        SDLK_TAB },
+	{ DCK_RTRIG,        SDLK_TAB },
 };
 
 #define NUM_GAME_BINDINGS (sizeof(game_bindings) / sizeof(game_bindings[0]))
@@ -276,6 +286,8 @@ void dc_input_poll(void)
 	if (analog_y > -STICK_DEADZONE && analog_y < STICK_DEADZONE) analog_y = 0;
 
 	if (!in_game) {
+		if (trig_l > TRIGGER_ON) current |= DCK_LTRIG;
+		if (trig_r > TRIGGER_ON) current |= DCK_RTRIG;
 		if (analog_x < 0) current |= DCK_STICK_LEFT;
 		if (analog_x > 0) current |= DCK_STICK_RIGHT;
 		if (analog_y < 0) current |= DCK_STICK_UP;

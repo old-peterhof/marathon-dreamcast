@@ -36,3 +36,4 @@ to the engine clamp, and the VMU Profiler. Git history has the detail.
 | b22 | rumble-shelved | 32498df | restore INIT_PURUPURU (exonerated by b21); rumble-pack boot hang traced to KOS's unbounded maple_wait_scan and shelved |
 | b23 | flat-saves | f066cd0 | saved games and recordings live directly in /ram since the ramdisk has no subdirectories; guard the empty file list and hide preferences from save listings |
 | b24 | sq-blit | ee4f34a | framebuffer blit uses sh4zam's store-queue memcpy; measure against b23 with the profile image |
+| b25 | save-fix | 7213b93 | saving failed with error -22 because the ramdisk has no rename(); Exchange now copies and deletes. Triggers send TAB in menus so the D-pad can escape a focused list |

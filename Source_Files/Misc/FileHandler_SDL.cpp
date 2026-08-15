@@ -519,6 +519,52 @@ bool FileSpecifier::GetFreeSpace(unsigned long &FreeSpace)
 }
 
 // Exchange two files
+#ifdef DC
+// KOS's ramdisk does not implement rename(): it returns EINVAL, which is errno
+// 22 and surfaced as "file system error ... error -22" the moment a save was
+// written. Saving goes through game_wad.cpp's TempFile.Exchange(File), so every
+// save failed at the last step, after the data had already been written.
+//
+// Copy the contents across and delete the temporary instead. Exchange nominally
+// swaps two files, but its only caller uses it to move a freshly written temp
+// into place, so a move is what it needs to do.
+bool FileSpecifier::Exchange(FileSpecifier &other)
+{
+	FILE *in, *out;
+	char buf[4096];
+	size_t n;
+
+	err = 0;
+
+	in = fopen(GetPath(), "rb");
+	if (!in) {
+		err = errno;
+		return false;
+	}
+
+	out = fopen(other.GetPath(), "wb");
+	if (!out) {
+		err = errno;
+		fclose(in);
+		return false;
+	}
+
+	while ((n = fread(buf, 1, sizeof buf, in)) > 0) {
+		if (fwrite(buf, 1, n, out) != n) {
+			err = errno;
+			break;
+		}
+	}
+
+	fclose(in);
+	fclose(out);
+
+	if (err == 0)
+		remove(GetPath());
+
+	return err == 0;
+}
+#else
 bool FileSpecifier::Exchange(FileSpecifier &other)
 {
 	// Create temporary name (this is cheap, we should make sure that the
@@ -536,6 +582,7 @@ bool FileSpecifier::Exchange(FileSpecifier &other)
 		err = errno;
 	return err == 0;
 }
+#endif
 
 // Delete file
 bool FileSpecifier::Delete()
