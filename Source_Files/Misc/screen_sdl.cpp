@@ -22,6 +22,10 @@
 #  include <OpenGL/gl.h>
 # else
 #  include <GL/gl.h>
+
+#ifdef DC
+#include "dc_gl_compat.h"
+#endif
 # endif
 #endif
 

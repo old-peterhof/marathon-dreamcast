@@ -1,5 +1,5 @@
 Source_Files/ModelView/WavefrontLoader.o: \
- Source_Files/ModelView/WavefrontLoader.cpp \
+ Source_Files/ModelView/WavefrontLoader.cpp dc/dc_gl_compat.h \
  Source_Files/CSeries/cseries.h Source_Files/CSeries/sdl_cseries.h \
  /opt/toolchains/dc/kos/../kos-ports/include/SDL/SDL.h \
  /opt/toolchains/dc/kos/../kos-ports/include/SDL/SDL_main.h \
@@ -36,6 +36,7 @@ Source_Files/ModelView/WavefrontLoader.o: \
  Source_Files/ModelView/WavefrontLoader.h \
  Source_Files/ModelView/Model3D.h Source_Files/Misc/FileHandler.h \
  Source_Files/Misc/tags.h Source_Files/CSeries/cstypes.h
+dc/dc_gl_compat.h:
 Source_Files/CSeries/cseries.h:
 Source_Files/CSeries/sdl_cseries.h:
 /opt/toolchains/dc/kos/../kos-ports/include/SDL/SDL.h:

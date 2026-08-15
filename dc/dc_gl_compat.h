@@ -74,6 +74,10 @@
 #define GL_OR				0x1507
 #endif
 
+#ifndef GL_XOR
+#define GL_XOR				0x1506
+#endif
+
 #ifndef GL_COMPILE
 #define GL_COMPILE			0x1300
 #endif
@@ -82,6 +86,17 @@
 extern "C" {
 #endif
 void dc_trace(int slot, const char *fmt, ...);
+
+/* dc/dc_glu.c -- GLdc ships a glu.h without this, and TextureManager::Shrink
+   needs it to bring oversized textures down to what the hardware accepts. */
+int gluScaleImage(GLenum format,
+                  GLsizei widthin, GLsizei heightin, GLenum typein,
+                  const void *datain,
+                  GLsizei widthout, GLsizei heightout, GLenum typeout,
+                  void *dataout);
+int gluBuild2DMipmaps(GLenum target, GLint internalFormat,
+                      GLsizei width, GLsizei height,
+                      GLenum format, GLenum type, const void *data);
 #ifdef __cplusplus
 }
 #endif
@@ -161,6 +176,26 @@ static inline void glLogicOp(GLenum opcode)
 static inline void glPolygonStipple(const GLubyte *mask)
 {
 	(void)mask;		/* costs the static/interference effect, nothing else */
+}
+
+/* ---- 3b. attribute stack ---------------------------------------------
+ *
+ *	GLdc keeps no attribute stack. The callers here (FontSpecifier::OGL_Render)
+ *	set every piece of state they depend on immediately after pushing, so the
+ *	push is redundant; the pop is not, and dropping it leaves texturing, blend
+ *	and cull state as the text renderer left them. Every drawing path in
+ *	OGL_Render.cpp sets those explicitly before it draws, so nothing downstream
+ *	reads them stale -- but it is a real difference from desktop GL and worth
+ *	suspecting if something is textured or blended when it should not be.
+ */
+
+static inline void glPushAttrib(GLbitfield mask)
+{
+	(void)mask;
+}
+
+static inline void glPopAttrib(void)
+{
 }
 
 /* ---- 4. clip planes: model path only, see the note above --------------- */

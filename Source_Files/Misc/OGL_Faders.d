@@ -1,4 +1,4 @@
-Source_Files/ModelView/Model3D.o: Source_Files/ModelView/Model3D.cpp \
+Source_Files/Misc/OGL_Faders.o: Source_Files/Misc/OGL_Faders.cpp \
  dc/dc_gl_compat.h Source_Files/CSeries/cseries.h \
  Source_Files/CSeries/sdl_cseries.h \
  /opt/toolchains/dc/kos/../kos-ports/include/SDL/SDL.h \
@@ -33,7 +33,16 @@ Source_Files/ModelView/Model3D.o: Source_Files/ModelView/Model3D.cpp \
  Source_Files/CSeries/cscluts.h Source_Files/CSeries/csstrings.h \
  Source_Files/CSeries/csfonts.h Source_Files/CSeries/cspixels.h \
  Source_Files/CSeries/csalerts.h Source_Files/CSeries/csmisc.h \
- Source_Files/ModelView/Model3D.h
+ Source_Files/Misc/fades.h Source_Files/Misc/XML_ElementParser.h \
+ Source_Files/Misc/Random.h Source_Files/Misc/render.h \
+ Source_Files/Misc/world.h Source_Files/Misc/textures.h \
+ Source_Files/Misc/ViewControl.h Source_Files/Misc/FontHandler.h \
+ Source_Files/Misc/sdl_fonts.h Source_Files/Misc/FileHandler.h \
+ Source_Files/Misc/tags.h Source_Files/CSeries/cstypes.h \
+ Source_Files/Misc/shape_descriptors.h \
+ Source_Files/Misc/scottish_textures.h Source_Files/Misc/OGL_Render.h \
+ Source_Files/Misc/OGL_Setup.h Source_Files/Misc/ImageLoader.h \
+ Source_Files/ModelView/Model3D.h Source_Files/Misc/OGL_Faders.h
 dc/dc_gl_compat.h:
 Source_Files/CSeries/cseries.h:
 Source_Files/CSeries/sdl_cseries.h:
@@ -73,4 +82,22 @@ Source_Files/CSeries/csfonts.h:
 Source_Files/CSeries/cspixels.h:
 Source_Files/CSeries/csalerts.h:
 Source_Files/CSeries/csmisc.h:
+Source_Files/Misc/fades.h:
+Source_Files/Misc/XML_ElementParser.h:
+Source_Files/Misc/Random.h:
+Source_Files/Misc/render.h:
+Source_Files/Misc/world.h:
+Source_Files/Misc/textures.h:
+Source_Files/Misc/ViewControl.h:
+Source_Files/Misc/FontHandler.h:
+Source_Files/Misc/sdl_fonts.h:
+Source_Files/Misc/FileHandler.h:
+Source_Files/Misc/tags.h:
+Source_Files/CSeries/cstypes.h:
+Source_Files/Misc/shape_descriptors.h:
+Source_Files/Misc/scottish_textures.h:
+Source_Files/Misc/OGL_Render.h:
+Source_Files/Misc/OGL_Setup.h:
+Source_Files/Misc/ImageLoader.h:
 Source_Files/ModelView/Model3D.h:
+Source_Files/Misc/OGL_Faders.h:

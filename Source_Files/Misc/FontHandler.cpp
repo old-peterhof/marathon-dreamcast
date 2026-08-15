@@ -28,6 +28,10 @@ Jan 12, 2001 (Loren Petrich):
 #  include <OpenGL/gl.h>
 # else
 #  include <GL/gl.h>
+
+#ifdef DC
+#include "dc_gl_compat.h"
+#endif
 # endif
 #endif
 
@@ -230,7 +234,9 @@ void FontSpecifier::OGL_Reset(bool IsStarting)
 	if (!IsStarting && !OGL_Texture)
 	{
 		glDeleteTextures(1,&TxtrID);
+#ifndef DC
 		glDeleteLists(DispList,256);
+#endif
 	}
 
 	// Invalidates whatever texture had been present
@@ -403,8 +409,23 @@ void FontSpecifier::OGL_Reset(bool IsStarting)
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_LUMINANCE_ALPHA, TxtrWidth, TxtrHeight,
 		0, GL_LUMINANCE_ALPHA, GL_UNSIGNED_BYTE, OGL_Texture);
  	
+#ifdef DC
+	// GLdc has no display lists. Each glyph's list did exactly two things --
+	// draw a textured quad, then advance the matrix by its width -- so the
+	// numbers are kept and OGL_Render() does the drawing directly. Same output,
+	// no list machinery, and no per-character list dispatch on a 200MHz part.
+	DCAscent = ascent_p;
+	DCDescent = descent_p;
+	DCPad = Pad;
+	for (int z = 0; z < 256; z++) {
+		DCGlyphs[z].l = DCGlyphs[z].r = 0;
+		DCGlyphs[z].t = DCGlyphs[z].b = 0;
+		DCGlyphs[z].w = 0;
+	}
+#else
  	// Allocate and create display lists of rendering commands
  	DispList = glGenLists(256);
+#endif
  	GLfloat TWidNorm = GLfloat(1)/TxtrWidth;
  	GLfloat THtNorm = GLfloat(1)/TxtrHeight;
  	for (int k=0; k<=LastLine; k++)
@@ -420,6 +441,15 @@ void FontSpecifier::OGL_Reset(bool IsStarting)
  			GLfloat Left = TWidNorm*Pos;
  			GLfloat Right = TWidNorm*NewPos;
  			
+#ifdef DC
+			if (Which >= 0 && Which < 256) {
+				DCGlyphs[Which].l = Left;
+				DCGlyphs[Which].r = Right;
+				DCGlyphs[Which].t = Top;
+				DCGlyphs[Which].b = Bottom;
+				DCGlyphs[Which].w = Width;
+			}
+#else
  			glNewList(DispList + Which, GL_COMPILE);
  			
  			// Draw the glyph rectangle
@@ -443,6 +473,7 @@ void FontSpecifier::OGL_Reset(bool IsStarting)
 			glTranslatef(Width-2*Pad,0,0);
 			
  			glEndList();
+#endif
  			
  			// For next one
  			Pos = NewPos;
@@ -474,7 +505,21 @@ void FontSpecifier::OGL_Render(const char *Text)
 	for (int k=0; k<Len; k++)
 	{
 		unsigned char c = Text[k];
+#ifdef DC
+		// Same quad the display list used to hold, drawn straight.
+		const DCGlyph &G = DCGlyphs[c];
+
+		glBegin(GL_POLYGON);
+		glTexCoord2f(G.l, G.t);  glVertex2f(0,   -DCAscent);
+		glTexCoord2f(G.r, G.t);  glVertex2f(G.w, -DCAscent);
+		glTexCoord2f(G.r, G.b);  glVertex2f(G.w,  DCDescent);
+		glTexCoord2f(G.l, G.b);  glVertex2f(0,    DCDescent);
+		glEnd();
+
+		glTranslatef(G.w - 2*DCPad, 0, 0);
+#else
 		glCallList(DispList+c);
+#endif
 	}
 	
 	glPopAttrib();

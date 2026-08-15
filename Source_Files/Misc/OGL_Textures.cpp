@@ -1248,11 +1248,14 @@ void LoadModelSkin(ImageDescriptor& Image, short Collection, short CLUT)
 	{
 		for (int k=0; k<ImageSize; k++)
 		{
-			uint32& IntPxl = Buffer[k];
+			// uint32 is unsigned long here and GLuint is unsigned int, so a
+			// uint32& will not bind to Buffer[k] even though they are the same
+			// width. Copy through a value instead of aliasing.
+			uint32 IntPxl = Buffer[k];
 			GLfloat FloatPxl[4];
 			MakeFloatColor(IntPxl,FloatPxl);
 			FindInfravisionVersion(Collection,FloatPxl);
-			IntPxl = MakeIntColor(FloatPxl);
+			Buffer[k] = MakeIntColor(FloatPxl);
 		}
 	}
 	
