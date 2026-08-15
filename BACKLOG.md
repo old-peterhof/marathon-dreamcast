@@ -25,6 +25,41 @@ Notes for whoever picks it up:
 - The natural hook points are the same places the game already makes noise:
   weapon fire in `weapons.cpp` and damage in `player.cpp`.
 
+## Controller-native UI
+
+Rebuild the dialogs, save/load windows, preference screens and the main menu to
+be designed for a controller, while still looking like Marathon. The present UI
+is a mouse interface with keyboard navigation bolted on, and every controller
+problem so far has been a symptom of that rather than a bug in the pad code.
+
+What is already known, so this does not start from scratch:
+
+- **The main menu is a 2D layout driven by a 1D list.** `shell_sdl.cpp` carries
+  a hardcoded `menus[]` array (BERO's) in a fixed order, and UP/DOWN walk that
+  array. It does not follow what the eye sees: the screen has two columns, so
+  "down" sometimes jumps across the screen. A controller wants the traversal to
+  match the layout.
+- **Lists trap focus.** `w_list_base::event` swallows UP and DOWN by design --
+  "Prevent selection of previous/next widget" -- so a focused list cannot be
+  left with a D-pad. We work around it by sending TAB from the triggers, which
+  works but is not discoverable: nothing on screen says so.
+- **Dialog navigation is inconsistent.** In `dialog::event`, UP *and* LEFT both
+  mean "previous widget" while DOWN and RIGHT mean "next", except when the
+  focused widget consumes them first -- `w_slider` eats LEFT/RIGHT to adjust,
+  `w_list` eats UP/DOWN to scroll. So which key does what depends on what is
+  selected, which is fine with a mouse and confusing with a pad.
+- **There is no consistent focus indicator.** The main menu highlights the
+  selected button (BERO added that), but dialog widgets rely on subtler cues
+  that were designed to be clicked rather than cursored to.
+- **The look is data-driven, which helps.** Themes live in
+  `disc-AlephOne/Themes/Default` as MML plus bitmaps, so a lot of restyling is
+  data rather than code. `sdl_dialogs.cpp` and `sdl_widgets.cpp` hold the
+  layout and behaviour.
+
+Worth deciding early whether this is a reskin of the existing widget set or a
+parallel controller-first set of screens that reuses the theme art. The second
+is more work but avoids fighting a widget system built around a pointer.
+
 ## PowerVR / hardware-accelerated renderer
 
 Would buy real frames — hardware runs about 20fps software-rendered. Blocked on
