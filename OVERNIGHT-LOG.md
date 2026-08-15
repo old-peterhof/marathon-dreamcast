@@ -569,3 +569,43 @@ still traces normally. `cdi` and `gdi` strip all three.
 
 Incidental data point on Flycast: one of those two boots needed **8 retries**
 before it got past the VMEM assertion. `tools/run-flycast.sh` is doing real work.
+
+### 02:30 — VMU preference saves working
+
+Preferences now survive a power cycle. `dc/dc_vmu.c` mirrors the one preferences
+file to a memory card either side of the game touching it: the VMU copy is
+restored into the ramdisk before preferences are read, and written back after
+they are saved. Aleph One itself is unchanged apart from two calls in
+`wad_prefs.cpp` — it still only ever reads and writes `/ram`.
+
+Hooked in `wad_prefs.cpp` rather than at startup because that is the one place
+the exact ramdisk path is known (`prefInfo->PrefsFile.GetPath()`), and the save
+goes at the end of `w_write_preferences_file` rather than in an atexit handler,
+since a console is switched off rather than quit.
+
+Verified across two boots:
+
+    boot 1: vmu: no saved prefs on /vmu/a1
+            vmu: saved 512 bytes to /vmu/a1
+            vmu: saved 2560 bytes to /vmu/a1
+    boot 2: vmu: loaded 3072 bytes from /vmu/a1
+            vmu: saved 2560 bytes to /vmu/a1
+
+That the second boot then parsed the file without `errUnknownWadVersion` also
+settles a question the docs left open: KOS strips the `vmu_pkg` header on read,
+because otherwise the wad header would sit at offset 512 and be rejected exactly
+the way the MacBinary Map was.
+
+Only preferences are mirrored. Saved games are far too large for a VMU's 128K.
+
+**Not yet verified:** that a *changed* setting survives, e.g. moving the Turn
+Sensitivity slider and finding it still moved after a reboot. The file round
+trips and parses, but confirming the content persists needs input into the
+dialog, which is the thing that stopped working. The honest status is
+"file-level round trip proven, setting-level persistence assumed".
+
+Two smaller notes. Reading back 3072 bytes for a 2560-byte write is block
+padding, harmless because wad offsets are absolute. And a diagnostic gap of my
+own: the first version returned silently when no card was present, so the first
+test produced no output at all and looked like a failure — it was simply that a
+Dreamcast *keyboard* on port A has no VMU slots. Absence is now traced.

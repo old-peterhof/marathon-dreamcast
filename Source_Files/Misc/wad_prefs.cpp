@@ -26,6 +26,13 @@ Aug 12, 2000 (Loren Petrich):
 
 #include "wad_prefs.h"
 
+#ifdef DC
+extern "C" {
+void dc_vmu_load_prefs(const char *ram_path);
+void dc_vmu_save_prefs(const char *ram_path);
+}
+#endif
+
 #ifdef env68k
 	#pragma segment file_io
 #endif
@@ -70,6 +77,13 @@ bool w_open_preferences_file(
 #elif defined(SDL)
 		prefInfo->PrefsFile.SetToPreferencesDir();
 		prefInfo->PrefsFile += PrefName;
+#endif
+
+#ifdef DC
+		// local_data_dir is the ramdisk, which is empty at every boot. If a
+		// memory card holds a saved copy, restore it before the file is read,
+		// so preferences survive a power cycle.
+		dc_vmu_load_prefs(prefInfo->PrefsFile.GetPath());
 #endif
 
 		/* does the preferences file exist? */
@@ -263,7 +277,14 @@ void w_write_preferences_file(
 		}
 		close_wad_file(PrefsFile);
 	} 
-	
+
+#ifdef DC
+	// Mirror the freshly written file out to a memory card. Done here rather
+	// than at exit, because a console is switched off rather than quit, so an
+	// atexit hook would rarely run.
+	dc_vmu_save_prefs(prefInfo->PrefsFile.GetPath());
+#endif
+
 	return;
 }
 
