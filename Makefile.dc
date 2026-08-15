@@ -154,18 +154,22 @@ Source_Files/Misc/weapons.o: CXXFLAGS += -O1
 
 MKDCDISC = /opt/toolchains/dc/mkdcdisc/build/mkdcdisc
 DISC     = disc
-M2DATA   = data/AlephOne-m2-demo.tar.gz
-DISCNAME = Aleph One
-DISCAUTH = BERO / Bungie
+GAMEDATA = data/game
+DISCNAME = Marathon 2
+DISCAUTH = Bungie / BERO
 
-$(M2DATA):
+$(GAMEDATA)/Map:
 	./tools/fetch-data.sh
 
-$(DISC)/.stamp: $(M2DATA)
+# disc/AlephOne is the tree the game reads as /cd/AlephOne. Two sources: the
+# MML, Fonts and Themes from BERO's port (the SDL interface needs them), and the
+# four retail data files fetched by tools/fetch-data.sh.
+$(DISC)/.stamp: $(GAMEDATA)/Map
 	rm -rf $(DISC)
 	mkdir -p $(DISC)/AlephOne
 	cp -R disc-AlephOne/. $(DISC)/AlephOne/
-	tar xzf $(M2DATA) -C $(DISC)/AlephOne
+	cp $(GAMEDATA)/Map $(GAMEDATA)/Shapes $(GAMEDATA)/Sounds $(GAMEDATA)/Images \
+		$(DISC)/AlephOne/
 	touch $@
 
 disc: $(DISC)/.stamp

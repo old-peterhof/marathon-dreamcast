@@ -13,10 +13,30 @@ You need KallistiOS at `/opt/toolchains/dc/kos`, with `kos-ports` providing SDL
 1.2 and libGL, and `mkdcdisc`.
 
 ```sh
-./tools/fetch-data.sh     # Marathon 2 demo data (once)
+./tools/fetch-data.sh     # full Marathon 2 retail data (once, ~29MB download)
 ./build.sh -j8            # -> alephone.elf
 ./build.sh flycast        # build a test image and run it
 ```
+
+### Game data
+
+Aleph One ships no game data. `tools/fetch-data.sh` pulls the full retail
+Marathon 2 from Aleph One's GitHub releases — Bungie made the trilogy freely
+available in 2005 and granted the project a distribution license in 2021. Free
+for noncommercial use; Bungie keeps the copyright.
+
+The modern package names its files `Map.sceA`, `Shapes.shpA`, `Sounds.sndA` and
+`Images.imgA`. Aleph One 0.12.0 predates those extensions and wants bare names,
+so the script renames them. The contents are the original Bungie files, so the
+formats match. `Plugins/`, `Scripts/` and `Physics Models/` are deliberately
+skipped: they target Aleph One 1.x and an MML dialect 0.12.0 cannot parse.
+
+|          | demo    | retail    |
+|----------|---------|-----------|
+| `Map`    | 2.4 MB  | 20.5 MB   |
+| `Shapes` | 5.3 MB  | 10.0 MB   |
+| `Sounds` | 3.75 MB | 14.2 MB   |
+| `Images` | 3.5 MB  | 4.1 MB    |
 
 Always go through `build.sh`; it sources `environ.sh`, which is where `KOS_BASE`,
 `KOS_PORTS`, `KOS_CFLAGS`, `KOS_LDFLAGS` and `KOS_LIBS` come from. Calling `make
@@ -135,11 +155,30 @@ constant. Stock KOS is fine.
 - `-fpermissive` and `-fno-strict-aliasing` are load-bearing. The renderer
   type-puns freely and the 2002 code leans on conversions the modern front end
   rejects.
+- **Retail data on 16 MB of RAM is unproven.** `Sounds` alone is 14.2 MB and
+  `Map` is 20.5 MB, against a 16 MB console. Aleph One streams both from disc
+  rather than loading them whole, so it should hold, but memory pressure is the
+  first thing to suspect if a level fails to load where the demo worked.
+
+## Flycast
+
+Flycast's address-space init is flaky on macOS: roughly half of all launches
+die with
+
+```
+Verify Failed : &mem_b[0] == ((u8*)getContext()->sq_buffer + sizeof(Sh4Context) + 0x0C000000)
+ in Init -> core/hw/sh4/dyna/driver.cpp : 349
+```
+
+and exit 6. It depends on where ASLR puts things, not on the disc image, and
+`Dynarec.Enabled = no` does not help — the check runs before dynarec matters.
+Just launch again. Use `open -a Flycast --args <disc>` rather than exec'ing the
+binary.
 
 ## Provenance
 
 - Aleph One 0.12.0 — `downloads.sourceforge.net/marathon/AlephOne-0.12.0.tar.gz`
 - DC port — BERO, 2002, `AlephOne-0.12.0-dc-1`, GPL-2.0
-- Marathon 2 demo data — `downloads.sourceforge.net/marathon/AlephOne-m2-demo.tar.gz`
+- Marathon 2 retail data — Aleph One release `release-20250829`, `Marathon2-20250829-Data.zip`
 
 Marathon is © Bungie. Aleph One is GPL-2.0; see `COPYING`.
