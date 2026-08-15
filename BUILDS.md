@@ -37,3 +37,5 @@ to the engine clamp, and the VMU Profiler. Git history has the detail.
 | b23 | flat-saves | f066cd0 | saved games and recordings live directly in /ram since the ramdisk has no subdirectories; guard the empty file list and hide preferences from save listings |
 | b24 | sq-blit | ee4f34a | framebuffer blit uses sh4zam's store-queue memcpy; measure against b23 with the profile image |
 | b25 | save-fix | 7213b93 | saving failed with error -22 because the ramdisk has no rename(); Exchange now copies and deletes. Triggers send TAB in menus so the D-pad can escape a focused list |
+| b26 | vmu-saves | e529f9c | Saved games mirrored to the VMU so they survive a power cycle |
+| b27 | vmu-saves-zlib | e529f9c | Deflate saved games so they fit on a VMU |

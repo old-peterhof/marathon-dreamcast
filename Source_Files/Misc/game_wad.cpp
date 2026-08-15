@@ -100,6 +100,10 @@ Nov 26, 2000 (Loren Petrich):
 // For packing and unpacking some of the stuff
 #include "Packing.h"
 
+#ifdef DC
+extern "C" void dc_vmu_save_game(const char *ram_path);
+#endif
+
 // LP addition: for physics-model stuff, we need these pointers to definitions
 /* sadly extern'ed from their respective files */
 // LP: no need to do this anymore
@@ -1109,7 +1113,7 @@ bool load_game_from_file(FileSpecifier& File)
 		}
 		else
 		{
-			/* Tell the user theyÕre screwed when they try to leave this level. */
+			/* Tell the user theyï¿½re screwed when they try to leave this level. */
 			alert_user(infoError, strERRORS, cantFindMap, 0);
 
 			// LP addition: makes the game look normal
@@ -1285,6 +1289,15 @@ bool save_game_file(FileSpecifier& File)
 		success= false;
 	}
 	
+#ifdef DC
+	// The save landed on the ramdisk, which the console wipes at power-off.
+	// Copy it to a memory card so it is still there next time. Declining is not
+	// an error the player needs an alert about -- the game is saved either way,
+	// it simply may not outlive the power switch. See dc/dc_vmu.c.
+	if (success)
+		dc_vmu_save_game(File.GetPath());
+#endif
+	
 	return success;
 }
 
@@ -1415,7 +1428,7 @@ bool process_map_wad(
 			load_lights(data, count, version);
 		}
 
-		//	HACK!!!!!!!!!!!!!!! vulcan doesnÕt NONE .first_object field after adding scenery
+		//	HACK!!!!!!!!!!!!!!! vulcan doesnï¿½t NONE .first_object field after adding scenery
 		{
 			for (count= 0; count<dynamic_world->polygon_count; ++count)
 			{

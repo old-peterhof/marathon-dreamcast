@@ -45,7 +45,7 @@ SDL_INCS = -I$(KOS_PORTS)/include/SDL
 # glKosSwapBuffers and ~48 core gl* entry points), so -lGL is required even
 # though Aleph One itself is built without HAVE_OPENGL and uses the software
 # renderer. Verified with nm: our own OGL_*.o reference zero gl symbols.
-SDL_LIBS = -lSDL -lGL
+SDL_LIBS = -lSDL -lGL -lz
 
 INCS    = $(SDL_INCS) -Idc/vendor -I$(CS) -I$(EP) -I$(MI) -I$(NW) -I$(PF) -I$(MV)
 DEFINES = -DSDL -DHAVE_UNISTD_H -DPACKAGE='"AlephOne"' -DVERSION='"0.12.0"' -DDC
@@ -229,6 +229,14 @@ MKDCDISC = /opt/toolchains/dc/mkdcdisc/build/mkdcdisc
 DISC     = disc
 GAMEDATA = data/game
 DISCNAME = Marathon 2
+
+# Fixed disc serial. mkdcdisc otherwise derives one from a hash of the boot
+# binary, so every build gets a different serial -- and Flycast keys its
+# emulated VMU on that, handing each build a blank memory card. Saved games and
+# preferences then never survive from one build to the next, which looks exactly
+# like the VMU code being broken. Pinning it means all builds share one card,
+# the way one console and one physical VMU do.
+DISCSERIAL = MARATHON2
 DISCAUTH = Bungie / BERO
 
 $(GAMEDATA)/Map:
@@ -257,14 +265,25 @@ test: $(TARGET) $(DISC)/.stamp
 	echo pad  > $(DISC)/AlephOne/PADTEST
 	echo on   > $(DISC)/AlephOne/DEBUG
 	$(MKDCDISC) -e $(TARGET) -d $(DISC)/AlephOne -o alephone-$(BUILD_TAG)-test.cdi \
-		-n "$(DISCNAME) $(BUILD_TAG)" -a "$(DISCAUTH)" -N
+		-s $(DISCSERIAL) -n "$(DISCNAME) $(BUILD_TAG)" -a "$(DISCAUTH)" -N
+
+# Hands-on image for Flycast: starts a level by itself and keeps tracing, but
+# leaves PADTEST off so a real controller drives the game rather than fighting
+# the synthetic stick. This is the one to use when a human is testing with a pad
+# plugged in -- `test` is for unattended runs.
+play: $(TARGET) $(DISC)/.stamp
+	rm -f $(DISC)/AlephOne/AUTOSTART $(DISC)/AlephOne/PADTEST $(DISC)/AlephOne/DEBUG $(DISC)/AlephOne/PROFILE
+	echo auto > $(DISC)/AlephOne/AUTOSTART
+	echo on   > $(DISC)/AlephOne/DEBUG
+	$(MKDCDISC) -e $(TARGET) -d $(DISC)/AlephOne -o alephone-$(BUILD_TAG)-play.cdi \
+		-s $(DISCSERIAL) -n "$(DISCNAME) $(BUILD_TAG)" -a "$(DISCAUTH)" -N
 
 # Hardware image: padded. Larger, but this is the one that actually boots on a
 # console or from GDEMU.
 cdi: $(TARGET) $(DISC)/.stamp
 	rm -f $(DISC)/AlephOne/AUTOSTART $(DISC)/AlephOne/PADTEST $(DISC)/AlephOne/DEBUG $(DISC)/AlephOne/PROFILE
 	$(MKDCDISC) -e $(TARGET) -d $(DISC)/AlephOne -o alephone-$(BUILD_TAG).cdi \
-		-n "$(DISCNAME) $(BUILD_TAG)" -a "$(DISCAUTH)"
+		-s $(DISCSERIAL) -n "$(DISCNAME) $(BUILD_TAG)" -a "$(DISCAUTH)"
 
 # Padded like `cdi`, so it boots on a console, but keeps the DEBUG marker so
 # dc_trace() output is drawn on screen with bfont. For diagnosing hardware-only
@@ -289,7 +308,7 @@ cdi-profile: $(TARGET) $(DISC)/.stamp
 gdi: $(TARGET) $(DISC)/.stamp
 	rm -f $(DISC)/AlephOne/AUTOSTART $(DISC)/AlephOne/PADTEST $(DISC)/AlephOne/DEBUG $(DISC)/AlephOne/PROFILE
 	$(MKDCDISC) -F gdi -e $(TARGET) -d $(DISC)/AlephOne -o alephone-$(BUILD_TAG).gdi \
-		-n "$(DISCNAME) $(BUILD_TAG)" -a "$(DISCAUTH)"
+		-s $(DISCSERIAL) -n "$(DISCNAME) $(BUILD_TAG)" -a "$(DISCAUTH)"
 
 # Launch via `open` rather than exec'ing the binary: run straight from a shell,
 # Flycast's dynarec VMEM init fails its own assertion in driver.cpp.

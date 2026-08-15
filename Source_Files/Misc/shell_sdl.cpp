@@ -150,6 +150,7 @@ static void usage(const char *prg_name)
 
 extern "C" {
 extern int fs_mem_init(void);
+extern void dc_vmu_load_saves(const char *ram_dir);
 #ifdef DC
 void dc_trace(int slot, const char *fmt, ...);
 void dc_input_init_video(void);		// suppress SDL's 60Hz prompt; see dc_input.c
@@ -163,6 +164,10 @@ int main(int argc, char **argv)
 {
 #ifdef DC
 	fs_mem_init();
+
+	// Pull any saved games off the memory card and into the ramdisk before the
+	// game looks at saved_games_dir, so they simply appear in the load dialog.
+	dc_vmu_load_saves("/ram");
 #endif
 	// Print banner (don't bother if this doesn't appear when started from a GUI)
 	printf(

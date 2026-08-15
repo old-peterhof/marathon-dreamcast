@@ -7,7 +7,6 @@ that fixed them.
 
 | Since | Symptom | Notes |
 |---|---|---|
-| b23 | **Saved games do not survive a power cycle** | Working as built, not a crash. Saves live in `/ram`, the KOS ramdisk, which is volatile. After a reboot there is nothing to list, so "Continue Saved Game" finds an empty directory and returns — which presents as the menu flashing, the same as the network and film buttons that also have nothing to show. b25 confirmed saving itself now works. Making saves persist means mirroring them to the VMU as preferences already are, and that hinges on size: a card holds 131072 bytes total. **Unmeasured.** An in-game probe (`dc_list_ram`) was added to report the sizes and produced no output under Flycast despite demonstrably being called, which is unexplained. |
 
 | Since | Symptom | Notes |
 |---|---|---|
@@ -30,3 +29,59 @@ that fixed them.
 | pre-tag | Hardware image shipped with AUTOSTART/PADTEST markers — corrupted `-include` line in Makefile.dc |
 | pre-tag | "Error 4" starting a new game — retail Map is MacBinary I, only MacBinary II was detected |
 | pre-tag | Black 3D view and black HUD — `SDL_BlitSurface` returns success and copies nothing |
+
+## Fixed
+
+### Saved games did not survive a power cycle (b23 - b26, fixed in b27)
+
+Saves lived only in `/ram`, the KOS ramdisk, which is wiped at power-off. Nothing
+crashed: after a reboot the load dialog simply found an empty directory and
+returned, which on screen looks like the menu flashing. It is the same silence as
+the network and film buttons, which also have nothing to list.
+
+They are now mirrored to a VMU either side of a write, the way preferences
+already were -- `dc_vmu_save_game()` after `save_game_file()` succeeds, and
+`dc_vmu_load_saves()` before Aleph One looks at `saved_games_dir`.
+
+The obstacle was size, and the measured figure is nothing like the one the web
+repeats for Aleph One saves:
+
+| | bytes |
+|---|---|
+| Marathon 2 save, as written | 214,629 |
+| Free on a VMU with prefs already on it | 99,328 |
+| Deflated, as stored | 82,944 |
+
+A VMU does not hold the 128K on the box: 200 of its 256 blocks are available to
+files. So the save is over twice too large at full size, and the first attempt
+correctly refused it -- `vmu: card full, need 421 blocks, 194 free`. That refusal
+is what produced the measurement, instead of a half-written card.
+
+zlib gets 2.59:1 on a save wad, which is mostly zeroes and repeated structure,
+so it now fits in 163 of the 194 free blocks. One save fits; a second will not.
+The free-block check still runs on the compressed size, so a save that is too big
+even deflated is declined rather than truncated.
+
+Verified end to end in Flycast: written, then restored across a relaunch with
+`vmu: restored 1 saved game(s)`.
+
+### Every Flycast build got a blank memory card (fixed in b27)
+
+Not a port bug, but it invalidated a lot of testing. mkdcdisc derives a disc
+serial from a hash of the boot binary unless told otherwise, so every build had a
+different one -- and Flycast keys its emulated VMU on the serial. Each build
+therefore started with a blank card, which is indistinguishable from the VMU code
+not working. Thirty-odd `IND-*_vmu_save_A1.bin` files had accumulated, one per
+build.
+
+`Makefile.dc` now passes a fixed `-s MARATHON2`, so every build shares one card,
+the way one console and one physical VMU do. Every earlier "prefs saved to the
+VMU" check under Flycast was in fact writing to a fresh card and proving nothing;
+only the hardware test ever exercised that path.
+
+### Flycast could not turn left (not a port bug)
+
+The 8BitDo Lite 2 mapping bound `0+:btn_analog_right` with no `0-` binding at
+all, so the analog X axis only existed in one direction. Same omission on the
+second stick. Added `0-:btn_analog_left` and `2-:axis2_left` to
+`~/Library/Application Support/Flycast/mappings/`. Nothing to do with the game.
