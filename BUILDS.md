@@ -43,3 +43,4 @@ to the engine clamp, and the VMU Profiler. Git history has the detail.
 | b29 | vmu-delta-saves | 50c5e4c | Fold saves against the map level: 163 blocks to 23 |
 | b30 | dialog-return | 717ac50 | Return selects a file in list dialogs, so saved games can be loaded |
 | b31 | start-pause-menu | 9d6a0ad | Start opens a pause menu: resume, save, preferences, quit |
+| b32 | menu-nav | 7caf9d9 | Main menu: no highlight trail, skips dead entries |

@@ -990,8 +990,19 @@ static void main_event_loop(void)
 		// Which build is this? Drawn every pass while the menu is up, so a
 		// button redraw cannot wipe it. Matches the image filename and the row
 		// in BUILDS.md.
-		if (get_game_state() == _display_main_menu)
-			dc_build_stamp(DC_BUILD_TAG);
+		if (get_game_state() == _display_main_menu) {
+			// Was drawn on every pass, which is a bfont blit per iteration of
+			// the loop that also reads the pad. Free on a console, evidently not
+			// through Flycast, where Max found the menu laggy. Four times a
+			// second is still often enough to survive a button redraw.
+			static uint32 last_stamp = 0;
+			uint32 now = SDL_GetTicks();
+
+			if (now - last_stamp > 250) {
+				last_stamp = now;
+				dc_build_stamp(DC_BUILD_TAG);
+			}
+		}
 
 		{
 			static int shown = 0;
@@ -1438,24 +1449,45 @@ static void process_game_key(const SDL_Event &event)
 			extern int last_menu;
 			int c_menu;
 
-			for(c_menu=0;c_menu<N_MENU && menus[c_menu]!=last_menu;c_menu++);
+			for(c_menu=0;c_menu<(int)N_MENU && menus[c_menu]!=last_menu;c_menu++);
+			if (c_menu >= (int)N_MENU) c_menu = 0;
 
 			switch(event.key.keysym.sym) {
 				case SDLK_UP:
-					c_menu--;
-					if (c_menu<0) c_menu = N_MENU-1;
+				case SDLK_DOWN: {
+					int step = (event.key.keysym.sym == SDLK_UP) ? -1 : 1;
+					int tries;
+
+					// Step over anything the engine has disabled. Network play
+					// is not built at all and a film cannot outlive a power
+					// cycle, so stopping on those entries only makes the player
+					// press the D-pad again to get past them.
+					for (tries = 0; tries < (int)N_MENU; tries++) {
+						c_menu += step;
+						if (c_menu < 0)
+							c_menu = (int)N_MENU - 1;
+						else if (c_menu >= (int)N_MENU)
+							c_menu = 0;
+						if (enabled_item(menus[c_menu]))
+							break;
+					}
 					break;
-				case SDLK_DOWN:
-					c_menu++;
-					if (c_menu>=N_MENU) c_menu=0;
-					break;
+				}
 				case SDLK_RETURN:
 					item = last_menu;
 					break;
+				default:
+					break;
 			}
 			if (menus[c_menu]!=last_menu) {
+				// Un-draw the old highlight before lighting the new one. Without
+				// this every button visited stays lit, and after a few presses
+				// the menu shows a trail of false highlights with no way to tell
+				// which one Return will actually pick.
+				draw_menu_button(last_menu, false);
 				last_menu = menus[c_menu];
 				draw_menu_button(last_menu,true);
+				dc_trace(30, "menu: highlight item %d", (int)last_menu);
 			}
 #endif
 
