@@ -47,8 +47,8 @@ Always go through `build.sh`; it sources `environ.sh`, which is where `KOS_BASE`
 | Target      | Result                                                     |
 |-------------|------------------------------------------------------------|
 | *(default)* | `alephone.elf`                                             |
-| `disc`      | stage `disc/AlephOne` from the skeleton plus the demo data  |
-| `test`      | unpadded `.cdi`, ~20 MB — **emulator only**                 |
+| `disc`      | stage `disc/AlephOne` from the skeleton plus the game data  |
+| `test`      | unpadded `.cdi`, ~59 MB — **emulator only**                 |
 | `cdi`       | padded `.cdi` — this is the one that boots on hardware      |
 | `gdi`       | GDEMU's native format                                       |
 | `flycast`   | build the test image and launch it                          |
