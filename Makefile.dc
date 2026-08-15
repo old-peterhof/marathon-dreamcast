@@ -241,15 +241,19 @@ MKDCDISC   = /opt/toolchains/dc/mkdcdisc/build/mkdcdisc
 DISC_DIR   = disc/AlephOne
 DISC_META  = -n "Aleph One" -a "Aleph One" -V "ALEPHONE"
 
-# -N drops the data-track padding. Padding only buys seek-time optimisation on a
-# real GD-ROM or a burned CD-R; a GDEMU reads from an SD card, where it is
-# pointless. It also takes each image from 20MB to 706MB, which is why five of
-# them filled 2.8GB. Use 'cdi-padded' if ever burning a physical disc.
+# Padding is REQUIRED, not an optimisation. mkdcdisc describes -N as disabling
+# a loading-speed optimisation, and on that basis it was used to shrink images
+# from 706MB to 20MB -- but an unpadded image does not boot on real hardware at
+# all. Every image that has ever booted on the Dreamcast was padded; both
+# unpadded ones failed to load. Flycast is happy either way, which is exactly
+# how this went unnoticed.
 cdi: $(TARGET)
-	$(MKDCDISC) -e $(TARGET) -d $(DISC_DIR) -o alephone.cdi $(DISC_META) -N
+	$(MKDCDISC) -e $(TARGET) -d $(DISC_DIR) -o alephone.cdi $(DISC_META)
 
-cdi-padded: $(TARGET)
-	$(MKDCDISC) -e $(TARGET) -d $(DISC_DIR) -o alephone-padded.cdi $(DISC_META)
+# Unpadded: 20MB instead of 706MB, and boots under Flycast only. Never put this
+# on the SD card.
+cdi-emu: $(TARGET)
+	$(MKDCDISC) -e $(TARGET) -d $(DISC_DIR) -o alephone.cdi $(DISC_META) -N
 
 # Same image as 'cdi' now that cdi is unpadded too; kept because
 # build.sh flycast depends on it.
@@ -334,4 +338,4 @@ rm-elf:
 clean: rm-elf
 	-rm -f $(OBJS)
 
-.PHONY: all bin run rm-elf clean one cdi cdi-padded test gdi flycast menu autostart oldkeys probe describe verify
+.PHONY: all bin run rm-elf clean one cdi cdi-emu test gdi flycast menu autostart oldkeys probe describe verify
