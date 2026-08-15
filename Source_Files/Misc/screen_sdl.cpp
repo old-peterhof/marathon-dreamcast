@@ -562,6 +562,27 @@ void render_screen(short ticks_elapsed)
 		         world_pixels ? world_pixels->format->BitsPerPixel : -1,
 		         world_pixels ? world_pixels->pitch : -1);
 	}
+
+	// Frames per second, and the player's facing and position. Two questions at
+	// once: how fast does the software renderer actually run on a 200MHz SH-4,
+	// and does injected input reach the player (yaw changes when turning, x/y
+	// when walking). Printed over serial roughly once a second.
+	{
+		static int dc_frames = 0;
+		static uint32 dc_last = 0;
+		dc_frames++;
+		uint32 now = SDL_GetTicks();
+		if (dc_last == 0) dc_last = now;
+		if (now - dc_last >= 1000) {
+			int fps10 = (dc_frames * 10000) / (int)(now - dc_last);
+			dc_trace(12, "fps %d.%d  yaw=%d pitch=%d pos=%d,%d",
+			         fps10 / 10, fps10 % 10,
+			         (int)world_view->yaw, (int)world_view->pitch,
+			         (int)world_view->origin.x, (int)world_view->origin.y);
+			dc_frames = 0;
+			dc_last = now;
+		}
+	}
 #endif
 	render_view(world_view, world_pixels_structure);
 #ifdef DC

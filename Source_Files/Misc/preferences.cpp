@@ -313,7 +313,16 @@ static void default_input_preferences(
 	struct input_preferences_data *preferences=(struct input_preferences_data *)prefs;
 
 	preferences->input_device= _keyboard_or_game_pad;
+#ifdef DC
+	// The standard layout puts movement on the numeric keypad (KP8/KP5/KP4/KP6),
+	// which a Dreamcast keyboard may not have and which host-to-DC key mapping
+	// under emulation does not reliably reach. The left-handed layout uses the
+	// arrow keys for forward/back/turn instead -- always present, and the
+	// natural target for a D-pad once controller support lands.
+	set_default_keys(preferences->keycodes, _left_handed_keyboard_setup);
+#else
 	set_default_keys(preferences->keycodes, _standard_keyboard_setup);
+#endif
 	
 	// LP addition: set up defaults for modifiers:
 	// interchange run and walk, but don't interchange swim and sink.

@@ -319,3 +319,37 @@ Nothing needs a pointer here: the menu is driven with UP/DOWN/RETURN.
 
 Verified with a menu-only image (`alephone-menu.cdi`, built without the AUTOSTART
 marker so it stays on the menu). Clean title screen, no smearing.
+
+### 01:20 — Playable. 30 fps, input confirmed moving the player (item E)
+
+Added an fps/state trace to the render path. It answers two things at once.
+
+**Framerate: a steady 29–30 fps.** That is the Marathon engine's own 30Hz tick
+target, so the software renderer is keeping up on a 200MHz SH-4 at 640x320 with
+no frames being dropped. No optimisation needed; the PowerVR is not required.
+
+**Input reaches the player.** With injected right-arrow presses:
+
+    fps 30.3  yaw=382  pos=10775,12663
+    fps 30.3  yaw=337  pos=10512,11024
+    fps 30.3  yaw=240  pos=9917,10657
+    Key: 0x4F (79), SDL Key: 0x0113        <- SDLK_RIGHT
+
+yaw swings 382 -> 337 -> 240 and the position changes. The game is being played.
+
+**What made it work:** the default key layout. Aleph One's `_standard_keyboard_setup`
+puts movement on the numeric keypad (KP8/KP5/KP4/KP6). Those never arrived —
+Flycast's host-to-DC keyboard mapping did not deliver them, and a Dreamcast
+keyboard may not have a keypad at all. `preferences.cpp` now defaults to
+`_left_handed_keyboard_setup` under `-DDC`, which uses the arrow keys. Those map
+cleanly (`SDLK_RIGHT` above) and are the natural target for a D-pad once
+controller support lands.
+
+Max confirmed independently that `z`/`x` strafe, which fits: letter keys were
+always getting through, only the keypad was not.
+
+Dead end worth recording: my first injection attempt sent zero key events
+because `osascript -e 'tell application "System Events" to repeat 40 times ...'`
+does not parse as a one-liner. A single `key code N` works inline, but a repeat
+block needs a real multi-line `tell ... end tell` script. I wasted a test cycle
+concluding "input does not reach the game" when nothing had actually been sent.
