@@ -1,5 +1,5 @@
 Source_Files/Misc/resource_manager.o: \
- Source_Files/Misc/resource_manager.cpp \
+ Source_Files/Misc/resource_manager.cpp dc/dc_gl_compat.h \
  /opt/toolchains/dc/kos/../kos-ports/include/SDL/SDL_endian.h \
  /opt/toolchains/dc/kos/../kos-ports/include/SDL/SDL_stdinc.h \
  /opt/toolchains/dc/kos/../kos-ports/include/SDL/SDL_config.h \
@@ -36,6 +36,7 @@ Source_Files/Misc/resource_manager.o: \
  Source_Files/CSeries/csalerts.h Source_Files/CSeries/csmisc.h \
  Source_Files/Misc/resource_manager.h Source_Files/Misc/FileHandler.h \
  Source_Files/Misc/tags.h Source_Files/CSeries/cstypes.h
+dc/dc_gl_compat.h:
 /opt/toolchains/dc/kos/../kos-ports/include/SDL/SDL_endian.h:
 /opt/toolchains/dc/kos/../kos-ports/include/SDL/SDL_stdinc.h:
 /opt/toolchains/dc/kos/../kos-ports/include/SDL/SDL_config.h:

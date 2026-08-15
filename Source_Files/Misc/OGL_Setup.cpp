@@ -151,13 +151,35 @@ void OGL_SetDefaults(OGL_ConfigureData& Data)
 			TxtrData.FarFilter = 5;		// GL_LINEAR_MIPMAP_LINEAR
 		else
 			TxtrData.FarFilter = 1;		// GL_LINEAR
+#ifdef DC
+		// A Dreamcast has 16MB of main RAM and 8MB of video RAM. Full-resolution
+		// 32-bit textures exhaust the heap partway through loading a level --
+		// "Out of memory. Requested sbrk_base ..." then bad_alloc. Half
+		// resolution at 16-bit colour is an eighth of the memory, and the PVR
+		// wants 16-bit texels anyway, so nothing is gained by handing it 32.
+		//
+		// Mipmaps are off for the same reason: they add a third again, and this
+		// is the wrong hardware to spend that on before anything renders at all.
+		TxtrData.FarFilter = 1;			// GL_LINEAR, no mipmap chain
+		TxtrData.Resolution = 1;		// 1/2
+		TxtrData.ColorFormat = 1;		// 16-bit color
+#else
 		TxtrData.Resolution = 0;		// 1x
 		TxtrData.ColorFormat = 0;		// 32-bit color
+#endif
 	}
 #ifdef SDL
 	// Reasonable default flags ("static" effect causes massive slowdown, so we turn it off)
+#ifdef DC
+	// No 3D models: this disc declares none, so the flag only enables a code
+	// path that cannot be exercised -- and it is the path that wants the clip
+	// planes GLdc does not have.
+	Data.Flags = OGL_Flag_FlatStatic | OGL_Flag_Fader | OGL_Flag_Map |
+		OGL_Flag_HUD | OGL_Flag_LiqSeeThru;
+#else
 	Data.Flags = OGL_Flag_FlatStatic | OGL_Flag_Fader | OGL_Flag_Map |
 		OGL_Flag_HUD | OGL_Flag_LiqSeeThru | OGL_Flag_3D_Models;
+#endif
 #else
 	// Reasonable default flags
 	Data.Flags = OGL_Flag_Map | OGL_Flag_LiqSeeThru | OGL_Flag_3D_Models;

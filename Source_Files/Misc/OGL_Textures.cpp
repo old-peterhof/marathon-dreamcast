@@ -81,6 +81,11 @@ June 14, 2001 (Loren Petrich):
 #include "OGL_Render.h"
 #include "OGL_Textures.h"
 
+#ifdef DC
+extern "C" void dc_trace(int slot, const char *fmt, ...);
+extern "C" unsigned dc_heap_used(void);
+#endif
+
 
 // Texture mapping
 struct TxtrTypeInfoData
@@ -251,6 +256,13 @@ void OGL_StartTextures()
 			TxtrTypeInfo.ColorFormat = ColorFormatList[ColorFormat];
 		else
 			TxtrTypeInfo.ColorFormat = GL_RGBA8;
+#ifdef DC
+		dc_trace(37 + (k > 2 ? 2 : k),
+		         "txtr[%d]: res=%d fmt=%04x far=%04x", k,
+		         (int)TxtrTypeInfo.Resolution,
+		         (unsigned)TxtrTypeInfo.ColorFormat,
+		         (unsigned)TxtrTypeInfo.FarFilter);
+#endif
 	}
 }
 
@@ -1083,7 +1095,16 @@ void TextureManager::PlaceTexture(uint32 *Buffer)
 	{
 	case GL_NEAREST:
 	case GL_LINEAR:
-		glTexImage2D(GL_TEXTURE_2D, 0, TxtrTypeInfo.ColorFormat, LoadedWidth, LoadedHeight,
+	#ifdef DC
+	{
+		static int nupload = 0;
+		if ((++nupload % 25) == 0)
+			dc_trace(39, "txtr: %d uploaded, heap %u KB, last %dx%d",
+			         nupload, dc_heap_used() / 1024,
+			         (int)LoadedWidth, (int)LoadedHeight);
+	}
+#endif
+	glTexImage2D(GL_TEXTURE_2D, 0, TxtrTypeInfo.ColorFormat, LoadedWidth, LoadedHeight,
 			0, GL_RGBA, GL_UNSIGNED_BYTE, Buffer);
 		break;
 	case GL_NEAREST_MIPMAP_NEAREST:

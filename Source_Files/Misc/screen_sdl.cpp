@@ -229,6 +229,7 @@ void exit_screen(void)
 // in-game screen: nothing else on this platform can report anything when the
 // display itself is the thing that is broken.
 extern "C" void dc_trace(int slot, const char *fmt, ...);
+extern "C" void dc_heap_trace(int slot, const char *where);
 extern "C" void dc_profiler_frame(void);
 // The row copy lives in dc/dc_blit.c, compiled as C: sh4zam's headers need C++11
 // and asm string forms this file cannot use under -std=gnu++98.
@@ -295,7 +296,15 @@ static void change_screen_mode(int width, int height, int depth, bool nogl)
 	// The original idea was to only enable OpenGL for the in-game display, but
 	// SDL crashes if OpenGL is turned on later
 	if (/*!nogl &&*/ screen_mode.acceleration == _opengl_acceleration) {
+#ifdef DC
+		// SDL_OPENGLBLIT is the deprecated 1.2 mode that keeps a 2D surface
+		// alongside the GL context and blits between them every frame. The
+		// Dreamcast backend has no such thing -- it hands the PowerVR to GLdc --
+		// so ask for a plain GL surface.
+		flags |= SDL_OPENGL;
+#else
 		flags |= SDL_OPENGLBLIT;
+#endif
 		SDL_GL_SetAttribute(SDL_GL_RED_SIZE, 5);
 		SDL_GL_SetAttribute(SDL_GL_GREEN_SIZE, 5);
 		SDL_GL_SetAttribute(SDL_GL_BLUE_SIZE, 5);
@@ -305,6 +314,21 @@ static void change_screen_mode(int width, int height, int depth, bool nogl)
 		flags |= SDL_HWSURFACE | SDL_HWPALETTE;
 #else
 	flags |= SDL_HWSURFACE | SDL_HWPALETTE;
+#endif
+#ifdef DC
+	// Setting the mode again tears the PowerVR down and back up under GLdc, and
+	// the next frame trips "Assertion pvr_state.valid failed" inside
+	// pvr_wait_ready. Aleph One asks for the same 640x480x16 a second time when
+	// a level starts, so the second call is pure destruction. Skip any request
+	// that would not change anything.
+	if (main_surface != NULL &&
+	    main_surface->w == width && main_surface->h == height &&
+	    main_surface->format->BitsPerPixel == depth &&
+	    (main_surface->flags & SDL_OPENGL) == (flags & SDL_OPENGL)) {
+		dc_trace(33, "mode: %dx%dx%d already set, not re-initialising",
+		         width, height, depth);
+		return;
+	}
 #endif
 	main_surface = SDL_SetVideoMode(width, height, depth, flags);
 	if (main_surface == NULL) {
@@ -323,6 +347,9 @@ static void change_screen_mode(int width, int height, int depth, bool nogl)
 	         main_surface->format->BitsPerPixel,
 	         main_surface->pixels, (unsigned)main_surface->flags);
 	if (dc_traced_mode < 3) dc_traced_mode++;
+	dc_trace(32, "gl: requested=%d obtained=%d",
+	         (int)(screen_mode.acceleration == _opengl_acceleration),
+	         (int)((main_surface->flags & SDL_OPENGL) != 0));
 #endif
 	if (depth == 8) {
 		SDL_Color colors[256];
@@ -335,6 +362,11 @@ static void change_screen_mode(int width, int height, int depth, bool nogl)
 	}
 #ifdef HAVE_OPENGL
 	if (main_surface->flags & SDL_OPENGL) {
+#ifdef DC
+		dc_trace(31, "gl: %s / %s",
+		         (const char *)glGetString(GL_RENDERER),
+		         (const char *)glGetString(GL_VERSION));
+#endif
 		printf("GL_VENDOR: %s\n", glGetString(GL_VENDOR));
 		printf("GL_RENDERER: %s\n", glGetString(GL_RENDERER));
 		printf("GL_VERSION: %s\n", glGetString(GL_VERSION));
@@ -568,6 +600,7 @@ void render_screen(short ticks_elapsed)
 		         world_pixels ? world_pixels->h : -1,
 		         world_pixels ? world_pixels->format->BitsPerPixel : -1,
 		         world_pixels ? world_pixels->pitch : -1);
+		dc_heap_trace(36, "at first render");
 	}
 
 	// Frames per second, and the player's facing and position. Two questions at

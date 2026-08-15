@@ -1,5 +1,6 @@
 Source_Files/Misc/marathon2.o: Source_Files/Misc/marathon2.cpp \
- Source_Files/CSeries/cseries.h Source_Files/CSeries/sdl_cseries.h \
+ dc/dc_gl_compat.h Source_Files/CSeries/cseries.h \
+ Source_Files/CSeries/sdl_cseries.h \
  /opt/toolchains/dc/kos/../kos-ports/include/SDL/SDL.h \
  /opt/toolchains/dc/kos/../kos-ports/include/SDL/SDL_main.h \
  /opt/toolchains/dc/kos/../kos-ports/include/SDL/SDL_stdinc.h \
@@ -52,6 +53,7 @@ Source_Files/Misc/marathon2.o: Source_Files/Misc/marathon2.cpp \
  Source_Files/Misc/OGL_Setup.h Source_Files/Misc/ImageLoader.h \
  Source_Files/ModelView/Model3D.h Source_Files/Pfhortran/scripting.h \
  Source_Files/Pfhortran/script_parser.h
+dc/dc_gl_compat.h:
 Source_Files/CSeries/cseries.h:
 Source_Files/CSeries/sdl_cseries.h:
 /opt/toolchains/dc/kos/../kos-ports/include/SDL/SDL.h:

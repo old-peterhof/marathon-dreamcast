@@ -1,5 +1,6 @@
 Source_Files/Misc/ViewControl.o: Source_Files/Misc/ViewControl.cpp \
- Source_Files/CSeries/cseries.h Source_Files/CSeries/sdl_cseries.h \
+ dc/dc_gl_compat.h Source_Files/CSeries/cseries.h \
+ Source_Files/CSeries/sdl_cseries.h \
  /opt/toolchains/dc/kos/../kos-ports/include/SDL/SDL.h \
  /opt/toolchains/dc/kos/../kos-ports/include/SDL/SDL_main.h \
  /opt/toolchains/dc/kos/../kos-ports/include/SDL/SDL_stdinc.h \
@@ -37,6 +38,7 @@ Source_Files/Misc/ViewControl.o: Source_Files/Misc/ViewControl.cpp \
  Source_Files/Misc/FontHandler.h Source_Files/Misc/sdl_fonts.h \
  Source_Files/Misc/FileHandler.h Source_Files/Misc/tags.h \
  Source_Files/CSeries/cstypes.h Source_Files/Misc/shape_descriptors.h
+dc/dc_gl_compat.h:
 Source_Files/CSeries/cseries.h:
 Source_Files/CSeries/sdl_cseries.h:
 /opt/toolchains/dc/kos/../kos-ports/include/SDL/SDL.h:

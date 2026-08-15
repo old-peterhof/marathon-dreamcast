@@ -1,4 +1,4 @@
-Source_Files/Misc/fades.o: Source_Files/Misc/fades.cpp \
+Source_Files/Misc/fades.o: Source_Files/Misc/fades.cpp dc/dc_gl_compat.h \
  Source_Files/CSeries/cseries.h Source_Files/CSeries/sdl_cseries.h \
  /opt/toolchains/dc/kos/../kos-ports/include/SDL/SDL.h \
  /opt/toolchains/dc/kos/../kos-ports/include/SDL/SDL_main.h \
@@ -35,6 +35,7 @@ Source_Files/Misc/fades.o: Source_Files/Misc/fades.cpp \
  Source_Files/Misc/fades.h Source_Files/Misc/XML_ElementParser.h \
  Source_Files/Misc/screen.h Source_Files/Misc/ColorParser.h \
  Source_Files/Misc/OGL_Faders.h
+dc/dc_gl_compat.h:
 Source_Files/CSeries/cseries.h:
 Source_Files/CSeries/sdl_cseries.h:
 /opt/toolchains/dc/kos/../kos-ports/include/SDL/SDL.h:

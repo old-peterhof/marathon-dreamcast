@@ -112,6 +112,7 @@ Dec 17, 2000 (Loren Petrich):
 #ifdef DC
 // GLdc provides 43 of the 61 entry points this file calls. The rest are here.
 #include "dc_gl_compat.h"
+extern "C" void dc_heap_trace(int slot, const char *where);
 #endif
 
 #ifdef mac
@@ -547,14 +548,29 @@ bool OGL_StartRun()
 #endif
 	
 	// Initialize the texture accounting
+#ifdef DC
+	dc_heap_trace(40, "StartRun entry");
+#endif
 	OGL_StartTextures();
+#ifdef DC
+	dc_heap_trace(41, "after StartTextures");
+#endif
 	
 	// Initialize the on-screen font for OpenGL rendering
 	GetOnScreenFont().OGL_Reset(true);
+#ifdef DC
+	dc_heap_trace(42, "after screen font");
+#endif
 	
 	// Reset the font info for overhead-map and HUD fonts done in OpenGL fashion
 	OGL_ResetMapFonts(true);
+#ifdef DC
+	dc_heap_trace(43, "after map fonts");
+#endif
 	OGL_ResetHUDFonts(true);
+#ifdef DC
+	dc_heap_trace(44, "after HUD fonts");
+#endif
 	
 	// Since an OpenGL context has just been created, don't try to clear any OpenGL textures
 	OGL_ResetModelSkins(false);
@@ -562,6 +578,9 @@ bool OGL_StartRun()
 	// Setup for 3D-model rendering
 	ModelRenderObject.Clear();
 	SetupShaders();
+#ifdef DC
+	dc_heap_trace(45, "StartRun done");
+#endif
 	
 	// Success!
 	JustInited = true;

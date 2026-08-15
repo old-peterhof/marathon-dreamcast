@@ -1,4 +1,4 @@
-Source_Files/Misc/media.o: Source_Files/Misc/media.cpp \
+Source_Files/Misc/media.o: Source_Files/Misc/media.cpp dc/dc_gl_compat.h \
  Source_Files/CSeries/cseries.h Source_Files/CSeries/sdl_cseries.h \
  /opt/toolchains/dc/kos/../kos-ports/include/SDL/SDL.h \
  /opt/toolchains/dc/kos/../kos-ports/include/SDL/SDL_main.h \
@@ -39,6 +39,7 @@ Source_Files/Misc/media.o: Source_Files/Misc/media.cpp \
  Source_Files/Misc/lightsource.h Source_Files/Misc/mysound.h \
  Source_Files/Misc/Packing.h Source_Files/Misc/DamageParser.h \
  Source_Files/Misc/media_definitions.h
+dc/dc_gl_compat.h:
 Source_Files/CSeries/cseries.h:
 Source_Files/CSeries/sdl_cseries.h:
 /opt/toolchains/dc/kos/../kos-ports/include/SDL/SDL.h:

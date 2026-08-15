@@ -1,5 +1,6 @@
 Source_Files/Misc/physics.o: Source_Files/Misc/physics.cpp \
- Source_Files/CSeries/cseries.h Source_Files/CSeries/sdl_cseries.h \
+ dc/dc_gl_compat.h Source_Files/CSeries/cseries.h \
+ Source_Files/CSeries/sdl_cseries.h \
  /opt/toolchains/dc/kos/../kos-ports/include/SDL/SDL.h \
  /opt/toolchains/dc/kos/../kos-ports/include/SDL/SDL_main.h \
  /opt/toolchains/dc/kos/../kos-ports/include/SDL/SDL_stdinc.h \
@@ -43,6 +44,7 @@ Source_Files/Misc/physics.o: Source_Files/Misc/physics.cpp \
  Source_Files/Misc/interface.h Source_Files/Misc/monsters.h \
  Source_Files/Misc/media.h Source_Files/Misc/ChaseCam.h \
  Source_Files/Misc/Packing.h Source_Files/Misc/physics_models.h
+dc/dc_gl_compat.h:
 Source_Files/CSeries/cseries.h:
 Source_Files/CSeries/sdl_cseries.h:
 /opt/toolchains/dc/kos/../kos-ports/include/SDL/SDL.h:

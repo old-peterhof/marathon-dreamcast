@@ -1,5 +1,6 @@
 Source_Files/Misc/motion_sensor.o: Source_Files/Misc/motion_sensor.cpp \
- Source_Files/CSeries/cseries.h Source_Files/CSeries/sdl_cseries.h \
+ dc/dc_gl_compat.h Source_Files/CSeries/cseries.h \
+ Source_Files/CSeries/sdl_cseries.h \
  /opt/toolchains/dc/kos/../kos-ports/include/SDL/SDL.h \
  /opt/toolchains/dc/kos/../kos-ports/include/SDL/SDL_main.h \
  /opt/toolchains/dc/kos/../kos-ports/include/SDL/SDL_stdinc.h \
@@ -45,6 +46,7 @@ Source_Files/Misc/motion_sensor.o: Source_Files/Misc/motion_sensor.cpp \
  Source_Files/Misc/HUDRenderer.h Source_Files/Misc/mysound.h \
  Source_Files/Misc/items.h Source_Files/Misc/weapons.h \
  Source_Files/Misc/screen_drawing.h Source_Files/Misc/HUDRenderer_OGL.h
+dc/dc_gl_compat.h:
 Source_Files/CSeries/cseries.h:
 Source_Files/CSeries/sdl_cseries.h:
 /opt/toolchains/dc/kos/../kos-ports/include/SDL/SDL.h:

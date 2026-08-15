@@ -1,5 +1,6 @@
 Source_Files/Misc/XML_MakeRoot.o: Source_Files/Misc/XML_MakeRoot.cpp \
- Source_Files/CSeries/cseries.h Source_Files/CSeries/sdl_cseries.h \
+ dc/dc_gl_compat.h Source_Files/CSeries/cseries.h \
+ Source_Files/CSeries/sdl_cseries.h \
  /opt/toolchains/dc/kos/../kos-ports/include/SDL/SDL.h \
  /opt/toolchains/dc/kos/../kos-ports/include/SDL/SDL_main.h \
  /opt/toolchains/dc/kos/../kos-ports/include/SDL/SDL_stdinc.h \
@@ -49,6 +50,7 @@ Source_Files/Misc/XML_MakeRoot.o: Source_Files/Misc/XML_MakeRoot.cpp \
  Source_Files/Misc/ImageLoader.h Source_Files/ModelView/Model3D.h \
  Source_Files/Misc/shell.h Source_Files/Misc/mysound.h \
  Source_Files/Misc/vbl.h Source_Files/Misc/sdl_dialogs.h
+dc/dc_gl_compat.h:
 Source_Files/CSeries/cseries.h:
 Source_Files/CSeries/sdl_cseries.h:
 /opt/toolchains/dc/kos/../kos-ports/include/SDL/SDL.h:

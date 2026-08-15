@@ -1,5 +1,6 @@
 Source_Files/Misc/overhead_map.o: Source_Files/Misc/overhead_map.cpp \
- Source_Files/CSeries/cseries.h Source_Files/CSeries/sdl_cseries.h \
+ dc/dc_gl_compat.h Source_Files/CSeries/cseries.h \
+ Source_Files/CSeries/sdl_cseries.h \
  /opt/toolchains/dc/kos/../kos-ports/include/SDL/SDL.h \
  /opt/toolchains/dc/kos/../kos-ports/include/SDL/SDL_main.h \
  /opt/toolchains/dc/kos/../kos-ports/include/SDL/SDL_stdinc.h \
@@ -46,6 +47,7 @@ Source_Files/Misc/overhead_map.o: Source_Files/Misc/overhead_map.cpp \
  Source_Files/Misc/OverheadMap_SDL.h \
  Source_Files/Misc/OverheadMapRenderer.h \
  Source_Files/Misc/OverheadMap_OGL.h
+dc/dc_gl_compat.h:
 Source_Files/CSeries/cseries.h:
 Source_Files/CSeries/sdl_cseries.h:
 /opt/toolchains/dc/kos/../kos-ports/include/SDL/SDL.h:

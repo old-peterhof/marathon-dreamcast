@@ -406,8 +406,35 @@ void FontSpecifier::OGL_Reset(bool IsStarting)
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+#ifdef DC
+	// GLdc has no GL_LUMINANCE_ALPHA -- it refuses the upload with "Couldn't
+	// find stride for format: 0x190a" and the font never appears. Expand the two
+	// bytes per texel into RGBA, which it does understand. Font textures are
+	// small and this runs once per font, so the extra copy costs nothing that
+	// matters.
+	{
+		int NumTexels = int(TxtrWidth) * int(TxtrHeight);
+		uint8 *RGBA = new uint8[NumTexels * 4];
+
+		for (int t = 0; t < NumTexels; t++) {
+			uint8 Lum = OGL_Texture[2*t];
+			uint8 Alpha = OGL_Texture[2*t + 1];
+
+			RGBA[4*t + 0] = Lum;
+			RGBA[4*t + 1] = Lum;
+			RGBA[4*t + 2] = Lum;
+			RGBA[4*t + 3] = Alpha;
+		}
+
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, TxtrWidth, TxtrHeight,
+			0, GL_RGBA, GL_UNSIGNED_BYTE, RGBA);
+
+		delete []RGBA;
+	}
+#else
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_LUMINANCE_ALPHA, TxtrWidth, TxtrHeight,
 		0, GL_LUMINANCE_ALPHA, GL_UNSIGNED_BYTE, OGL_Texture);
+#endif
  	
 #ifdef DC
 	// GLdc has no display lists. Each glyph's list did exactly two things --

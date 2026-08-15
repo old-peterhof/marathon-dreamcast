@@ -1,5 +1,5 @@
 Source_Files/Pfhortran/script_instructions.o: \
- Source_Files/Pfhortran/script_instructions.cpp \
+ Source_Files/Pfhortran/script_instructions.cpp dc/dc_gl_compat.h \
  Source_Files/CSeries/cseries.h Source_Files/CSeries/sdl_cseries.h \
  /opt/toolchains/dc/kos/../kos-ports/include/SDL/SDL.h \
  /opt/toolchains/dc/kos/../kos-ports/include/SDL/SDL_main.h \
@@ -53,6 +53,7 @@ Source_Files/Pfhortran/script_instructions.o: \
  Source_Files/Misc/effects.h Source_Files/Misc/projectiles.h \
  Source_Files/Misc/flood_map.h Source_Files/Pfhortran/script_parser.h \
  Source_Files/Pfhortran/script_instructions.h Source_Files/Misc/world.h
+dc/dc_gl_compat.h:
 Source_Files/CSeries/cseries.h:
 Source_Files/CSeries/sdl_cseries.h:
 /opt/toolchains/dc/kos/../kos-ports/include/SDL/SDL.h:

@@ -1,6 +1,6 @@
 Source_Files/Misc/ColorParser.o: Source_Files/Misc/ColorParser.cpp \
- Source_Files/Misc/ColorParser.h Source_Files/CSeries/cseries.h \
- Source_Files/CSeries/sdl_cseries.h \
+ dc/dc_gl_compat.h Source_Files/Misc/ColorParser.h \
+ Source_Files/CSeries/cseries.h Source_Files/CSeries/sdl_cseries.h \
  /opt/toolchains/dc/kos/../kos-ports/include/SDL/SDL.h \
  /opt/toolchains/dc/kos/../kos-ports/include/SDL/SDL_main.h \
  /opt/toolchains/dc/kos/../kos-ports/include/SDL/SDL_stdinc.h \
@@ -34,6 +34,7 @@ Source_Files/Misc/ColorParser.o: Source_Files/Misc/ColorParser.cpp \
  Source_Files/CSeries/csfonts.h Source_Files/CSeries/cspixels.h \
  Source_Files/CSeries/csalerts.h Source_Files/CSeries/csmisc.h \
  Source_Files/Misc/XML_ElementParser.h
+dc/dc_gl_compat.h:
 Source_Files/Misc/ColorParser.h:
 Source_Files/CSeries/cseries.h:
 Source_Files/CSeries/sdl_cseries.h:

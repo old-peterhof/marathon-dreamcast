@@ -62,10 +62,57 @@ is more work but avoids fighting a widget system built around a pointer.
 
 ## PowerVR / hardware-accelerated renderer
 
-Would buy real frames — hardware runs about 20fps software-rendered. Blocked on
-GLdc lacking clip planes, which `OGL_Render.cpp` uses five of for portal and
-liquid-surface clipping. See the note in `Makefile.dc` under `GL=1`, which
-records the full list of missing entry points.
+Status after b34: **it builds, links, initialises a real GL context on the
+PowerVR, loads a level, and dies of memory exhaustion on the first frame.**
+
+    gl: requested=1 obtained=1
+    gl: PowerVR2 CLX2 100mHz / 1.2 (partial) - GLdc 1.1
+
+The old note here said this was blocked on clip planes and needed a renderer
+rewrite. That was wrong. All six glClipPlane calls are inside RenderModelSetup(),
+reached only when rectangle_definition::ModelPtr is set -- the external-3D-model
+path, which stock Marathon 2 never enters. See dc/dc_gl_compat.h.
+
+Fixed along the way:
+
+- 17 missing GL entry points, via dc/dc_gl_compat.h, force-included under GL=1
+- display lists, in both OGL_RenderText and FontHandler's 256-glyph table
+- gluScaleImage and gluBuild2DMipmaps, in dc/dc_glu.c
+- GL_LUMINANCE_ALPHA font textures, which GLdc refuses ("Couldn't find stride
+  for format: 0x190a") -- expanded to RGBA
+- SDL_OPENGLBLIT, which the Dreamcast backend has no notion of, to SDL_OPENGL
+- a second SDL_SetVideoMode at level entry tearing the PowerVR down underneath
+  GLdc, which tripped "Assertion pvr_state.valid failed" in pvr_wait_ready
+
+### What is left: memory
+
+A Dreamcast has 16MB. Measured heap, GL build:
+
+| stage | heap |
+|---|---|
+| after initialize_marathon | 812 KB |
+| OGL_StartRun entry | 8,760 KB |
+| after OGL_StartTextures | 9,148 KB |
+| after screen font | 9,532 KB |
+| after map fonts | 10,684 KB |
+| at first render | 12,084 KB |
+| next request | +2,048 KB, refused |
+
+The interesting line is the second: 8MB goes in during level loading, before a
+single GL call. GL setup adds about 3.3MB on top of that, and the last 2MB
+request is what falls off the end.
+
+So the work is not in the renderer, it is in the 8MB baseline. Options, roughly
+in order of promise:
+
+1. Find what the level load actually allocates. It is the same load the software
+   build survives, so the question is how much headroom software has -- measure
+   `heap: at first render` in a software build and subtract.
+2. Texture settings are already at half resolution, 16-bit colour, no mipmaps,
+   and verified applied (`txtr[0]: res=1 fmt=8056 far=2601`). Quarter resolution
+   is available if needed.
+3. GLdc's initial OP/TR/PT vertex list capacities are configurable through
+   glKosInitConfig; the SDL backend calls plain glKosInit and takes the defaults.
 
 ## Get a saved game below 10 blocks
 
