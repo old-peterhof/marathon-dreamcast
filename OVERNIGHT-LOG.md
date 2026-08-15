@@ -778,3 +778,37 @@ the trace reads `sens=50/50`.
 
 Consequence worth stating plainly: the hardware images handed over before this
 fix had sensitivity 100 compiled in, not the intended 50. Rebuilt.
+
+### 2026-08-15 — the hardware image shipped with test markers on it
+
+Max reported `alephone.cdi` auto-starting a level and spinning the view to the
+right at intervals. Both are test markers that should never have been on a
+hardware image: AUTOSTART starts a game by itself, PADTEST synthesises a held
+stick deflection.
+
+**Cause was a corrupted line in Makefile.dc.** One of my `sed`-style edits
+appended target names onto the dependency include, leaving:
+
+    -include $(OBJS:.o=.d) autostart-marker no-autostart-marker
+
+Make *builds* targets named in an include in order to satisfy it, so the
+marker-staging recipe ran on **every single invocation**, writing AUTOSTART,
+PADTEST and DEBUG into the staged disc tree regardless of which image was being
+built.
+
+**My verification was also worthless.** I "checked" by counting occurrences of
+the string `DEBUG` in the image and reasoned that 2 versus 5 looked consistent.
+The binary itself contains the literal `/cd/AlephOne/DEBUG`, so that count could
+never distinguish a marker file from a string constant. I reported the image as
+correct on the strength of it.
+
+Two fixes:
+
+1. The `-include` line is repaired, and the fragile phony marker targets are
+   gone. Each image recipe now removes all three markers and then writes exactly
+   the ones it wants, in its own recipe, in order. No cross-target ordering to
+   get wrong, and nothing that runs as a side effect of an include.
+
+2. `tools/verify-image.sh` dumps the data track, mounts it, and lists the real
+   ISO9660 directory. That is the only check that can actually answer the
+   question. `alephone.cdi` now reports "No test markers present."
