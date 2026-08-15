@@ -262,63 +262,60 @@ gdi: $(TARGET)
 # Straight-to-level build, for testing rendering and controls in isolation.
 # Removes shell.o first: adding -DDC_AUTOSTART does not by itself make the
 # object stale, so without this the flag would silently have no effect.
-# Variant targets. Each one removes the objects the variant's -D affects,
-# because a changed -D does NOT make an object stale -- 'make cdi' straight
-# after 'make autostart' silently reuses the autostart shell.o and produces a
-# mislabelled image. Each target then asserts on the built binary that it got
-# what it asked for, so a mix-up fails the build instead of reaching hardware.
+# Build variants. All of them produce ONE file, alephone.cdi -- the same image
+# boots in Flycast and on real hardware, so there is no reason for more than one.
+# Each target removes the objects its -D affects first, because a changed -D does
+# NOT make an object stale, then asserts against the built binary that it got
+# what it asked for and prints what the image contains.
 
 NM = $(KOS_BASE)/../sh-elf/bin/sh-elf-nm
 
+# The normal build: main menu, real renderer. This is the default.
 menu:
-	-rm -f $(MI)/shell.o $(MI)/screen_sdl.o $(TARGET) alephone.cdi alephone-menu.cdi
+	-rm -f $(MI)/shell.o $(MI)/screen_sdl.o $(MI)/vbl.o $(TARGET) alephone.cdi
 	$(MAKE) -f Makefile.dc cdi
 	@$(NM) $(TARGET) | grep -q dc_autostart_active \
 		&& { echo "BUILD ERROR: menu build contains autostart marker"; exit 1; } || true
 	@$(NM) $(TARGET) | grep -q dc_render_probe_active \
 		&& { echo "BUILD ERROR: menu build contains render probe"; exit 1; } || true
-	cp alephone.cdi alephone-menu.cdi
-	@echo "OK: alephone-menu.cdi is a menu build, real renderer"
+	@$(MAKE) -s -f Makefile.dc describe
 
+# Debug variant: straight into a new game, no menu.
 autostart:
-	-rm -f $(MI)/shell.o $(MI)/screen_sdl.o $(TARGET) alephone-test.cdi alephone.cdi alephone-autostart.cdi
-	$(MAKE) -f Makefile.dc test AUTOSTART=1
-	$(MAKE) -f Makefile.dc cdi  AUTOSTART=1
+	-rm -f $(MI)/shell.o $(MI)/screen_sdl.o $(MI)/vbl.o $(TARGET) alephone.cdi
+	$(MAKE) -f Makefile.dc cdi AUTOSTART=1
 	@$(NM) $(TARGET) | grep -q dc_autostart_active \
 		|| { echo "BUILD ERROR: autostart build lacks autostart marker"; exit 1; }
-	@$(NM) $(TARGET) | grep -q dc_render_probe_active \
-		&& { echo "BUILD ERROR: autostart build contains render probe"; exit 1; } || true
-	cp alephone.cdi alephone-autostart.cdi
-	@echo "OK: alephone-autostart.cdi skips the menu, real renderer"
+	@$(MAKE) -s -f Makefile.dc describe
 
-# Menu build with the stock keypad bindings. Pair with alephone-menu.cdi to
-# find out whether the Dreamcast key remap is what blacks out the menu.
+# Debug variant: stock keypad bindings instead of the Dreamcast arrow keys.
 oldkeys:
-	-rm -f $(MI)/shell.o $(MI)/screen_sdl.o $(MI)/vbl.o $(TARGET) alephone.cdi alephone-oldkeys.cdi
+	-rm -f $(MI)/shell.o $(MI)/screen_sdl.o $(MI)/vbl.o $(TARGET) alephone.cdi
 	$(MAKE) -f Makefile.dc cdi OLDKEYS=1
-	@$(NM) $(TARGET) | grep -q dc_autostart_active \
-		&& { echo "BUILD ERROR: oldkeys build contains autostart marker"; exit 1; } || true
-	cp alephone.cdi alephone-oldkeys.cdi
-	@echo "OK: alephone-oldkeys.cdi is a menu build with stock keypad bindings"
+	@$(MAKE) -s -f Makefile.dc describe
 
-# Autostart + magenta 3D view. Answers whether the presentation path works at
-# all, independently of what the renderer produces.
+# Debug variant: 3D view filled magenta, to test the presentation path alone.
 probe:
-	-rm -f $(MI)/shell.o $(MI)/screen_sdl.o $(TARGET) alephone-test.cdi alephone.cdi
-	$(MAKE) -f Makefile.dc test AUTOSTART=1 PROBE=1
-	$(MAKE) -f Makefile.dc cdi  AUTOSTART=1 PROBE=1
+	-rm -f $(MI)/shell.o $(MI)/screen_sdl.o $(MI)/vbl.o $(TARGET) alephone.cdi
+	$(MAKE) -f Makefile.dc cdi AUTOSTART=1 PROBE=1
+	@$(NM) $(TARGET) | grep -q dc_render_probe_active \
+		|| { echo "BUILD ERROR: probe build lacks render probe"; exit 1; }
+	@$(MAKE) -s -f Makefile.dc describe
 
-# Say what a built ELF actually is. Flags that silently fail to take effect have
-# cost several hardware test rounds, so variant is reported from the binary's
-# marker symbols rather than from which command was typed.
-verify:
-	@echo "$(TARGET):"
-	@$(KOS_BASE)/../sh-elf/bin/sh-elf-nm $(TARGET) | grep -q dc_autostart_active \
-		&& echo "  menu      : NO  (boots straight into a new game)" \
-		|| echo "  menu      : YES (starts at the main menu)"
-	@$(KOS_BASE)/../sh-elf/bin/sh-elf-nm $(TARGET) | grep -q dc_render_probe_active \
-		&& echo "  3D view   : MAGENTA PROBE (not the real renderer)" \
-		|| echo "  3D view   : real renderer"
+# What is in alephone.cdi right now. Read from the binary's marker symbols, not
+# from which command was typed -- several flags have silently failed to take
+# effect over this port's life.
+describe:
+	@echo "alephone.cdi:"
+	@$(NM) $(TARGET) | grep -q dc_autostart_active \
+		&& echo "  start   : straight into a new game (no menu)" \
+		|| echo "  start   : main menu"
+	@$(NM) $(TARGET) | grep -q dc_render_probe_active \
+		&& echo "  3D view : MAGENTA PROBE (not the real renderer)" \
+		|| echo "  3D view : real renderer"
+	@ls -l alephone.cdi 2>/dev/null | awk '{printf "  size    : %.1f MB\n", $$5/1048576}'
+
+verify: describe
 
 # 'open -a' rather than running the binary directly. Flycast reserves a large
 # contiguous virtual address range for its 16MB guest RAM (nvmem); launched from
@@ -337,4 +334,4 @@ rm-elf:
 clean: rm-elf
 	-rm -f $(OBJS)
 
-.PHONY: all bin run rm-elf clean one cdi test gdi flycast menu autostart oldkeys probe verify cdi-padded
+.PHONY: all bin run rm-elf clean one cdi cdi-padded test gdi flycast menu autostart oldkeys probe describe verify
