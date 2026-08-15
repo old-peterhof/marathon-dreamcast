@@ -50,6 +50,15 @@ static void player_dialog(void *arg);
 static void opengl_dialog(void *arg);
 static void graphics_dialog(void *arg);
 static void sound_dialog(void *arg);
+#ifdef DC
+// Opens the CONTROLS dialog without anyone navigating a menu. Used by the
+// AUTOSTART=controls marker so the sensitivity sliders can be screenshotted
+// unattended -- synthesised keystrokes into Flycast proved unreliable.
+// controls_dialog never dereferences its parent argument, so NULL is fine.
+static void controls_dialog(void *arg);
+extern "C" void dc_open_controls_dialog(void) { controls_dialog(0); }
+#endif
+
 static void controls_dialog(void *arg);
 static void environment_dialog(void *arg);
 static void keyboard_dialog(void *arg);
@@ -490,9 +499,20 @@ static void controls_dialog(void *arg)
 	dialog d;
 	d.add(new w_static_text("CONTROLS", TITLE_FONT, TITLE_COLOR));
 	d.add(new w_spacer());
+#ifdef DC
+	// There is no mouse on a Dreamcast. This toggle now gates the analog stick,
+	// because input_device != _keyboard_or_game_pad is what makes vbl_sdl.cpp
+	// call test_mouse() at all -- so label it for what it actually does.
+	mouse_w = new w_toggle("Analog Stick", input_preferences->input_device);
+#else
 	mouse_w = new w_toggle("Mouse Control", input_preferences->input_device);
+#endif
 	d.add(mouse_w);
+#ifdef DC
+	w_toggle *invert_mouse_w = new w_toggle("Invert Look", input_preferences->modifiers & _inputmod_invert_mouse);
+#else
 	w_toggle *invert_mouse_w = new w_toggle("Invert Mouse", input_preferences->modifiers & _inputmod_invert_mouse);
+#endif
 	d.add(invert_mouse_w);
 	w_toggle *always_run_w = new w_toggle("Always Run", input_preferences->modifiers & _inputmod_interchange_run_walk);
 	d.add(always_run_w);

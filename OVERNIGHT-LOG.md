@@ -525,3 +525,33 @@ into a bounded field by `mask_in_absolute_positioning_information`
 magnitude. 67 deg/sec is the ceiling for this path. The sensitivity slider is
 therefore capped at 100% — above that it would do nothing — and its useful work
 is reducing sensitivity for finer aim.
+
+### 02:15 — Sensitivity sliders verified; input injection abandoned as a test route
+
+TURN SENSITIVITY and LOOK SENSITIVITY both render in Preferences > CONTROLS,
+each at 100% with the thumb hard right, which is the default. Screenshot
+confirms.
+
+Getting there needed a change of approach. Synthesised keystrokes into Flycast,
+which worked earlier tonight, stopped working entirely: `osascript` reports no
+error (so Accessibility is still granted) and Flycast is frontmost, but the
+emulator logs zero key events, on a freshly launched process. Several cycles
+went into this with no progress and no explanation.
+
+Rather than keep fighting it, the AUTOSTART marker now takes a value. Writing
+`controls` into it makes the game open the CONTROLS dialog by itself a few
+seconds after boot, so the dialog can be screenshotted with no input at all.
+`preferences_sdl.cpp` gained a small `extern "C"` wrapper for this;
+`controls_dialog` never dereferences its parent argument, so passing NULL is
+safe.
+
+This is the third time the disc-marker trick has been the way out of an input
+problem (AUTOSTART, PADTEST, now AUTOSTART=controls). Worth remembering as the
+general pattern here: when the emulator will not cooperate as an input source,
+make the game drive itself and observe the result.
+
+Also relabelled two toggles that were actively misleading on this platform.
+"Mouse Control" now reads "Analog Stick" — there is no mouse on a Dreamcast, and
+that toggle is what gates the stick, since `input_device != _keyboard_or_game_pad`
+is the condition under which `vbl_sdl.cpp` calls `test_mouse()` at all.
+"Invert Mouse" likewise became "Invert Look".

@@ -806,6 +806,7 @@ const uint32 TICKS_BETWEEN_EVENT_POLL = 167;	// 6 Hz
 extern "C" void dc_trace(int slot, const char *fmt, ...);
 extern "C" void dc_input_poll(void);
 extern "C" void dc_input_set_ingame(int yes);
+extern "C" void dc_open_controls_dialog(void);
 
 /*
  *	Unattended testing hook.
@@ -819,17 +820,31 @@ extern "C" void dc_input_set_ingame(int yes);
  *	binary for both images, and the hardware target simply does not stage the
  *	marker. `make test` adds it, `make cdi` does not.
  */
-static bool dc_autostart_wanted(void)
+// 0 = no marker, 1 = start a new game, 2 = open the CONTROLS dialog.
+// The marker's contents pick which; "controls" opens preferences instead of
+// starting a game, so the sensitivity sliders can be screenshotted with no
+// input at all.
+static int dc_autostart_mode(void)
 {
-	static int checked = 0, wanted = 0;
+	static int checked = 0, mode = 0;
 
 	if (!checked) {
 		checked = 1;
-		wanted = (access("/cd/AlephOne/AUTOSTART", 4) == 0);
-		dc_trace(1, "autostart marker %s", wanted ? "present" : "absent");
+		if (access("/cd/AlephOne/AUTOSTART", 4) == 0) {
+			FILE *f = fopen("/cd/AlephOne/AUTOSTART", "r");
+			char buf[32];
+
+			mode = 1;
+			if (f) {
+				if (fgets(buf, sizeof buf, f) && strncmp(buf, "controls", 8) == 0)
+					mode = 2;
+				fclose(f);
+			}
+		}
+		dc_trace(1, "autostart mode %d", mode);
 	}
 
-	return wanted != 0;
+	return mode;
 }
 #endif
 
@@ -854,14 +869,20 @@ static void main_event_loop(void)
 		}
 		dc_input_poll();
 
-		if (!dc_autostarted && dc_autostart_wanted()
+		if (!dc_autostarted && dc_autostart_mode()
 		    && get_game_state() == _display_main_menu) {
 			if (dc_menu_since == 0)
 				dc_menu_since = SDL_GetTicks();
 			else if (SDL_GetTicks() - dc_menu_since > 3000) {
+				int mode = dc_autostart_mode();
 				dc_autostarted = true;
-				dc_trace(2, "autostart: selecting iNewGame");
-				do_menu_item_command(mInterface, iNewGame, false);
+				if (mode == 2) {
+					dc_trace(2, "autostart: opening CONTROLS dialog");
+					dc_open_controls_dialog();
+				} else {
+					dc_trace(2, "autostart: selecting iNewGame");
+					do_menu_item_command(mInterface, iNewGame, false);
+				}
 				dc_trace(3, "autostart: returned, state=%d", (int)get_game_state());
 				continue;
 			}
