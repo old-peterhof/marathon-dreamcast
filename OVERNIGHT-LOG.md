@@ -404,3 +404,32 @@ Dead end worth recording: my first two attempts reported "none found on the
 maple bus" even with a controller configured. Cause was ordering, not the
 driver — I edited `emu.cfg` and *then* killed Flycast, and Flycast rewrites its
 config on quit, silently reverting the edit. Kill first, then edit, then launch.
+
+### 01:40 — tools/run-flycast.sh, and a flaw in my own test harness
+
+Every "boot and check" this session used an inline retry loop that tested
+liveness with `pgrep -f Flycast`. That pattern matches **any** command line
+containing the word Flycast, including the launching shell, so it reported
+success for a process that had already died of the VMEM assertion — and then
+never retried. At least one "no traces at all" result earlier tonight was this,
+not the port.
+
+`tools/run-flycast.sh` replaces it. It checks liveness by PID with `kill -0`,
+retries up to 15 times, distinguishes a VMEM assertion from any other early
+exit, and captures stdout so KOS's serial printf is available. First use retried
+three assertions and started cleanly on the fourth.
+
+Flycast's own reliability is worth stating plainly: it failed to initialise on 3
+of 4 consecutive launches in that run.
+
+Controller status after this round: **detection confirmed, mapping still
+unverified.** With a Sega Controller on port A the trace reports
+`controller: found, polling`, and gameplay runs at ~30 fps, but no button
+changes were ever observed. Flycast's `SDL_Keyboard.cfg` does map arrows to the
+D-pad by USB HID scancode (79 right, 80 left, 81 down, 82 up, 40 start, 27 A),
+so the route ought to work; the run was cut short when Flycast hung and Max
+force-quit it.
+
+Also worth recording about Flycast config: it rewrites `emu.cfg` on quit. Edit
+it while Flycast is running and the edit is silently reverted when it exits.
+Kill first, then edit, then launch.
