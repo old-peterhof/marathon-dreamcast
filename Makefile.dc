@@ -306,6 +306,57 @@ probe:
 		|| { echo "BUILD ERROR: probe build lacks render probe"; exit 1; }
 	@$(MAKE) -s -f Makefile.dc describe
 
+# ---------------------------------------------------------------------------
+# Snapshots
+# ---------------------------------------------------------------------------
+#
+# Git holds the source, which is not the same as holding a working build. For
+# most of this port's life header dependencies were untracked, so binaries were
+# built from a mix of object files and could not be reproduced from any commit
+# -- when a build worked on hardware there was no way back to it.
+#
+# So keep the artifact, not just the commit. The ELF is 15MB; the 706MB .cdi is
+# almost entirely padding and is regenerated from the ELF on demand.
+#
+#   make snapshot NAME=hw-ok     save the current build
+#   make snapshots               list what has been saved
+#   make restore NAME=hw-ok      rebuild alephone.cdi from that saved build
+#
+# Take a snapshot the moment something works on hardware, before changing
+# anything.
+
+SNAPDIR = snapshots
+
+snapshot: $(TARGET)
+	@test -n "$(NAME)" || { echo "usage: make snapshot NAME=<label>"; exit 1; }
+	@mkdir -p $(SNAPDIR)/$(NAME)
+	@cp $(TARGET) $(SNAPDIR)/$(NAME)/
+	@{ echo "saved   : $$(date '+%Y-%m-%d %H:%M:%S')"; \
+	   echo "commit  : $$(git rev-parse --short HEAD 2>/dev/null) $$(git log -1 --format=%s 2>/dev/null)"; \
+	   echo "dirty   : $$(git status --porcelain 2>/dev/null | wc -l | tr -d ' ') files uncommitted"; \
+	   $(NM) $(TARGET) | grep -q dc_autostart_active \
+	     && echo "start   : straight into a new game" || echo "start   : main menu"; \
+	   $(NM) $(TARGET) | grep -q dc_render_probe_active \
+	     && echo "3D view : MAGENTA PROBE" || echo "3D view : real renderer"; \
+	 } > $(SNAPDIR)/$(NAME)/BUILD.txt
+	@echo "snapshot saved: $(SNAPDIR)/$(NAME)"
+	@cat $(SNAPDIR)/$(NAME)/BUILD.txt | sed 's/^/  /'
+
+snapshots:
+	@test -d $(SNAPDIR) || { echo "no snapshots yet"; exit 0; }
+	@for d in $(SNAPDIR)/*/; do \
+	   echo "$$(basename $$d):"; sed 's/^/  /' $$d/BUILD.txt 2>/dev/null; echo; \
+	 done
+
+# Rebuilds the disc image from a saved ELF. Does not touch the source tree, so
+# it works even when the current source is broken.
+restore:
+	@test -n "$(NAME)" || { echo "usage: make restore NAME=<label>"; exit 1; }
+	@test -f $(SNAPDIR)/$(NAME)/$(TARGET) || { echo "no snapshot named '$(NAME)'"; exit 1; }
+	$(MKDCDISC) -e $(SNAPDIR)/$(NAME)/$(TARGET) -d $(DISC_DIR) -o alephone.cdi $(DISC_META)
+	@echo "alephone.cdi rebuilt from snapshot '$(NAME)':"
+	@sed 's/^/  /' $(SNAPDIR)/$(NAME)/BUILD.txt
+
 # What is in alephone.cdi right now. Read from the binary's marker symbols, not
 # from which command was typed -- several flags have silently failed to take
 # effect over this port's life.
@@ -338,4 +389,4 @@ rm-elf:
 clean: rm-elf
 	-rm -f $(OBJS)
 
-.PHONY: all bin run rm-elf clean one cdi cdi-emu test gdi flycast menu autostart oldkeys probe describe verify
+.PHONY: all bin run rm-elf clean one cdi cdi-emu test snapshot snapshots restore gdi flycast menu autostart oldkeys probe describe verify
