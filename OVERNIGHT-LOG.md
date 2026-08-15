@@ -555,3 +555,17 @@ Also relabelled two toggles that were actively misleading on this platform.
 that toggle is what gates the stick, since `input_device != _keyboard_or_game_pad`
 is the condition under which `vbl_sdl.cpp` calls `test_mouse()` at all.
 "Invert Mouse" likewise became "Invert Look".
+
+### 02:22 — Debug tracing gated behind a DEBUG marker
+
+`dc_trace()` now returns immediately unless the disc carries a `DEBUG` file.
+Gating inside the function rather than at the call sites means one switch covers
+every trace in the port, and a release image is silent without any of them being
+edited out — they stay available for the next time something needs diagnosing.
+
+Verified both directions: an image built without the marker produces **0** trace
+lines, while `make test` (which stages DEBUG alongside AUTOSTART and PADTEST)
+still traces normally. `cdi` and `gdi` strip all three.
+
+Incidental data point on Flycast: one of those two boots needed **8 retries**
+before it got past the VMEM assertion. `tools/run-flycast.sh` is doing real work.

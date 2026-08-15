@@ -195,9 +195,10 @@ $(DISC)/.stamp: $(GAMEDATA)/Map
 autostart-marker: $(DISC)/.stamp
 	echo "auto" > $(DISC)/AlephOne/AUTOSTART
 	echo "pad" > $(DISC)/AlephOne/PADTEST
+	echo "on" > $(DISC)/AlephOne/DEBUG
 
 no-autostart-marker: $(DISC)/.stamp
-	rm -f $(DISC)/AlephOne/AUTOSTART $(DISC)/AlephOne/PADTEST
+	rm -f $(DISC)/AlephOne/AUTOSTART $(DISC)/AlephOne/PADTEST $(DISC)/AlephOne/DEBUG
 
 disc: $(DISC)/.stamp
 

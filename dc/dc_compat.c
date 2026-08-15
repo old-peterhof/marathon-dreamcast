@@ -16,6 +16,7 @@
  */
 
 #include <stdio.h>
+#include <unistd.h>
 #include <stdarg.h>
 #include <sys/stat.h>
 #include <kos/fs_ramdisk.h>
@@ -35,11 +36,34 @@
  *
  *	`slot` is a line number so successive calls stack rather than overwrite.
  */
+/*
+ *	Tracing is off unless the disc carries a DEBUG file, the same marker trick as
+ *	AUTOSTART and PADTEST. Gating here rather than at the call sites means one
+ *	switch covers every trace in the port, and a release image stays silent
+ *	without any of them being edited or removed.
+ *
+ *	`make test` stages the marker; `cdi` and `gdi` never do.
+ */
+static int dc_trace_enabled(void)
+{
+	static int checked = 0, enabled = 0;
+
+	if (!checked) {
+		checked = 1;
+		enabled = (access("/cd/AlephOne/DEBUG", 4) == 0);
+	}
+
+	return enabled;
+}
+
 void dc_trace(int slot, const char *fmt, ...)
 {
 	char buf[128];
 	va_list ap;
 	int y;
+
+	if (!dc_trace_enabled())
+		return;
 
 	va_start(ap, fmt);
 	vsnprintf(buf, sizeof buf, fmt, ap);
