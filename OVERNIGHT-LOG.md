@@ -472,3 +472,56 @@ Remaining work worth doing, none of it blocking:
   framerate claim has been withdrawn.
 - Real hardware. Nothing here has been on a console yet; `./build.sh cdi`
   produces the padded 740MB image for that.
+
+### 02:10 — Max's control scheme implemented, with configurable sensitivity
+
+Replaced the earlier placeholder mapping with the finalised scheme. The
+important structural change: **turning and looking are analog now**, not
+synthesised arrow-key presses.
+
+| control | binding | path |
+|---|---|---|
+| Analog stick | turn / look | analog, via the `_fixed` delta_yaw/pitch path |
+| Y / A | move forward / back | digital key |
+| X / B | strafe left / right | digital key |
+| R / L triggers | primary / alt fire | analog, read in `test_mouse` |
+| D-pad Up / Down / Left | action, map, cycle weapon | digital key |
+| Start | pause | digital key |
+
+Aleph One's analog route is the mouse path, so `mouse_sdl.cpp` now reads the
+stick instead of a pointer on Dreamcast: `enter_mouse` arms without grabbing or
+warping anything, `mouse_idle` converts stick deflection straight to a per-tick
+rate (a stick reports a rate, not a displacement, so unlike the mouse there is
+nothing to divide by elapsed ticks), and `test_mouse` folds the triggers in as
+the two fire flags. `preferences.cpp` also had to switch `input_device` to
+`_mouse_yaw_pitch`, because `vbl_sdl.cpp:139` skips `test_mouse` entirely for
+`_keyboard_or_game_pad` — the default would have left the stick dead.
+
+Menus are a separate binding table. BERO's menu handler only understands UP,
+DOWN and RETURN, so out of game the D-pad and stick navigate and A confirms.
+`shell_sdl.cpp` calls `dc_input_set_ingame()` from the game state each pass, and
+the switch releases every key in the outgoing table so nothing sticks down
+across a context change.
+
+**Sensitivity is now in the Preferences UI** — Turn and Look sliders under
+CONTROLS, stored in `input_preferences` as `sens_horizontal` / `sens_vertical`
+(the names later Aleph One versions use). Appended to the end of the struct so
+older preferences still line up, and clamped in `validate_input_preferences`
+because a file written before the fields existed leaves them zero, which would
+make the stick dead.
+
+**A measurement mistake of mine, corrected.** I first reported 316 deg/sec and
+called it twice too fast. That was wrong: my analysis script computed
+`(b - a) % 512`, which turns a negative delta into a large positive one. The
+true figures at full deflection were 44 deg/sec, then 33 deg/sec after I
+"fixed" it — I had tuned the wrong direction, making an already-slow stick
+slower. With signed arithmetic the current default measures **95 units/sec =
+67 deg/sec**.
+
+**And a real engine limit.** Raising the base scale fourfold only moved the rate
+from 44 to 67 deg/sec. The cause is `physics.cpp:278`: `delta_yaw` is shifted
+into a bounded field by `mask_in_absolute_positioning_information`
+(`MAXIMUM_ABSOLUTE_YAW`), so the turn rate saturates regardless of input
+magnitude. 67 deg/sec is the ceiling for this path. The sensitivity slider is
+therefore capped at 100% — above that it would do nothing — and its useful work
+is reducing sensitivity for finer aim.

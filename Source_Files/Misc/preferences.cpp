@@ -312,7 +312,18 @@ static void default_input_preferences(
 {
 	struct input_preferences_data *preferences=(struct input_preferences_data *)prefs;
 
+#ifdef DC
+	// vbl_sdl.cpp only calls test_mouse() when this is not _keyboard_or_game_pad,
+	// and that is the path carrying the analog stick's yaw and pitch. Leaving
+	// the default would switch the stick off entirely.
+	preferences->input_device= _mouse_yaw_pitch;
+	preferences->sens_horizontal = SENS_DEFAULT;
+	preferences->sens_vertical = SENS_DEFAULT;
+#else
 	preferences->input_device= _keyboard_or_game_pad;
+	preferences->sens_horizontal = SENS_DEFAULT;
+	preferences->sens_vertical = SENS_DEFAULT;
+#endif
 #ifdef DC
 	// The standard layout puts movement on the numeric keypad (KP8/KP5/KP4/KP6),
 	// which a Dreamcast keyboard may not have and which host-to-DC key mapping
@@ -524,6 +535,16 @@ static bool validate_player_preferences(
 static bool validate_input_preferences(
 	void *prefs)
 {
+	// Preferences written before these fields existed leave them zero, which
+	// would make the analog stick dead. Clamp into range on the way in.
+	{
+		struct input_preferences_data *ip = (struct input_preferences_data *)prefs;
+		if (ip->sens_horizontal < SENS_MINIMUM || ip->sens_horizontal > SENS_MAXIMUM)
+			ip->sens_horizontal = SENS_DEFAULT;
+		if (ip->sens_vertical < SENS_MINIMUM || ip->sens_vertical > SENS_MAXIMUM)
+			ip->sens_vertical = SENS_DEFAULT;
+	}
+
 	(void) (prefs);
 	return false;
 }

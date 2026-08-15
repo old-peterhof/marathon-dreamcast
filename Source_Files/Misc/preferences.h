@@ -91,7 +91,22 @@ struct input_preferences_data
 	int16 keycodes[NUMBER_OF_KEYS];
 	// LP addition: input modifiers
 	uint16 modifiers;
+	// Analog look sensitivity, as a percentage; 100 is the tuned default.
+	// Appended rather than inserted so older preferences files still line up.
+	int16 sens_horizontal;
+	int16 sens_vertical;
 };
+
+// The slider tops out at 100% deliberately. Aleph One packs delta_yaw into a
+// bounded field in the action flags (physics.cpp:278, MAXIMUM_ABSOLUTE_YAW), so
+// the turn rate saturates around 67 deg/sec no matter how large a value is fed
+// in -- quadrupling the base scale only raised the measured rate by half. Above
+// 100% the slider would do nothing, so the useful range is all of it.
+#define SENS_MINIMUM   5
+#define SENS_MAXIMUM   100
+#define SENS_STEP      5
+#define SENS_DEFAULT   100
+#define NUMBER_OF_SENS_LEVELS ((SENS_MAXIMUM - SENS_MINIMUM) / SENS_STEP + 1)
 
 #define MAXIMUM_PATCHES_PER_ENVIRONMENT (32)
 

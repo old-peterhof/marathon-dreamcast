@@ -805,6 +805,7 @@ const uint32 TICKS_BETWEEN_EVENT_POLL = 167;	// 6 Hz
 #ifdef DC
 extern "C" void dc_trace(int slot, const char *fmt, ...);
 extern "C" void dc_input_poll(void);
+extern "C" void dc_input_set_ingame(int yes);
 
 /*
  *	Unattended testing hook.
@@ -844,7 +845,13 @@ static void main_event_loop(void)
 
 #ifdef DC
 		// SDL's DC driver never reads the controller, so we do it here and
-		// inject the result as key events. Covers menus and gameplay alike.
+		// inject the result as key events. The pad has two mappings -- movement
+		// on the face buttons in game, arrow-key navigation in menus -- so tell
+		// it which context we are in before polling.
+		{
+			short gs = get_game_state();
+			dc_input_set_ingame(gs == _game_in_progress || gs == _change_level);
+		}
 		dc_input_poll();
 
 		if (!dc_autostarted && dc_autostart_wanted()

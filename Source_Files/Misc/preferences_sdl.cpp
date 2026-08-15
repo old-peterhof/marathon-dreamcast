@@ -500,6 +500,20 @@ static void controls_dialog(void *arg)
 	d.add(always_swim_w);
 	w_toggle *weapon_w = new w_toggle("Auto-Switch Weapons", !(input_preferences->modifiers & _inputmod_dont_switch_to_new_weapon));
 	d.add(weapon_w);
+#ifdef DC
+	// Analog stick sensitivity. Two axes because turning and looking want very
+	// different rates: Marathon's vertical range is small, so a comfortable
+	// yaw speed feels twitchy applied to pitch.
+	d.add(new w_spacer());
+	w_slider *sens_h_w = new w_slider("Turn Sensitivity",
+		NUMBER_OF_SENS_LEVELS,
+		(input_preferences->sens_horizontal - SENS_MINIMUM) / SENS_STEP);
+	d.add(sens_h_w);
+	w_slider *sens_v_w = new w_slider("Look Sensitivity",
+		NUMBER_OF_SENS_LEVELS,
+		(input_preferences->sens_vertical - SENS_MINIMUM) / SENS_STEP);
+	d.add(sens_v_w);
+#endif
 	d.add(new w_spacer());
 	d.add(new w_button("CONFIGURE KEYBOARD", keyboard_dialog, &d));
 	d.add(new w_spacer());
@@ -529,6 +543,19 @@ static void controls_dialog(void *arg)
 			input_preferences->modifiers = flags;
 			changed = true;
 		}
+
+#ifdef DC
+		int sh = SENS_MINIMUM + sens_h_w->get_selection() * SENS_STEP;
+		int sv = SENS_MINIMUM + sens_v_w->get_selection() * SENS_STEP;
+		if (sh != input_preferences->sens_horizontal) {
+			input_preferences->sens_horizontal = sh;
+			changed = true;
+		}
+		if (sv != input_preferences->sens_vertical) {
+			input_preferences->sens_vertical = sv;
+			changed = true;
+		}
+#endif
 
 		if (changed)
 			write_preferences();

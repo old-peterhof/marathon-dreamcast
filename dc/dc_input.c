@@ -6,30 +6,43 @@
  *	"dummy" one. MAPLE_FUNC_CONTROLLER is never read at all, which is why BERO's
  *	2002 README says a keyboard is required to play.
  *
- *	So we read the controller ourselves and feed the result into SDL as key
- *	events. The injection goes through SDL_PrivateKeyboard rather than
- *	SDL_PushEvent, and that choice matters: SDL_PrivateKeyboard updates SDL's
- *	internal key-state array as well as queueing the event, and Aleph One reads
- *	gameplay input by polling SDL_GetKeyState (vbl_sdl.cpp:98). A pushed event
- *	alone would drive the menus but leave the player standing still.
+ *	Two paths out of here:
  *
- *	The mapping targets the arrow-key layout, which is the Dreamcast default
- *	(see preferences.cpp), so the D-pad drives both menu navigation and
- *	movement without any rebinding.
+ *	  - Digital buttons become key presses, injected with SDL_PrivateKeyboard.
+ *	    That call updates SDL's internal key-state array as well as queueing an
+ *	    event, and Aleph One polls SDL_GetKeyState (vbl_sdl.cpp:98) during play.
+ *	    SDL_PushEvent alone would drive menus and leave the player standing
+ *	    still.
  *
- *		D-pad        arrow keys      menu navigation / move + turn
- *		analog stick arrow keys      same, with a deadzone
- *		A            RETURN + SPACE  menu select / primary trigger
- *		B            LALT            secondary trigger
- *		X            TAB             action, i.e. use switches and terminals
- *		Y            M               toggle overhead map
- *		Start        ESCAPE          pause and abort
- *		L trigger    Z               sidestep left
- *		R trigger    X               sidestep right
+ *	  - The analog stick and triggers are read directly by mouse_sdl.cpp, which
+ *	    feeds them into Aleph One's _fixed delta_yaw/delta_pitch path. Turning
+ *	    and looking therefore stay properly analog rather than being quantised
+ *	    into synthetic arrow-key presses.
  *
- *	A sends RETURN and SPACE together. Neither is harmful in the other context:
- *	the menu handler in shell_sdl.cpp only inspects UP, DOWN and RETURN, and
- *	RETURN is unbound during play.
+ *	CONTROL SCHEME
+ *
+ *	  Analog stick    turn left/right, look up/down     (analog, continuous)
+ *	  Y               move forward
+ *	  A               move backward
+ *	  X               strafe left
+ *	  B               strafe right
+ *	  R trigger       primary fire                      (analog)
+ *	  L trigger       alt fire / secondary trigger      (analog)
+ *	  D-pad Up        action / use
+ *	  D-pad Down      toggle map
+ *	  D-pad Left      cycle weapon forward
+ *	  D-pad Right     spare
+ *	  Start           pause / menu
+ *
+ *	The stick drives aim rather than movement because Marathon's aiming benefits
+ *	most from analog precision, while walk speed is effectively fixed. The D-pad
+ *	shares a thumb with the stick, so nothing time-critical during combat lives
+ *	there -- only stationary actions.
+ *
+ *	Menus are a separate context. There the D-pad and stick navigate with the
+ *	arrow keys and A confirms, because BERO's menu handler in shell_sdl.cpp only
+ *	understands UP, DOWN and RETURN. shell_sdl.cpp calls dc_input_set_ingame()
+ *	as the game state changes.
  */
 
 #include <string.h>
@@ -45,26 +58,43 @@ extern int SDL_PrivateKeyboard(Uint8 state, SDL_keysym *key);
 /* dc/dc_compat.c -- prints over serial and to the framebuffer. */
 extern void dc_trace(int slot, const char *fmt, ...);
 
-/* Analog stick centres near 128 and the plastic rarely returns exactly there,
-   so ignore small deflections. Triggers rest at 0 and read up to 255. */
-#define STICK_DEADZONE	40
+/* Stick centres at 0 on KOS and the plastic rarely returns exactly there. */
+#define STICK_DEADZONE	20
 #define TRIGGER_ON		64
 
-struct dc_binding {
-	int mask;		/* controller button, or one of the pseudo masks below */
-	SDLKey sym;
-};
-
-/* Pseudo-buttons for the analog axes and triggers, so they can live in the
-   same table as the real buttons and share the edge-detection below. */
+/* Pseudo-buttons so the stick can drive menu navigation through the same
+   edge-detected table as the real buttons. Only used out of game. */
 #define DCK_STICK_LEFT	(1 << 24)
 #define DCK_STICK_RIGHT	(1 << 25)
 #define DCK_STICK_UP	(1 << 26)
 #define DCK_STICK_DOWN	(1 << 27)
-#define DCK_LTRIG		(1 << 28)
-#define DCK_RTRIG		(1 << 29)
 
-static const struct dc_binding bindings[] = {
+struct dc_binding {
+	int mask;
+	SDLKey sym;
+};
+
+/*
+ *	In game. Movement on the face buttons, actions on the D-pad. Turning,
+ *	looking and both triggers are handled on the analog path instead and so do
+ *	not appear here.
+ */
+static const struct dc_binding game_bindings[] = {
+	{ CONT_Y,           SDLK_UP },        /* move forward     */
+	{ CONT_A,           SDLK_DOWN },      /* move backward    */
+	{ CONT_X,           SDLK_z },         /* strafe left      */
+	{ CONT_B,           SDLK_x },         /* strafe right     */
+	{ CONT_DPAD_UP,     SDLK_TAB },       /* action / use     */
+	{ CONT_DPAD_DOWN,   SDLK_m },         /* toggle map       */
+	{ CONT_DPAD_LEFT,   SDLK_QUOTE },     /* cycle weapon fwd */
+	{ CONT_START,       SDLK_ESCAPE },    /* pause            */
+};
+
+/*
+ *	Menus. The handler in shell_sdl.cpp only looks at UP, DOWN and RETURN, so
+ *	the D-pad and the stick both navigate and A confirms.
+ */
+static const struct dc_binding menu_bindings[] = {
 	{ CONT_DPAD_UP,     SDLK_UP },
 	{ CONT_DPAD_DOWN,   SDLK_DOWN },
 	{ CONT_DPAD_LEFT,   SDLK_LEFT },
@@ -74,16 +104,48 @@ static const struct dc_binding bindings[] = {
 	{ DCK_STICK_LEFT,   SDLK_LEFT },
 	{ DCK_STICK_RIGHT,  SDLK_RIGHT },
 	{ CONT_A,           SDLK_RETURN },
-	{ CONT_A,           SDLK_SPACE },
-	{ CONT_B,           SDLK_LALT },
-	{ CONT_X,           SDLK_TAB },
-	{ CONT_Y,           SDLK_m },
 	{ CONT_START,       SDLK_ESCAPE },
-	{ DCK_LTRIG,        SDLK_z },
-	{ DCK_RTRIG,        SDLK_x },
 };
 
-#define NUM_BINDINGS (sizeof(bindings) / sizeof(bindings[0]))
+#define NUM_GAME_BINDINGS (sizeof(game_bindings) / sizeof(game_bindings[0]))
+#define NUM_MENU_BINDINGS (sizeof(menu_bindings) / sizeof(menu_bindings[0]))
+
+static int in_game = 0;
+
+/* Latest analog readings, refreshed by dc_input_poll and consumed by
+   mouse_sdl.cpp on the same frame. */
+static int analog_x = 0, analog_y = 0;
+static int trig_l = 0, trig_r = 0;
+
+void dc_input_set_ingame(int yes)
+{
+	if (in_game == (yes != 0))
+		return;
+
+	in_game = (yes != 0);
+
+	/* Releasing everything on a context switch avoids a key left stuck down
+	   under the other mapping -- holding Y through a level change would
+	   otherwise leave SDLK_UP pressed forever in the menu. */
+	{
+		SDL_keysym keysym;
+		unsigned int i;
+		const struct dc_binding *table = in_game ? menu_bindings : game_bindings;
+		unsigned int count = in_game ? NUM_MENU_BINDINGS : NUM_GAME_BINDINGS;
+
+		for (i = 0; i < count; i++) {
+			memset(&keysym, 0, sizeof keysym);
+			keysym.sym = table[i].sym;
+			keysym.mod = KMOD_NONE;
+			SDL_PrivateKeyboard(SDL_RELEASED, &keysym);
+		}
+	}
+}
+
+int  dc_input_analog_x(void) { return analog_x; }
+int  dc_input_analog_y(void) { return analog_y; }
+int  dc_input_trigger_l(void) { return trig_l; }
+int  dc_input_trigger_r(void) { return trig_r; }
 
 static void send_key(SDLKey sym, int pressed)
 {
@@ -97,23 +159,10 @@ static void send_key(SDLKey sym, int pressed)
 }
 
 /*
- *	Read the first controller and turn any change since the last call into key
- *	presses and releases. Safe to call when nothing is plugged in.
- */
-/*
- *	Self-test. Flycast will not route host input to an emulated controller in
- *	the configurations tried here, so the button table cannot be exercised under
- *	emulation. This synthesises a held D-pad Right instead, which isolates our
- *	half of the chain: binding table -> send_key -> SDL_PrivateKeyboard ->
- *	SDL_GetKeyState -> the player turning.
- *
- *	If the player's yaw moves with this enabled, everything downstream of
- *	reading the pad is correct and the only remaining unknown is whether the
- *	emulator delivers real pad input -- which a human with an actual controller
- *	settles immediately.
- *
- *	Enabled by a PADTEST file on the disc, the same trick as AUTOSTART, so it
- *	never ships in the hardware image.
+ *	Self-test, enabled by a PADTEST file on the disc exactly like AUTOSTART, so
+ *	it never reaches the hardware image. Flycast would not route host input to
+ *	an emulated pad in any configuration tried, so this synthesises a stick
+ *	deflection to exercise the analog path unattended.
  */
 static int padtest_wanted(void)
 {
@@ -123,7 +172,7 @@ static int padtest_wanted(void)
 		checked = 1;
 		wanted = (access("/cd/AlephOne/PADTEST", 4) == 0);
 		if (wanted)
-			dc_trace(15, "PADTEST: synthesising D-pad Right");
+			dc_trace(15, "PADTEST: synthesising stick right");
 	}
 
 	return wanted;
@@ -136,10 +185,11 @@ void dc_input_poll(void)
 	static int reported_present = 0, reported_absent = 0;
 	static int padtest_frames = 0;
 
+	const struct dc_binding *table;
+	unsigned int count, i;
 	maple_device_t *dev;
 	cont_state_t *st;
-	int current = 0, changed;
-	unsigned int i;
+	int current, changed;
 
 	dev = maple_enum_type(0, MAPLE_FUNC_CONTROLLER);
 	if (!dev) {
@@ -147,6 +197,7 @@ void dc_input_poll(void)
 			reported_absent = 1;
 			dc_trace(13, "controller: none found on the maple bus");
 		}
+		analog_x = analog_y = trig_l = trig_r = 0;
 		return;
 	}
 
@@ -161,23 +212,32 @@ void dc_input_poll(void)
 
 	current = st->buttons;
 
-	/* Self-test: hold D-pad Right for a second every three seconds, so the
-	   effect on the player is unmistakable in the yaw trace. */
+	analog_x = st->joyx;
+	analog_y = st->joyy;
+	trig_l = st->ltrig;
+	trig_r = st->rtrig;
+
 	if (padtest_wanted()) {
 		padtest_frames++;
-		if ((padtest_frames % 90) < 30)
-			current |= CONT_DPAD_RIGHT;
+		analog_x = 127;		/* held hard right, so the turn rate is measurable */
 	}
 
-	if (st->joyx < -STICK_DEADZONE) current |= DCK_STICK_LEFT;
-	if (st->joyx >  STICK_DEADZONE) current |= DCK_STICK_RIGHT;
-	if (st->joyy < -STICK_DEADZONE) current |= DCK_STICK_UP;
-	if (st->joyy >  STICK_DEADZONE) current |= DCK_STICK_DOWN;
-	if (st->ltrig > TRIGGER_ON)     current |= DCK_LTRIG;
-	if (st->rtrig > TRIGGER_ON)     current |= DCK_RTRIG;
+	/* Deadzone, then treat the stick as a d-pad for menu navigation only. */
+	if (analog_x > -STICK_DEADZONE && analog_x < STICK_DEADZONE) analog_x = 0;
+	if (analog_y > -STICK_DEADZONE && analog_y < STICK_DEADZONE) analog_y = 0;
 
-	/* First poll establishes a baseline; do not report whatever happens to be
-	   held at startup as a fresh press. */
+	if (!in_game) {
+		if (analog_x < 0) current |= DCK_STICK_LEFT;
+		if (analog_x > 0) current |= DCK_STICK_RIGHT;
+		if (analog_y < 0) current |= DCK_STICK_UP;
+		if (analog_y > 0) current |= DCK_STICK_DOWN;
+	}
+
+	table = in_game ? game_bindings : menu_bindings;
+	count = in_game ? NUM_GAME_BINDINGS : NUM_MENU_BINDINGS;
+
+	/* First poll establishes a baseline; whatever is held at startup is not a
+	   fresh press. */
 	if (!have_previous) {
 		have_previous = 1;
 		previous = current;
@@ -190,15 +250,13 @@ void dc_input_poll(void)
 		return;
 	}
 
-	dc_trace(14, "controller buttons %08x -> %08x", (unsigned)previous, (unsigned)current);
-
-	for (i = 0; i < NUM_BINDINGS; i++) {
-		int mask = bindings[i].mask;
+	for (i = 0; i < count; i++) {
+		int mask = table[i].mask;
 
 		if (!(changed & mask))
 			continue;
 
-		send_key(bindings[i].sym, (current & mask) != 0);
+		send_key(table[i].sym, (current & mask) != 0);
 	}
 
 	previous = current;
