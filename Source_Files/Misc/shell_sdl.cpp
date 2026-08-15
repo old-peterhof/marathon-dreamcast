@@ -151,6 +151,7 @@ static void usage(const char *prg_name)
 extern "C" {
 extern int fs_mem_init(void);
 #ifdef DC
+void dc_trace(int slot, const char *fmt, ...);
 void dc_input_init_video(void);		// suppress SDL's 60Hz prompt; see dc_input.c
 void dc_profiler_start(void);		// VMU Profiler, gated on a PROFILE marker
 void dc_input_dump_maple(void);		// lists the maple bus once, DEBUG builds only
@@ -337,17 +338,30 @@ static void initialize_application(void)
 
 	// Subdirectories
 	preferences_dir = local_data_dir;
+#ifdef DC
+	// The KOS ramdisk is flat: mkdir returns EINVAL and files cannot be created
+	// inside subdirectories -- both verified with a standalone probe. So
+	// "/ram/Saved Games" can never exist, which means saving was impossible and
+	// loading was pointed at a directory that would never be there. Everything
+	// lives directly in /ram instead; the filenames are distinct, so nothing
+	// collides.
+	saved_games_dir = local_data_dir;
+	recordings_dir = local_data_dir;
+#else
 	saved_games_dir = local_data_dir + "Saved Games";
 	recordings_dir = local_data_dir + "Recordings";
+#endif
 
 	// Create local directories
 	local_data_dir.CreateDirectory();
+#ifndef DC
 	saved_games_dir.CreateDirectory();
 	recordings_dir.CreateDirectory();
 	DirectorySpecifier local_mml_dir = local_data_dir + "MML";
 	local_mml_dir.CreateDirectory();
 	DirectorySpecifier local_themes_dir = local_data_dir + "Themes";
 	local_themes_dir.CreateDirectory();
+#endif
 
 	// Setup resource manager
 	initialize_resources();
@@ -643,9 +657,38 @@ bool FileSpecifier::ReadDialog(int type, char *prompt)
 			break;
 	}
 	vector<dir_entry> entries;
-	if (!dir.ReadDirectory(entries))
+	bool read_ok = dir.ReadDirectory(entries);
+#ifdef DC
+	dc_trace(24, "filedlg %s: read=%d entries=%d", dir.GetPath(),
+	         (int)read_ok, (int)entries.size());
+#endif
+	if (!read_ok)
 		return false;
 	sort(entries.begin(), entries.end());
+
+#ifdef DC
+	// Saved games share /ram with the preferences file, because the ramdisk has
+	// no subdirectories. Hide the preferences from a save or film listing so it
+	// cannot be offered as something to load.
+	if (type == _typecode_savegame || type == _typecode_film) {
+		char prefs_name[64];
+		getcstr(prefs_name, strFILENAMES, filenamePREFERENCES);
+
+		for (vector<dir_entry>::iterator it = entries.begin(); it != entries.end(); ) {
+			if (it->name == prefs_name)
+				it = entries.erase(it);
+			else
+				++it;
+		}
+	}
+
+	// A list widget built over an empty vector is asking for trouble, and there
+	// is nothing to choose from anyway. Bail out rather than construct it.
+	if (entries.empty()) {
+		dc_trace(25, "filedlg: nothing to list, not opening");
+		return false;
+	}
+#endif
 
 	// Create dialog
 	dialog d;
@@ -856,8 +899,12 @@ static int dc_autostart_mode(void)
 
 			mode = 1;
 			if (f) {
-				if (fgets(buf, sizeof buf, f) && strncmp(buf, "controls", 8) == 0)
-					mode = 2;
+				if (fgets(buf, sizeof buf, f)) {
+					if (strncmp(buf, "controls", 8) == 0)
+						mode = 2;
+					else if (strncmp(buf, "load", 4) == 0)
+						mode = 3;
+				}
 				fclose(f);
 			}
 		}
@@ -917,6 +964,9 @@ static void main_event_loop(void)
 				if (mode == 2) {
 					dc_trace(2, "autostart: opening CONTROLS dialog");
 					dc_open_controls_dialog();
+				} else if (mode == 3) {
+					dc_trace(2, "autostart: selecting iLoadGame");
+					do_menu_item_command(mInterface, iLoadGame, false);
 				} else {
 					dc_trace(2, "autostart: selecting iNewGame");
 					do_menu_item_command(mInterface, iNewGame, false);
