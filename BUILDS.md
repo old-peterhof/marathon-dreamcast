@@ -29,3 +29,4 @@ tools/new-build.sh <slug> "what changed"
 Builds before b17 were not tagged. Roughly, in order: the first hardware boot,
 the 60Hz prompt fix, controller support, the analog aim scheme, the yaw rescale
 to the engine clamp, and the VMU Profiler. Git history has the detail.
+| b18 | tick-fix | 5b8fe35 | test_mouse now zeroes the delta after reading; catch-up ticks were each re-applying the full stick deflection, multiplying turn rate by how far behind the renderer was |

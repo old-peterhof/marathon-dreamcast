@@ -224,6 +224,15 @@ void test_mouse(short type, uint32 *flags, _fixed *delta_yaw, _fixed *delta_pitc
 		*delta_yaw = snapshot_delta_yaw;
 		*delta_pitch = snapshot_delta_pitch;
 		*delta_velocity = snapshot_delta_velocity;
+
+		// Consume it. execute_timer_tasks() calls mouse_idle() once per pass
+		// but runs the game tick N times to catch up, and each tick calls
+		// test_mouse. Without this the same deflection is applied N times and
+		// the turn rate scales with how far behind the renderer is -- which is
+		// why hardware at 20fps turned roughly twenty times faster than the
+		// emulator at 30, for identical code and settings. Upstream's mouse
+		// path zeroes here for exactly this reason; omitting it was the bug.
+		snapshot_delta_yaw = snapshot_delta_pitch = snapshot_delta_velocity = 0;
 	}
 	return;
 #endif
