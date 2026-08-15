@@ -241,11 +241,18 @@ MKDCDISC   = /opt/toolchains/dc/mkdcdisc/build/mkdcdisc
 DISC_DIR   = disc/AlephOne
 DISC_META  = -n "Aleph One" -a "Aleph One" -V "ALEPHONE"
 
+# -N drops the data-track padding. Padding only buys seek-time optimisation on a
+# real GD-ROM or a burned CD-R; a GDEMU reads from an SD card, where it is
+# pointless. It also takes each image from 20MB to 706MB, which is why five of
+# them filled 2.8GB. Use 'cdi-padded' if ever burning a physical disc.
 cdi: $(TARGET)
-	$(MKDCDISC) -e $(TARGET) -d $(DISC_DIR) -o alephone.cdi $(DISC_META)
+	$(MKDCDISC) -e $(TARGET) -d $(DISC_DIR) -o alephone.cdi $(DISC_META) -N
 
-# -N drops the track padding. Padding speeds real-hardware loading but inflates
-# the image from ~21MB to ~740MB, which is intolerable for a build-test loop.
+cdi-padded: $(TARGET)
+	$(MKDCDISC) -e $(TARGET) -d $(DISC_DIR) -o alephone-padded.cdi $(DISC_META)
+
+# Same image as 'cdi' now that cdi is unpadded too; kept because
+# build.sh flycast depends on it.
 test: $(TARGET)
 	$(MKDCDISC) -e $(TARGET) -d $(DISC_DIR) -o alephone-test.cdi $(DISC_META) -N
 
@@ -330,4 +337,4 @@ rm-elf:
 clean: rm-elf
 	-rm -f $(OBJS)
 
-.PHONY: all bin run rm-elf clean one cdi test gdi flycast menu autostart oldkeys probe verify
+.PHONY: all bin run rm-elf clean one cdi test gdi flycast menu autostart oldkeys probe verify cdi-padded
