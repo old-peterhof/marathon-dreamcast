@@ -124,3 +124,72 @@ was learned even when something is abandoned.
 - `${=VAR}` when passing KOS flags in this zsh shell.
 - Flycast fails to launch roughly half the time with a VMEM assertion; retry in
   a loop rather than concluding the image is broken.
+
+### 00:37 — Error 4 root cause: MacBinary I. Fixed (built, not yet confirmed in-game)
+
+First, a tooling trap that cost me a wrong diagnosis, and which anything working
+in this tree needs to know:
+
+**`grep` here is `ugrep`, and it silently skips non-UTF-8 files.** 61 of the
+source files in `Source_Files/` are ISO-8859, including `wad.cpp`, `render.cpp`,
+`player.cpp` and `map.h`. Searching them returns *nothing* — no match, no
+warning, no error. `grep -a` helps but is still unreliable here. **Search this
+tree with Python**, not grep.
+
+That is exactly how I got error 4 wrong. I searched for `errUnknownWadVersion`,
+found one hit in `wad_prefs.cpp:291`, and concluded with some confidence that
+the failure was the preferences wad and not the map. There is a second site —
+`wad.cpp:138`, inside `read_wad_header` — and ugrep hid it because `wad.cpp` is
+not UTF-8. The dialog was telling the truth all along: it is the map.
+
+**The actual cause.** `read_wad_header` rejects a file when
+
+    header->version > 4 || header->data_version > 2 || header->wad_count < 1
+
+The retail `Map` begins `00 03 4d 61 70 00`, which parses as version 3 and
+data_version 0x4D61 — the "Ma" of "Map". The wad header is not at offset 0,
+because the file is wrapped in a **MacBinary** container. The real header sits
+at offset 128 and reads version 2, data_version 1, **wad_count 41** — the full
+41-level campaign.
+
+Aleph One already handles MacBinary transparently, but `is_macbinary()` in
+`FileHandler_SDL.cpp` demanded bytes 122 and 123 be >= 0x81. That is the
+MacBinary **II** version stamp, and the retail Map is MacBinary **I** — both
+bytes are zero — so detection bailed at the first test and the wrapper was
+never stripped.
+
+The demo data was never affected because it ships as AppleSingle (magic
+0x00051600), which is detected separately just above.
+
+Container survey of the four retail files:
+
+| file | container | notes |
+|---|---|---|
+| `Map` | MacBinary I | data 5,479,687 + rsrc 14,998,386 + 128 = 20,478,322 vs 20,478,336 on disc |
+| `Images` | MacBinary II | bytes 122/123 = 0x81, so it always worked — which is why the title screen rendered |
+| `Shapes` | none | byte 74 = 195, correctly rejected and read raw |
+| `Sounds` | none | correctly rejected and read raw |
+
+**Fix:** `is_macbinary()` now accepts MacBinary I. The CRC test is applied only
+when the II version stamp is present, since I has no meaningful CRC. To avoid
+mistaking a raw wad for a container without a CRC to lean on, MacBinary I
+additionally has to have plausible fork sizes that fit inside the file.
+
+Built green, ELF 14,612,320 bytes, and the menu still comes up with no
+regression. **Not yet confirmed past the menu** — see below.
+
+### 00:37 — Input injection blocked (item D)
+
+`osascript` refuses: *"osascript is not allowed to send keystrokes. (1002)"*.
+Sending keys needs Accessibility permission for Terminal, which is a system
+setting only Max can grant:
+
+  System Settings -> Privacy & Security -> Accessibility -> enable Terminal
+
+Flycast's own config is fine — `device1 = 5` is `MDT_Keyboard`, so a Dreamcast
+keyboard is already emulated on port A, which is what BERO's UP/DOWN/RETURN menu
+navigation needs. The only thing missing is permission to press the keys.
+
+Until that is granted I can verify boot and menu, but not gameplay. So the
+MacBinary fix is **built and verified at the byte level, not observed working
+in-game**. Stating that plainly rather than claiming the level loads.

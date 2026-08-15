@@ -83,32 +83,67 @@ bool is_applesingle(SDL_RWops *f, bool rsrc_fork, long &offset, long &length)
 
 bool is_macbinary(SDL_RWops *f, long &data_length, long &rsrc_length)
 {
-	// This only recognizes MacBinary II files
+	// Recognizes MacBinary I as well as II.
+	//
+	// The original code required bytes 122 and 123 to be >= 0x81, which is the
+	// MacBinary II signature. That rejects MacBinary I outright, and the retail
+	// Marathon 2 data files are MacBinary I: Map, Shapes, Sounds and Images all
+	// carry zeroes there. Aleph One then read the wad header at offset 0 rather
+	// than at 128, got version=3 / data_version=0x4D61 (the "Ma" of "Map"), and
+	// failed read_wad_header's sanity check with errUnknownWadVersion -- the
+	// "error 4" dialog. The demo data was unaffected because it ships as
+	// AppleSingle, which is handled separately just above.
 	SDL_RWseek(f, 0, SEEK_SET);
 	uint8 header[128];
-	SDL_RWread(f, header, 1, 128);
-	if (header[0] || header[1] > 63 || header[74] || header[122] < 0x81 || header[123] < 0x81)
+	if (SDL_RWread(f, header, 1, 128) != 128)
 		return false;
 
-	// Check CRC
-	uint16 crc = 0;
-	for (int i=0; i<124; i++) {
-		uint16 data = header[i] << 8;
-		for (int j=0; j<8; j++) {
-			if ((data ^ crc) & 0x8000)
-				crc = (crc << 1) ^ 0x1021;
-			else
-				crc <<= 1;
-			data <<= 1;
+	// Fields both variants must satisfy: byte 0 is a zero version marker, the
+	// filename is 1-63 bytes, and bytes 74 and 82 are reserved zeroes.
+	if (header[0] || header[1] < 1 || header[1] > 63 || header[74] || header[82])
+		return false;
+
+	// Bytes 122/123 carry the MacBinary II version stamp. Only II guarantees a
+	// meaningful CRC at 124..125, so only II gets the CRC test.
+	bool is_macbinary_ii = (header[122] >= 0x81 && header[123] >= 0x81);
+
+	if (is_macbinary_ii) {
+		uint16 crc = 0;
+		for (int i=0; i<124; i++) {
+			uint16 data = header[i] << 8;
+			for (int j=0; j<8; j++) {
+				if ((data ^ crc) & 0x8000)
+					crc = (crc << 1) ^ 0x1021;
+				else
+					crc <<= 1;
+				data <<= 1;
+			}
 		}
+		if (crc != ((header[124] << 8) | header[125]))
+			return false;
 	}
-	//printf("crc %02x\n", crc);
-	if (crc != ((header[124] << 8) | header[125]))
-		return false;
 
-	// CRC valid, extract fork sizes
 	data_length = (header[83] << 24) | (header[84] << 16) | (header[85] << 8) | header[86];
 	rsrc_length = (header[87] << 24) | (header[88] << 16) | (header[89] << 8) | header[90];
+
+	// Without a CRC to lean on, MacBinary I needs the fork sizes themselves to
+	// be plausible, otherwise a raw wad whose first bytes happen to look like a
+	// header would be mistaken for a container.
+	if (data_length < 0 || rsrc_length < 0)
+		return false;
+
+	if (!is_macbinary_ii) {
+		long pos = SDL_RWtell(f);
+		SDL_RWseek(f, 0, SEEK_END);
+		long file_length = SDL_RWtell(f);
+		SDL_RWseek(f, pos, SEEK_SET);
+
+		// Forks start at 128 and are each padded up to a 128-byte boundary.
+		long need = 128 + ((data_length + 127) & ~127) + rsrc_length;
+		if (data_length + rsrc_length == 0 || need > file_length)
+			return false;
+	}
+
 	return true;
 }
 
