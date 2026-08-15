@@ -150,7 +150,7 @@ static void usage(const char *prg_name)
 
 extern "C" {
 extern int fs_mem_init(void);
-extern void dc_vmu_load_saves(const char *ram_dir);
+extern void dc_vmu_load_saves(const char *ram_dir, const char *map_path);
 #ifdef DC
 void dc_trace(int slot, const char *fmt, ...);
 void dc_input_init_video(void);		// suppress SDL's 60Hz prompt; see dc_input.c
@@ -167,7 +167,7 @@ int main(int argc, char **argv)
 
 	// Pull any saved games off the memory card and into the ramdisk before the
 	// game looks at saved_games_dir, so they simply appear in the load dialog.
-	dc_vmu_load_saves("/ram");
+	dc_vmu_load_saves("/ram", "/cd/AlephOne/Map");
 #endif
 	// Print banner (don't bother if this doesn't appear when started from a GUI)
 	printf(
@@ -514,6 +514,43 @@ void alert_user(short severity, short resid, short item, OSErr error)
 	if (severity != infoError)
 		exit(1);
 }
+
+
+#ifdef DC
+/*
+ *  dc_alert_text -- a message box whose text is supplied directly.
+ *
+ *  alert_user() can only show strings that already live in a resource, which is
+ *  no use for telling a player how many blocks their memory card had free. This
+ *  is the same dialog, and so gets the same controller handling, but takes its
+ *  lines as arguments.
+ *
+ *  It exists because of a failure that was worse than a crash: a save that had
+ *  been declined for want of space on the card reported nothing at all, so the
+ *  game said it had saved and the player only found out after a power cycle.
+ */
+extern "C" void dc_alert_text(const char *title, const char *line1, const char *line2)
+{
+	if (SDL_GetVideoSurface() == NULL) {
+		fprintf(stderr, "%s: %s %s\n", title, line1 ? line1 : "", line2 ? line2 : "");
+		return;
+	}
+
+	dialog d;
+	d.add(new w_static_text(const_cast<char *>(title), TITLE_FONT, TITLE_COLOR));
+	d.add(new w_spacer());
+	if (line1)
+		d.add(new w_static_text(const_cast<char *>(line1)));
+	if (line2)
+		d.add(new w_static_text(const_cast<char *>(line2)));
+	d.add(new w_spacer());
+	d.add(new w_button("OK", dialog_ok, &d));
+	d.run();
+
+	if (top_dialog == NULL)
+		update_game_window();
+}
+#endif
 
 
 /*

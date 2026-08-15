@@ -101,7 +101,7 @@ Nov 26, 2000 (Loren Petrich):
 #include "Packing.h"
 
 #ifdef DC
-extern "C" void dc_vmu_save_game(const char *ram_path);
+extern "C" void dc_vmu_save_game(const char *ram_path, const char *map_path, int level);
 #endif
 
 // LP addition: for physics-model stuff, we need these pointers to definitions
@@ -1294,8 +1294,11 @@ bool save_game_file(FileSpecifier& File)
 	// Copy it to a memory card so it is still there next time. Declining is not
 	// an error the player needs an alert about -- the game is saved either way,
 	// it simply may not outlive the power switch. See dc/dc_vmu.c.
+	// The map path and level let dc_wad.c fold the save against the level it was
+	// made on, which is the difference between 163 blocks on a memory card and 22.
 	if (success)
-		dc_vmu_save_game(File.GetPath());
+		dc_vmu_save_game(File.GetPath(), MapFileSpec.GetPath(),
+		                 dynamic_world->current_level_number);
 #endif
 	
 	return success;

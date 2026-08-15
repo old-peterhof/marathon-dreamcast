@@ -15,6 +15,11 @@
 # not catch it, because the binary itself contains "/cd/AlephOne/DEBUG". The
 # only trustworthy check is to read the ISO9660 directory, which is what this
 # does: dump the data track, mount it, and list.
+#
+# It inspects the *currently staged* tree, so run it directly after the target
+# you mean to ship. Building `play` or `test` after `cdi` restages the markers,
+# and this will then correctly report an unfit image even though the .cdi on
+# disk is fine.
 
 set -u
 

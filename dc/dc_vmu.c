@@ -40,6 +40,15 @@
 
 extern void dc_trace(int slot, const char *fmt, ...);
 
+/* Defined in shell_sdl.cpp. A message box with text supplied directly, so a
+   declined save can say how much room the card actually had. */
+extern void dc_alert_text(const char *title, const char *line1, const char *line2);
+
+/* Defined in dc_wad.c. Folds a save against the level it was made on, and being
+   XOR, folds it back again. Returns -1 if the level could not be read. */
+extern int dc_wad_xor_level(uint8_t *save, long save_len,
+                            const char *map_path, int level);
+
 #define VMU_FILE_NAME	"ALEPHONE.PRF"
 #define VMU_BLOCK		512
 #define VMU_MAX_BYTES	(64 * VMU_BLOCK)	/* generous ceiling; prefs are tiny */
@@ -219,6 +228,7 @@ void dc_vmu_save_prefs(const char *ram_path)
 #define SAVE_MAGIC_3	'V'
 #define SAVE_NAME_OFF	16			/* name lives here, after the length fields */
 #define SAVE_FLAG_ZLIB	0x01		/* payload is deflated */
+#define SAVE_FLAG_DELTA	0x02		/* payload was XORed against its map level */
 
 static void put_u32(uint8_t *p, uint32_t v)
 {
@@ -237,7 +247,7 @@ static uint32_t get_u32(const uint8_t *p)
 #define SAVE_TEMP_NAME	"savetemp.dat"
 
 static void save_hdr_put(uint8_t *h, const char *name, uint32_t raw_len,
-                         uint32_t stored_len, uint8_t flags)
+                         uint32_t stored_len, uint8_t flags, int level)
 {
 	memset(h, 0, SAVE_HDR_LEN);
 	h[0] = SAVE_MAGIC_0; h[1] = SAVE_MAGIC_1;
@@ -245,11 +255,15 @@ static void save_hdr_put(uint8_t *h, const char *name, uint32_t raw_len,
 	put_u32(h + 4, raw_len);
 	put_u32(h + 8, stored_len);
 	h[12] = flags;
+	/* Which level the save was folded against; meaningless without the flag. */
+	h[13] = (uint8_t)(level & 0xff);
+	h[14] = (uint8_t)((level >> 8) & 0xff);
 	strncpy((char *)h + SAVE_NAME_OFF, name, SAVE_HDR_LEN - SAVE_NAME_OFF - 1);
 }
 
 static int save_hdr_get(const uint8_t *h, char *name, size_t name_len,
-                        uint32_t *raw_len, uint32_t *stored_len, uint8_t *flags)
+                        uint32_t *raw_len, uint32_t *stored_len, uint8_t *flags,
+                        int *level)
 {
 	if (h[0] != SAVE_MAGIC_0 || h[1] != SAVE_MAGIC_1 ||
 	    h[2] != SAVE_MAGIC_2 || h[3] != SAVE_MAGIC_3)
@@ -258,6 +272,9 @@ static int save_hdr_get(const uint8_t *h, char *name, size_t name_len,
 	*raw_len    = get_u32(h + 4);
 	*stored_len = get_u32(h + 8);
 	*flags      = h[12];
+
+	if (level)
+		*level = (int)h[13] | ((int)h[14] << 8);
 
 	strncpy(name, (const char *)h + SAVE_NAME_OFF, name_len - 1);
 	name[name_len - 1] = 0;
@@ -273,15 +290,29 @@ static const char *base_name(const char *path)
 }
 
 /*
- *	How many blocks the card has left. KOS wants the maple device rather than the
- *	mount path, so this asks the bus directly for the first memory card. Returns
- *	-1 if there is no card or the count cannot be read, which callers treat as
- *	"do not write".
+ *	How many blocks a given card has left.
+ *
+ *	KOS wants the maple device rather than the mount path, and the mount name
+ *	encodes it: /vmu/a1 is port a, unit 1. Returns -1 if the device cannot be
+ *	found or the count cannot be read, which callers treat as "do not write".
  */
-static int vmu_free_blocks(void)
+static int vmu_free_blocks(const char *unit)
 {
-	maple_device_t *dev = maple_enum_type(0, MAPLE_FUNC_MEMCARD);
+	const char *name = strrchr(unit, '/');
+	maple_device_t *dev;
+	int port, slot;
 
+	if (!name)
+		return -1;
+
+	name++;
+	port = name[0] - 'a';
+	slot = name[1] - '0';
+
+	if (port < 0 || port > 3 || slot < 0 || slot > 5)
+		return -1;
+
+	dev = maple_enum_dev(port, slot);
 	if (!dev)
 		return -1;
 
@@ -289,25 +320,83 @@ static int vmu_free_blocks(void)
 }
 
 /*
+ *	Choose a card with room for `need` blocks.
+ *
+ *	A player may have two cards fitted, and the first one found is not
+ *	necessarily the one with space -- a Dreamcast owner's VMU is usually already
+ *	full of other games. So try each in turn, and if none has room, report back
+ *	the most free space any of them had so the message can say something useful.
+ */
+static int pick_vmu(int need, char *out, size_t out_len, int *best_free, int *found_any)
+{
+	DIR *d = opendir("/vmu");
+	struct dirent *de;
+	int ok = 0;
+
+	*best_free = -1;
+	*found_any = 0;
+
+	if (!d)
+		return 0;
+
+	while ((de = readdir(d)) != NULL) {
+		char unit[32];
+		int freeb;
+
+		if (de->d_name[0] == '.')
+			continue;
+
+		snprintf(unit, sizeof unit, "/vmu/%s", de->d_name);
+		*found_any = 1;
+
+		freeb = vmu_free_blocks(unit);
+		if (freeb > *best_free)
+			*best_free = freeb;
+
+		if (freeb < 0 || freeb >= need) {
+			snprintf(out, out_len, "%s", unit);
+			ok = 1;
+			break;
+		}
+	}
+
+	closedir(d);
+	return ok;
+}
+
+/*
  *	Restore every save on the card into the ramdisk. Called once at start-up,
  *	before Aleph One looks at saved_games_dir, so the load dialog simply finds
  *	them there.
  */
-void dc_vmu_load_saves(const char *ram_dir)
+void dc_vmu_load_saves(const char *ram_dir, const char *map_path)
 {
 	char unit[32];
 	int slot, restored = 0;
+	DIR *dir;
+	struct dirent *de;
 
 	if (!ram_dir)
 		ram_dir = "/ram";
 
-	if (!first_vmu(unit, sizeof unit))
+	dir = opendir("/vmu");
+	if (!dir)
 		return;
+
+	/* Look on every card, not just the first: a player may keep the game on one
+	   and something else on the other. */
+	while ((de = readdir(dir)) != NULL) {
+
+	if (de->d_name[0] == '.')
+		continue;
+
+	snprintf(unit, sizeof unit, "/vmu/%s", de->d_name);
 
 	for (slot = 1; slot <= SAVE_SLOTS; slot++) {
 		char src[80], dst[160], name[SAVE_HDR_LEN];
 		uint8_t hdr[SAVE_HDR_LEN], flags;
 		uint32_t raw_len, stored_len;
+		int level = 0;
 		FILE *in, *out;
 		uint8_t *stored, *raw;
 		size_t got;
@@ -319,7 +408,7 @@ void dc_vmu_load_saves(const char *ram_dir)
 			continue;
 
 		if (fread(hdr, 1, SAVE_HDR_LEN, in) != SAVE_HDR_LEN ||
-		    !save_hdr_get(hdr, name, sizeof name, &raw_len, &stored_len, &flags) ||
+		    !save_hdr_get(hdr, name, sizeof name, &raw_len, &stored_len, &flags, &level) ||
 		    raw_len == 0 || stored_len == 0) {
 			fclose(in);
 			continue;
@@ -361,6 +450,16 @@ void dc_vmu_load_saves(const char *ram_dir)
 			raw = stored;
 		}
 
+		/* Unfold against the level, which is the same XOR that folded it. */
+		if (flags & SAVE_FLAG_DELTA) {
+			if (dc_wad_xor_level(raw, (long)raw_len, map_path, level) < 0) {
+				dc_trace(17, "vmu: %s needs level %d, which could not be read",
+				         name, level);
+				free(raw);
+				continue;
+			}
+		}
+
 		snprintf(dst, sizeof dst, "%s/%s", ram_dir, name);
 		out = fopen(dst, "wb");
 		if (out) {
@@ -371,6 +470,10 @@ void dc_vmu_load_saves(const char *ram_dir)
 
 		free(raw);
 	}
+
+	}
+
+	closedir(dir);
 
 	if (restored)
 		dc_trace(17, "vmu: restored %d saved game(s)", restored);
@@ -384,19 +487,64 @@ void dc_vmu_load_saves(const char *ram_dir)
  *	ignored: the save itself is already safely on the ramdisk and the player can
  *	keep playing, they simply will not have it after a power cycle.
  */
-void dc_vmu_save_game(const char *ram_path)
+/*
+ *	Look for a slot on this card already holding a save of this name, so saving
+ *	over a game reuses its space instead of consuming a second slot. Returns the
+ *	slot number, or 0 if there is none. `first_free` receives the lowest slot
+ *	number not in use, or 0 if the card is out of slots.
+ */
+static int find_slot(const char *unit, const char *name, int *first_free)
 {
-	char unit[32], dst[80];
+	int slot;
+
+	*first_free = 0;
+
+	for (slot = 1; slot <= SAVE_SLOTS; slot++) {
+		char probe[80], existing[SAVE_HDR_LEN];
+		uint8_t hdr[SAVE_HDR_LEN], flags;
+		uint32_t raw_len, stored_len;
+		FILE *f;
+
+		snprintf(probe, sizeof probe, "%s/AOSAVE%02d.SAV", unit, slot);
+
+		f = fopen(probe, "rb");
+		if (!f) {
+			if (!*first_free)
+				*first_free = slot;
+			continue;
+		}
+
+		if (fread(hdr, 1, SAVE_HDR_LEN, f) == SAVE_HDR_LEN &&
+		    save_hdr_get(hdr, existing, sizeof existing, &raw_len, &stored_len, &flags, NULL) &&
+		    strcmp(existing, name) == 0) {
+			fclose(f);
+			return slot;
+		}
+
+		fclose(f);
+	}
+
+	return 0;
+}
+
+void dc_vmu_save_game(const char *ram_path, const char *map_path, int level)
+{
+	static int warned_no_card = 0;
+	char unit[32], dst[80], msg1[96], msg2[96];
 	const char *name;
 	vmu_pkg_t pkg;
 	FILE *in;
 	file_t fd;
 	uint8_t *raw = NULL, *out = NULL;
 	uLongf bound;
+	uint8_t delta = 0;
 	size_t alloc;
 	long size;
 	size_t got, payload, padded;
 	int slot, target = 0, first_free = 0, free_blocks, need_blocks;
+	int best_free = -1, found_any = 0, chose = 0;
+	DIR *dir;
+	struct dirent *de;
 
 	if (!ram_path)
 		return;
@@ -404,11 +552,6 @@ void dc_vmu_save_game(const char *ram_path)
 	name = base_name(ram_path);
 	if (strcmp(name, SAVE_TEMP_NAME) == 0)
 		return;
-
-	if (!first_vmu(unit, sizeof unit)) {
-		dc_trace(17, "vmu: no memory card, save stays on /ram only");
-		return;
-	}
 
 	in = fopen(ram_path, "rb");
 	if (!in)
@@ -440,14 +583,19 @@ void dc_vmu_save_game(const char *ram_path)
 		return;
 	}
 
-	/* Deflate. A save is far too big for a card at full size -- 215040 bytes
-	   against roughly 99328 free -- so this is not an optimisation, it is the
-	   only way the file fits at all. */
-	bound = compressBound((uLong)size);
+	/*
+	 *	Fold the save against the level it was made on before compressing. Most
+	 *	of a save is a verbatim copy of the map already on the disc, so this
+	 *	turns the bulk of it into zeroes for deflate to swallow: measured, 163
+	 *	blocks down to 22. If the level cannot be read the save is simply stored
+	 *	whole, which still works, just large.
+	 */
+	if (dc_wad_xor_level(raw, (long)size, map_path, level) >= 0)
+		delta = SAVE_FLAG_DELTA;
+	else
+		dc_trace(17, "vmu: level %d unreadable, storing %s whole", level, name);
 
-	/* Room for the header, the worst-case deflate, and the block padding that
-	   gets rounded up afterwards -- the padded length is computed from the
-	   *actual* compressed size, which can round past the bound. */
+	bound = compressBound((uLong)size);
 	alloc = SAVE_HDR_LEN + (size_t)bound + VMU_BLOCK;
 
 	out = malloc(alloc);
@@ -470,61 +618,95 @@ void dc_vmu_save_game(const char *ram_path)
 	payload = SAVE_HDR_LEN + (size_t)bound;
 	padded = (payload + VMU_BLOCK - 1) / VMU_BLOCK * VMU_BLOCK;
 
-	/* The tail between the payload and the block boundary must be zero on the
-	   card; the buffer was sized above to guarantee it is there to zero. */
 	if (padded > payload)
 		memset(out + payload, 0, padded - payload);
 
-	save_hdr_put(out, name, (uint32_t)size, (uint32_t)bound, SAVE_FLAG_ZLIB);
+	save_hdr_put(out, name, (uint32_t)size, (uint32_t)bound,
+	             (uint8_t)(SAVE_FLAG_ZLIB | delta), level);
 
-	/* Pick a slot: the one already holding this name, else the lowest unused. */
-	for (slot = 1; slot <= SAVE_SLOTS; slot++) {
-		char probe[80], existing[SAVE_HDR_LEN];
-		uint8_t hdr[SAVE_HDR_LEN], eflags;
-		uint32_t eraw, estored;
-		FILE *f;
+	need_blocks = (int)(padded / VMU_BLOCK) + 1;	/* +1 for the directory header */
 
-		snprintf(probe, sizeof probe, "%s/AOSAVE%02d.SAV", unit, slot);
+	/*
+	 *	Prefer a card that already holds this save: overwriting it costs nothing
+	 *	extra, and its blocks come back the moment the old copy is unlinked.
+	 */
+	dir = opendir("/vmu");
+	if (dir) {
+		while ((de = readdir(dir)) != NULL) {
+			char cand[32];
+			int ff;
 
-		f = fopen(probe, "rb");
-		if (!f) {
-			if (!first_free)
-				first_free = slot;
-			continue;
+			if (de->d_name[0] == '.')
+				continue;
+
+			snprintf(cand, sizeof cand, "/vmu/%s", de->d_name);
+			found_any = 1;
+
+			slot = find_slot(cand, name, &ff);
+			if (slot) {
+				char old[80];
+
+				snprintf(old, sizeof old, "%s/AOSAVE%02d.SAV", cand, slot);
+				fs_unlink(old);
+
+				snprintf(unit, sizeof unit, "%s", cand);
+				target = slot;
+				chose = 1;
+				break;
+			}
 		}
-
-		if (fread(hdr, 1, SAVE_HDR_LEN, f) == SAVE_HDR_LEN &&
-		    save_hdr_get(hdr, existing, sizeof existing, &eraw, &estored, &eflags) &&
-		    strcmp(existing, name) == 0)
-			target = slot;
-
-		fclose(f);
-
-		if (target)
-			break;
+		closedir(dir);
 	}
 
-	if (!target)
-		target = first_free;
+	/* Otherwise take any card with room for it. */
+	if (!chose) {
+		if (pick_vmu(need_blocks, unit, sizeof unit, &best_free, &found_any)) {
+			find_slot(unit, name, &first_free);
+			target = first_free;
+			chose = target != 0;
+		}
+	}
 
-	if (!target) {
-		dc_trace(17, "vmu: all %d save slots in use", SAVE_SLOTS);
+	if (!found_any) {
+		dc_trace(17, "vmu: no memory card, save stays on /ram only");
+		if (!warned_no_card) {
+			warned_no_card = 1;
+			dc_alert_text("NO MEMORY CARD",
+			              "This game is saved, but only until",
+			              "the console is switched off.");
+		}
+		free(out);
+		return;
+	}
+
+	if (!chose) {
+		/* Tell the player, with the real numbers. A save that is quietly
+		   dropped is worse than one that fails loudly: the game otherwise
+		   reports success and the loss only shows up after a power cycle. */
+		dc_trace(17, "vmu: card full, %s needs %d blocks, %d free",
+		         name, need_blocks, best_free);
+
+		snprintf(msg1, sizeof msg1, "Needs %d blocks, %d free.",
+		         need_blocks, best_free < 0 ? 0 : best_free);
+		snprintf(msg2, sizeof msg2, "Saved to memory only.");
+
+		dc_alert_text("MEMORY CARD FULL", msg1, msg2);
 		free(out);
 		return;
 	}
 
 	snprintf(dst, sizeof dst, "%s/AOSAVE%02d.SAV", unit, target);
 
-	/* Delete any previous copy before measuring free space, so overwriting a
-	   save is judged on what it actually costs rather than counted twice. */
-	fs_unlink(dst);
-
-	free_blocks = vmu_free_blocks();
-	need_blocks = (int)(padded / VMU_BLOCK) + 1;	/* +1 for the directory header */
-
+	free_blocks = vmu_free_blocks(unit);
 	if (free_blocks >= 0 && free_blocks < need_blocks) {
-		dc_trace(17, "vmu: card full, %s needs %d blocks, %d free",
-		         name, need_blocks, free_blocks);
+		dc_trace(17, "vmu: %s short by %d blocks", unit,
+		         need_blocks - free_blocks);
+
+		snprintf(msg1, sizeof msg1, "Needs %d blocks, %d free.",
+		         need_blocks, free_blocks);
+		snprintf(msg2, sizeof msg2, "Saved to memory only.");
+
+		dc_alert_text("MEMORY CARD FULL", msg1, msg2);
 		free(out);
 		return;
 	}
@@ -532,6 +714,9 @@ void dc_vmu_save_game(const char *ram_path)
 	fd = fs_open(dst, O_WRONLY | O_TRUNC | O_CREAT);
 	if (fd == FILEHND_INVALID) {
 		dc_trace(17, "vmu: cannot open %s", dst);
+		dc_alert_text("MEMORY CARD ERROR",
+		              "Could not write to the card.",
+		              "Saved to memory only.");
 		free(out);
 		return;
 	}
@@ -548,11 +733,15 @@ void dc_vmu_save_game(const char *ram_path)
 
 	fs_vmu_set_header(fd, &pkg);
 
-	if (fs_write(fd, out, padded) != (ssize_t)padded)
+	if (fs_write(fd, out, padded) != (ssize_t)padded) {
 		dc_trace(17, "vmu: short write saving %s", name);
-	else
-		dc_trace(17, "vmu: saved %s to slot %d, %ld -> %u bytes (%d blocks)",
-		         name, target, size, (unsigned)padded, need_blocks);
+		dc_alert_text("MEMORY CARD ERROR",
+		              "The write did not complete.",
+		              "Saved to memory only.");
+	} else {
+		dc_trace(17, "vmu: saved %s to %s slot %d, %ld -> %u bytes (%d blocks)",
+		         name, unit, target, size, (unsigned)padded, need_blocks);
+	}
 
 	fs_close(fd);
 	free(out);
