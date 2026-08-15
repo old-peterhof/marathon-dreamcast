@@ -47,6 +47,10 @@ void free_and_unlock_memory(void);
 
 #include "TextStrings.h"
 
+#ifdef DC
+#include "../../dc/build_id.h"
+#endif
+
 #ifdef HAVE_CONFIG_H
 #include "confpaths.h"
 #endif
@@ -149,6 +153,7 @@ extern int fs_mem_init(void);
 #ifdef DC
 void dc_input_init_video(void);		// suppress SDL's 60Hz prompt; see dc_input.c
 void dc_profiler_start(void);		// VMU Profiler, gated on a PROFILE marker
+void dc_build_stamp(const char *tag);	// draws the build tag on the menu
 #endif
 }
 
@@ -883,6 +888,12 @@ static void main_event_loop(void)
 		dc_input_poll();
 
 #ifdef DC
+		// Which build is this? Drawn every pass while the menu is up, so a
+		// button redraw cannot wipe it. Matches the image filename and the row
+		// in BUILDS.md.
+		if (get_game_state() == _display_main_menu)
+			dc_build_stamp(DC_BUILD_TAG);
+
 		{
 			static int shown = 0;
 			if (!shown && get_game_state() == _display_main_menu) {

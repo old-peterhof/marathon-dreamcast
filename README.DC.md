@@ -103,6 +103,17 @@ from two calls in `wad_prefs.cpp` and still only ever touches `/ram`.
 
 Saved games are **not** mirrored; they far exceed a VMU's 128K.
 
+## Identifying a build
+
+Every image is named `alephone-b<N>-<slug>.cdi`, the same `b<N> <slug>` is drawn
+at the bottom-left of the main menu, and it is burned into the disc volume label
+so it survives a rename. `BUILDS.md` maps each tag to its commit and what
+changed, so feedback like "b17 turns too fast at the rim" identifies exactly one
+binary.
+
+Start a new one with `tools/new-build.sh <slug> "what changed"`, which bumps the
+number, sets the name and appends the row.
+
 ## Testing aids
 
 Synthesised keystrokes into Flycast proved unreliable, so the port can drive

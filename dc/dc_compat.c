@@ -113,3 +113,16 @@ int access(const char *path, int mode)
 
 	return 0;
 }
+
+/*
+ *	dc_build_stamp -- draw the build tag in the corner of the main menu.
+ *
+ *	Not gated on DEBUG: knowing which build is running matters most on a normal
+ *	image, which is exactly the one a player is giving feedback about. Drawn
+ *	every pass rather than once, because the menu redraws its buttons and would
+ *	otherwise erase it.
+ */
+void dc_build_stamp(const char *tag)
+{
+	bfont_draw_str(vram_s + 452 * 640 + 8, 640, 0, (char *)tag);
+}
