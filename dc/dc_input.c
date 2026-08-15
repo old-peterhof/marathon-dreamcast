@@ -33,6 +33,7 @@
  */
 
 #include <string.h>
+#include <unistd.h>
 #include <SDL/SDL.h>
 #include <dc/maple.h>
 #include <dc/maple/controller.h>
@@ -99,11 +100,41 @@ static void send_key(SDLKey sym, int pressed)
  *	Read the first controller and turn any change since the last call into key
  *	presses and releases. Safe to call when nothing is plugged in.
  */
+/*
+ *	Self-test. Flycast will not route host input to an emulated controller in
+ *	the configurations tried here, so the button table cannot be exercised under
+ *	emulation. This synthesises a held D-pad Right instead, which isolates our
+ *	half of the chain: binding table -> send_key -> SDL_PrivateKeyboard ->
+ *	SDL_GetKeyState -> the player turning.
+ *
+ *	If the player's yaw moves with this enabled, everything downstream of
+ *	reading the pad is correct and the only remaining unknown is whether the
+ *	emulator delivers real pad input -- which a human with an actual controller
+ *	settles immediately.
+ *
+ *	Enabled by a PADTEST file on the disc, the same trick as AUTOSTART, so it
+ *	never ships in the hardware image.
+ */
+static int padtest_wanted(void)
+{
+	static int checked = 0, wanted = 0;
+
+	if (!checked) {
+		checked = 1;
+		wanted = (access("/cd/AlephOne/PADTEST", 4) == 0);
+		if (wanted)
+			dc_trace(15, "PADTEST: synthesising D-pad Right");
+	}
+
+	return wanted;
+}
+
 void dc_input_poll(void)
 {
 	static int previous = 0;
 	static int have_previous = 0;
 	static int reported_present = 0, reported_absent = 0;
+	static int padtest_frames = 0;
 
 	maple_device_t *dev;
 	cont_state_t *st;
@@ -129,6 +160,14 @@ void dc_input_poll(void)
 	}
 
 	current = st->buttons;
+
+	/* Self-test: hold D-pad Right for a second every three seconds, so the
+	   effect on the player is unmistakable in the yaw trace. */
+	if (padtest_wanted()) {
+		padtest_frames++;
+		if ((padtest_frames % 90) < 30)
+			current |= CONT_DPAD_RIGHT;
+	}
 
 	if (st->joyx < -STICK_DEADZONE) current |= DCK_STICK_LEFT;
 	if (st->joyx >  STICK_DEADZONE) current |= DCK_STICK_RIGHT;

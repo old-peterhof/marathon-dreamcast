@@ -194,9 +194,10 @@ $(DISC)/.stamp: $(GAMEDATA)/Map
 # so the hardware image always boots to a normal menu.
 autostart-marker: $(DISC)/.stamp
 	echo "auto" > $(DISC)/AlephOne/AUTOSTART
+	echo "pad" > $(DISC)/AlephOne/PADTEST
 
 no-autostart-marker: $(DISC)/.stamp
-	rm -f $(DISC)/AlephOne/AUTOSTART
+	rm -f $(DISC)/AlephOne/AUTOSTART $(DISC)/AlephOne/PADTEST
 
 disc: $(DISC)/.stamp
 

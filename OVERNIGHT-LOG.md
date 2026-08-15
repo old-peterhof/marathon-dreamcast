@@ -433,3 +433,42 @@ force-quit it.
 Also worth recording about Flycast config: it rewrites `emu.cfg` on quit. Edit
 it while Flycast is running and the edit is silently reverted when it exits.
 Kill first, then edit, then launch.
+
+### 01:50 — Controller driver VERIFIED (item B done)
+
+Flycast would not route host keys to an emulated pad in any configuration tried,
+so the button table could not be exercised the obvious way. Instead the driver
+now has a self-test, gated on a `PADTEST` file on the disc exactly like
+AUTOSTART, which synthesises a held D-pad Right for one second in every three.
+That isolates our half of the chain from the emulator's input plumbing.
+
+Result:
+
+    [dctrace 15] PADTEST: synthesising D-pad Right
+    [dctrace 14] controller buttons 00000000 -> 00000080     (CONT_DPAD_RIGHT)
+    [dctrace 14] controller buttons 00000080 -> 00000000
+    fps 30.3  yaw=369 -> 464 -> 501 -> 171 -> 186 -> 210 -> 237 -> 264 -> 297
+
+The player turns continuously, wrapping past 512 (Marathon's full circle). So
+the binding table, `send_key`, `SDL_PrivateKeyboard`, and Aleph One's
+`SDL_GetKeyState` polling all work together. Using `SDL_PrivateKeyboard` rather
+than `SDL_PushEvent` is vindicated: a queued event alone would not have moved
+the player.
+
+What remains genuinely unverified is only whether real pad input reaches the
+driver, which is Flycast's input routing rather than our code, and is what the
+maple bus does natively on hardware. Someone with a controller settles it in
+seconds.
+
+**Queue complete: A, B, C, D and E are all done.**
+
+Remaining work worth doing, none of it blocking:
+
+- Quiet the debug tracing before this is treated as a release build. The fps
+  and button traces print over serial every second.
+- VMU saves. Preferences and saved games live on the ramdisk and do not survive
+  a power cycle.
+- The `GL=1` PowerVR path, which matters more than it seemed now that the
+  framerate claim has been withdrawn.
+- Real hardware. Nothing here has been on a console yet; `./build.sh cdi`
+  produces the padded 740MB image for that.
