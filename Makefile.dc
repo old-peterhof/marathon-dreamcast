@@ -90,7 +90,7 @@ SRCS = \
 # syscalls.c duplicates newlib symbols modern KOS already provides, and fs_mem.c
 # reimplements what is now fs_ramdisk. dc/dc_compat.c supplies the two pieces
 # that are actually still missing -- fs_mem_init() and access().
-DC_OBJS = dc/dc_compat.o
+DC_OBJS = dc/dc_compat.o dc/dc_input.o
 
 OBJS0 = $(SRCS:.cpp=.o)
 OBJS  = $(OBJS0:.c=.o) $(DC_OBJS)

@@ -353,3 +353,54 @@ because `osascript -e 'tell application "System Events" to repeat 40 times ...'`
 does not parse as a one-liner. A single `key code N` works inline, but a repeat
 block needs a real multi-line `tell ... end tell` script. I wasted a test cycle
 concluding "input does not reach the game" when nothing had actually been sent.
+
+### 01:30 — Correction: the 30 fps figure is NOT a hardware measurement
+
+Max caught this and he is right. The 29-30 fps I measured came from Flycast on
+an Apple-silicon Mac. Flycast's SH-4 dynarec does not throttle to real 200MHz
+silicon, so that number is an **upper bound from emulation**, not evidence about
+hardware. The engine also caps at a 30Hz tick, so "30 fps" only says it is not
+falling below the cap under emulation.
+
+The earlier claim that "the PowerVR is not needed for full speed" is withdrawn.
+Nothing measured so far says anything trustworthy about framerate on a real
+Dreamcast. Software rendering at 640x320 on a 200MHz SH-4 could well be much
+slower, and the hardware-accelerated path (BERO's untested `GL=1`) may turn out
+to matter after all. This needs a real console to settle.
+
+### 01:30 — DC controller driver (item B): detects, mapping unverified
+
+`dc/dc_input.c` reads the controller directly off the maple bus and injects the
+result into SDL. `dc_input_poll()` is called from `main_event_loop`, so it
+covers menus and gameplay alike.
+
+Injection goes through `SDL_PrivateKeyboard`, not `SDL_PushEvent`, and that
+choice is load-bearing: `SDL_PrivateKeyboard` updates SDL's internal key-state
+array as well as queueing the event, and Aleph One polls `SDL_GetKeyState`
+(`vbl_sdl.cpp:98`) for gameplay input. A pushed event alone would drive menus
+but leave the player standing still.
+
+Mapping targets the arrow-key layout, now the Dreamcast default, so the D-pad
+serves menus and movement without rebinding:
+
+| control | key | effect |
+|---|---|---|
+| D-pad / analog stick | arrows | menu nav, move and turn |
+| A | RETURN + SPACE | menu select / primary trigger |
+| B | LALT | secondary trigger |
+| X | TAB | action (switches, terminals) |
+| Y | M | overhead map |
+| Start | ESCAPE | pause / abort |
+| L / R triggers | Z / X | sidestep left / right |
+
+**Status: detection confirmed, mapping not yet exercised.** With a Sega
+Controller configured on port A the trace reports `controller: found, polling`,
+so enumeration and status reads work. No button events have been generated yet
+because Flycast is not routing synthesised host keys to the emulated D-pad.
+Verifying the table needs either a keyboard-to-gamepad mapping in Flycast's
+input settings, or a human pressing an actual pad.
+
+Dead end worth recording: my first two attempts reported "none found on the
+maple bus" even with a controller configured. Cause was ordering, not the
+driver — I edited `emu.cfg` and *then* killed Flycast, and Flycast rewrites its
+config on quit, silently reverting the edit. Kill first, then edit, then launch.

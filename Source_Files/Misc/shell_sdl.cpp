@@ -804,6 +804,7 @@ const uint32 TICKS_BETWEEN_EVENT_POLL = 167;	// 6 Hz
 
 #ifdef DC
 extern "C" void dc_trace(int slot, const char *fmt, ...);
+extern "C" void dc_input_poll(void);
 
 /*
  *	Unattended testing hook.
@@ -842,6 +843,10 @@ static void main_event_loop(void)
 	while (get_game_state() != _quit_game) {
 
 #ifdef DC
+		// SDL's DC driver never reads the controller, so we do it here and
+		// inject the result as key events. Covers menus and gameplay alike.
+		dc_input_poll();
+
 		if (!dc_autostarted && dc_autostart_wanted()
 		    && get_game_state() == _display_main_menu) {
 			if (dc_menu_since == 0)
