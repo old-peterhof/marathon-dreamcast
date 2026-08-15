@@ -100,3 +100,36 @@ What it should do is open a small in-game menu -- resume, options, quit to main
 menu -- rather than only freezing the world. That overlaps with the controller-
 native UI work below, and should probably be built as the first screen in it,
 since it is the one every player will meet.
+
+## Shrink the saved game to a level diff
+
+A saved game in this 2002 engine is a complete standalone level wad: it carries
+the whole map, plus the stock physics models, plus the state that actually
+changed. Measured by pulling a real save back off the VMU and parsing its chunk
+directory:
+
+| group | bytes | share |
+|---|---|---|
+| level geometry (SIDS, POLY, LINS, EPNT, LITE, OBJS, terminals, placement) | 168,821 | 79% |
+| map index table (iidx) | 19,988 | 9% |
+| stock physics (MNpx, PRpx, WPpx, FXpx, PXpx) | 11,774 | 6% |
+| genuinely dynamic state (mobj, mOns, PLAT, plyr, dwol, weap, automap) | 13,376 | 6% |
+| **total** | **214,629** | |
+
+The three largest chunks alone -- sides, polygons and lines -- are 68% of the
+file, and every byte of them is already on the disc in the map wad.
+
+Aleph One changed this after 2012, which is why every figure quoted online puts a
+save at 30K to 90K. Doing the same here would take a save from 214629 bytes to
+roughly 13K raw, maybe 5K deflated, and turn one save slot on a VMU into a dozen.
+It would also make saving quicker, which matters at 200MHz.
+
+The catch, and the reason this is a project rather than a tweak: the geometry
+cannot simply be dropped. Sides and polygons mutate during play -- switches
+retexture panels, terminals change polygon permutations, platforms move -- so
+what is needed is a diff against the map file, not an omission. `process_map_wad`
+with `restoring_game = true` currently assumes a self-contained wad, and the
+revert-game path leans on the same assumption.
+
+Not urgent. One save fits today and works. This buys slots and speed, not
+function.
