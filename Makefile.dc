@@ -143,7 +143,59 @@ Source_Files/Misc/weapons.o: CXXFLAGS += -O1
 # Makefile.am expects. So there is nothing to generate; xmltok.c just includes
 # the checked-in header.
 
+# ---------------------------------------------------------------------------
+# Disc images
+#
+# The game looks for its data at /cd/AlephOne (shell_sdl.cpp), so the ISO needs
+# an AlephOne directory at the root. Its contents come from two places: the MML,
+# Fonts and Themes in disc-AlephOne/ that shipped with BERO's port, and the
+# Images/Map/Shapes/Sounds from the Marathon 2 demo (tools/fetch-data.sh).
+# ---------------------------------------------------------------------------
+
+MKDCDISC = /opt/toolchains/dc/mkdcdisc/build/mkdcdisc
+DISC     = disc
+M2DATA   = data/AlephOne-m2-demo.tar.gz
+DISCNAME = Aleph One
+DISCAUTH = BERO / Bungie
+
+$(M2DATA):
+	./tools/fetch-data.sh
+
+$(DISC)/.stamp: $(M2DATA)
+	rm -rf $(DISC)
+	mkdir -p $(DISC)/AlephOne
+	cp -R disc-AlephOne/. $(DISC)/AlephOne/
+	tar xzf $(M2DATA) -C $(DISC)/AlephOne
+	touch $@
+
+disc: $(DISC)/.stamp
+
+# Emulator image: -N skips data-track padding, so it is ~20MB instead of ~700MB.
+# Fine under Flycast. Do NOT burn this or put it on a GDEMU -- padding is what
+# makes the image boot on real hardware.
+test: $(TARGET) $(DISC)/.stamp
+	$(MKDCDISC) -e $(TARGET) -d $(DISC)/AlephOne -o alephone-test.cdi \
+		-n "$(DISCNAME)" -a "$(DISCAUTH)" -N
+
+# Hardware image: padded. Larger, but this is the one that actually boots on a
+# console or from GDEMU.
+cdi: $(TARGET) $(DISC)/.stamp
+	$(MKDCDISC) -e $(TARGET) -d $(DISC)/AlephOne -o alephone.cdi \
+		-n "$(DISCNAME)" -a "$(DISCAUTH)"
+
+gdi: $(TARGET) $(DISC)/.stamp
+	$(MKDCDISC) -F gdi -e $(TARGET) -d $(DISC)/AlephOne -o alephone.gdi \
+		-n "$(DISCNAME)" -a "$(DISCAUTH)"
+
+# Launch via `open` rather than exec'ing the binary: run straight from a shell,
+# Flycast's dynarec VMEM init fails its own assertion in driver.cpp.
+flycast: test
+	open -a Flycast --args "$(CURDIR)/alephone-test.cdi"
+
 clean:
 	rm -f $(OBJS) $(TARGET)
 
-.PHONY: all clean
+distclean: clean
+	rm -rf $(DISC) alephone-test.cdi alephone.cdi alephone.gdi
+
+.PHONY: all clean distclean disc test cdi gdi flycast

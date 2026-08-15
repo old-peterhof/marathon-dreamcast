@@ -8,7 +8,12 @@
 #
 #   ./build.sh            build alephone.elf
 #   ./build.sh -j8        build in parallel
+#   ./build.sh test       unpadded .cdi (~20MB) for Flycast
+#   ./build.sh flycast    build the test image and launch Flycast on it
+#   ./build.sh cdi        padded .cdi for burning or GDEMU
+#   ./build.sh gdi        .gdi, GDEMU's native format
 #   ./build.sh clean      remove objects and the elf
+#   ./build.sh distclean  also remove disc images and the staged disc tree
 #
 set -e
 

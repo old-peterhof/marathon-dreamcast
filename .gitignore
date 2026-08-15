@@ -4,3 +4,5 @@
 *.gdi
 *.bin
 .DS_Store
+data/
+disc/
