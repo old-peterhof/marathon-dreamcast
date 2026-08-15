@@ -193,3 +193,49 @@ navigation needs. The only thing missing is permission to press the keys.
 Until that is granted I can verify boot and menu, but not gameplay. So the
 MacBinary fix is **built and verified at the byte level, not observed working
 in-game**. Stating that plainly rather than claiming the level loads.
+
+### 00:45 — MacBinary fix CONFIRMED. New blocker: no video in-game.
+
+Max pressed Return on the keyboard and **the level loaded, with sound**. Error 4
+is gone. The MacBinary I fix is confirmed working end to end, and a Dreamcast
+keyboard in Flycast (`device1 = 5`, `MDT_Keyboard`) drives BERO's menu
+navigation without any changes needed.
+
+New symptom: gameplay runs — audio plays — but nothing is drawn.
+
+What the SDL DC video driver actually does, from
+`kos-ports/SDL/dist/SDL-/src/video/dc/SDL_dcvideo.c`:
+
+- `DC_SetVideoMode` only maps **320x240** and **640x480** to a display mode.
+  Anything else returns NULL. All four of the first `ViewSizes` entries are
+  640x480 overall, so the size Aleph One asks for is fine.
+- `switch(bpp)` accepts 15/16/24/32 but **not 8**. An 8-bit request returns NULL,
+  which would make Aleph One `exit(1)` — it didn't, so we are at 16-bit.
+- `DC_UpdateRects` is a **no-op unless the textured driver is active**:
+
+      static void DC_UpdateRects(_THIS, int numrects, SDL_Rect *rects)
+      {
+          if (!SDL_DC_USING_GL() && sdl_dc_textured)
+              sdl_dc_blit_textured();
+      }
+
+  That looked like the culprit, because gameplay updates a sub-rectangle while
+  the menu does a full-screen `SDL_UpdateRect(main_surface, 0,0,0,0)`. It is
+  **not** the culprit: in the non-textured path `current->pixels = vram_l`
+  (line 548) — writes land directly in video RAM, so a no-op UpdateRects is
+  harmless. The display path is fine either way.
+
+So the blit path works and the mode is valid. Suspicion moves to the renderer
+itself, or to `world_pixels` never being drawn into. Candidates, in order:
+
+1. `render_view()` producing nothing — possibly the shapes/textures not loading
+   from the retail `Shapes` (which is *not* MacBinary-wrapped, unlike `Map`).
+2. Memory pressure. 16MB of RAM against a 20MB `Map` and a 10MB `Shapes`.
+   `reallocate_world_pixels` needs ~614KB for a 640x480x16 surface on top.
+3. `clear_screen()` on mode change leaving black and nothing overwriting it.
+
+Asked Max for a cheap diagnostic that separates these: whether the HUD draws,
+and whether the overhead map (the `m` key, `_toggle_map`) draws. HUD or map
+visible means the display path is alive and only the 3D view is dead, which
+points hard at (1). Nothing visible at all points at the display path after the
+in-game mode switch.
