@@ -37,6 +37,15 @@ int dc_input_trigger_r(void);
 #define DC_YAW_SCALE    (FIXED_ONE / 2)
 #define DC_PITCH_SCALE  (FIXED_ONE / 4)
 #define DC_STICK_MAX    128
+// Deflection at or beyond this is treated as full. The outer part of the stick
+// travel then all maps to the same rate, instead of continuing to climb.
+//
+// Reported from hardware: even at a usable overall sensitivity the stick was
+// "much too sensitive on the outside range". That is the squared curve doing
+// exactly the wrong thing at the rim -- the slope of x^2 is steepest at full
+// deflection, so the smallest nudge there swings the rate hardest, which is
+// where a thumb has least precision. Saturating early flattens it.
+#define DC_STICK_SAT    100
 #define DC_TRIGGER_ON   64
 #endif
 
@@ -139,13 +148,17 @@ void mouse_idle(short type)
 		// around centre, which is where aiming actually happens.
 		long ax = (sx < 0) ? -sx : sx;
 		long ay = (sy < 0) ? -sy : sy;
-		long cx = (ax * ax) / DC_STICK_MAX;		// 0..128, quadratic
-		long cy = (ay * ay) / DC_STICK_MAX;
+
+		if (ax > DC_STICK_SAT) ax = DC_STICK_SAT;
+		if (ay > DC_STICK_SAT) ay = DC_STICK_SAT;
+
+		long cx = (ax * ax) / DC_STICK_SAT;		// 0..DC_STICK_SAT, quadratic
+		long cy = (ay * ay) / DC_STICK_SAT;
 		if (sx < 0) cx = -cx;
 		if (sy < 0) cy = -cy;
 
-		_fixed vx = (_fixed)((cx * (long)(DC_YAW_SCALE / DC_STICK_MAX) * sh) / 100);
-		_fixed vy = (_fixed)((-cy * (long)(DC_PITCH_SCALE / DC_STICK_MAX) * sv) / 100);
+		_fixed vx = (_fixed)((cx * (long)(DC_YAW_SCALE / DC_STICK_SAT) * sh) / 100);
+		_fixed vy = (_fixed)((-cy * (long)(DC_PITCH_SCALE / DC_STICK_SAT) * sv) / 100);
 
 		if (input_preferences->modifiers & _inputmod_invert_mouse)
 			vy = -vy;

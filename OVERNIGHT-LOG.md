@@ -867,3 +867,34 @@ both simpler and independent of the library's internals.
 
 Smoke-tested under Flycast: the profiler thread launches and the game continues
 at its usual rate with no errors.
+
+### 2026-08-15 — outer saturation zone; the rim was the problem, not the ceiling
+
+Max: 25% on the previous build was "mostly usable but still much too sensitive
+on the outside range of the thumbstick".
+
+That is a curve-shape complaint, not a maximum-rate one, and the squared
+response was doing exactly the wrong thing at the rim: the slope of x^2 is
+steepest at full deflection, so the smallest nudge there swings the rate hardest
+— precisely where a thumb has the least precision.
+
+Added a saturation point at 100 of 128 deflection. Everything beyond about 80%
+of travel maps to the same rate, so the outer fifth of the stick is flat:
+
+| deflection | fraction of max rate |
+|---|---|
+| 10% | 1.4% |
+| 30% | 14.4% |
+| 50% | 41.0% |
+| 70% | 79.2% |
+| 80% | 100% |
+| 100% | 100% |
+
+Default moved to 50%. The previous build's scale was twice this one's, so 50%
+here is the same absolute rate as the 25% that was reported mostly usable — the
+difference is that the rim is now flat rather than climbing.
+
+Worth stating plainly: tuning feel remotely, from measurements taken under an
+emulator whose framerate does not match hardware, is guesswork with numbers
+attached. The curve is now one constant (`DC_STICK_SAT`) plus one slider, both
+easy to move.
