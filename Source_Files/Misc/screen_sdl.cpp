@@ -226,6 +226,10 @@ void exit_screen(void)
 // display itself is the thing that is broken.
 extern "C" void dc_trace(int slot, const char *fmt, ...);
 extern "C" void dc_profiler_frame(void);
+// The row copy lives in dc/dc_blit.c, compiled as C: sh4zam's headers need C++11
+// and asm string forms this file cannot use under -std=gnu++98.
+extern "C" void dc_blit_rows(void *dst, const void *src, int bytes, int rows,
+                             int dst_pitch, int src_pitch);
 static int dc_traced_mode = 0, dc_traced_render = 0, dc_traced_update = 0;
 
 /*
@@ -271,12 +275,10 @@ static bool dc_copy_to_screen(SDL_Surface *src, const SDL_Rect *src_rect,
 
 	const uint8 *s = (const uint8 *)src->pixels + sy * src->pitch + sx * 2;
 	uint8 *d = (uint8 *)dst->pixels + dy * dst->pitch + dx * 2;
+	const int bytes = w * 2;
 
-	for (int y = 0; y < h; y++) {
-		memcpy(d, s, w * 2);
-		s += src->pitch;
-		d += dst->pitch;
-	}
+	// Store queues where possible; see dc/dc_blit.c.
+	dc_blit_rows(d, s, bytes, h, dst->pitch, src->pitch);
 
 	return true;
 }

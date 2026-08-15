@@ -35,3 +35,4 @@ to the engine clamp, and the VMU Profiler. Git history has the detail.
 | b21 | fine-aim | dc15958 | dither the turn delta against the engine's quantiser so slow turns are possible (centre was twitchy); disable INIT_PURUPURU as an experiment to identify the rumble-pack boot hang |
 | b22 | rumble-shelved | 32498df | restore INIT_PURUPURU (exonerated by b21); rumble-pack boot hang traced to KOS's unbounded maple_wait_scan and shelved |
 | b23 | flat-saves | f066cd0 | saved games and recordings live directly in /ram since the ramdisk has no subdirectories; guard the empty file list and hide preferences from save listings |
+| b24 | sq-blit | ee4f34a | framebuffer blit uses sh4zam's store-queue memcpy; measure against b23 with the profile image |

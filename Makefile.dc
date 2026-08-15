@@ -132,7 +132,7 @@ SRCS = \
 # reimplements what is now fs_ramdisk. dc/dc_compat.c supplies the two pieces
 # that are actually still missing -- fs_mem_init() and access().
 DC_OBJS = dc/dc_compat.o dc/dc_input.o dc/dc_vmu.o dc/dc_profiler.o \
-          dc/dc_maple.o \
+          dc/dc_maple.o dc/dc_blit.o dc/vendor/sh4zam_src/shz_mem_sh4.o \
           dc/vendor/vmu_profiler.o
 
 OBJS0 = $(SRCS:.cpp=.o)
@@ -188,6 +188,11 @@ Source_Files/Misc/weapons.o: CXXFLAGS += -O1
 
 %.o: %.c
 	$(KOS_CC) $(CFLAGS) -c $< -o $@
+
+# sh4zam's hand-written SH4 assembly. Vendored rather than built through its
+# kos-port, which needs cmake; this keeps the build self-contained.
+%.o: %.s
+	$(KOS_CC) $(KOS_CFLAGS) -c $< -o $@
 
 # Aleph One 0.12.0 selects its platform layer by #including one .cpp from
 # another, so these files never get an object of their own and make cannot see

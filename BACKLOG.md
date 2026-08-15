@@ -32,13 +32,21 @@ GLdc lacking clip planes, which `OGL_Render.cpp` uses five of for portal and
 liquid-surface clipping. See the note in `Makefile.dc` under `GL=1`, which
 records the full list of missing entry points.
 
-## sh4zam store-queue blit
+## sh4zam store-queue blit — DONE in b24, effect unmeasured
 
-`dc_copy_to_screen` copies 400KB per frame into VRAM with a per-row `memcpy`.
-`shz_sq_memcpy32` from sh4zam uses the SH4 store queues, the standard fast path
-for VRAM writes. Most of `shz_mem.h` is `SHZ_INLINE`, so it can be used
-header-only without building the kos-port. Measure with the VMU Profiler either
-side.
+Implemented. `dc/dc_blit.c` uses `shz_sq_memcpy32`, falling back to `memcpy`
+when alignment or length does not qualify.
+
+Two things worth knowing for next time. It is **not** header-only: the symbol
+lives in hand-written assembly (`source/sh4/shz_mem_sh4.s`), vendored under
+`dc/vendor/sh4zam_src` because the kos-port needs cmake, which is not installed.
+And sh4zam's headers need C++11 and use asm string forms `-std=gnu++98` cannot
+parse, so the blit had to move into a C file — the rest of the port is pinned to
+gnu++98 for the 2002 code.
+
+Still to do: **measure it**. Flycast reports no change because it does not model
+store-queue timing. Boot `alephone-b23-flat-saves-profile.cdi` and then
+`alephone-b24-sq-blit-profile.cdi` and compare the FPS on the VMU.
 
 ## Saved games on VMU
 
