@@ -268,11 +268,29 @@ void dc_input_poll(void)
 		return;
 	}
 
+	{
+		static int shown = 0;
+		if (shown < 6) {
+			shown++;
+			dc_trace(17, "btn %08x->%08x ingame=%d", (unsigned)previous,
+			         (unsigned)current, in_game);
+		}
+	}
+
 	for (i = 0; i < count; i++) {
 		int mask = table[i].mask;
 
 		if (!(changed & mask))
 			continue;
+
+		{
+			static int keys_shown = 0;
+			if (keys_shown < 6) {
+				keys_shown++;
+				dc_trace(18, "key sym=%d %s", (int)table[i].sym,
+				         (current & mask) ? "down" : "up");
+			}
+		}
 
 		send_key(table[i].sym, (current & mask) != 0);
 	}

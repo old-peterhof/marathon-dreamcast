@@ -237,6 +237,15 @@ cdi: $(TARGET) $(DISC)/.stamp no-autostart-marker
 	$(MKDCDISC) -e $(TARGET) -d $(DISC)/AlephOne -o alephone.cdi \
 		-n "$(DISCNAME)" -a "$(DISCAUTH)"
 
+# Padded like `cdi`, so it boots on a console, but keeps the DEBUG marker so
+# dc_trace() output is drawn on screen with bfont. For diagnosing hardware-only
+# problems where there is no serial console to read.
+cdi-debug: $(TARGET) $(DISC)/.stamp no-autostart-marker
+	echo "on" > $(DISC)/AlephOne/DEBUG
+	$(MKDCDISC) -e $(TARGET) -d $(DISC)/AlephOne -o alephone-debug.cdi \
+		-n "$(DISCNAME) debug" -a "$(DISCAUTH)"
+	rm -f $(DISC)/AlephOne/DEBUG
+
 gdi: $(TARGET) $(DISC)/.stamp no-autostart-marker
 	$(MKDCDISC) -F gdi -e $(TARGET) -d $(DISC)/AlephOne -o alephone.gdi \
 		-n "$(DISCNAME)" -a "$(DISCAUTH)"
@@ -252,4 +261,4 @@ clean:
 distclean: clean
 	rm -rf $(DISC) alephone-test.cdi alephone.cdi alephone.gdi
 
-.PHONY: all clean distclean disc test cdi gdi flycast autostart-marker no-autostart-marker
+.PHONY: all clean distclean disc test cdi cdi-debug gdi flycast autostart-marker no-autostart-marker
