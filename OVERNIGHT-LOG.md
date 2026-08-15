@@ -741,3 +741,40 @@ complaint actually was:
 matters more than it looks, because the sensitivity sliders live in Preferences —
 if the pad cannot reach them, the default is all the player gets. `cdi-debug`
 was built to diagnose exactly this and the result is not in yet.
+
+### 2026-08-15 — controller in dialogs, and a stale-object bug of my own
+
+**Pad could not navigate Preferences.** `dc_input_poll()` was only called from
+`main_event_loop`, and Aleph One's dialogs run their own nested loop in
+`sdl_dialogs.cpp`. While a dialog is open the main loop is not running, so the
+controller was never polled. `dialog::run()` now polls each pass and forces the
+menu binding table for the duration, in case the dialog was opened from
+gameplay. The mapping already suited dialogs: UP/DOWN and LEFT/RIGHT move
+between widgets, RETURN acts, ESCAPE exits, and `w_slider::event` swallows
+LEFT/RIGHT to adjust a focused slider.
+
+Verified unattended: with an image that opens CONTROLS by itself and pulses a
+synthetic stick, `key sym=275 down` now arrives while the dialog is open.
+
+A false alarm along the way, worth recording because it looked alarming: a
+screenshot showed "ANALOG STICK **Off**", which would mean `input_device == 0`
+and a completely dead stick. It was self-inflicted — PADTEST was pulsing
+SDLK_RIGHT into the dialog, the first focused widget is that toggle, and
+`w_select::event` cycles a toggle on RIGHT. My own test input had flipped it.
+Tracing the value directly showed `input_device=1`. It also proved the dialog
+fix end to end, since the injected key visibly changed a widget.
+
+**A real bug it did expose: no header dependency tracking.** The same trace read
+`sens=100/100` after I had set `SENS_DEFAULT` to 50. Editing `preferences.h`
+rebuilt nothing, because `Makefile.dc` tracked only `.cpp` inputs — so the link
+quietly shipped a stale `preferences.o`. This is the second form of the same
+trap in this Makefile; the first was `.cpp` files included by other `.cpp` files.
+The earlier session hit it too (`eca86af Fix header dependency tracking; movement
+bindings were shipping stale`).
+
+Fixed properly with `-MMD -MP` and `-include $(OBJS:.o=.d)`. Touching
+`preferences.h` now rebuilds 10 objects where it previously rebuilt none, and
+the trace reads `sens=50/50`.
+
+Consequence worth stating plainly: the hardware images handed over before this
+fix had sensitivity 100 compiled in, not the intended 50. Rebuilt.

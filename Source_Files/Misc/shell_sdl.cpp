@@ -880,6 +880,18 @@ static void main_event_loop(void)
 		}
 		dc_input_poll();
 
+#ifdef DC
+		{
+			static int shown = 0;
+			if (!shown && get_game_state() == _display_main_menu) {
+				shown = 1;
+				dc_trace(19, "input_device=%d sens=%d/%d",
+				         (int)input_preferences->input_device,
+				         (int)input_preferences->sens_horizontal,
+				         (int)input_preferences->sens_vertical);
+			}
+		}
+#endif
 		if (!dc_autostarted && dc_autostart_mode()
 		    && get_game_state() == _display_main_menu) {
 			if (dc_menu_since == 0)
