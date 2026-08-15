@@ -11,9 +11,17 @@ Notes for whoever picks it up:
 - KOS has a driver at `dc/maple/purupuru.h`. It is left **enabled** in this
   port precisely so this stays possible — see `dc/dc_maple.c`, where it would
   have been the blunter fix for the boot hang and was deliberately not used.
-- A rumble pack currently prevents the game booting at all (see BUGS.md). That
-  has to be resolved first, and resolving it is a prerequisite rather than a
-  detour: whatever is wrong at enumeration time will matter to the driver too.
+- A rumble pack currently prevents the game booting at all (see BUGS.md), and
+  the cause is now known: KOS's `maple_wait_scan()` waits forever for all four
+  ports to report, and the pack makes one never report. Pulling it out while
+  hung releases the wait and the boot continues. The rumble driver itself is
+  exonerated — b21 ran with `INIT_PURUPURU` cleared and still hung.
+- That has to be solved first, and it is a prerequisite rather than a detour: a
+  device that will not enumerate cannot be driven either. Two routes, both real
+  work: patch KOS's maple to bound the wait, or clear `INIT_MAPLE_ALL` and take
+  over maple init ourselves so we control the timeout. Before either, try an
+  official pack — this was a third-party unit and may just answer enumeration
+  badly.
 - The natural hook points are the same places the game already makes noise:
   weapon fire in `weapons.cpp` and damage in `player.cpp`.
 

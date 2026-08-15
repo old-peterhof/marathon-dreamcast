@@ -33,3 +33,4 @@ to the engine clamp, and the VMU Profiler. Git history has the detail.
 | b19 | maple-probe | 4ba82d2 | b18's turn-rate fix plus a startup dump of the maple bus in debug builds, to characterise the suspected rumble-pack boot failure |
 | b20 | half-rate | e57d4ee | base yaw scale halved again (FIXED_ONE/4) after b18 was reported ~2x too fast at 30%; default sensitivity 30% |
 | b21 | fine-aim | dc15958 | dither the turn delta against the engine's quantiser so slow turns are possible (centre was twitchy); disable INIT_PURUPURU as an experiment to identify the rumble-pack boot hang |
+| b22 | rumble-shelved | 32498df | restore INIT_PURUPURU (exonerated by b21); rumble-pack boot hang traced to KOS's unbounded maple_wait_scan and shelved |

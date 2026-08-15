@@ -16,24 +16,26 @@
  *
  *	  2. purupuru_init, the rumble driver itself.
  *
- *	Only the second can be tested. `maple_wait_scan` is bound to INIT_MAPLE_ALL
- *	alongside `maple_init` itself (arch/init_flags.h), so switching it off would
- *	take the whole maple subsystem with it, controller included. INIT_PURUPURU is
- *	an independent flag and can be cleared on its own.
+ *	b21 tested the second by clearing INIT_PURUPURU, and it **still hung**. So
+ *	the rumble driver is exonerated -- it never initialised in that build -- and
+ *	the unbounded bus scan is the cause.
  *
- *	So this build clears it, as an experiment rather than a decision:
+ *	The decisive observation was Max's: pulling the pack out *while hung* lets
+ *	the boot continue. That is exactly a blocking wait on a scan that completes
+ *	the moment the offending device leaves the bus. `maple_scan_done` requires
+ *	`scan_ready_mask == 0xf`, all four ports; the pack makes one never report.
  *
- *	  - If the game now boots with a pack fitted, the driver's initialisation is
- *	    the culprit, and that is precisely the thing to fix in order to support
- *	    force feedback properly.
- *	  - If it still hangs, the driver is exonerated and the unbounded bus scan is
- *	    the remaining suspect, which needs a different approach entirely.
+ *	INIT_PURUPURU is therefore restored here. Leaving the driver off would carry
+ *	a change that fixes nothing and quietly obstructs the force-feedback work in
+ *	BACKLOG.md.
  *
- *	Either outcome is worth a test cycle. Rumble support for gun shots and taking
- *	hits is wanted (see BACKLOG.md) and this is a step toward it, not away: the
- *	flag is one constant to put back once the cause is understood.
+ *	Bounding the wait is not available to us: `maple_wait_scan` is bound to
+ *	INIT_MAPLE_ALL alongside `maple_init` itself (arch/init_flags.h), so clearing
+ *	it would take the whole maple subsystem including the controller. The routes
+ *	that remain -- patching KOS's maple, or taking over maple init ourselves --
+ *	belong with the rumble feature rather than before it. See BUGS.md.
  */
 
 #include <kos/init.h>
 
-KOS_INIT_FLAGS(INIT_DEFAULT & ~INIT_PURUPURU);
+KOS_INIT_FLAGS(INIT_DEFAULT);
