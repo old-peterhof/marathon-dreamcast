@@ -232,6 +232,27 @@ static int padtest_wanted(void)
 	return wanted;
 }
 
+/*
+ *	AUTOKEY: press Return once, a couple of seconds after a menu appears.
+ *
+ *	The file dialogs cannot be exercised without a person holding the pad, which
+ *	makes the one path that was broken -- listing a saved game and choosing it --
+ *	the one path no unattended run could reach. This injects the keypress so an
+ *	emulator run can open the dialog, pick the highlighted entry and report
+ *	whether the game actually loaded. Staged only by the loadtest image.
+ */
+static int autokey_wanted(void)
+{
+	static int checked = 0, wanted = 0;
+
+	if (!checked) {
+		checked = 1;
+		wanted = (access("/cd/AlephOne/AUTOKEY", 4) == 0);
+	}
+
+	return wanted;
+}
+
 void dc_input_poll(void)
 {
 	static int previous = 0;
@@ -339,4 +360,33 @@ void dc_input_poll(void)
 	}
 
 	previous = current;
+}
+
+/*
+ *	Called from dialog::run() on every pass, so the autokey fires while a dialog
+ *	is actually up rather than on the menu behind it. Counting passes of the main
+ *	event loop was no good: it spins far faster than the dialog does, so the
+ *	keypress landed before the dialog had even opened.
+ */
+void dc_input_note_dialog(void)
+{
+	static int frames = 0, fired = 0;
+
+	if (!autokey_wanted() || fired)
+		return;
+
+	if (++frames > 60) {
+		SDL_keysym k;
+
+		fired = 1;
+		dc_trace(27, "autokey: injecting RETURN into dialog");
+
+		k.scancode = 0;
+		k.sym = SDLK_RETURN;
+		k.mod = KMOD_NONE;
+		k.unicode = 0;
+
+		SDL_PrivateKeyboard(SDL_PRESSED, &k);
+		SDL_PrivateKeyboard(SDL_RELEASED, &k);
+	}
 }

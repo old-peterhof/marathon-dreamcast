@@ -151,6 +151,12 @@ static void usage(const char *prg_name)
 extern "C" {
 extern int fs_mem_init(void);
 extern void dc_vmu_load_saves(const char *ram_dir, const char *map_path);
+}
+#ifdef DC
+#include <dirent.h>
+extern bool load_and_start_game(FileSpecifier& File);
+#endif
+extern "C" {
 #ifdef DC
 void dc_trace(int slot, const char *fmt, ...);
 void dc_input_init_video(void);		// suppress SDL's 60Hz prompt; see dc_input.c
@@ -944,6 +950,8 @@ static int dc_autostart_mode(void)
 				if (fgets(buf, sizeof buf, f)) {
 					if (strncmp(buf, "controls", 8) == 0)
 						mode = 2;
+					else if (strncmp(buf, "loadfirst", 9) == 0)
+						mode = 4;
 					else if (strncmp(buf, "load", 4) == 0)
 						mode = 3;
 				}
@@ -1009,6 +1017,43 @@ static void main_event_loop(void)
 				} else if (mode == 3) {
 					dc_trace(2, "autostart: selecting iLoadGame");
 					do_menu_item_command(mInterface, iLoadGame, false);
+				} else if (mode == 4) {
+					// Load the first saved game in /ram without going through
+					// the file dialog. The dialog wants a keypress, which an
+					// unattended run cannot supply, and skipping it separates a
+					// broken load from a broken dialog.
+					DIR *d = opendir("/ram");
+					struct dirent *de;
+					char pick[128];
+
+					pick[0] = 0;
+					if (d) {
+						while ((de = readdir(d)) != NULL) {
+							if (de->d_name[0] == '.')
+								continue;
+							// The preferences file lives in the same flat
+							// ramdisk and is not a save wad; handing it to the
+							// wad reader trips an assertion and takes the
+							// system down.
+							if (strstr(de->d_name, "Preferences") ||
+							    strstr(de->d_name, "Prefs") ||
+							    strstr(de->d_name, "prefs"))
+								continue;
+							snprintf(pick, sizeof pick, "%s", de->d_name);
+							break;
+						}
+						closedir(d);
+					}
+
+					if (pick[0]) {
+						FileSpecifier f = local_data_dir + pick;
+						dc_trace(2, "autostart: loading %s", pick);
+						dc_trace(25, "autostart: exists=%d", (int)f.Exists());
+						bool ok = load_and_start_game(f);
+						dc_trace(26, "autostart: load_and_start_game=%d", (int)ok);
+					} else {
+						dc_trace(2, "autostart: nothing in /ram to load");
+					}
 				} else {
 					dc_trace(2, "autostart: selecting iNewGame");
 					do_menu_item_command(mInterface, iNewGame, false);

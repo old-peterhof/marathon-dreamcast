@@ -22,6 +22,34 @@ that fixed them.
 
 ## Fixed
 
+### A listed saved game could not be opened (fixed in b30)
+
+Continue Saved Game showed the save, but choosing it dropped back to the main
+menu. The load was never attempted: `w_list_base::event` in sdl_widgets.cpp
+handled UP, DOWN, PAGEUP, PAGEDOWN, HOME and END, and nothing else.
+`item_selected()` was reachable only from the mouse-click path, so on a console
+Return fell through the list to the dialog, which has exactly one button --
+CANCEL. The dialog dutifully cancelled.
+
+`w_list_base::event` now treats Return and keypad Enter the way a click is
+treated. This fixes every list dialog at once: saved games, replay films and the
+level picker.
+
+Proved end to end in Flycast rather than by reading the code. The file dialogs
+cannot be reached unattended, so a new AUTOKEY disc marker makes dc_input.c
+inject one Return after 60 passes of `dialog::run()`, and `make loadtest` builds
+an image that autostarts into CONTINUE SAVED GAME. The run reports:
+
+    autokey: injecting RETURN into dialog
+    load: /ram/Untitled Game -> load_level_from_map=1 err=0
+    autostart: returned, state=8
+    fps 30.3  yaw=507 pos=29696,11407
+
+The position is the saved one, not the level's spawn point, so the state really
+came back. Along the way this also confirmed the VMU restore and the XOR unfold
+are correct: the fault was never in the save.
+
+
 | Fixed in | Symptom |
 |---|---|
 | b17 | Rim of the stick disproportionately sensitive (squared curve steepest at full deflection) — saturation zone added |
@@ -31,6 +59,34 @@ that fixed them.
 | pre-tag | Black 3D view and black HUD — `SDL_BlitSurface` returns success and copies nothing |
 
 ## Fixed
+
+### A listed saved game could not be opened (fixed in b30)
+
+Continue Saved Game showed the save, but choosing it dropped back to the main
+menu. The load was never attempted: `w_list_base::event` in sdl_widgets.cpp
+handled UP, DOWN, PAGEUP, PAGEDOWN, HOME and END, and nothing else.
+`item_selected()` was reachable only from the mouse-click path, so on a console
+Return fell through the list to the dialog, which has exactly one button --
+CANCEL. The dialog dutifully cancelled.
+
+`w_list_base::event` now treats Return and keypad Enter the way a click is
+treated. This fixes every list dialog at once: saved games, replay films and the
+level picker.
+
+Proved end to end in Flycast rather than by reading the code. The file dialogs
+cannot be reached unattended, so a new AUTOKEY disc marker makes dc_input.c
+inject one Return after 60 passes of `dialog::run()`, and `make loadtest` builds
+an image that autostarts into CONTINUE SAVED GAME. The run reports:
+
+    autokey: injecting RETURN into dialog
+    load: /ram/Untitled Game -> load_level_from_map=1 err=0
+    autostart: returned, state=8
+    fps 30.3  yaw=507 pos=29696,11407
+
+The position is the saved one, not the level's spawn point, so the state really
+came back. Along the way this also confirmed the VMU restore and the XOR unfold
+are correct: the fault was never in the save.
+
 
 ### Saved games did not survive a power cycle (b23 - b26, fixed in b27)
 
@@ -85,3 +141,12 @@ The 8BitDo Lite 2 mapping bound `0+:btn_analog_right` with no `0-` binding at
 all, so the analog X axis only existed in one direction. Same omission on the
 second stick. Added `0-:btn_analog_left` and `2-:axis2_left` to
 `~/Library/Application Support/Flycast/mappings/`. Nothing to do with the game.
+
+## Observations, not yet bugs
+
+- **The main menu is slower and laggier under Flycast than on hardware.** Max's
+  observation, and the opposite of what the rest of the port does. The main menu
+  redraws the build stamp with bfont on every pass of the event loop, which is
+  free on a console and evidently is not through Flycast's blit path. Worth
+  checking before blaming the emulator, since the same loop drives menu input and
+  that is what feels laggy.

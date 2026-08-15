@@ -102,6 +102,7 @@ Nov 26, 2000 (Loren Petrich):
 
 #ifdef DC
 extern "C" void dc_vmu_save_game(const char *ram_path, const char *map_path, int level);
+extern "C" void dc_trace(int slot, const char *fmt, ...);
 #endif
 
 // LP addition: for physics-model stuff, we need these pointers to definitions
@@ -1093,6 +1094,10 @@ bool load_game_from_file(FileSpecifier& File)
 	
 	/* Load the level from the map */
 	success= load_level_from_map(NONE); /* Save games are ALWAYS index NONE */
+#ifdef DC
+	dc_trace(23, "load: %s -> load_level_from_map=%d err=%d",
+	         File.GetPath(), (int)success, (int)get_game_error(NULL));
+#endif
 	if (success)
 	{
 		uint32 parent_checksum;
@@ -1103,6 +1108,10 @@ bool load_game_from_file(FileSpecifier& File)
 
 		/* Find the original scenario this saved game was a part of.. */
 		parent_checksum= read_wad_file_parent_checksum(File);
+#ifdef DC
+		dc_trace(24, "load: parent_checksum=%08x found=%d",
+		         (unsigned)parent_checksum, (int)use_map_file(parent_checksum));
+#endif
 		if(use_map_file(parent_checksum))
 		{
 			// LP: getting the level scripting off of the map file

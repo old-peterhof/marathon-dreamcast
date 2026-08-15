@@ -4,7 +4,7 @@
 #
 #   tools/verify-image.sh            # checks the staged disc/AlephOne tree
 #
-# A hardware image must not contain AUTOSTART, PADTEST, DEBUG or PROFILE. Those markers
+# A hardware image must not contain AUTOSTART, PADTEST, DEBUG, PROFILE or AUTOKEY. Those markers
 # make the game start a level by itself, spin the view with a synthetic stick,
 # and draw diagnostics over the screen -- all fine for an emulator run, all
 # wrong on a console.
@@ -52,7 +52,7 @@ ls "$MP/AlephOne" | sed 's/^/    /'
 echo
 
 fail=0
-for m in AUTOSTART PADTEST DEBUG PROFILE; do
+for m in AUTOSTART PADTEST DEBUG PROFILE AUTOKEY; do
 	if [ -e "$MP/AlephOne/$m" ]; then
 		echo "PRESENT: $m -- this image is NOT fit for hardware"
 		fail=1
