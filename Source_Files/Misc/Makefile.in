@@ -1,0 +1,1563 @@
+# Makefile.in generated automatically by automake 1.4-p5 from Makefile.am
+
+# Copyright (C) 1994, 1995-8, 1999, 2001 Free Software Foundation, Inc.
+# This Makefile.in is free software; the Free Software Foundation
+# gives unlimited permission to copy and/or distribute it,
+# with or without modifications, as long as this notice is preserved.
+
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY, to the extent permitted by law; without
+# even the implied warranty of MERCHANTABILITY or FITNESS FOR A
+# PARTICULAR PURPOSE.
+
+
+SHELL = @SHELL@
+
+srcdir = @srcdir@
+top_srcdir = @top_srcdir@
+VPATH = @srcdir@
+prefix = @prefix@
+exec_prefix = @exec_prefix@
+
+bindir = @bindir@
+sbindir = @sbindir@
+libexecdir = @libexecdir@
+datadir = @datadir@
+sysconfdir = @sysconfdir@
+sharedstatedir = @sharedstatedir@
+localstatedir = @localstatedir@
+libdir = @libdir@
+infodir = @infodir@
+mandir = @mandir@
+includedir = @includedir@
+oldincludedir = /usr/include
+
+DESTDIR =
+
+pkgdatadir = $(datadir)/@PACKAGE@
+pkglibdir = $(libdir)/@PACKAGE@
+pkgincludedir = $(includedir)/@PACKAGE@
+
+top_builddir = ../..
+
+ACLOCAL = @ACLOCAL@
+AUTOCONF = @AUTOCONF@
+AUTOMAKE = @AUTOMAKE@
+AUTOHEADER = @AUTOHEADER@
+
+INSTALL = @INSTALL@
+INSTALL_PROGRAM = @INSTALL_PROGRAM@ $(AM_INSTALL_PROGRAM_FLAGS)
+INSTALL_DATA = @INSTALL_DATA@
+INSTALL_SCRIPT = @INSTALL_SCRIPT@
+transform = @program_transform_name@
+
+NORMAL_INSTALL = :
+PRE_INSTALL = :
+POST_INSTALL = :
+NORMAL_UNINSTALL = :
+PRE_UNINSTALL = :
+POST_UNINSTALL = :
+host_alias = @host_alias@
+host_triplet = @host@
+CC = @CC@
+CPP = @CPP@
+CXX = @CXX@
+CXXCPP = @CXXCPP@
+MAKEINFO = @MAKEINFO@
+PACKAGE = @PACKAGE@
+RANLIB = @RANLIB@
+SDL_CFLAGS = @SDL_CFLAGS@
+SDL_CONFIG = @SDL_CONFIG@
+SDL_LIBS = @SDL_LIBS@
+SYS_GL_LIBS = @SYS_GL_LIBS@
+VERSION = @VERSION@
+
+bin_PROGRAMS = alephone
+
+alephone_SOURCES =    AnimatedTextures.h ChaseCam.h ColorParser.h Crosshairs.h DamageParser.h   FileHandler.h FontHandler.h HUDRenderer.h HUDRenderer_SW.h HUDRenderer_OGL.h   ImageLoader.h ISp_Support.h OGL_Faders.h OGL_Render.h OGL_Setup.h   OGL_Textures.h OverheadMap_OGL.h OverheadMap_SDL.h OverheadMapRenderer.h   PlayerName.h Random.h Rasterizer.h Rasterizer_OGL.h Rasterizer_SW.h   RenderPlaceObjs.h RenderRasterize.h RenderSortPoly.h RenderVisTree.h   ShapesParser.h TextStrings.h VectorOps.h ViewControl.h XML_Configure.h   XML_DataBlock.h XML_ElementParser.h XML_LevelScript.h XML_ParseTreeRoot.h   XML_Loader_SDL.h   collection_definition.h computer_interface.h crc.h dynamic_limits.h editor.h   effect_definitions.h effects.h extensions.h fades.h find_files.h flood_map.h   game_errors.h game_wad.h game_window.h images.h interface.h interface_menus.h   item_definitions.h items.h key_definitions.h lightsource.h map.h media.h   media_definitions.h monster_definitions.h monsters.h motion_sensor.h mouse.h   music.h mysound.h overhead_map.h physics_models.h platform_definitions.h   platforms.h player.h preferences.h progress.h projectile_definitions.h   projectiles.h render.h resource_manager.h scenery.h scenery_definitions.h   scottish_textures.h screen.h screen_definitions.h screen_drawing.h   sdl_dialogs.h sdl_fonts.h sdl_network.h sdl_widgets.h shape_definitions.h   shape_descriptors.h shell.h song_definitions.h sound_definitions.h tags.h   textures.h vbl.h vbl_definitions.h wad.h wad_prefs.h weapon_definitions.h   weapons.h world.h     AnimatedTextures.cpp ChaseCam.cpp ColorParser.cpp Crosshairs_SDL.cpp   DamageParser.cpp FileHandler_SDL.cpp FontHandler.cpp HUDRenderer.cpp   HUDRenderer_SW.cpp HUDRenderer_OGL.cpp ImageLoader_SDL.cpp OGL_Faders.cpp   OGL_Render.cpp OGL_Setup.cpp OGL_Textures.cpp OverheadMap_OGL.cpp   OverheadMap_SDL.cpp OverheadMapRenderer.cpp Packing.h PlayerName.cpp   RenderPlaceObjs.cpp RenderRasterize.cpp RenderSortPoly.cpp RenderVisTree.cpp   ShapesParser.cpp TextStrings.cpp ViewControl.cpp XML_Configure.cpp   XML_DataBlock.cpp XML_ElementParser.cpp XML_LevelScript.cpp XML_MakeRoot.cpp   XML_Loader_SDL.cpp   computer_interface.cpp crc.cpp devices.cpp dynamic_limits.cpp effects.cpp   fades.cpp find_files_sdl.cpp flood_map.cpp game_errors.cpp game_wad.cpp   game_window.cpp game_window_sdl.cpp images.cpp import_definitions.cpp   interface.cpp interface_sdl.cpp items.cpp lightsource.cpp map.cpp   map_constructors.cpp marathon2.cpp media.cpp monsters.cpp motion_sensor.cpp   mouse_sdl.cpp mysound.cpp overhead_map.cpp pathfinding.cpp physics.cpp   placement.cpp platforms.cpp player.cpp preferences.cpp preprocess_map_sdl.cpp   projectiles.cpp render.cpp resource_manager.cpp scenery.cpp   scottish_textures.cpp screen_drawing.cpp screen_sdl.cpp sdl_dialogs.cpp   sdl_fonts.cpp sdl_widgets.cpp shapes.cpp shell.cpp shell_misc.cpp   textures.cpp vbl.cpp vbl_sdl.cpp wad.cpp wad_sdl.cpp wad_prefs.cpp   weapons.cpp world.cpp
+
+
+alephone_LDADD = ../CSeries/libcseries.a ../Expat/libexpat.a   ../ModelView/libmodelview.a ../Network/libnetwork.a   ../Pfhortran/libpfhortran.a @SYS_GL_LIBS@
+
+
+EXTRA_alephone_SOURCES = computer_interface_sdl.cpp images_sdl.cpp   low_level_textures.cpp preferences_sdl.cpp screen_shared.cpp   screen_drawing_sdl.cpp shapes_sdl.cpp shell_sdl.cpp sound_sdl.cpp
+
+
+INCLUDES = -I$(top_srcdir)/Source_Files/CSeries   -I$(top_srcdir)/Source_Files/Expat -I$(top_srcdir)/Source_Files/Network   -I$(top_srcdir)/Source_Files/Pfhortran -I$(top_srcdir)/Source_Files/ModelView
+
+
+DISTCLEANFILES = confpaths.h
+mkinstalldirs = $(SHELL) $(top_srcdir)/mkinstalldirs
+CONFIG_HEADER = ../../config.h
+CONFIG_CLEAN_FILES = 
+PROGRAMS =  $(bin_PROGRAMS)
+
+
+DEFS = @DEFS@ -I. -I$(srcdir) -I../..
+CPPFLAGS = @CPPFLAGS@
+LDFLAGS = @LDFLAGS@
+LIBS = @LIBS@
+X_CFLAGS = @X_CFLAGS@
+X_LIBS = @X_LIBS@
+X_EXTRA_LIBS = @X_EXTRA_LIBS@
+X_PRE_LIBS = @X_PRE_LIBS@
+alephone_OBJECTS =  AnimatedTextures.o ChaseCam.o ColorParser.o \
+Crosshairs_SDL.o DamageParser.o FileHandler_SDL.o FontHandler.o \
+HUDRenderer.o HUDRenderer_SW.o HUDRenderer_OGL.o ImageLoader_SDL.o \
+OGL_Faders.o OGL_Render.o OGL_Setup.o OGL_Textures.o OverheadMap_OGL.o \
+OverheadMap_SDL.o OverheadMapRenderer.o PlayerName.o RenderPlaceObjs.o \
+RenderRasterize.o RenderSortPoly.o RenderVisTree.o ShapesParser.o \
+TextStrings.o ViewControl.o XML_Configure.o XML_DataBlock.o \
+XML_ElementParser.o XML_LevelScript.o XML_MakeRoot.o XML_Loader_SDL.o \
+computer_interface.o crc.o devices.o dynamic_limits.o effects.o fades.o \
+find_files_sdl.o flood_map.o game_errors.o game_wad.o game_window.o \
+game_window_sdl.o images.o import_definitions.o interface.o \
+interface_sdl.o items.o lightsource.o map.o map_constructors.o \
+marathon2.o media.o monsters.o motion_sensor.o mouse_sdl.o mysound.o \
+overhead_map.o pathfinding.o physics.o placement.o platforms.o player.o \
+preferences.o preprocess_map_sdl.o projectiles.o render.o \
+resource_manager.o scenery.o scottish_textures.o screen_drawing.o \
+screen_sdl.o sdl_dialogs.o sdl_fonts.o sdl_widgets.o shapes.o shell.o \
+shell_misc.o textures.o vbl.o vbl_sdl.o wad.o wad_sdl.o wad_prefs.o \
+weapons.o world.o
+alephone_DEPENDENCIES =  ../CSeries/libcseries.a ../Expat/libexpat.a \
+../ModelView/libmodelview.a ../Network/libnetwork.a \
+../Pfhortran/libpfhortran.a
+alephone_LDFLAGS = 
+CXXFLAGS = @CXXFLAGS@
+CXXCOMPILE = $(CXX) $(DEFS) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS)
+CXXLD = $(CXX)
+CXXLINK = $(CXXLD) $(AM_CXXFLAGS) $(CXXFLAGS) $(LDFLAGS) -o $@
+CFLAGS = @CFLAGS@
+COMPILE = $(CC) $(DEFS) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)
+CCLD = $(CC)
+LINK = $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(LDFLAGS) -o $@
+DIST_COMMON =  Makefile.am Makefile.in
+
+
+DISTFILES = $(DIST_COMMON) $(SOURCES) $(HEADERS) $(TEXINFOS) $(EXTRA_DIST)
+
+TAR = gtar
+GZIP_ENV = --best
+SOURCES = $(alephone_SOURCES) $(EXTRA_alephone_SOURCES)
+OBJECTS = $(alephone_OBJECTS)
+
+all: all-redirect
+.SUFFIXES:
+.SUFFIXES: .S .c .cpp .o .s
+$(srcdir)/Makefile.in: Makefile.am $(top_srcdir)/configure.in $(ACLOCAL_M4) 
+	cd $(top_srcdir) && $(AUTOMAKE) --gnu --include-deps Source_Files/Misc/Makefile
+
+Makefile: $(srcdir)/Makefile.in  $(top_builddir)/config.status
+	cd $(top_builddir) \
+	  && CONFIG_FILES=$(subdir)/$@ CONFIG_HEADERS= $(SHELL) ./config.status
+
+
+mostlyclean-binPROGRAMS:
+
+clean-binPROGRAMS:
+	-test -z "$(bin_PROGRAMS)" || rm -f $(bin_PROGRAMS)
+
+distclean-binPROGRAMS:
+
+maintainer-clean-binPROGRAMS:
+
+install-binPROGRAMS: $(bin_PROGRAMS)
+	@$(NORMAL_INSTALL)
+	$(mkinstalldirs) $(DESTDIR)$(bindir)
+	@list='$(bin_PROGRAMS)'; for p in $$list; do \
+	  if test -f $$p; then \
+	    echo "  $(INSTALL_PROGRAM) $$p $(DESTDIR)$(bindir)/`echo $$p|sed 's/$(EXEEXT)$$//'|sed '$(transform)'|sed 's/$$/$(EXEEXT)/'`"; \
+	     $(INSTALL_PROGRAM) $$p $(DESTDIR)$(bindir)/`echo $$p|sed 's/$(EXEEXT)$$//'|sed '$(transform)'|sed 's/$$/$(EXEEXT)/'`; \
+	  else :; fi; \
+	done
+
+uninstall-binPROGRAMS:
+	@$(NORMAL_UNINSTALL)
+	list='$(bin_PROGRAMS)'; for p in $$list; do \
+	  rm -f $(DESTDIR)$(bindir)/`echo $$p|sed 's/$(EXEEXT)$$//'|sed '$(transform)'|sed 's/$$/$(EXEEXT)/'`; \
+	done
+
+.c.o:
+	$(COMPILE) -c $<
+
+.s.o:
+	$(COMPILE) -c $<
+
+.S.o:
+	$(COMPILE) -c $<
+
+mostlyclean-compile:
+	-rm -f *.o core *.core
+
+clean-compile:
+
+distclean-compile:
+	-rm -f *.tab.c
+
+maintainer-clean-compile:
+
+alephone: $(alephone_OBJECTS) $(alephone_DEPENDENCIES)
+	@rm -f alephone
+	$(CXXLINK) $(alephone_LDFLAGS) $(alephone_OBJECTS) $(alephone_LDADD) $(LIBS)
+.cpp.o:
+	$(CXXCOMPILE) -c $<
+
+tags: TAGS
+
+ID: $(HEADERS) $(SOURCES) $(LISP)
+	list='$(SOURCES) $(HEADERS)'; \
+	unique=`for i in $$list; do echo $$i; done | \
+	  awk '    { files[$$0] = 1; } \
+	       END { for (i in files) print i; }'`; \
+	here=`pwd` && cd $(srcdir) \
+	  && mkid -f$$here/ID $$unique $(LISP)
+
+TAGS:  $(HEADERS) $(SOURCES)  $(TAGS_DEPENDENCIES) $(LISP)
+	tags=; \
+	here=`pwd`; \
+	list='$(SOURCES) $(HEADERS)'; \
+	unique=`for i in $$list; do echo $$i; done | \
+	  awk '    { files[$$0] = 1; } \
+	       END { for (i in files) print i; }'`; \
+	test -z "$(ETAGS_ARGS)$$unique$(LISP)$$tags" \
+	  || (cd $(srcdir) && etags $(ETAGS_ARGS) $$tags  $$unique $(LISP) -o $$here/TAGS)
+
+mostlyclean-tags:
+
+clean-tags:
+
+distclean-tags:
+	-rm -f TAGS ID
+
+maintainer-clean-tags:
+
+distdir = $(top_builddir)/$(PACKAGE)-$(VERSION)/$(subdir)
+
+subdir = Source_Files/Misc
+
+distdir: $(DISTFILES)
+	@for file in $(DISTFILES); do \
+	  d=$(srcdir); \
+	  if test -d $$d/$$file; then \
+	    cp -pr $$d/$$file $(distdir)/$$file; \
+	  else \
+	    test -f $(distdir)/$$file \
+	    || ln $$d/$$file $(distdir)/$$file 2> /dev/null \
+	    || cp -p $$d/$$file $(distdir)/$$file || :; \
+	  fi; \
+	done
+AnimatedTextures.o: AnimatedTextures.cpp \
+	../../Source_Files/CSeries/cseries.h \
+	../../Source_Files/CSeries/sdl_cseries.h ../../config.h \
+	../../Source_Files/CSeries/cstypes.h \
+	../../Source_Files/CSeries/csmacros.h \
+	../../Source_Files/CSeries/cscluts.h \
+	../../Source_Files/CSeries/csstrings.h \
+	../../Source_Files/CSeries/csfonts.h \
+	../../Source_Files/CSeries/cspixels.h \
+	../../Source_Files/CSeries/csalerts.h \
+	../../Source_Files/CSeries/csmisc.h AnimatedTextures.h \
+	shape_descriptors.h XML_ElementParser.h interface.h
+ChaseCam.o: ChaseCam.cpp ../../Source_Files/CSeries/cseries.h \
+	../../Source_Files/CSeries/sdl_cseries.h ../../config.h \
+	../../Source_Files/CSeries/cstypes.h \
+	../../Source_Files/CSeries/csmacros.h \
+	../../Source_Files/CSeries/cscluts.h \
+	../../Source_Files/CSeries/csstrings.h \
+	../../Source_Files/CSeries/csfonts.h \
+	../../Source_Files/CSeries/cspixels.h \
+	../../Source_Files/CSeries/csalerts.h \
+	../../Source_Files/CSeries/csmisc.h map.h world.h \
+	dynamic_limits.h XML_ElementParser.h shape_descriptors.h \
+	player.h ChaseCam.h
+ColorParser.o: ColorParser.cpp ColorParser.h \
+	../../Source_Files/CSeries/cseries.h \
+	../../Source_Files/CSeries/sdl_cseries.h ../../config.h \
+	../../Source_Files/CSeries/cstypes.h \
+	../../Source_Files/CSeries/csmacros.h \
+	../../Source_Files/CSeries/cscluts.h \
+	../../Source_Files/CSeries/csstrings.h \
+	../../Source_Files/CSeries/csfonts.h \
+	../../Source_Files/CSeries/cspixels.h \
+	../../Source_Files/CSeries/csalerts.h \
+	../../Source_Files/CSeries/csmisc.h XML_ElementParser.h
+Crosshairs_SDL.o: Crosshairs_SDL.cpp \
+	../../Source_Files/CSeries/cseries.h \
+	../../Source_Files/CSeries/sdl_cseries.h ../../config.h \
+	../../Source_Files/CSeries/cstypes.h \
+	../../Source_Files/CSeries/csmacros.h \
+	../../Source_Files/CSeries/cscluts.h \
+	../../Source_Files/CSeries/csstrings.h \
+	../../Source_Files/CSeries/csfonts.h \
+	../../Source_Files/CSeries/cspixels.h \
+	../../Source_Files/CSeries/csalerts.h \
+	../../Source_Files/CSeries/csmisc.h Crosshairs.h
+DamageParser.o: DamageParser.cpp ../../Source_Files/CSeries/cseries.h \
+	../../Source_Files/CSeries/sdl_cseries.h ../../config.h \
+	../../Source_Files/CSeries/cstypes.h \
+	../../Source_Files/CSeries/csmacros.h \
+	../../Source_Files/CSeries/cscluts.h \
+	../../Source_Files/CSeries/csstrings.h \
+	../../Source_Files/CSeries/csfonts.h \
+	../../Source_Files/CSeries/cspixels.h \
+	../../Source_Files/CSeries/csalerts.h \
+	../../Source_Files/CSeries/csmisc.h DamageParser.h map.h \
+	world.h dynamic_limits.h XML_ElementParser.h \
+	shape_descriptors.h
+FileHandler_SDL.o: FileHandler_SDL.cpp \
+	../../Source_Files/CSeries/cseries.h \
+	../../Source_Files/CSeries/sdl_cseries.h ../../config.h \
+	../../Source_Files/CSeries/cstypes.h \
+	../../Source_Files/CSeries/csmacros.h \
+	../../Source_Files/CSeries/cscluts.h \
+	../../Source_Files/CSeries/csstrings.h \
+	../../Source_Files/CSeries/csfonts.h \
+	../../Source_Files/CSeries/cspixels.h \
+	../../Source_Files/CSeries/csalerts.h \
+	../../Source_Files/CSeries/csmisc.h FileHandler.h tags.h \
+	resource_manager.h shell.h XML_ElementParser.h interface.h \
+	shape_descriptors.h game_errors.h
+FontHandler.o: FontHandler.cpp ../../Source_Files/CSeries/cseries.h \
+	../../Source_Files/CSeries/sdl_cseries.h ../../config.h \
+	../../Source_Files/CSeries/cstypes.h \
+	../../Source_Files/CSeries/csmacros.h \
+	../../Source_Files/CSeries/cscluts.h \
+	../../Source_Files/CSeries/csstrings.h \
+	../../Source_Files/CSeries/csfonts.h \
+	../../Source_Files/CSeries/cspixels.h \
+	../../Source_Files/CSeries/csalerts.h \
+	../../Source_Files/CSeries/csmisc.h FontHandler.h \
+	XML_ElementParser.h sdl_fonts.h FileHandler.h tags.h \
+	shape_descriptors.h screen_drawing.h
+HUDRenderer.o: HUDRenderer.cpp HUDRenderer.h \
+	../../Source_Files/CSeries/cseries.h \
+	../../Source_Files/CSeries/sdl_cseries.h ../../config.h \
+	../../Source_Files/CSeries/cstypes.h \
+	../../Source_Files/CSeries/csmacros.h \
+	../../Source_Files/CSeries/cscluts.h \
+	../../Source_Files/CSeries/csstrings.h \
+	../../Source_Files/CSeries/csfonts.h \
+	../../Source_Files/CSeries/cspixels.h \
+	../../Source_Files/CSeries/csalerts.h \
+	../../Source_Files/CSeries/csmisc.h map.h world.h \
+	dynamic_limits.h XML_ElementParser.h shape_descriptors.h \
+	interface.h player.h mysound.h motion_sensor.h items.h \
+	weapons.h ../../Source_Files/Network/network_games.h \
+	screen_drawing.h
+HUDRenderer_OGL.o: HUDRenderer_OGL.cpp HUDRenderer_OGL.h HUDRenderer.h \
+	../../Source_Files/CSeries/cseries.h \
+	../../Source_Files/CSeries/sdl_cseries.h ../../config.h \
+	../../Source_Files/CSeries/cstypes.h \
+	../../Source_Files/CSeries/csmacros.h \
+	../../Source_Files/CSeries/cscluts.h \
+	../../Source_Files/CSeries/csstrings.h \
+	../../Source_Files/CSeries/csfonts.h \
+	../../Source_Files/CSeries/cspixels.h \
+	../../Source_Files/CSeries/csalerts.h \
+	../../Source_Files/CSeries/csmisc.h map.h world.h \
+	dynamic_limits.h XML_ElementParser.h shape_descriptors.h \
+	interface.h player.h mysound.h motion_sensor.h items.h \
+	weapons.h ../../Source_Files/Network/network_games.h \
+	screen_drawing.h FontHandler.h sdl_fonts.h FileHandler.h tags.h \
+	game_window.h screen_definitions.h images.h render.h textures.h \
+	ViewControl.h scottish_textures.h OGL_Setup.h ImageLoader.h \
+	../../Source_Files/ModelView/Model3D.h OGL_Textures.h
+HUDRenderer_SW.o: HUDRenderer_SW.cpp HUDRenderer_SW.h HUDRenderer.h \
+	../../Source_Files/CSeries/cseries.h \
+	../../Source_Files/CSeries/sdl_cseries.h ../../config.h \
+	../../Source_Files/CSeries/cstypes.h \
+	../../Source_Files/CSeries/csmacros.h \
+	../../Source_Files/CSeries/cscluts.h \
+	../../Source_Files/CSeries/csstrings.h \
+	../../Source_Files/CSeries/csfonts.h \
+	../../Source_Files/CSeries/cspixels.h \
+	../../Source_Files/CSeries/csalerts.h \
+	../../Source_Files/CSeries/csmisc.h map.h world.h \
+	dynamic_limits.h XML_ElementParser.h shape_descriptors.h \
+	interface.h player.h mysound.h motion_sensor.h items.h \
+	weapons.h ../../Source_Files/Network/network_games.h \
+	screen_drawing.h
+ImageLoader_SDL.o: ImageLoader_SDL.cpp ImageLoader.h \
+	../../Source_Files/CSeries/cseries.h \
+	../../Source_Files/CSeries/sdl_cseries.h ../../config.h \
+	../../Source_Files/CSeries/cstypes.h \
+	../../Source_Files/CSeries/csmacros.h \
+	../../Source_Files/CSeries/cscluts.h \
+	../../Source_Files/CSeries/csstrings.h \
+	../../Source_Files/CSeries/csfonts.h \
+	../../Source_Files/CSeries/cspixels.h \
+	../../Source_Files/CSeries/csalerts.h \
+	../../Source_Files/CSeries/csmisc.h FileHandler.h tags.h
+OGL_Faders.o: OGL_Faders.cpp ../../Source_Files/CSeries/cseries.h \
+	../../Source_Files/CSeries/sdl_cseries.h ../../config.h \
+	../../Source_Files/CSeries/cstypes.h \
+	../../Source_Files/CSeries/csmacros.h \
+	../../Source_Files/CSeries/cscluts.h \
+	../../Source_Files/CSeries/csstrings.h \
+	../../Source_Files/CSeries/csfonts.h \
+	../../Source_Files/CSeries/cspixels.h \
+	../../Source_Files/CSeries/csalerts.h \
+	../../Source_Files/CSeries/csmisc.h fades.h XML_ElementParser.h \
+	Random.h render.h world.h textures.h ViewControl.h \
+	FontHandler.h sdl_fonts.h FileHandler.h tags.h \
+	shape_descriptors.h scottish_textures.h OGL_Render.h \
+	OGL_Setup.h ImageLoader.h \
+	../../Source_Files/ModelView/Model3D.h OGL_Faders.h
+OGL_Render.o: OGL_Render.cpp ../../Source_Files/CSeries/cseries.h \
+	../../Source_Files/CSeries/sdl_cseries.h ../../config.h \
+	../../Source_Files/CSeries/cstypes.h \
+	../../Source_Files/CSeries/csmacros.h \
+	../../Source_Files/CSeries/cscluts.h \
+	../../Source_Files/CSeries/csstrings.h \
+	../../Source_Files/CSeries/csfonts.h \
+	../../Source_Files/CSeries/cspixels.h \
+	../../Source_Files/CSeries/csalerts.h \
+	../../Source_Files/CSeries/csmisc.h interface.h \
+	XML_ElementParser.h shape_descriptors.h render.h world.h \
+	textures.h ViewControl.h FontHandler.h sdl_fonts.h \
+	FileHandler.h tags.h scottish_textures.h map.h dynamic_limits.h \
+	player.h OGL_Render.h OGL_Setup.h ImageLoader.h \
+	../../Source_Files/ModelView/Model3D.h OGL_Textures.h \
+	Crosshairs.h VectorOps.h Random.h OGL_Faders.h \
+	../../Source_Files/ModelView/ModelRenderer.h
+OGL_Setup.o: OGL_Setup.cpp ../../Source_Files/CSeries/cseries.h \
+	../../Source_Files/CSeries/sdl_cseries.h ../../config.h \
+	../../Source_Files/CSeries/cstypes.h \
+	../../Source_Files/CSeries/csmacros.h \
+	../../Source_Files/CSeries/cscluts.h \
+	../../Source_Files/CSeries/csstrings.h \
+	../../Source_Files/CSeries/csfonts.h \
+	../../Source_Files/CSeries/cspixels.h \
+	../../Source_Files/CSeries/csalerts.h \
+	../../Source_Files/CSeries/csmisc.h shape_descriptors.h \
+	OGL_Setup.h ImageLoader.h FileHandler.h tags.h \
+	../../Source_Files/ModelView/Model3D.h XML_ElementParser.h \
+	ColorParser.h ../../Source_Files/ModelView/StudioLoader.h \
+	../../Source_Files/ModelView/WavefrontLoader.h
+OGL_Textures.o: OGL_Textures.cpp ../../Source_Files/CSeries/cseries.h \
+	../../Source_Files/CSeries/sdl_cseries.h ../../config.h \
+	../../Source_Files/CSeries/cstypes.h \
+	../../Source_Files/CSeries/csmacros.h \
+	../../Source_Files/CSeries/cscluts.h \
+	../../Source_Files/CSeries/csstrings.h \
+	../../Source_Files/CSeries/csfonts.h \
+	../../Source_Files/CSeries/cspixels.h \
+	../../Source_Files/CSeries/csalerts.h \
+	../../Source_Files/CSeries/csmisc.h interface.h \
+	XML_ElementParser.h shape_descriptors.h render.h world.h \
+	textures.h ViewControl.h FontHandler.h sdl_fonts.h \
+	FileHandler.h tags.h scottish_textures.h map.h dynamic_limits.h \
+	collection_definition.h OGL_Setup.h ImageLoader.h \
+	../../Source_Files/ModelView/Model3D.h OGL_Render.h \
+	OGL_Textures.h
+OverheadMapRenderer.o: OverheadMapRenderer.cpp \
+	../../Source_Files/CSeries/cseries.h \
+	../../Source_Files/CSeries/sdl_cseries.h ../../config.h \
+	../../Source_Files/CSeries/cstypes.h \
+	../../Source_Files/CSeries/csmacros.h \
+	../../Source_Files/CSeries/cscluts.h \
+	../../Source_Files/CSeries/csstrings.h \
+	../../Source_Files/CSeries/csfonts.h \
+	../../Source_Files/CSeries/cspixels.h \
+	../../Source_Files/CSeries/csalerts.h \
+	../../Source_Files/CSeries/csmisc.h OverheadMapRenderer.h \
+	world.h map.h dynamic_limits.h XML_ElementParser.h \
+	shape_descriptors.h monsters.h overhead_map.h shell.h \
+	FontHandler.h sdl_fonts.h FileHandler.h tags.h flood_map.h \
+	media.h platforms.h player.h render.h textures.h ViewControl.h \
+	scottish_textures.h
+OverheadMap_OGL.o: OverheadMap_OGL.cpp \
+	../../Source_Files/CSeries/cseries.h \
+	../../Source_Files/CSeries/sdl_cseries.h ../../config.h \
+	../../Source_Files/CSeries/cstypes.h \
+	../../Source_Files/CSeries/csmacros.h \
+	../../Source_Files/CSeries/cscluts.h \
+	../../Source_Files/CSeries/csstrings.h \
+	../../Source_Files/CSeries/csfonts.h \
+	../../Source_Files/CSeries/cspixels.h \
+	../../Source_Files/CSeries/csalerts.h \
+	../../Source_Files/CSeries/csmisc.h OverheadMap_OGL.h \
+	OverheadMapRenderer.h world.h map.h dynamic_limits.h \
+	XML_ElementParser.h shape_descriptors.h monsters.h \
+	overhead_map.h shell.h FontHandler.h sdl_fonts.h FileHandler.h \
+	tags.h
+OverheadMap_SDL.o: OverheadMap_SDL.cpp \
+	../../Source_Files/CSeries/cseries.h \
+	../../Source_Files/CSeries/sdl_cseries.h ../../config.h \
+	../../Source_Files/CSeries/cstypes.h \
+	../../Source_Files/CSeries/csmacros.h \
+	../../Source_Files/CSeries/cscluts.h \
+	../../Source_Files/CSeries/csstrings.h \
+	../../Source_Files/CSeries/csfonts.h \
+	../../Source_Files/CSeries/cspixels.h \
+	../../Source_Files/CSeries/csalerts.h \
+	../../Source_Files/CSeries/csmisc.h OverheadMap_SDL.h \
+	OverheadMapRenderer.h world.h map.h dynamic_limits.h \
+	XML_ElementParser.h shape_descriptors.h monsters.h \
+	overhead_map.h shell.h FontHandler.h sdl_fonts.h FileHandler.h \
+	tags.h screen_drawing.h
+PlayerName.o: PlayerName.cpp ../../Source_Files/CSeries/cseries.h \
+	../../Source_Files/CSeries/sdl_cseries.h ../../config.h \
+	../../Source_Files/CSeries/cstypes.h \
+	../../Source_Files/CSeries/csmacros.h \
+	../../Source_Files/CSeries/cscluts.h \
+	../../Source_Files/CSeries/csstrings.h \
+	../../Source_Files/CSeries/csfonts.h \
+	../../Source_Files/CSeries/cspixels.h \
+	../../Source_Files/CSeries/csalerts.h \
+	../../Source_Files/CSeries/csmisc.h PlayerName.h \
+	XML_ElementParser.h
+RenderPlaceObjs.o: RenderPlaceObjs.cpp \
+	../../Source_Files/CSeries/cseries.h \
+	../../Source_Files/CSeries/sdl_cseries.h ../../config.h \
+	../../Source_Files/CSeries/cstypes.h \
+	../../Source_Files/CSeries/csmacros.h \
+	../../Source_Files/CSeries/cscluts.h \
+	../../Source_Files/CSeries/csstrings.h \
+	../../Source_Files/CSeries/csfonts.h \
+	../../Source_Files/CSeries/cspixels.h \
+	../../Source_Files/CSeries/csalerts.h \
+	../../Source_Files/CSeries/csmisc.h map.h world.h \
+	dynamic_limits.h XML_ElementParser.h shape_descriptors.h \
+	lightsource.h media.h RenderPlaceObjs.h interface.h render.h \
+	textures.h ViewControl.h FontHandler.h sdl_fonts.h \
+	FileHandler.h tags.h scottish_textures.h RenderSortPoly.h \
+	RenderVisTree.h OGL_Setup.h ImageLoader.h \
+	../../Source_Files/ModelView/Model3D.h
+RenderRasterize.o: RenderRasterize.cpp \
+	../../Source_Files/CSeries/cseries.h \
+	../../Source_Files/CSeries/sdl_cseries.h ../../config.h \
+	../../Source_Files/CSeries/cstypes.h \
+	../../Source_Files/CSeries/csmacros.h \
+	../../Source_Files/CSeries/cscluts.h \
+	../../Source_Files/CSeries/csstrings.h \
+	../../Source_Files/CSeries/csfonts.h \
+	../../Source_Files/CSeries/cspixels.h \
+	../../Source_Files/CSeries/csalerts.h \
+	../../Source_Files/CSeries/csmisc.h map.h world.h \
+	dynamic_limits.h XML_ElementParser.h shape_descriptors.h \
+	lightsource.h media.h RenderRasterize.h render.h textures.h \
+	ViewControl.h FontHandler.h sdl_fonts.h FileHandler.h tags.h \
+	scottish_textures.h RenderSortPoly.h RenderVisTree.h \
+	RenderPlaceObjs.h interface.h Rasterizer.h OGL_Render.h \
+	OGL_Setup.h ImageLoader.h \
+	../../Source_Files/ModelView/Model3D.h AnimatedTextures.h
+RenderSortPoly.o: RenderSortPoly.cpp \
+	../../Source_Files/CSeries/cseries.h \
+	../../Source_Files/CSeries/sdl_cseries.h ../../config.h \
+	../../Source_Files/CSeries/cstypes.h \
+	../../Source_Files/CSeries/csmacros.h \
+	../../Source_Files/CSeries/cscluts.h \
+	../../Source_Files/CSeries/csstrings.h \
+	../../Source_Files/CSeries/csfonts.h \
+	../../Source_Files/CSeries/cspixels.h \
+	../../Source_Files/CSeries/csalerts.h \
+	../../Source_Files/CSeries/csmisc.h map.h world.h \
+	dynamic_limits.h XML_ElementParser.h shape_descriptors.h \
+	RenderSortPoly.h render.h textures.h ViewControl.h \
+	FontHandler.h sdl_fonts.h FileHandler.h tags.h \
+	scottish_textures.h RenderVisTree.h
+RenderVisTree.o: RenderVisTree.cpp ../../Source_Files/CSeries/cseries.h \
+	../../Source_Files/CSeries/sdl_cseries.h ../../config.h \
+	../../Source_Files/CSeries/cstypes.h \
+	../../Source_Files/CSeries/csmacros.h \
+	../../Source_Files/CSeries/cscluts.h \
+	../../Source_Files/CSeries/csstrings.h \
+	../../Source_Files/CSeries/csfonts.h \
+	../../Source_Files/CSeries/cspixels.h \
+	../../Source_Files/CSeries/csalerts.h \
+	../../Source_Files/CSeries/csmisc.h map.h world.h \
+	dynamic_limits.h XML_ElementParser.h shape_descriptors.h \
+	RenderVisTree.h render.h textures.h ViewControl.h FontHandler.h \
+	sdl_fonts.h FileHandler.h tags.h scottish_textures.h
+ShapesParser.o: ShapesParser.cpp ../../Source_Files/CSeries/cseries.h \
+	../../Source_Files/CSeries/sdl_cseries.h ../../config.h \
+	../../Source_Files/CSeries/cstypes.h \
+	../../Source_Files/CSeries/csmacros.h \
+	../../Source_Files/CSeries/cscluts.h \
+	../../Source_Files/CSeries/csstrings.h \
+	../../Source_Files/CSeries/csfonts.h \
+	../../Source_Files/CSeries/cspixels.h \
+	../../Source_Files/CSeries/csalerts.h \
+	../../Source_Files/CSeries/csmisc.h ShapesParser.h \
+	shape_descriptors.h XML_ElementParser.h
+TextStrings.o: TextStrings.cpp ../../Source_Files/CSeries/cseries.h \
+	../../Source_Files/CSeries/sdl_cseries.h ../../config.h \
+	../../Source_Files/CSeries/cstypes.h \
+	../../Source_Files/CSeries/csmacros.h \
+	../../Source_Files/CSeries/cscluts.h \
+	../../Source_Files/CSeries/csstrings.h \
+	../../Source_Files/CSeries/csfonts.h \
+	../../Source_Files/CSeries/cspixels.h \
+	../../Source_Files/CSeries/csalerts.h \
+	../../Source_Files/CSeries/csmisc.h TextStrings.h \
+	XML_ElementParser.h
+ViewControl.o: ViewControl.cpp ../../Source_Files/CSeries/cseries.h \
+	../../Source_Files/CSeries/sdl_cseries.h ../../config.h \
+	../../Source_Files/CSeries/cstypes.h \
+	../../Source_Files/CSeries/csmacros.h \
+	../../Source_Files/CSeries/cscluts.h \
+	../../Source_Files/CSeries/csstrings.h \
+	../../Source_Files/CSeries/csfonts.h \
+	../../Source_Files/CSeries/cspixels.h \
+	../../Source_Files/CSeries/csalerts.h \
+	../../Source_Files/CSeries/csmisc.h world.h mysound.h \
+	XML_ElementParser.h ViewControl.h FontHandler.h sdl_fonts.h \
+	FileHandler.h tags.h shape_descriptors.h
+XML_Configure.o: XML_Configure.cpp ../../Source_Files/CSeries/cseries.h \
+	../../Source_Files/CSeries/sdl_cseries.h ../../config.h \
+	../../Source_Files/CSeries/cstypes.h \
+	../../Source_Files/CSeries/csmacros.h \
+	../../Source_Files/CSeries/cscluts.h \
+	../../Source_Files/CSeries/csstrings.h \
+	../../Source_Files/CSeries/csfonts.h \
+	../../Source_Files/CSeries/cspixels.h \
+	../../Source_Files/CSeries/csalerts.h \
+	../../Source_Files/CSeries/csmisc.h XML_Configure.h \
+	../../Source_Files/Expat/xmlparse.h XML_ElementParser.h
+XML_DataBlock.o: XML_DataBlock.cpp ../../Source_Files/CSeries/cseries.h \
+	../../Source_Files/CSeries/sdl_cseries.h ../../config.h \
+	../../Source_Files/CSeries/cstypes.h \
+	../../Source_Files/CSeries/csmacros.h \
+	../../Source_Files/CSeries/cscluts.h \
+	../../Source_Files/CSeries/csstrings.h \
+	../../Source_Files/CSeries/csfonts.h \
+	../../Source_Files/CSeries/cspixels.h \
+	../../Source_Files/CSeries/csalerts.h \
+	../../Source_Files/CSeries/csmisc.h XML_DataBlock.h \
+	XML_Configure.h ../../Source_Files/Expat/xmlparse.h \
+	XML_ElementParser.h
+XML_ElementParser.o: XML_ElementParser.cpp \
+	../../Source_Files/CSeries/cseries.h \
+	../../Source_Files/CSeries/sdl_cseries.h ../../config.h \
+	../../Source_Files/CSeries/cstypes.h \
+	../../Source_Files/CSeries/csmacros.h \
+	../../Source_Files/CSeries/cscluts.h \
+	../../Source_Files/CSeries/csstrings.h \
+	../../Source_Files/CSeries/csfonts.h \
+	../../Source_Files/CSeries/cspixels.h \
+	../../Source_Files/CSeries/csalerts.h \
+	../../Source_Files/CSeries/csmisc.h XML_ElementParser.h
+XML_LevelScript.o: XML_LevelScript.cpp \
+	../../Source_Files/CSeries/cseries.h \
+	../../Source_Files/CSeries/sdl_cseries.h ../../config.h \
+	../../Source_Files/CSeries/cstypes.h \
+	../../Source_Files/CSeries/csmacros.h \
+	../../Source_Files/CSeries/cscluts.h \
+	../../Source_Files/CSeries/csstrings.h \
+	../../Source_Files/CSeries/csfonts.h \
+	../../Source_Files/CSeries/cspixels.h \
+	../../Source_Files/CSeries/csalerts.h \
+	../../Source_Files/CSeries/csmisc.h game_wad.h music.h \
+	FileHandler.h tags.h XML_DataBlock.h XML_Configure.h \
+	../../Source_Files/Expat/xmlparse.h XML_ElementParser.h \
+	XML_LevelScript.h XML_ParseTreeRoot.h \
+	../../Source_Files/Pfhortran/scripting.h Random.h
+XML_Loader_SDL.o: XML_Loader_SDL.cpp \
+	../../Source_Files/CSeries/cseries.h \
+	../../Source_Files/CSeries/sdl_cseries.h ../../config.h \
+	../../Source_Files/CSeries/cstypes.h \
+	../../Source_Files/CSeries/csmacros.h \
+	../../Source_Files/CSeries/cscluts.h \
+	../../Source_Files/CSeries/csstrings.h \
+	../../Source_Files/CSeries/csfonts.h \
+	../../Source_Files/CSeries/cspixels.h \
+	../../Source_Files/CSeries/csalerts.h \
+	../../Source_Files/CSeries/csmisc.h XML_Loader_SDL.h \
+	XML_Configure.h ../../Source_Files/Expat/xmlparse.h \
+	XML_ElementParser.h FileHandler.h tags.h
+XML_MakeRoot.o: XML_MakeRoot.cpp ../../Source_Files/CSeries/cseries.h \
+	../../Source_Files/CSeries/sdl_cseries.h ../../config.h \
+	../../Source_Files/CSeries/cstypes.h \
+	../../Source_Files/CSeries/csmacros.h \
+	../../Source_Files/CSeries/cscluts.h \
+	../../Source_Files/CSeries/csstrings.h \
+	../../Source_Files/CSeries/csfonts.h \
+	../../Source_Files/CSeries/cspixels.h \
+	../../Source_Files/CSeries/csalerts.h \
+	../../Source_Files/CSeries/csmisc.h XML_ParseTreeRoot.h \
+	XML_ElementParser.h TextStrings.h interface.h \
+	shape_descriptors.h game_window.h PlayerName.h motion_sensor.h \
+	world.h overhead_map.h dynamic_limits.h AnimatedTextures.h \
+	player.h map.h items.h media.h platforms.h scenery.h fades.h \
+	ViewControl.h FontHandler.h sdl_fonts.h FileHandler.h tags.h \
+	weapons.h OGL_Setup.h ImageLoader.h \
+	../../Source_Files/ModelView/Model3D.h shell.h mysound.h vbl.h \
+	sdl_dialogs.h
+computer_interface.o: computer_interface.cpp \
+	../../Source_Files/CSeries/cseries.h \
+	../../Source_Files/CSeries/sdl_cseries.h ../../config.h \
+	../../Source_Files/CSeries/cstypes.h \
+	../../Source_Files/CSeries/csmacros.h \
+	../../Source_Files/CSeries/cscluts.h \
+	../../Source_Files/CSeries/csstrings.h \
+	../../Source_Files/CSeries/csfonts.h \
+	../../Source_Files/CSeries/cspixels.h \
+	../../Source_Files/CSeries/csalerts.h \
+	../../Source_Files/CSeries/csmisc.h FileHandler.h tags.h \
+	world.h map.h dynamic_limits.h XML_ElementParser.h \
+	shape_descriptors.h player.h computer_interface.h \
+	screen_drawing.h overhead_map.h mysound.h interface.h shell.h \
+	platforms.h lightsource.h screen.h images.h Packing.h \
+	../../Source_Files/Pfhortran/scripting.h \
+	computer_interface_sdl.cpp sdl_fonts.h
+crc.o: crc.cpp ../../Source_Files/CSeries/cseries.h \
+	../../Source_Files/CSeries/sdl_cseries.h ../../config.h \
+	../../Source_Files/CSeries/cstypes.h \
+	../../Source_Files/CSeries/csmacros.h \
+	../../Source_Files/CSeries/cscluts.h \
+	../../Source_Files/CSeries/csstrings.h \
+	../../Source_Files/CSeries/csfonts.h \
+	../../Source_Files/CSeries/cspixels.h \
+	../../Source_Files/CSeries/csalerts.h \
+	../../Source_Files/CSeries/csmisc.h FileHandler.h tags.h crc.h
+devices.o: devices.cpp ../../Source_Files/CSeries/cseries.h \
+	../../Source_Files/CSeries/sdl_cseries.h ../../config.h \
+	../../Source_Files/CSeries/cstypes.h \
+	../../Source_Files/CSeries/csmacros.h \
+	../../Source_Files/CSeries/cscluts.h \
+	../../Source_Files/CSeries/csstrings.h \
+	../../Source_Files/CSeries/csfonts.h \
+	../../Source_Files/CSeries/cspixels.h \
+	../../Source_Files/CSeries/csalerts.h \
+	../../Source_Files/CSeries/csmisc.h map.h world.h \
+	dynamic_limits.h XML_ElementParser.h shape_descriptors.h \
+	monsters.h interface.h player.h platforms.h mysound.h \
+	computer_interface.h lightsource.h game_window.h items.h \
+	../../Source_Files/Pfhortran/scripting.h
+dynamic_limits.o: dynamic_limits.cpp \
+	../../Source_Files/CSeries/cseries.h \
+	../../Source_Files/CSeries/sdl_cseries.h ../../config.h \
+	../../Source_Files/CSeries/cstypes.h \
+	../../Source_Files/CSeries/csmacros.h \
+	../../Source_Files/CSeries/cscluts.h \
+	../../Source_Files/CSeries/csstrings.h \
+	../../Source_Files/CSeries/csfonts.h \
+	../../Source_Files/CSeries/cspixels.h \
+	../../Source_Files/CSeries/csalerts.h \
+	../../Source_Files/CSeries/csmisc.h dynamic_limits.h \
+	XML_ElementParser.h map.h world.h shape_descriptors.h effects.h \
+	monsters.h projectiles.h flood_map.h
+effects.o: effects.cpp ../../Source_Files/CSeries/cseries.h \
+	../../Source_Files/CSeries/sdl_cseries.h ../../config.h \
+	../../Source_Files/CSeries/cstypes.h \
+	../../Source_Files/CSeries/csmacros.h \
+	../../Source_Files/CSeries/cscluts.h \
+	../../Source_Files/CSeries/csstrings.h \
+	../../Source_Files/CSeries/csfonts.h \
+	../../Source_Files/CSeries/cspixels.h \
+	../../Source_Files/CSeries/csalerts.h \
+	../../Source_Files/CSeries/csmisc.h map.h world.h \
+	dynamic_limits.h XML_ElementParser.h shape_descriptors.h \
+	interface.h effects.h mysound.h Packing.h effect_definitions.h
+fades.o: fades.cpp ../../Source_Files/CSeries/cseries.h \
+	../../Source_Files/CSeries/sdl_cseries.h ../../config.h \
+	../../Source_Files/CSeries/cstypes.h \
+	../../Source_Files/CSeries/csmacros.h \
+	../../Source_Files/CSeries/cscluts.h \
+	../../Source_Files/CSeries/csstrings.h \
+	../../Source_Files/CSeries/csfonts.h \
+	../../Source_Files/CSeries/cspixels.h \
+	../../Source_Files/CSeries/csalerts.h \
+	../../Source_Files/CSeries/csmisc.h fades.h XML_ElementParser.h \
+	screen.h ColorParser.h OGL_Faders.h
+find_files_sdl.o: find_files_sdl.cpp \
+	../../Source_Files/CSeries/cseries.h \
+	../../Source_Files/CSeries/sdl_cseries.h ../../config.h \
+	../../Source_Files/CSeries/cstypes.h \
+	../../Source_Files/CSeries/csmacros.h \
+	../../Source_Files/CSeries/cscluts.h \
+	../../Source_Files/CSeries/csstrings.h \
+	../../Source_Files/CSeries/csfonts.h \
+	../../Source_Files/CSeries/cspixels.h \
+	../../Source_Files/CSeries/csalerts.h \
+	../../Source_Files/CSeries/csmisc.h FileHandler.h tags.h \
+	find_files.h
+flood_map.o: flood_map.cpp ../../Source_Files/CSeries/cseries.h \
+	../../Source_Files/CSeries/sdl_cseries.h ../../config.h \
+	../../Source_Files/CSeries/cstypes.h \
+	../../Source_Files/CSeries/csmacros.h \
+	../../Source_Files/CSeries/cscluts.h \
+	../../Source_Files/CSeries/csstrings.h \
+	../../Source_Files/CSeries/csfonts.h \
+	../../Source_Files/CSeries/cspixels.h \
+	../../Source_Files/CSeries/csalerts.h \
+	../../Source_Files/CSeries/csmisc.h map.h world.h \
+	dynamic_limits.h XML_ElementParser.h shape_descriptors.h \
+	flood_map.h
+game_errors.o: game_errors.cpp ../../Source_Files/CSeries/cseries.h \
+	../../Source_Files/CSeries/sdl_cseries.h ../../config.h \
+	../../Source_Files/CSeries/cstypes.h \
+	../../Source_Files/CSeries/csmacros.h \
+	../../Source_Files/CSeries/cscluts.h \
+	../../Source_Files/CSeries/csstrings.h \
+	../../Source_Files/CSeries/csfonts.h \
+	../../Source_Files/CSeries/cspixels.h \
+	../../Source_Files/CSeries/csalerts.h \
+	../../Source_Files/CSeries/csmisc.h game_errors.h
+game_wad.o: game_wad.cpp ../../Source_Files/CSeries/cseries.h \
+	../../Source_Files/CSeries/sdl_cseries.h ../../config.h \
+	../../Source_Files/CSeries/cstypes.h \
+	../../Source_Files/CSeries/csmacros.h \
+	../../Source_Files/CSeries/cscluts.h \
+	../../Source_Files/CSeries/csstrings.h \
+	../../Source_Files/CSeries/csfonts.h \
+	../../Source_Files/CSeries/cspixels.h \
+	../../Source_Files/CSeries/csalerts.h \
+	../../Source_Files/CSeries/csmisc.h map.h world.h \
+	dynamic_limits.h XML_ElementParser.h shape_descriptors.h \
+	monsters.h ../../Source_Files/Network/network.h projectiles.h \
+	effects.h player.h platforms.h flood_map.h scenery.h \
+	lightsource.h media.h weapons.h FileHandler.h tags.h editor.h \
+	wad.h game_wad.h interface.h game_window.h game_errors.h \
+	computer_interface.h images.h ChaseCam.h render.h textures.h \
+	ViewControl.h FontHandler.h sdl_fonts.h scottish_textures.h \
+	XML_LevelScript.h Packing.h
+game_window.o: game_window.cpp ../../Source_Files/CSeries/cseries.h \
+	../../Source_Files/CSeries/sdl_cseries.h ../../config.h \
+	../../Source_Files/CSeries/cstypes.h \
+	../../Source_Files/CSeries/csmacros.h \
+	../../Source_Files/CSeries/cscluts.h \
+	../../Source_Files/CSeries/csstrings.h \
+	../../Source_Files/CSeries/csfonts.h \
+	../../Source_Files/CSeries/cspixels.h \
+	../../Source_Files/CSeries/csalerts.h \
+	../../Source_Files/CSeries/csmisc.h HUDRenderer_SW.h \
+	HUDRenderer.h map.h world.h dynamic_limits.h \
+	XML_ElementParser.h shape_descriptors.h interface.h player.h \
+	mysound.h motion_sensor.h items.h weapons.h \
+	../../Source_Files/Network/network_games.h screen_drawing.h \
+	game_window.h ColorParser.h FontHandler.h sdl_fonts.h \
+	FileHandler.h tags.h screen.h
+game_window_sdl.o: game_window_sdl.cpp \
+	../../Source_Files/CSeries/cseries.h \
+	../../Source_Files/CSeries/sdl_cseries.h ../../config.h \
+	../../Source_Files/CSeries/cstypes.h \
+	../../Source_Files/CSeries/csmacros.h \
+	../../Source_Files/CSeries/cscluts.h \
+	../../Source_Files/CSeries/csstrings.h \
+	../../Source_Files/CSeries/csfonts.h \
+	../../Source_Files/CSeries/cspixels.h \
+	../../Source_Files/CSeries/csalerts.h \
+	../../Source_Files/CSeries/csmisc.h FileHandler.h tags.h \
+	HUDRenderer_SW.h HUDRenderer.h map.h world.h dynamic_limits.h \
+	XML_ElementParser.h shape_descriptors.h interface.h player.h \
+	mysound.h motion_sensor.h items.h weapons.h \
+	../../Source_Files/Network/network_games.h screen_drawing.h \
+	shell.h preferences.h ChaseCam.h Crosshairs.h OGL_Setup.h \
+	ImageLoader.h ../../Source_Files/ModelView/Model3D.h screen.h \
+	screen_definitions.h images.h
+images.o: images.cpp ../../Source_Files/CSeries/cseries.h \
+	../../Source_Files/CSeries/sdl_cseries.h ../../config.h \
+	../../Source_Files/CSeries/cstypes.h \
+	../../Source_Files/CSeries/csmacros.h \
+	../../Source_Files/CSeries/cscluts.h \
+	../../Source_Files/CSeries/csstrings.h \
+	../../Source_Files/CSeries/csfonts.h \
+	../../Source_Files/CSeries/cspixels.h \
+	../../Source_Files/CSeries/csalerts.h \
+	../../Source_Files/CSeries/csmisc.h FileHandler.h tags.h \
+	interface.h XML_ElementParser.h shape_descriptors.h shell.h \
+	images.h screen.h wad.h screen_drawing.h images_sdl.cpp \
+	../../Source_Files/CSeries/byte_swapping.h
+import_definitions.o: import_definitions.cpp \
+	../../Source_Files/CSeries/cseries.h \
+	../../Source_Files/CSeries/sdl_cseries.h ../../config.h \
+	../../Source_Files/CSeries/cstypes.h \
+	../../Source_Files/CSeries/csmacros.h \
+	../../Source_Files/CSeries/cscluts.h \
+	../../Source_Files/CSeries/csstrings.h \
+	../../Source_Files/CSeries/csfonts.h \
+	../../Source_Files/CSeries/cspixels.h \
+	../../Source_Files/CSeries/csalerts.h \
+	../../Source_Files/CSeries/csmisc.h tags.h map.h world.h \
+	dynamic_limits.h XML_ElementParser.h shape_descriptors.h \
+	interface.h game_wad.h wad.h game_errors.h FileHandler.h \
+	monsters.h effects.h projectiles.h player.h weapons.h \
+	extensions.h
+interface.o: interface.cpp ../../Source_Files/CSeries/cseries.h \
+	../../Source_Files/CSeries/sdl_cseries.h ../../config.h \
+	../../Source_Files/CSeries/cstypes.h \
+	../../Source_Files/CSeries/csmacros.h \
+	../../Source_Files/CSeries/cscluts.h \
+	../../Source_Files/CSeries/csstrings.h \
+	../../Source_Files/CSeries/csfonts.h \
+	../../Source_Files/CSeries/cspixels.h \
+	../../Source_Files/CSeries/csalerts.h \
+	../../Source_Files/CSeries/csmisc.h map.h world.h \
+	dynamic_limits.h XML_ElementParser.h shape_descriptors.h \
+	interface.h player.h screen_drawing.h mysound.h fades.h \
+	game_window.h game_errors.h music.h FileHandler.h tags.h \
+	images.h screen.h ../../Source_Files/Network/network.h vbl.h \
+	shell.h preferences.h ChaseCam.h Crosshairs.h OGL_Setup.h \
+	ImageLoader.h ../../Source_Files/ModelView/Model3D.h \
+	screen_definitions.h interface_menus.h render.h textures.h \
+	ViewControl.h FontHandler.h sdl_fonts.h scottish_textures.h \
+	OGL_Render.h XML_LevelScript.h
+interface_sdl.o: interface_sdl.cpp ../../Source_Files/CSeries/cseries.h \
+	../../Source_Files/CSeries/sdl_cseries.h ../../config.h \
+	../../Source_Files/CSeries/cstypes.h \
+	../../Source_Files/CSeries/csmacros.h \
+	../../Source_Files/CSeries/cscluts.h \
+	../../Source_Files/CSeries/csstrings.h \
+	../../Source_Files/CSeries/csfonts.h \
+	../../Source_Files/CSeries/cspixels.h \
+	../../Source_Files/CSeries/csalerts.h \
+	../../Source_Files/CSeries/csmisc.h map.h world.h \
+	dynamic_limits.h XML_ElementParser.h shape_descriptors.h \
+	shell.h interface.h player.h \
+	../../Source_Files/Network/network.h \
+	../../Source_Files/Network/network_sound.h screen_drawing.h \
+	mysound.h preferences.h ChaseCam.h Crosshairs.h OGL_Setup.h \
+	ImageLoader.h FileHandler.h tags.h \
+	../../Source_Files/ModelView/Model3D.h fades.h game_window.h \
+	game_errors.h screen.h images.h interface_menus.h
+items.o: items.cpp ../../Source_Files/CSeries/cseries.h \
+	../../Source_Files/CSeries/sdl_cseries.h ../../config.h \
+	../../Source_Files/CSeries/cstypes.h \
+	../../Source_Files/CSeries/csmacros.h \
+	../../Source_Files/CSeries/cscluts.h \
+	../../Source_Files/CSeries/csstrings.h \
+	../../Source_Files/CSeries/csfonts.h \
+	../../Source_Files/CSeries/cspixels.h \
+	../../Source_Files/CSeries/csalerts.h \
+	../../Source_Files/CSeries/csmisc.h map.h world.h \
+	dynamic_limits.h XML_ElementParser.h shape_descriptors.h \
+	interface.h monsters.h player.h mysound.h platforms.h fades.h \
+	items.h flood_map.h effects.h game_window.h weapons.h \
+	../../Source_Files/Network/network_games.h ShapesParser.h \
+	../../Source_Files/Pfhortran/scripting.h item_definitions.h
+lightsource.o: lightsource.cpp ../../Source_Files/CSeries/cseries.h \
+	../../Source_Files/CSeries/sdl_cseries.h ../../config.h \
+	../../Source_Files/CSeries/cstypes.h \
+	../../Source_Files/CSeries/csmacros.h \
+	../../Source_Files/CSeries/cscluts.h \
+	../../Source_Files/CSeries/csstrings.h \
+	../../Source_Files/CSeries/csfonts.h \
+	../../Source_Files/CSeries/cspixels.h \
+	../../Source_Files/CSeries/csalerts.h \
+	../../Source_Files/CSeries/csmisc.h map.h world.h \
+	dynamic_limits.h XML_ElementParser.h shape_descriptors.h \
+	lightsource.h Packing.h
+map.o: map.cpp ../../Source_Files/CSeries/cseries.h \
+	../../Source_Files/CSeries/sdl_cseries.h ../../config.h \
+	../../Source_Files/CSeries/cstypes.h \
+	../../Source_Files/CSeries/csmacros.h \
+	../../Source_Files/CSeries/cscluts.h \
+	../../Source_Files/CSeries/csstrings.h \
+	../../Source_Files/CSeries/csfonts.h \
+	../../Source_Files/CSeries/cspixels.h \
+	../../Source_Files/CSeries/csalerts.h \
+	../../Source_Files/CSeries/csmisc.h map.h world.h \
+	dynamic_limits.h XML_ElementParser.h shape_descriptors.h \
+	interface.h monsters.h projectiles.h effects.h player.h \
+	platforms.h lightsource.h media.h mysound.h
+map_constructors.o: map_constructors.cpp \
+	../../Source_Files/CSeries/cseries.h \
+	../../Source_Files/CSeries/sdl_cseries.h ../../config.h \
+	../../Source_Files/CSeries/cstypes.h \
+	../../Source_Files/CSeries/csmacros.h \
+	../../Source_Files/CSeries/cscluts.h \
+	../../Source_Files/CSeries/csstrings.h \
+	../../Source_Files/CSeries/csfonts.h \
+	../../Source_Files/CSeries/cspixels.h \
+	../../Source_Files/CSeries/csalerts.h \
+	../../Source_Files/CSeries/csmisc.h map.h world.h \
+	dynamic_limits.h XML_ElementParser.h shape_descriptors.h \
+	flood_map.h Packing.h
+marathon2.o: marathon2.cpp ../../Source_Files/CSeries/cseries.h \
+	../../Source_Files/CSeries/sdl_cseries.h ../../config.h \
+	../../Source_Files/CSeries/cstypes.h \
+	../../Source_Files/CSeries/csmacros.h \
+	../../Source_Files/CSeries/cscluts.h \
+	../../Source_Files/CSeries/csstrings.h \
+	../../Source_Files/CSeries/csfonts.h \
+	../../Source_Files/CSeries/cspixels.h \
+	../../Source_Files/CSeries/csalerts.h \
+	../../Source_Files/CSeries/csmisc.h map.h world.h \
+	dynamic_limits.h XML_ElementParser.h shape_descriptors.h \
+	render.h textures.h ViewControl.h FontHandler.h sdl_fonts.h \
+	FileHandler.h tags.h scottish_textures.h interface.h \
+	flood_map.h effects.h monsters.h projectiles.h player.h \
+	../../Source_Files/Network/network.h scenery.h platforms.h \
+	lightsource.h media.h fades.h items.h weapons.h game_window.h \
+	mysound.h ../../Source_Files/Network/network_games.h \
+	AnimatedTextures.h ChaseCam.h OGL_Setup.h ImageLoader.h \
+	../../Source_Files/ModelView/Model3D.h \
+	../../Source_Files/Pfhortran/scripting.h \
+	../../Source_Files/Pfhortran/script_parser.h
+media.o: media.cpp ../../Source_Files/CSeries/cseries.h \
+	../../Source_Files/CSeries/sdl_cseries.h ../../config.h \
+	../../Source_Files/CSeries/cstypes.h \
+	../../Source_Files/CSeries/csmacros.h \
+	../../Source_Files/CSeries/cscluts.h \
+	../../Source_Files/CSeries/csstrings.h \
+	../../Source_Files/CSeries/csfonts.h \
+	../../Source_Files/CSeries/cspixels.h \
+	../../Source_Files/CSeries/csalerts.h \
+	../../Source_Files/CSeries/csmisc.h map.h world.h \
+	dynamic_limits.h XML_ElementParser.h shape_descriptors.h \
+	media.h effects.h fades.h lightsource.h mysound.h Packing.h \
+	DamageParser.h media_definitions.h
+monsters.o: monsters.cpp ../../Source_Files/CSeries/cseries.h \
+	../../Source_Files/CSeries/sdl_cseries.h ../../config.h \
+	../../Source_Files/CSeries/cstypes.h \
+	../../Source_Files/CSeries/csmacros.h \
+	../../Source_Files/CSeries/cscluts.h \
+	../../Source_Files/CSeries/csstrings.h \
+	../../Source_Files/CSeries/csfonts.h \
+	../../Source_Files/CSeries/cspixels.h \
+	../../Source_Files/CSeries/csalerts.h \
+	../../Source_Files/CSeries/csmisc.h map.h world.h \
+	dynamic_limits.h XML_ElementParser.h shape_descriptors.h \
+	render.h textures.h ViewControl.h FontHandler.h sdl_fonts.h \
+	FileHandler.h tags.h scottish_textures.h interface.h \
+	flood_map.h effects.h monsters.h projectiles.h player.h \
+	platforms.h scenery.h mysound.h fades.h items.h media.h \
+	Packing.h monster_definitions.h
+motion_sensor.o: motion_sensor.cpp ../../Source_Files/CSeries/cseries.h \
+	../../Source_Files/CSeries/sdl_cseries.h ../../config.h \
+	../../Source_Files/CSeries/cstypes.h \
+	../../Source_Files/CSeries/csmacros.h \
+	../../Source_Files/CSeries/cscluts.h \
+	../../Source_Files/CSeries/csstrings.h \
+	../../Source_Files/CSeries/csfonts.h \
+	../../Source_Files/CSeries/cspixels.h \
+	../../Source_Files/CSeries/csalerts.h \
+	../../Source_Files/CSeries/csmisc.h map.h world.h \
+	dynamic_limits.h XML_ElementParser.h shape_descriptors.h \
+	monsters.h render.h textures.h ViewControl.h FontHandler.h \
+	sdl_fonts.h FileHandler.h tags.h scottish_textures.h \
+	interface.h motion_sensor.h player.h \
+	../../Source_Files/Network/network_games.h HUDRenderer_SW.h \
+	HUDRenderer.h mysound.h items.h weapons.h screen_drawing.h \
+	HUDRenderer_OGL.h
+mouse_sdl.o: mouse_sdl.cpp ../../Source_Files/CSeries/cseries.h \
+	../../Source_Files/CSeries/sdl_cseries.h ../../config.h \
+	../../Source_Files/CSeries/cstypes.h \
+	../../Source_Files/CSeries/csmacros.h \
+	../../Source_Files/CSeries/cscluts.h \
+	../../Source_Files/CSeries/csstrings.h \
+	../../Source_Files/CSeries/csfonts.h \
+	../../Source_Files/CSeries/cspixels.h \
+	../../Source_Files/CSeries/csalerts.h \
+	../../Source_Files/CSeries/csmisc.h mouse.h player.h world.h \
+	map.h dynamic_limits.h XML_ElementParser.h shape_descriptors.h \
+	shell.h preferences.h interface.h ChaseCam.h Crosshairs.h \
+	OGL_Setup.h ImageLoader.h FileHandler.h tags.h \
+	../../Source_Files/ModelView/Model3D.h
+mysound.o: mysound.cpp ../../Source_Files/CSeries/cseries.h \
+	../../Source_Files/CSeries/sdl_cseries.h ../../config.h \
+	../../Source_Files/CSeries/cstypes.h \
+	../../Source_Files/CSeries/csmacros.h \
+	../../Source_Files/CSeries/cscluts.h \
+	../../Source_Files/CSeries/csstrings.h \
+	../../Source_Files/CSeries/csfonts.h \
+	../../Source_Files/CSeries/cspixels.h \
+	../../Source_Files/CSeries/csalerts.h \
+	../../Source_Files/CSeries/csmisc.h shell.h XML_ElementParser.h \
+	world.h interface.h shape_descriptors.h mysound.h game_errors.h \
+	FileHandler.h tags.h Packing.h sound_definitions.h \
+	sound_sdl.cpp music.h song_definitions.h
+overhead_map.o: overhead_map.cpp ../../Source_Files/CSeries/cseries.h \
+	../../Source_Files/CSeries/sdl_cseries.h ../../config.h \
+	../../Source_Files/CSeries/cstypes.h \
+	../../Source_Files/CSeries/csmacros.h \
+	../../Source_Files/CSeries/cscluts.h \
+	../../Source_Files/CSeries/csstrings.h \
+	../../Source_Files/CSeries/csfonts.h \
+	../../Source_Files/CSeries/cspixels.h \
+	../../Source_Files/CSeries/csalerts.h \
+	../../Source_Files/CSeries/csmisc.h shell.h XML_ElementParser.h \
+	map.h world.h dynamic_limits.h shape_descriptors.h monsters.h \
+	overhead_map.h player.h render.h textures.h ViewControl.h \
+	FontHandler.h sdl_fonts.h FileHandler.h tags.h \
+	scottish_textures.h flood_map.h platforms.h media.h \
+	ColorParser.h OverheadMap_SDL.h OverheadMapRenderer.h \
+	OverheadMap_OGL.h
+pathfinding.o: pathfinding.cpp ../../Source_Files/CSeries/cseries.h \
+	../../Source_Files/CSeries/sdl_cseries.h ../../config.h \
+	../../Source_Files/CSeries/cstypes.h \
+	../../Source_Files/CSeries/csmacros.h \
+	../../Source_Files/CSeries/cscluts.h \
+	../../Source_Files/CSeries/csstrings.h \
+	../../Source_Files/CSeries/csfonts.h \
+	../../Source_Files/CSeries/cspixels.h \
+	../../Source_Files/CSeries/csalerts.h \
+	../../Source_Files/CSeries/csmisc.h map.h world.h \
+	dynamic_limits.h XML_ElementParser.h shape_descriptors.h \
+	flood_map.h
+physics.o: physics.cpp ../../Source_Files/CSeries/cseries.h \
+	../../Source_Files/CSeries/sdl_cseries.h ../../config.h \
+	../../Source_Files/CSeries/cstypes.h \
+	../../Source_Files/CSeries/csmacros.h \
+	../../Source_Files/CSeries/cscluts.h \
+	../../Source_Files/CSeries/csstrings.h \
+	../../Source_Files/CSeries/csfonts.h \
+	../../Source_Files/CSeries/cspixels.h \
+	../../Source_Files/CSeries/csalerts.h \
+	../../Source_Files/CSeries/csmisc.h render.h world.h textures.h \
+	ViewControl.h FontHandler.h XML_ElementParser.h sdl_fonts.h \
+	FileHandler.h tags.h shape_descriptors.h scottish_textures.h \
+	map.h dynamic_limits.h player.h interface.h monsters.h media.h \
+	ChaseCam.h Packing.h physics_models.h
+placement.o: placement.cpp ../../Source_Files/CSeries/cseries.h \
+	../../Source_Files/CSeries/sdl_cseries.h ../../config.h \
+	../../Source_Files/CSeries/cstypes.h \
+	../../Source_Files/CSeries/csmacros.h \
+	../../Source_Files/CSeries/cscluts.h \
+	../../Source_Files/CSeries/csstrings.h \
+	../../Source_Files/CSeries/csfonts.h \
+	../../Source_Files/CSeries/cspixels.h \
+	../../Source_Files/CSeries/csalerts.h \
+	../../Source_Files/CSeries/csmisc.h map.h world.h \
+	dynamic_limits.h XML_ElementParser.h shape_descriptors.h \
+	monsters.h items.h
+platforms.o: platforms.cpp ../../Source_Files/CSeries/cseries.h \
+	../../Source_Files/CSeries/sdl_cseries.h ../../config.h \
+	../../Source_Files/CSeries/cstypes.h \
+	../../Source_Files/CSeries/csmacros.h \
+	../../Source_Files/CSeries/cscluts.h \
+	../../Source_Files/CSeries/csstrings.h \
+	../../Source_Files/CSeries/csfonts.h \
+	../../Source_Files/CSeries/cspixels.h \
+	../../Source_Files/CSeries/csalerts.h \
+	../../Source_Files/CSeries/csmisc.h world.h map.h \
+	dynamic_limits.h XML_ElementParser.h shape_descriptors.h \
+	platforms.h lightsource.h mysound.h player.h media.h items.h \
+	Packing.h DamageParser.h platform_definitions.h
+player.o: player.cpp ../../Source_Files/CSeries/cseries.h \
+	../../Source_Files/CSeries/sdl_cseries.h ../../config.h \
+	../../Source_Files/CSeries/cstypes.h \
+	../../Source_Files/CSeries/csmacros.h \
+	../../Source_Files/CSeries/cscluts.h \
+	../../Source_Files/CSeries/csstrings.h \
+	../../Source_Files/CSeries/csfonts.h \
+	../../Source_Files/CSeries/cspixels.h \
+	../../Source_Files/CSeries/csalerts.h \
+	../../Source_Files/CSeries/csmisc.h map.h world.h \
+	dynamic_limits.h XML_ElementParser.h shape_descriptors.h \
+	player.h monsters.h interface.h mysound.h fades.h media.h \
+	items.h weapons.h game_window.h computer_interface.h \
+	projectiles.h ../../Source_Files/Network/network_games.h \
+	screen.h ChaseCam.h Packing.h
+preferences.o: preferences.cpp ../../Source_Files/CSeries/cseries.h \
+	../../Source_Files/CSeries/sdl_cseries.h ../../config.h \
+	../../Source_Files/CSeries/cstypes.h \
+	../../Source_Files/CSeries/csmacros.h \
+	../../Source_Files/CSeries/cscluts.h \
+	../../Source_Files/CSeries/csstrings.h \
+	../../Source_Files/CSeries/csfonts.h \
+	../../Source_Files/CSeries/cspixels.h \
+	../../Source_Files/CSeries/csalerts.h \
+	../../Source_Files/CSeries/csmisc.h FileHandler.h tags.h map.h \
+	world.h dynamic_limits.h XML_ElementParser.h \
+	shape_descriptors.h shell.h interface.h mysound.h music.h \
+	ISp_Support.h preferences.h ChaseCam.h Crosshairs.h OGL_Setup.h \
+	ImageLoader.h ../../Source_Files/ModelView/Model3D.h wad.h \
+	wad_prefs.h game_errors.h ../../Source_Files/Network/network.h \
+	find_files.h game_wad.h screen.h fades.h extensions.h \
+	preferences_sdl.cpp sdl_dialogs.h sdl_fonts.h sdl_widgets.h \
+	images.h screen_drawing.h
+preprocess_map_sdl.o: preprocess_map_sdl.cpp \
+	../../Source_Files/CSeries/cseries.h \
+	../../Source_Files/CSeries/sdl_cseries.h ../../config.h \
+	../../Source_Files/CSeries/cstypes.h \
+	../../Source_Files/CSeries/csmacros.h \
+	../../Source_Files/CSeries/cscluts.h \
+	../../Source_Files/CSeries/csstrings.h \
+	../../Source_Files/CSeries/csfonts.h \
+	../../Source_Files/CSeries/cspixels.h \
+	../../Source_Files/CSeries/csalerts.h \
+	../../Source_Files/CSeries/csmisc.h FileHandler.h tags.h \
+	world.h map.h dynamic_limits.h XML_ElementParser.h \
+	shape_descriptors.h shell.h interface.h game_wad.h \
+	game_errors.h
+projectiles.o: projectiles.cpp ../../Source_Files/CSeries/cseries.h \
+	../../Source_Files/CSeries/sdl_cseries.h ../../config.h \
+	../../Source_Files/CSeries/cstypes.h \
+	../../Source_Files/CSeries/csmacros.h \
+	../../Source_Files/CSeries/cscluts.h \
+	../../Source_Files/CSeries/csstrings.h \
+	../../Source_Files/CSeries/csfonts.h \
+	../../Source_Files/CSeries/cspixels.h \
+	../../Source_Files/CSeries/csalerts.h \
+	../../Source_Files/CSeries/csmisc.h map.h world.h \
+	dynamic_limits.h XML_ElementParser.h shape_descriptors.h \
+	interface.h effects.h monsters.h projectiles.h player.h \
+	scenery.h media.h mysound.h items.h Packing.h \
+	projectile_definitions.h
+render.o: render.cpp ../../Source_Files/CSeries/cseries.h \
+	../../Source_Files/CSeries/sdl_cseries.h ../../config.h \
+	../../Source_Files/CSeries/cstypes.h \
+	../../Source_Files/CSeries/csmacros.h \
+	../../Source_Files/CSeries/cscluts.h \
+	../../Source_Files/CSeries/csstrings.h \
+	../../Source_Files/CSeries/csfonts.h \
+	../../Source_Files/CSeries/cspixels.h \
+	../../Source_Files/CSeries/csalerts.h \
+	../../Source_Files/CSeries/csmisc.h map.h world.h \
+	dynamic_limits.h XML_ElementParser.h shape_descriptors.h \
+	render.h textures.h ViewControl.h FontHandler.h sdl_fonts.h \
+	FileHandler.h tags.h scottish_textures.h interface.h \
+	lightsource.h media.h weapons.h AnimatedTextures.h OGL_Render.h \
+	OGL_Setup.h ImageLoader.h \
+	../../Source_Files/ModelView/Model3D.h RenderVisTree.h \
+	RenderSortPoly.h RenderPlaceObjs.h RenderRasterize.h \
+	Rasterizer.h Rasterizer_SW.h Rasterizer_OGL.h
+resource_manager.o: resource_manager.cpp \
+	../../Source_Files/CSeries/cseries.h \
+	../../Source_Files/CSeries/sdl_cseries.h ../../config.h \
+	../../Source_Files/CSeries/cstypes.h \
+	../../Source_Files/CSeries/csmacros.h \
+	../../Source_Files/CSeries/cscluts.h \
+	../../Source_Files/CSeries/csstrings.h \
+	../../Source_Files/CSeries/csfonts.h \
+	../../Source_Files/CSeries/cspixels.h \
+	../../Source_Files/CSeries/csalerts.h \
+	../../Source_Files/CSeries/csmisc.h resource_manager.h \
+	FileHandler.h tags.h
+scenery.o: scenery.cpp ../../Source_Files/CSeries/cseries.h \
+	../../Source_Files/CSeries/sdl_cseries.h ../../config.h \
+	../../Source_Files/CSeries/cstypes.h \
+	../../Source_Files/CSeries/csmacros.h \
+	../../Source_Files/CSeries/cscluts.h \
+	../../Source_Files/CSeries/csstrings.h \
+	../../Source_Files/CSeries/csfonts.h \
+	../../Source_Files/CSeries/cspixels.h \
+	../../Source_Files/CSeries/csalerts.h \
+	../../Source_Files/CSeries/csmisc.h ShapesParser.h \
+	shape_descriptors.h XML_ElementParser.h map.h world.h \
+	dynamic_limits.h render.h textures.h ViewControl.h \
+	FontHandler.h sdl_fonts.h FileHandler.h tags.h \
+	scottish_textures.h interface.h flood_map.h effects.h \
+	monsters.h projectiles.h player.h platforms.h scenery.h \
+	scenery_definitions.h
+scottish_textures.o: scottish_textures.cpp \
+	../../Source_Files/CSeries/cseries.h \
+	../../Source_Files/CSeries/sdl_cseries.h ../../config.h \
+	../../Source_Files/CSeries/cstypes.h \
+	../../Source_Files/CSeries/csmacros.h \
+	../../Source_Files/CSeries/cscluts.h \
+	../../Source_Files/CSeries/csstrings.h \
+	../../Source_Files/CSeries/csfonts.h \
+	../../Source_Files/CSeries/cspixels.h \
+	../../Source_Files/CSeries/csalerts.h \
+	../../Source_Files/CSeries/csmisc.h render.h world.h textures.h \
+	ViewControl.h FontHandler.h XML_ElementParser.h sdl_fonts.h \
+	FileHandler.h tags.h shape_descriptors.h scottish_textures.h \
+	Rasterizer_SW.h Rasterizer.h OGL_Render.h OGL_Setup.h \
+	ImageLoader.h ../../Source_Files/ModelView/Model3D.h \
+	low_level_textures.cpp
+screen_drawing.o: screen_drawing.cpp \
+	../../Source_Files/CSeries/cseries.h \
+	../../Source_Files/CSeries/sdl_cseries.h ../../config.h \
+	../../Source_Files/CSeries/cstypes.h \
+	../../Source_Files/CSeries/csmacros.h \
+	../../Source_Files/CSeries/cscluts.h \
+	../../Source_Files/CSeries/csstrings.h \
+	../../Source_Files/CSeries/csfonts.h \
+	../../Source_Files/CSeries/cspixels.h \
+	../../Source_Files/CSeries/csalerts.h \
+	../../Source_Files/CSeries/csmisc.h map.h world.h \
+	dynamic_limits.h XML_ElementParser.h shape_descriptors.h \
+	interface.h shell.h screen_drawing.h fades.h screen.h \
+	ColorParser.h FontHandler.h sdl_fonts.h FileHandler.h tags.h \
+	screen_drawing_sdl.cpp
+screen_sdl.o: screen_sdl.cpp ../../Source_Files/CSeries/cseries.h \
+	../../Source_Files/CSeries/sdl_cseries.h ../../config.h \
+	../../Source_Files/CSeries/cstypes.h \
+	../../Source_Files/CSeries/csmacros.h \
+	../../Source_Files/CSeries/cscluts.h \
+	../../Source_Files/CSeries/csstrings.h \
+	../../Source_Files/CSeries/csfonts.h \
+	../../Source_Files/CSeries/cspixels.h \
+	../../Source_Files/CSeries/csalerts.h \
+	../../Source_Files/CSeries/csmisc.h world.h map.h \
+	dynamic_limits.h XML_ElementParser.h shape_descriptors.h \
+	render.h textures.h ViewControl.h FontHandler.h sdl_fonts.h \
+	FileHandler.h tags.h scottish_textures.h shell.h interface.h \
+	player.h overhead_map.h fades.h game_window.h screen.h \
+	preferences.h ChaseCam.h Crosshairs.h OGL_Setup.h ImageLoader.h \
+	../../Source_Files/ModelView/Model3D.h computer_interface.h \
+	OGL_Render.h ../../Source_Files/Pfhortran/scripting.h \
+	screen_drawing.h mouse.h screen_shared.cpp
+sdl_dialogs.o: sdl_dialogs.cpp ../../Source_Files/CSeries/cseries.h \
+	../../Source_Files/CSeries/sdl_cseries.h ../../config.h \
+	../../Source_Files/CSeries/cstypes.h \
+	../../Source_Files/CSeries/csmacros.h \
+	../../Source_Files/CSeries/cscluts.h \
+	../../Source_Files/CSeries/csstrings.h \
+	../../Source_Files/CSeries/csfonts.h \
+	../../Source_Files/CSeries/cspixels.h \
+	../../Source_Files/CSeries/csalerts.h \
+	../../Source_Files/CSeries/csmisc.h sdl_dialogs.h sdl_fonts.h \
+	FileHandler.h tags.h sdl_widgets.h shape_descriptors.h \
+	screen_drawing.h XML_ElementParser.h shell.h screen.h images.h \
+	world.h mysound.h game_errors.h XML_Loader_SDL.h \
+	XML_Configure.h ../../Source_Files/Expat/xmlparse.h \
+	XML_ParseTreeRoot.h
+sdl_fonts.o: sdl_fonts.cpp ../../Source_Files/CSeries/cseries.h \
+	../../Source_Files/CSeries/sdl_cseries.h ../../config.h \
+	../../Source_Files/CSeries/cstypes.h \
+	../../Source_Files/CSeries/csmacros.h \
+	../../Source_Files/CSeries/cscluts.h \
+	../../Source_Files/CSeries/csstrings.h \
+	../../Source_Files/CSeries/csfonts.h \
+	../../Source_Files/CSeries/cspixels.h \
+	../../Source_Files/CSeries/csalerts.h \
+	../../Source_Files/CSeries/csmisc.h sdl_fonts.h FileHandler.h \
+	tags.h ../../Source_Files/CSeries/byte_swapping.h \
+	resource_manager.h
+sdl_widgets.o: sdl_widgets.cpp ../../Source_Files/CSeries/cseries.h \
+	../../Source_Files/CSeries/sdl_cseries.h ../../config.h \
+	../../Source_Files/CSeries/cstypes.h \
+	../../Source_Files/CSeries/csmacros.h \
+	../../Source_Files/CSeries/cscluts.h \
+	../../Source_Files/CSeries/csstrings.h \
+	../../Source_Files/CSeries/csfonts.h \
+	../../Source_Files/CSeries/cspixels.h \
+	../../Source_Files/CSeries/csalerts.h \
+	../../Source_Files/CSeries/csmisc.h sdl_dialogs.h sdl_fonts.h \
+	FileHandler.h tags.h sdl_widgets.h resource_manager.h \
+	shape_descriptors.h screen_drawing.h XML_ElementParser.h \
+	images.h shell.h world.h mysound.h interface.h
+shapes.o: shapes.cpp ../../Source_Files/CSeries/cseries.h \
+	../../Source_Files/CSeries/sdl_cseries.h ../../config.h \
+	../../Source_Files/CSeries/cstypes.h \
+	../../Source_Files/CSeries/csmacros.h \
+	../../Source_Files/CSeries/cscluts.h \
+	../../Source_Files/CSeries/csstrings.h \
+	../../Source_Files/CSeries/csfonts.h \
+	../../Source_Files/CSeries/cspixels.h \
+	../../Source_Files/CSeries/csalerts.h \
+	../../Source_Files/CSeries/csmisc.h shell.h XML_ElementParser.h \
+	render.h world.h textures.h ViewControl.h FontHandler.h \
+	sdl_fonts.h FileHandler.h tags.h shape_descriptors.h \
+	scottish_textures.h interface.h collection_definition.h \
+	screen.h game_errors.h map.h dynamic_limits.h OGL_Render.h \
+	OGL_Setup.h ImageLoader.h \
+	../../Source_Files/ModelView/Model3D.h ColorParser.h Packing.h \
+	shape_definitions.h shapes_sdl.cpp \
+	../../Source_Files/CSeries/byte_swapping.h
+shell.o: shell.cpp ../../Source_Files/CSeries/cseries.h \
+	../../Source_Files/CSeries/sdl_cseries.h ../../config.h \
+	../../Source_Files/CSeries/cstypes.h \
+	../../Source_Files/CSeries/csmacros.h \
+	../../Source_Files/CSeries/cscluts.h \
+	../../Source_Files/CSeries/csstrings.h \
+	../../Source_Files/CSeries/csfonts.h \
+	../../Source_Files/CSeries/cspixels.h \
+	../../Source_Files/CSeries/csalerts.h \
+	../../Source_Files/CSeries/csmisc.h map.h world.h \
+	dynamic_limits.h XML_ElementParser.h shape_descriptors.h \
+	monsters.h player.h render.h textures.h ViewControl.h \
+	FontHandler.h sdl_fonts.h FileHandler.h tags.h \
+	scottish_textures.h shell.h interface.h mysound.h fades.h \
+	screen.h music.h images.h vbl.h preferences.h ChaseCam.h \
+	Crosshairs.h OGL_Setup.h ImageLoader.h \
+	../../Source_Files/ModelView/Model3D.h \
+	../../Source_Files/Network/network_sound.h mouse.h \
+	screen_drawing.h computer_interface.h game_wad.h game_window.h \
+	extensions.h items.h interface_menus.h weapons.h OGL_Render.h \
+	XML_ParseTreeRoot.h shell_sdl.cpp XML_Loader_SDL.h \
+	XML_Configure.h ../../Source_Files/Expat/xmlparse.h \
+	resource_manager.h sdl_dialogs.h sdl_widgets.h TextStrings.h \
+	confpaths.h
+shell_misc.o: shell_misc.cpp ../../Source_Files/CSeries/cseries.h \
+	../../Source_Files/CSeries/sdl_cseries.h ../../config.h \
+	../../Source_Files/CSeries/cstypes.h \
+	../../Source_Files/CSeries/csmacros.h \
+	../../Source_Files/CSeries/cscluts.h \
+	../../Source_Files/CSeries/csstrings.h \
+	../../Source_Files/CSeries/csfonts.h \
+	../../Source_Files/CSeries/cspixels.h \
+	../../Source_Files/CSeries/csalerts.h \
+	../../Source_Files/CSeries/csmisc.h XML_ParseTreeRoot.h \
+	XML_ElementParser.h interface.h shape_descriptors.h world.h \
+	screen.h mysound.h map.h dynamic_limits.h shell.h preferences.h \
+	ChaseCam.h Crosshairs.h OGL_Setup.h ImageLoader.h FileHandler.h \
+	tags.h ../../Source_Files/ModelView/Model3D.h vbl.h player.h \
+	music.h items.h
+textures.o: textures.cpp ../../Source_Files/CSeries/cseries.h \
+	../../Source_Files/CSeries/sdl_cseries.h ../../config.h \
+	../../Source_Files/CSeries/cstypes.h \
+	../../Source_Files/CSeries/csmacros.h \
+	../../Source_Files/CSeries/cscluts.h \
+	../../Source_Files/CSeries/csstrings.h \
+	../../Source_Files/CSeries/csfonts.h \
+	../../Source_Files/CSeries/cspixels.h \
+	../../Source_Files/CSeries/csalerts.h \
+	../../Source_Files/CSeries/csmisc.h textures.h
+vbl.o: vbl.cpp ../../Source_Files/CSeries/cseries.h \
+	../../Source_Files/CSeries/sdl_cseries.h ../../config.h \
+	../../Source_Files/CSeries/cstypes.h \
+	../../Source_Files/CSeries/csmacros.h \
+	../../Source_Files/CSeries/cscluts.h \
+	../../Source_Files/CSeries/csstrings.h \
+	../../Source_Files/CSeries/csfonts.h \
+	../../Source_Files/CSeries/cspixels.h \
+	../../Source_Files/CSeries/csalerts.h \
+	../../Source_Files/CSeries/csmisc.h map.h world.h \
+	dynamic_limits.h XML_ElementParser.h shape_descriptors.h \
+	interface.h shell.h preferences.h ChaseCam.h Crosshairs.h \
+	OGL_Setup.h ImageLoader.h FileHandler.h tags.h \
+	../../Source_Files/ModelView/Model3D.h mouse.h player.h \
+	key_definitions.h vbl.h ISp_Support.h Packing.h \
+	vbl_definitions.h
+vbl_sdl.o: vbl_sdl.cpp ../../Source_Files/CSeries/cseries.h \
+	../../Source_Files/CSeries/sdl_cseries.h ../../config.h \
+	../../Source_Files/CSeries/cstypes.h \
+	../../Source_Files/CSeries/csmacros.h \
+	../../Source_Files/CSeries/cscluts.h \
+	../../Source_Files/CSeries/csstrings.h \
+	../../Source_Files/CSeries/csfonts.h \
+	../../Source_Files/CSeries/cspixels.h \
+	../../Source_Files/CSeries/csalerts.h \
+	../../Source_Files/CSeries/csmisc.h FileHandler.h tags.h \
+	resource_manager.h map.h world.h dynamic_limits.h \
+	XML_ElementParser.h shape_descriptors.h shell.h preferences.h \
+	interface.h ChaseCam.h Crosshairs.h OGL_Setup.h ImageLoader.h \
+	../../Source_Files/ModelView/Model3D.h player.h mouse.h \
+	key_definitions.h computer_interface.h vbl.h vbl_definitions.h
+wad.o: wad.cpp ../../Source_Files/CSeries/cseries.h \
+	../../Source_Files/CSeries/sdl_cseries.h ../../config.h \
+	../../Source_Files/CSeries/cstypes.h \
+	../../Source_Files/CSeries/csmacros.h \
+	../../Source_Files/CSeries/cscluts.h \
+	../../Source_Files/CSeries/csstrings.h \
+	../../Source_Files/CSeries/csfonts.h \
+	../../Source_Files/CSeries/cspixels.h \
+	../../Source_Files/CSeries/csalerts.h \
+	../../Source_Files/CSeries/csmisc.h wad.h tags.h crc.h \
+	game_errors.h interface.h XML_ElementParser.h \
+	shape_descriptors.h FileHandler.h Packing.h
+wad_prefs.o: wad_prefs.cpp ../../Source_Files/CSeries/cseries.h \
+	../../Source_Files/CSeries/sdl_cseries.h ../../config.h \
+	../../Source_Files/CSeries/cstypes.h \
+	../../Source_Files/CSeries/csmacros.h \
+	../../Source_Files/CSeries/cscluts.h \
+	../../Source_Files/CSeries/csstrings.h \
+	../../Source_Files/CSeries/csfonts.h \
+	../../Source_Files/CSeries/cspixels.h \
+	../../Source_Files/CSeries/csalerts.h \
+	../../Source_Files/CSeries/csmisc.h map.h world.h \
+	dynamic_limits.h XML_ElementParser.h shape_descriptors.h \
+	shell.h wad.h game_errors.h wad_prefs.h FileHandler.h tags.h
+wad_sdl.o: wad_sdl.cpp ../../Source_Files/CSeries/cseries.h \
+	../../Source_Files/CSeries/sdl_cseries.h ../../config.h \
+	../../Source_Files/CSeries/cstypes.h \
+	../../Source_Files/CSeries/csmacros.h \
+	../../Source_Files/CSeries/cscluts.h \
+	../../Source_Files/CSeries/csstrings.h \
+	../../Source_Files/CSeries/csfonts.h \
+	../../Source_Files/CSeries/cspixels.h \
+	../../Source_Files/CSeries/csalerts.h \
+	../../Source_Files/CSeries/csmisc.h FileHandler.h tags.h \
+	find_files.h
+weapons.o: weapons.cpp ../../Source_Files/CSeries/cseries.h \
+	../../Source_Files/CSeries/sdl_cseries.h ../../config.h \
+	../../Source_Files/CSeries/cstypes.h \
+	../../Source_Files/CSeries/csmacros.h \
+	../../Source_Files/CSeries/cscluts.h \
+	../../Source_Files/CSeries/csstrings.h \
+	../../Source_Files/CSeries/csfonts.h \
+	../../Source_Files/CSeries/cspixels.h \
+	../../Source_Files/CSeries/csalerts.h \
+	../../Source_Files/CSeries/csmisc.h map.h world.h \
+	dynamic_limits.h XML_ElementParser.h shape_descriptors.h \
+	projectiles.h player.h weapons.h mysound.h interface.h items.h \
+	monsters.h game_window.h Packing.h shell.h weapon_definitions.h
+world.o: world.cpp ../../Source_Files/CSeries/cseries.h \
+	../../Source_Files/CSeries/sdl_cseries.h ../../config.h \
+	../../Source_Files/CSeries/cstypes.h \
+	../../Source_Files/CSeries/csmacros.h \
+	../../Source_Files/CSeries/cscluts.h \
+	../../Source_Files/CSeries/csstrings.h \
+	../../Source_Files/CSeries/csfonts.h \
+	../../Source_Files/CSeries/cspixels.h \
+	../../Source_Files/CSeries/csalerts.h \
+	../../Source_Files/CSeries/csmisc.h world.h
+
+info-am:
+info: info-am
+dvi-am:
+dvi: dvi-am
+check-am: all-am
+check: check-am
+installcheck-am:
+installcheck: installcheck-am
+install-exec-am: install-binPROGRAMS
+install-exec: install-exec-am
+
+install-data-am:
+install-data: install-data-am
+
+install-am: all-am
+	@$(MAKE) $(AM_MAKEFLAGS) install-exec-am install-data-am
+install: install-am
+uninstall-am: uninstall-binPROGRAMS
+uninstall: uninstall-am
+all-am: Makefile $(PROGRAMS)
+all-redirect: all-am
+install-strip:
+	$(MAKE) $(AM_MAKEFLAGS) AM_INSTALL_PROGRAM_FLAGS=-s install
+installdirs:
+	$(mkinstalldirs)  $(DESTDIR)$(bindir)
+
+
+mostlyclean-generic:
+
+clean-generic:
+
+distclean-generic:
+	-rm -f Makefile $(CONFIG_CLEAN_FILES)
+	-rm -f config.cache config.log stamp-h stamp-h[0-9]*
+	-test -z "$(DISTCLEANFILES)" || rm -f $(DISTCLEANFILES)
+
+maintainer-clean-generic:
+mostlyclean-am:  mostlyclean-binPROGRAMS mostlyclean-compile \
+		mostlyclean-tags mostlyclean-generic
+
+mostlyclean: mostlyclean-am
+
+clean-am:  clean-binPROGRAMS clean-compile clean-tags clean-generic \
+		mostlyclean-am
+
+clean: clean-am
+
+distclean-am:  distclean-binPROGRAMS distclean-compile distclean-tags \
+		distclean-generic clean-am
+
+distclean: distclean-am
+
+maintainer-clean-am:  maintainer-clean-binPROGRAMS \
+		maintainer-clean-compile maintainer-clean-tags \
+		maintainer-clean-generic distclean-am
+	@echo "This command is intended for maintainers to use;"
+	@echo "it deletes files that may require special tools to rebuild."
+
+maintainer-clean: maintainer-clean-am
+
+.PHONY: mostlyclean-binPROGRAMS distclean-binPROGRAMS clean-binPROGRAMS \
+maintainer-clean-binPROGRAMS uninstall-binPROGRAMS install-binPROGRAMS \
+mostlyclean-compile distclean-compile clean-compile \
+maintainer-clean-compile tags mostlyclean-tags distclean-tags \
+clean-tags maintainer-clean-tags distdir info-am info dvi-am dvi check \
+check-am installcheck-am installcheck install-exec-am install-exec \
+install-data-am install-data install-am install uninstall-am uninstall \
+all-redirect all-am all installdirs mostlyclean-generic \
+distclean-generic clean-generic maintainer-clean-generic clean \
+mostlyclean distclean maintainer-clean
+
+
+# Data directories
+confpaths.h: Makefile
+	echo "#define PKGDATADIR \"$(pkgdatadir)\"" > $@
+
+shell.o: confpaths.h
+
+# Tell versions [3.59,3.63) of GNU make to not export all variables.
+# Otherwise a system limit (for SysV at least) may be exceeded.
+.NOEXPORT:
