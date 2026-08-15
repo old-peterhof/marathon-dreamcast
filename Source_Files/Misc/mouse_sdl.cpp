@@ -124,8 +124,19 @@ void mouse_idle(short type)
 		long sh = input_preferences->sens_horizontal;
 		long sv = input_preferences->sens_vertical;
 
-		_fixed vx = (_fixed)((sx * (long)(DC_YAW_SCALE / 128) * sh) / 100);
-		_fixed vy = (_fixed)((-sy * (long)(DC_PITCH_SCALE / 128) * sv) / 100);
+		// Squared response, the same shape the mouse path uses. A linear map
+		// made the stick unusable on hardware: every small nudge got the full
+		// turn rate. Squaring keeps the rim fast while giving fine control
+		// around centre, which is where aiming actually happens.
+		long ax = (sx < 0) ? -sx : sx;
+		long ay = (sy < 0) ? -sy : sy;
+		long cx = (ax * ax) / DC_STICK_MAX;		// 0..128, quadratic
+		long cy = (ay * ay) / DC_STICK_MAX;
+		if (sx < 0) cx = -cx;
+		if (sy < 0) cy = -cy;
+
+		_fixed vx = (_fixed)((cx * (long)(DC_YAW_SCALE / DC_STICK_MAX) * sh) / 100);
+		_fixed vy = (_fixed)((-cy * (long)(DC_PITCH_SCALE / DC_STICK_MAX) * sv) / 100);
 
 		if (input_preferences->modifiers & _inputmod_invert_mouse)
 			vy = -vy;

@@ -709,3 +709,35 @@ Built for hardware: `alephone.cdi` (740MB, padded) and a GDI set (`alephone.gdi`
 plus track01.bin / track02.raw / track03.bin, 1.19GB). Verified the marker files
 are absent from both. Flycast regression check after the 60Hz change: 30.4 fps,
 unchanged.
+
+### 2026-08-15 — FIRST REAL HARDWARE RESULTS
+
+It boots on a Dreamcast, loads a level, and plays. Two measurements from Max
+that no amount of emulation would have produced.
+
+**~20 fps on hardware.** This is the number the Flycast figure could not give.
+The engine ticks at 30Hz and Flycast held 30 fps; a real SH-4 renders the
+640x320 software view at about 20. Withdrawing the earlier framerate claim was
+correct, and this makes the PowerVR path materially interesting rather than
+academic — hardware acceleration would be buying real frames, not vanity.
+
+**The analog stick was far too sensitive.** Cause: I gave it a linear response.
+Aleph One's mouse path applies a squared curve for fine control near centre and
+I did not carry that over, so every small nudge produced the full turn rate.
+
+Fixed with the same squared shape, plus a 50% default. Note what this does and
+does not change, measured under Flycast at full deflection: still 67 deg/sec,
+because `MAXIMUM_ABSOLUTE_YAW` clamps the rate there regardless of input. The
+improvement is entirely in the partial-deflection range, which is where the
+complaint actually was:
+
+| stick | before (linear, 100%) | after (squared, 50%) |
+|---|---|---|
+| full | clamped ~67 deg/sec | clamped ~67 deg/sec |
+| half | ~50% of scale | ~12% of scale |
+| quarter | ~25% | ~3% |
+
+**Still open from hardware:** the controller cannot navigate the main menu. That
+matters more than it looks, because the sensitivity sliders live in Preferences —
+if the pad cannot reach them, the default is all the player gets. `cdi-debug`
+was built to diagnose exactly this and the result is not in yet.
