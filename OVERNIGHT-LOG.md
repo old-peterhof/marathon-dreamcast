@@ -678,3 +678,34 @@ assumed rather than observed.
 **Stopping here.** Everything that can be done without hardware or a human is
 done. What remains needs a console, a controller, or someone to move a slider
 and reboot.
+
+## 2026-08-15 morning — hardware prep
+
+Max reports trouble producing files that work on the Dreamcast, suspecting
+GDEMU. Mined the recovered `dc/a1-0.12.0` repo from the earlier session, which
+got further on real hardware than this rebuild ever did, and found three
+hardware-only findings Flycast cannot surface.
+
+**Ported: the "Press Y for 60Hz" prompt.** SDL's Dreamcast driver shows it and
+blocks inside `SDL_SetVideoMode` waiting for an answer. On a console that stalls
+startup; under emulation it never appears, so this rebuild had no idea. Fixed
+the same way the earlier session did — `SDL_DC_Default60Hz(SDL_TRUE)` and
+`SDL_DC_ShowAskHz(SDL_FALSE)`, called from `initialize_application()` after
+`SDL_Init` and before the first `change_screen_mode()`. Both symbols confirmed
+present in our kos-ports SDL and linked into the binary.
+
+**Already correct: disc padding.** The earlier session tested this three times on
+hardware and settled it — an unpadded image stops at the licence screen. Our
+`cdi` and `gdi` targets already pad; only `test` uses `-N`, and that image also
+carries the marker files, so it must never reach an SD card.
+
+**Probably already fixed: the black 3D view.** The earlier session hypothesised
+`SDL_FULLSCREEN` and recorded it as unverified. This rebuild found and proved a
+different cause — `SDL_BlitSurface` returning success while copying nothing — and
+replaced it with a direct row copy. That likely resolves their symptom too,
+though only hardware will confirm it.
+
+Built for hardware: `alephone.cdi` (740MB, padded) and a GDI set (`alephone.gdi`
+plus track01.bin / track02.raw / track03.bin, 1.19GB). Verified the marker files
+are absent from both. Flycast regression check after the 60Hz change: 30.4 fps,
+unchanged.

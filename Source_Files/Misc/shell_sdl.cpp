@@ -146,6 +146,9 @@ static void usage(const char *prg_name)
 
 extern "C" {
 extern int fs_mem_init(void);
+#ifdef DC
+void dc_input_init_video(void);		// suppress SDL's 60Hz prompt; see dc_input.c
+#endif
 }
 
 int main(int argc, char **argv)
@@ -237,6 +240,14 @@ static void initialize_application(void)
 	}
 	SDL_WM_SetCaption("Aleph One", "Aleph One");
 	atexit(shutdown_application);
+
+#ifdef DC
+	// Must follow SDL_Init and precede the first change_screen_mode(): SDL's
+	// Dreamcast driver otherwise shows a "Press Y for 60Hz" prompt and blocks
+	// inside SDL_SetVideoMode. Harmless under emulation, fatal to startup on a
+	// real console.
+	dc_input_init_video();
+#endif
 
 #ifdef HAVE_SDL_NET
 	// Initialize SDL_net

@@ -48,6 +48,7 @@
 #include <string.h>
 #include <unistd.h>
 #include <SDL/SDL.h>
+#include <SDL/SDL_dreamcast.h>
 #include <dc/maple.h>
 #include <dc/maple/controller.h>
 
@@ -116,6 +117,23 @@ static int in_game = 0;
    mouse_sdl.cpp on the same frame. */
 static int analog_x = 0, analog_y = 0;
 static int trig_l = 0, trig_r = 0;
+
+/*
+ *	Video setup that must happen before the first SDL_SetVideoMode.
+ *
+ *	By default SDL's Dreamcast driver puts up a "Press Y for 60Hz" prompt and
+ *	blocks inside SDL_SetVideoMode waiting for an answer. On real hardware that
+ *	stalls startup on a question with only one sensible response: Marathon runs
+ *	at 30 ticks/second and the console is NTSC, so 60Hz is simply correct.
+ *
+ *	Invisible under Flycast, which never shows the prompt -- this was found on
+ *	real hardware in an earlier session and is ported back in here.
+ */
+void dc_input_init_video(void)
+{
+	SDL_DC_Default60Hz(SDL_TRUE);
+	SDL_DC_ShowAskHz(SDL_FALSE);
+}
 
 void dc_input_set_ingame(int yes)
 {
