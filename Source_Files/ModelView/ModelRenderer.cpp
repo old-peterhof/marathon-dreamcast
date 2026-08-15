@@ -5,7 +5,7 @@
 */
 
 #include <string.h>
-#include <alloca.h>
+//#include <alloca.h>
 #include "cseries.h"
 #include "ModelRenderer.h"
 

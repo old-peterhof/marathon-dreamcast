@@ -305,6 +305,7 @@ void HUD_SW_Class::render_motion_sensor(short ticks_elapsed)
 	}
 }
 
+#ifdef HAVE_OPENGL
 void HUD_OGL_Class::render_motion_sensor(short ticks_elapsed)
 {
 	// Draw background
@@ -321,6 +322,7 @@ void HUD_OGL_Class::render_motion_sensor(short ticks_elapsed)
 		draw_network_compass();
 	draw_all_entity_blips();
 }
+#endif
 
 /* the interface code will call this function and only draw the motion sensor if we return true */
 bool motion_sensor_has_changed(void)
@@ -470,6 +472,7 @@ void HUD_SW_Class::draw_or_erase_unclipped_shape(short x, short y, shape_descrip
 		bitmap_window_copy(virgin_mount, mount, x, y, x+blip->width, y+blip->height);
 }
 
+#ifdef	HAVE_OPENGL
 void HUD_OGL_Class::draw_or_erase_unclipped_shape(short x, short y, shape_descriptor shape, bool draw)
 {
 	if (draw) {
@@ -477,6 +480,7 @@ void HUD_OGL_Class::draw_or_erase_unclipped_shape(short x, short y, shape_descri
 		DrawShapeAtXY(shape, x + r->left, y + r->top);
 	}
 }
+#endif
 
 void HUD_SW_Class::erase_entity_blip(point2d *location, shape_descriptor shape)
 {
@@ -510,6 +514,7 @@ void HUD_SW_Class::draw_entity_blip(point2d *location, shape_descriptor shape)
 		location->y + (motion_sensor_side_length>>1) - (blip->height>>1));
 }
 
+#ifdef HAVE_OPENGL
 void HUD_OGL_Class::draw_entity_blip(point2d *location, shape_descriptor shape)
 {
 	bitmap_definition *blip;
@@ -527,6 +532,7 @@ void HUD_OGL_Class::draw_entity_blip(point2d *location, shape_descriptor shape)
 		true);
 	DisableClipPlane();
 }
+#endif
 
 /* if we find an entity that is being removed, we continue with the removal process and ignore
 	the new signal; the new entity will probably not be added to the sensor again for a full

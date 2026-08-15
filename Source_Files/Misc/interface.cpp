@@ -470,6 +470,12 @@ void resume_game(
 	set_keyboard_controller_status(true);
 }
 
+void draw_menu_button(short index,bool pressed)
+{
+	short rectangle_index= index-1+_new_game_button_rect;
+	draw_button(rectangle_index, pressed);
+}
+
 void draw_menu_button_for_command(
 	short index)
 {
@@ -631,6 +637,7 @@ void idle_game_state(
 	return;
 }
 
+int last_menu = iNewGame;
 void display_main_menu(
 	void)
 {
@@ -642,6 +649,7 @@ void display_main_menu(
 	game_state.flags= 0;
 	
 	display_screen(MAIN_MENU_BASE);
+	draw_menu_button(last_menu,true);
 	
 	/* Start up the song! */
 	if(!music_playing() && game_state.main_menu_display_count==0)
@@ -798,6 +806,7 @@ void do_menu_item_command(
 			break;
 			
 		case mInterface:
+			last_menu = menu_item;
 			switch(menu_item)
 			{
 				case iNewGame:
@@ -1133,7 +1142,7 @@ static void transfer_to_new_level(
 }
 
 /* The port is set.. */
-static void draw_button(
+static void draw_button_sub(
 	short index, 
 	bool pressed)
 {
@@ -1150,6 +1159,16 @@ static void draw_button(
 
 	return;
 }
+static void draw_button(short index,bool pressed)
+{
+	static short last_index;
+	if (pressed && index!=last_index) {
+		draw_button_sub(last_index,false);
+		last_index = index;
+	}
+	draw_button_sub(index,pressed);
+}
+
 					
 static void handle_replay( /* This is gross. */
 	bool last_replay)

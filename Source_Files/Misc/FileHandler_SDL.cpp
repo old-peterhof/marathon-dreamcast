@@ -399,11 +399,15 @@ TimeType FileSpecifier::GetDate()
 {
 	struct stat st;
 	err = 0;
+#ifdef DC /* DC */
+	return 0;
+#else
 	if (stat(GetPath(), &st) < 0) {
 		err = errno;
 		return 0;
 	}
 	return st.st_mtime;
+#endif
 }
 
 // Determine file type
@@ -679,9 +683,13 @@ bool FileSpecifier::ReadDirectory(vector<dir_entry> &vec)
 		if (de->d_name[0] != '.' || (de->d_name[1] && de->d_name[1] != '.')) {
 			FileSpecifier full_path = name;
 			full_path += de->d_name;
+#ifdef DC /* DC */
+			vec.push_back(dir_entry(de->d_name, de->size, de->size<0, false));
+#else
 			struct stat st;
 			if (stat(full_path.GetPath(), &st) == 0)
 				vec.push_back(dir_entry(de->d_name, st.st_size, S_ISDIR(st.st_mode), false));
+#endif
 		}
 		de = readdir(d);
 	}

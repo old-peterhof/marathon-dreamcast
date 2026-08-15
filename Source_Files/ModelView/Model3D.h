@@ -60,7 +60,11 @@ struct Model3D
 	void Clear();
 	
 	// Constructor
-	Model3D() {FindBoundingBox();}
+	Model3D() {
+#ifdef	HAVE_OPENGL
+		FindBoundingBox();
+#endif
+	}
 };
 
 

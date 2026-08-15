@@ -65,7 +65,7 @@ typedef uint8 byte;
 
 // Make it compile on systems without OpenGL
 #ifndef HAVE_OPENGL
-#define GLfloat float
+typedef float GLfloat;
 #endif
 
 #endif

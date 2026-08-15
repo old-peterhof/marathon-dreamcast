@@ -77,6 +77,8 @@ static void get_name_from_system(char *name)
 	else
 		strcpy(name, "Bob User");
 
+#elif defined(DC)
+	strcpy(name,"Bob User");
 #else
 #error get_name_from_system() not implemented for this platform
 #endif

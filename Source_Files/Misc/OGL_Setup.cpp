@@ -454,67 +454,72 @@ void OGL_TextureOptionsBase::Load()
 	FileSpecifier File;
 	
 	// Load the normal image with alpha channel
-	try
+//	try
 	{
 		// Check to see if loading needs to be done;
 		// it does not need to be if an image is present.
-		if (NormalImg.IsPresent()) throw 0;
+		if (NormalImg.IsPresent()) return;
 		NormalImg.Clear();
 		
 		// Load the normal image if it has a filename specified for it
-		if (!StringPresent(NormalColors)) throw 0;
+		if (!StringPresent(NormalColors)) return;
 #ifdef mac
-		if (!File.SetToApp()) throw 0;
+		if (!File.SetToApp()) return;
 #endif
-		if (!File.SetNameWithPath(&NormalColors[0])) throw 0;
-		if (!LoadImageFromFile(NormalImg,File,ImageLoader_Colors)) throw 0;
+		if (!File.SetNameWithPath(&NormalColors[0])) return;
+		if (!LoadImageFromFile(NormalImg,File,ImageLoader_Colors)) return;
 	}
-	catch(...)
+//	catch(...)
+	if (0)
 	{
 		// A texture must have a normal colored part
 		return;
 	}
 	
-	try
+//	try
+	do
 	{
 		// Load the normal mask if it has a filename specified for it
-		if (!StringPresent(NormalMask)) throw 0;
+		if (!StringPresent(NormalMask)) break;
 #ifdef mac
-		if (!File.SetToApp()) throw 0;
+		if (!File.SetToApp()) break;
 #endif
-		if (!File.SetNameWithPath(&NormalMask[0])) throw 0;
-		if (!LoadImageFromFile(NormalImg,File,ImageLoader_Opacity)) throw 0;
+		if (!File.SetNameWithPath(&NormalMask[0])) break;
+		if (!LoadImageFromFile(NormalImg,File,ImageLoader_Opacity)) break;
 	}
-	catch(...)
-	{}
+	while(0);
+//	catch(...)
+//	{}
 	
 	// Load the glow image with alpha channel
-	try
+	//try
+	do
 	{
 		// Check to see if loading needs to be done;
 		// it does not need to be if an image is present.
-		if (GlowImg.IsPresent()) throw 0;
+		if (GlowImg.IsPresent()) break;
 		GlowImg.Clear();
 		
 		// Load the glow image if it has a filename specified for it
-		if (!StringPresent(GlowColors)) throw 0;
+		if (!StringPresent(GlowColors)) break;
 #ifdef mac
-		if (!File.SetToApp()) throw 0;
+		if (!File.SetToApp()) break;
 #endif
-		if (!File.SetNameWithPath(&GlowColors[0])) throw 0;
-		if (!LoadImageFromFile(GlowImg,File,ImageLoader_Colors)) throw 0;
+		if (!File.SetNameWithPath(&GlowColors[0])) break;
+		if (!LoadImageFromFile(GlowImg,File,ImageLoader_Colors)) break;
 		
 		// Load the glow mask if it has a filename specified for it;
 		// only loaded if an image has been loaded for it
-		if (!StringPresent(GlowMask)) throw 0;
+		if (!StringPresent(GlowMask)) break;
 #ifdef mac
-		if (!File.SetToApp()) throw 0;
+		if (!File.SetToApp()) break;
 #endif
-		if (!File.SetNameWithPath(&GlowMask[0])) throw 0;
-		if (!LoadImageFromFile(GlowImg,File,ImageLoader_Opacity)) throw 0;
+		if (!File.SetNameWithPath(&GlowMask[0])) break;
+		if (!LoadImageFromFile(GlowImg,File,ImageLoader_Opacity)) break;
 	}
-	catch(...)
-	{}
+	while(0);
+	//catch(...)
+	//{}
 	
 	// The rest of the code is made simpler by these constraints:
 	// that the glow texture only be present if the normal texture is also present,
@@ -540,7 +545,7 @@ void OGL_TextureOptionsBase::Unload()
 }
 
 // Any easy STL ways of doing this mapping of functions onto members of arrays?
-
+#ifdef HAVE_OPENGL
 void OGL_SkinManager::Load()
 {
 	for (vector<OGL_SkinData>::iterator SkinIter = SkinData.begin(); SkinIter < SkinData.end(); SkinIter++)
@@ -767,7 +772,7 @@ void OGL_ModelData::Unload()
 	// Don't forget the skins
 	OGL_SkinManager::Unload();
 }
-
+#endif
 
 
 // for managing the model and image loading and unloading
@@ -775,6 +780,7 @@ void OGL_LoadModelsImages(int Collection)
 {
 	assert(Collection >= 0 && Collection < MAXIMUM_COLLECTIONS);
 	
+#ifdef	HAVE_OPENGL
 	// For wall/sprite images
 	vector<TextureOptionsEntry>& TOL = TOList[Collection];
 	for (vector<TextureOptionsEntry>::iterator TOIter = TOL.begin(); TOIter < TOL.end(); TOIter++)
@@ -797,12 +803,14 @@ void OGL_LoadModelsImages(int Collection)
 		else
 			MdlIter->ModelData.Unload();
 	}
+#endif
 }
 
 void OGL_UnloadModelsImages(int Collection)
 {
 	assert(Collection >= 0 && Collection < MAXIMUM_COLLECTIONS);
 	
+#ifdef	HAVE_OPENGL
 	// For wall/sprite images
 	vector<TextureOptionsEntry>& TOL = TOList[Collection];
 	for (vector<TextureOptionsEntry>::iterator TOIter = TOL.begin(); TOIter < TOL.end(); TOIter++)
@@ -816,12 +824,14 @@ void OGL_UnloadModelsImages(int Collection)
 	{
 		MdlIter->ModelData.Unload();
 	}
+#endif
 }
 
 
 // Reset model skins; used in OGL_ResetTextures() in OGL_Textures.cpp
 void OGL_ResetModelSkins(bool Clear_OGL_Txtrs)
 {
+#ifdef	HAVE_OPENGL
 	for (int ic=0; ic<MAXIMUM_COLLECTIONS; ic++)
 	{
 		vector<ModelDataEntry>& ML = MdlList[ic];
@@ -830,6 +840,7 @@ void OGL_ResetModelSkins(bool Clear_OGL_Txtrs)
 			MdlIter->ModelData.Reset(Clear_OGL_Txtrs);
 		}
 	}
+#endif
 }
 
 
