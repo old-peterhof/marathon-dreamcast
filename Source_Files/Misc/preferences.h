@@ -108,7 +108,10 @@ struct input_preferences_data
 // Reported too sensitive on real hardware at 100% with a linear response.
 // With the squared curve now in mouse_sdl.cpp and a 50% default the stick is
 // calm around centre; the slider goes to 100% for anyone who wants it faster.
-#define SENS_DEFAULT   50
+// Reported still too fast at 50% once the scale was corrected, so default low
+// and let the player raise it. The slider now spans roughly 4 to 67 deg/sec at
+// full deflection, 67 being the engine's own ceiling.
+#define SENS_DEFAULT   30
 #define NUMBER_OF_SENS_LEVELS ((SENS_MAXIMUM - SENS_MINIMUM) / SENS_STEP + 1)
 
 #define MAXIMUM_PATCHES_PER_ENVIRONMENT (32)

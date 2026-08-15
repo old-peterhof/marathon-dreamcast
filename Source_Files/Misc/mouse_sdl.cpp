@@ -17,16 +17,25 @@ int dc_input_trigger_l(void);
 int dc_input_trigger_r(void);
 }
 
-// Base sensitivity at 100%, measured rather than guessed. FIXED_ONE/4 gives
-// 63 angle units/sec at full deflection, which is only 44 deg/sec -- far too
-// slow to aim with. Four times that lands near 176 deg/sec, a normal maximum
-// turn rate for a console shooter. Pitch is half of yaw: Marathon's vertical
-// range is small, so the same rate feels twitchy.
+// Base sensitivity at 100%, set from the engine's own limit rather than by
+// feel. mask_in_absolute_positioning_information() encodes the turn as
 //
-// Both are then scaled by the player's Turn/Look Sensitivity preference, so
-// this constant only sets what 100% means.
-#define DC_YAW_SCALE    (FIXED_ONE)
-#define DC_PITCH_SCALE  (FIXED_ONE / 2)
+//     encoded = (delta_yaw >> (16 - ABSOLUTE_YAW_BITS)) + MAXIMUM_ABSOLUTE_YAW/2
+//     encoded = PIN(encoded, 0, MAXIMUM_ABSOLUTE_YAW - 1)
+//
+// With ABSOLUTE_YAW_BITS = 7 that saturates at delta_yaw = 32767, i.e.
+// FIXED_ONE/2. Anything larger is thrown away.
+//
+// This was previously FIXED_ONE, so full stick produced 65536 at 100% and
+// 32768 at 50% -- both above the clamp. The whole top half of the slider did
+// nothing and the outer edge of the stick was pinned at maximum turn rate,
+// which is exactly how it felt on hardware.
+//
+// FIXED_ONE/2 puts full deflection at 100% right at the top of the usable
+// range, so the slider now maps linearly onto real turn rate across its whole
+// travel. Pitch stays half of yaw; Marathon's vertical range is small.
+#define DC_YAW_SCALE    (FIXED_ONE / 2)
+#define DC_PITCH_SCALE  (FIXED_ONE / 4)
 #define DC_STICK_MAX    128
 #define DC_TRIGGER_ON   64
 #endif

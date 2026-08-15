@@ -812,3 +812,29 @@ Two fixes:
 2. `tools/verify-image.sh` dumps the data track, mounts it, and lists the real
    ISO9660 directory. That is the only check that can actually answer the
    question. `alephone.cdi` now reports "No test markers present."
+
+### 2026-08-15 — sensitivity: the slider's top half did nothing
+
+Confirmed working on hardware: the Preferences dialog is navigable with the pad,
+and sensitivity persists to the VMU. That closes the last "assumed rather than
+observed" item from the README.
+
+Max reported 50% still far too fast at the outer edge of the stick. Cause found
+by reading the encoder rather than guessing.
+`mask_in_absolute_positioning_information()` does:
+
+    encoded = (delta_yaw >> (16 - ABSOLUTE_YAW_BITS)) + MAXIMUM_ABSOLUTE_YAW/2
+    encoded = PIN(encoded, 0, MAXIMUM_ABSOLUTE_YAW - 1)
+
+`ABSOLUTE_YAW_BITS` is 7, so delta_yaw saturates at 32767 = FIXED_ONE/2.
+`DC_YAW_SCALE` was FIXED_ONE, so full deflection produced 65536 at 100% and
+32768 at 50% — **both above the clamp**. The entire top half of the slider was
+inert and the outer edge of the stick sat at maximum turn rate regardless of the
+setting. That is exactly the reported symptom, and it also explains two earlier
+confusions: why quadrupling the scale bought only 1.5x, and why 100% linear and
+50% squared measured identically at 67 deg/sec.
+
+`DC_YAW_SCALE` is now FIXED_ONE/2, placing full deflection at 100% exactly at
+the top of the usable range, so the slider maps linearly onto real turn rate for
+its whole travel. Measured: 50% now gives 44 deg/sec where it previously gave 67.
+Default lowered to 30%.
