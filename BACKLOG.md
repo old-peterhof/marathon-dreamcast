@@ -89,18 +89,6 @@ Only preferences are mirrored today. Saved games far exceed a VMU's 128K, so
 this needs splitting across blocks or compressing, and is a real project rather
 than an afternoon.
 
-## Start button does nothing useful
-
-Start is mapped through to the key Aleph One treats as pause, but on hardware it
-does not visibly pause or open anything. A console player has no other way out
-of a level: there is no Escape key to reach the menu, quit to the main screen, or
-save outside a terminal.
-
-What it should do is open a small in-game menu -- resume, options, quit to main
-menu -- rather than only freezing the world. That overlaps with the controller-
-native UI work below, and should probably be built as the first screen in it,
-since it is the one every player will meet.
-
 ## Get a saved game below 10 blocks
 
 Done in b29, most of the way: folding a save against its map level took it from

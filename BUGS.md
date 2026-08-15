@@ -22,6 +22,31 @@ that fixed them.
 
 ## Fixed
 
+### Start did nothing (fixed in b31)
+
+Every in-game command in this engine is an Alt+key chord -- Alt+P to pause,
+Alt+S to save, Alt+C to leave the level. A pad has no Alt and no letters, so
+from a console there was no way to pause, no way to save away from a terminal,
+and no way out of a level short of resetting the console. Start was bound to
+Escape, which gameplay ignores outside demo mode.
+
+Start now opens a PAUSED dialog: RESUME, SAVE GAME, PREFERENCES, QUIT TO MAIN
+MENU. The dialog is itself the pause, since dialogs run their own event loop and
+the world stops while one is up, and Start closes it again because a dialog reads
+Escape as cancel. Quitting goes through iCloseGame, which asks for confirmation,
+so a mis-press cannot throw a level away.
+
+This depended on b30: a dialog whose buttons cannot be chosen with Return is no
+use on a console.
+
+Verified unattended -- AUTOKEY now also presses Start once a level is running:
+
+    autokey: injecting START in game
+    pause menu: opened
+    autokey: injecting RETURN into dialog
+    fps 30.3  yaw=392 pos=11456,19616
+
+
 ### A listed saved game could not be opened (fixed in b30)
 
 Continue Saved Game showed the save, but choosing it dropped back to the main
@@ -59,6 +84,31 @@ are correct: the fault was never in the save.
 | pre-tag | Black 3D view and black HUD — `SDL_BlitSurface` returns success and copies nothing |
 
 ## Fixed
+
+### Start did nothing (fixed in b31)
+
+Every in-game command in this engine is an Alt+key chord -- Alt+P to pause,
+Alt+S to save, Alt+C to leave the level. A pad has no Alt and no letters, so
+from a console there was no way to pause, no way to save away from a terminal,
+and no way out of a level short of resetting the console. Start was bound to
+Escape, which gameplay ignores outside demo mode.
+
+Start now opens a PAUSED dialog: RESUME, SAVE GAME, PREFERENCES, QUIT TO MAIN
+MENU. The dialog is itself the pause, since dialogs run their own event loop and
+the world stops while one is up, and Start closes it again because a dialog reads
+Escape as cancel. Quitting goes through iCloseGame, which asks for confirmation,
+so a mis-press cannot throw a level away.
+
+This depended on b30: a dialog whose buttons cannot be chosen with Return is no
+use on a console.
+
+Verified unattended -- AUTOKEY now also presses Start once a level is running:
+
+    autokey: injecting START in game
+    pause menu: opened
+    autokey: injecting RETURN into dialog
+    fps 30.3  yaw=392 pos=11456,19616
+
 
 ### A listed saved game could not be opened (fixed in b30)
 
@@ -150,3 +200,9 @@ second stick. Added `0-:btn_analog_left` and `2-:axis2_left` to
   free on a console and evidently is not through Flycast's blit path. Worth
   checking before blaming the emulator, since the same loop drives menu input and
   that is what feels laggy.
+
+- **Third-party rumble packs are reportedly prone to locking up on maple bus
+  activity.** Max found this written up elsewhere, and it matches what the port
+  sees exactly: the hang is in KOS's unbounded `maple_wait_scan()` waiting for
+  all four ports to report, and pulling the pack out mid-hang lets boot continue.
+  Worth trying an official pack before spending anything more on it.

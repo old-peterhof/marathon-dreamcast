@@ -302,6 +302,27 @@ void dc_input_poll(void)
 			analog_x = 127;
 	}
 
+	if (autokey_wanted() && in_game) {
+		/* Press Start once, well into a level, so an unattended run can check
+		   that the pause menu opens at all. */
+		static int frames = 0, fired = 0;
+
+		if (!fired && ++frames > 300) {
+			SDL_keysym k;
+
+			fired = 1;
+			dc_trace(28, "autokey: injecting START in game");
+
+			k.scancode = 0;
+			k.sym = SDLK_ESCAPE;
+			k.mod = KMOD_NONE;
+			k.unicode = 0;
+
+			SDL_PrivateKeyboard(SDL_PRESSED, &k);
+			SDL_PrivateKeyboard(SDL_RELEASED, &k);
+		}
+	}
+
 	/* Deadzone, then treat the stick as a d-pad for menu navigation only. */
 	if (analog_x > -STICK_DEADZONE && analog_x < STICK_DEADZONE) analog_x = 0;
 	if (analog_y > -STICK_DEADZONE && analog_y < STICK_DEADZONE) analog_y = 0;
