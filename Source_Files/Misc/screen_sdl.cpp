@@ -225,6 +225,7 @@ void exit_screen(void)
 // in-game screen: nothing else on this platform can report anything when the
 // display itself is the thing that is broken.
 extern "C" void dc_trace(int slot, const char *fmt, ...);
+extern "C" void dc_profiler_frame(void);
 static int dc_traced_mode = 0, dc_traced_render = 0, dc_traced_update = 0;
 
 /*
@@ -715,6 +716,9 @@ static void update_screen(SDL_Rect &source, SDL_Rect &destination, bool hi_rez)
 		// survives across frames, which it could not if this blit landed.
 		if (!dc_copy_to_screen(world_pixels, NULL, main_surface, &destination))
 			SDL_BlitSurface(world_pixels, NULL, main_surface, &destination);
+
+		// One rendered frame: tell the VMU Profiler so it can average a rate.
+		dc_profiler_frame();
 #else
 		SDL_BlitSurface(world_pixels, NULL, main_surface, &destination);
 #endif

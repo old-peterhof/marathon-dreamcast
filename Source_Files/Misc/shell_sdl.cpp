@@ -148,6 +148,7 @@ extern "C" {
 extern int fs_mem_init(void);
 #ifdef DC
 void dc_input_init_video(void);		// suppress SDL's 60Hz prompt; see dc_input.c
+void dc_profiler_start(void);		// VMU Profiler, gated on a PROFILE marker
 #endif
 }
 
@@ -247,6 +248,7 @@ static void initialize_application(void)
 	// inside SDL_SetVideoMode. Harmless under emulation, fatal to startup on a
 	// real console.
 	dc_input_init_video();
+	dc_profiler_start();
 #endif
 
 #ifdef HAVE_SDL_NET

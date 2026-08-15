@@ -838,3 +838,32 @@ confusions: why quadrupling the scale bought only 1.5x, and why 100% linear and
 the top of the usable range, so the slider maps linearly onto real turn rate for
 its whole travel. Measured: 50% now gives 44 deg/sec where it previously gave 67.
 Default lowered to 30%.
+
+### 2026-08-15 — VMU Profiler integrated: real framerate from real hardware
+
+Max pointed at two Dreamcast projects, both aimed squarely at the 20 fps
+problem. The first is now in.
+
+**vmu-profiler** (Falco Girgis, written for the GTA3 Dreamcast port) runs a
+background thread that displays live statistics on the VMU's LCD. That fixes the
+structural blind spot in this whole effort: every framerate figure until now came
+from Flycast, which reported a steady 30 because that is the engine's tick cap,
+while hardware does about 20. There was no way to see the difference without a
+console in the loop, and one claim had to be withdrawn because of it.
+
+Vendored under `dc/vendor` with its licence intact, wrapped by `dc/dc_profiler.c`,
+started from `initialize_application()` and ticked once per rendered frame from
+`update_screen()`.
+
+Gated on its own `PROFILE` marker rather than reusing `DEBUG`, deliberately: the
+bfont traces `DEBUG` enables draw over the 3D view, which is the last thing
+wanted while reading a framerate. `make cdi-profile` builds a padded, bootable
+image with only that marker.
+
+The library ships a sample FPS callback but it is commented out and reads a
+`fps_frames` member the public struct does not have, so it cannot be used as
+written. `dc_profiler.c` counts frames and computes the rate itself, which is
+both simpler and independent of the library's internals.
+
+Smoke-tested under Flycast: the profiler thread launches and the game continues
+at its usual rate with no errors.
