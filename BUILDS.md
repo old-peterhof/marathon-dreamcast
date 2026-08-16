@@ -49,3 +49,4 @@ to the engine clamp, and the VMU Profiler. Git history has the detail.
 | b35 | prefs-version | 730c268 | Reset stale DC settings; hi-res can no longer stick off |
 | b36 | gl-renders | f25083d | GL renders the world: hardware-accelerated on the PowerVR |
 | b37 | sw-fast-compare | 4fea323 | Software renderer, for measuring Falco's flags on hardware |
+| b38 | falco-flags | 58786d0 | Full Falco treatment: KOS, ports and project at -O3 -ffast-math -flto |

@@ -315,13 +315,20 @@ static void change_screen_mode(int width, int height, int depth, bool nogl)
 #else
 	flags |= SDL_HWSURFACE | SDL_HWPALETTE;
 #endif
-#ifdef DC
-	// Setting the mode again tears the PowerVR down and back up under GLdc, and
-	// the next frame trips "Assertion pvr_state.valid failed" inside
-	// pvr_wait_ready. Aleph One asks for the same 640x480x16 a second time when
-	// a level starts, so the second call is pure destruction. Skip any request
-	// that would not change anything.
-	if (main_surface != NULL &&
+#if defined(DC) && defined(HAVE_OPENGL)
+	// GL BUILDS ONLY. Setting the mode again tears the PowerVR down and back up
+	// under GLdc, and the next frame trips "Assertion pvr_state.valid failed"
+	// inside pvr_wait_ready. Aleph One asks for the same 640x480x16 a second
+	// time when a level starts, so under GL that second call is pure
+	// destruction.
+	//
+	// It is emphatically NOT safe in the software build. change_screen_mode()
+	// does more than set the mode: it rebuilds the colour table and frees
+	// HUD_Buffer. Skipping it there was a real regression -- b37 reached the
+	// splash screen on hardware and then never drew a level -- and it went
+	// unnoticed because Flycast happened to survive it. Guarded to GL, and to a
+	// surface that really is a GL one.
+	if (main_surface != NULL && (main_surface->flags & SDL_OPENGL) &&
 	    main_surface->w == width && main_surface->h == height &&
 	    main_surface->format->BitsPerPixel == depth &&
 	    (main_surface->flags & SDL_OPENGL) == (flags & SDL_OPENGL)) {
