@@ -146,28 +146,31 @@ into it, so removing an item means either editing artwork or leaving a dead
 region on screen. That argues for doing this as part of the controller-native UI
 work rather than before it.
 
-## Rebuild KallistiOS and its ports with heavier optimisation
+## Falco's optimisation flags -- done, one at a time
 
-Falco Girgis (KallistiOS) suggested this after seeing the port run: enable -O3,
--ffast-math, -mfsca, -mfsrra and -flto in the KOS environ.sh, re-source it, then
-rebuild KOS, every dependency and the project so the flags reach all translation
-units.
+All three enabled in /opt/toolchains/dc/kos/environ.sh, with KallistiOS, zlib,
+libpng, libGL and SDL rebuilt clean at each step, and each step tested on
+hardware before the next was added. KOS_CFLAGS reaches this project's own
+compiles and its link too, so Aleph One gets them as well.
 
-Half of it is done. `FAST=1` puts -O3 -ffast-math -flto on Aleph One's own
-objects and the link, and b35 was built and verified both ways: the picture is
-identical, 12388 of 12800 pixels drawn against 12400 for the ordinary build, so
--ffast-math does not disturb the software renderer. -mfsca and -mfsrra were
-already coming from KOS_CFLAGS.
+| build | flags | text | hardware |
+|---|---|---|---|
+| b48 | baseline, -O2 | 1272373 | loads, fast |
+| b51 | -O3 | 1412357 | loads |
+| b54 | + -fbuiltin -ffast-math -ffp-contract=fast | 1411365 | loads, maybe +1fps, nothing wrong |
+| b55 | + -flto=auto -ffat-lto-objects | 1397381 | **untested** |
 
-What is left is the larger half: KOS itself, SDL, GLdc and zlib were all built
-with whatever environ.sh specified at the time, and the renderer spends most of
-its life in code this project did not compile. That means editing
-/opt/toolchains/dc/kos/environ.sh, re-sourcing, and rebuilding kos and kos-ports
-from scratch -- an hour or so, and it invalidates every object here, which the
-config stamp will notice.
+-mfsca and -mfsrra were already arriving from the sub-architecture config; what
+they needed was -ffast-math to let gcc actually use them for sin and cos.
 
-No measurement yet. Flycast holds at 30fps because that is the engine's tick
-rate, not the renderer's limit, so the difference can only be seen on hardware.
+The honest result so far is about +1fps, which is within what Max could tell
+apart by eye. The VMU now shows the framerate, so b55 is the first build where
+the number can be compared directly rather than guessed at.
+
+If more is wanted from this direction, the untried lever is the pair KOS
+describes as "empirically a decent set for optimal release build performance"
+and which Falco did not mention: -freorder-blocks-algorithm=simple and
+-fipa-pta, both sitting commented out in environ.sh.
 
 ## Player health and air on the VMU
 
