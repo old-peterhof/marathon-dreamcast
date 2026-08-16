@@ -23,6 +23,7 @@
 #include <dc/video.h>
 #include <dc/biosfont.h>
 #include <kos/thread.h>
+#include <arch/timer.h>
 
 /*
  *	dc_trace -- draw a line of text straight into video RAM.
@@ -152,4 +153,15 @@ int access(const char *path, int mode)
 void dc_build_stamp(const char *tag)
 {
 	bfont_draw_str(vram_s + 452 * 640 + 8, 640, 0, (char *)tag);
+}
+
+/*
+ *	dc_ticks -- milliseconds since boot, for timing load phases.
+ *
+ *	Wraps KOS's timer rather than SDL_GetTicks so it can be called from anywhere
+ *	without pulling SDL into a translation unit that does not already have it.
+ */
+unsigned dc_ticks(void)
+{
+	return (unsigned)(timer_ms_gettime64() & 0xffffffffu);
 }

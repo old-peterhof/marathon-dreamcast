@@ -99,7 +99,10 @@ extern TP2PerfGlobals perf_globals;
 
 #ifdef DC
 extern "C" void dc_trace(int slot, const char *fmt, ...);
+extern "C" unsigned dc_ticks(void);
+static unsigned dc_newgame_t0 = 0;
 #endif
+
 
 #ifdef env68k
 	#pragma segment shell
@@ -816,10 +819,16 @@ void do_menu_item_command(
 				case iNewGame:
 #ifdef DC
 					dc_trace(9, "new: begin_game");
+					dc_newgame_t0 = dc_ticks();
 #endif
 					begin_game(_single_player, cheat);
 #ifdef DC
-					dc_trace(11, "new: begin_game returned");
+					{
+						extern unsigned dc_coll_n, dc_coll_ms;
+						dc_trace(11, "new: TOTAL %u ms", dc_ticks() - dc_newgame_t0);
+						dc_trace(12, "new: %u collections, %u ms in them",
+						         dc_coll_n, dc_coll_ms);
+					}
 #endif
 					break;
 		

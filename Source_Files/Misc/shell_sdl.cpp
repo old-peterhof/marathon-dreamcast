@@ -990,8 +990,20 @@ static void main_event_loop(void)
 		// Which build is this? Drawn every pass while the menu is up, so a
 		// button redraw cannot wipe it. Matches the image filename and the row
 		// in BUILDS.md.
-		if (get_game_state() == _display_main_menu)
-			dc_build_stamp(DC_BUILD_TAG);
+		if (get_game_state() == _display_main_menu) {
+			// Four times a second, not every pass. This is a bfont blit straight
+			// into video RAM, and it was running on every iteration of the loop
+			// that also reads the pad. Free on a console; not through an
+			// emulator's video memory, where Max found the menu sluggish.
+			// Still often enough to survive a button redraw.
+			static uint32 dc_last_stamp = 0;
+			uint32 dc_now = SDL_GetTicks();
+
+			if (dc_now - dc_last_stamp > 250) {
+				dc_last_stamp = dc_now;
+				dc_build_stamp(DC_BUILD_TAG);
+			}
+		}
 
 		{
 			static int shown = 0;
@@ -1115,6 +1127,15 @@ static void main_event_loop(void)
 					int num_tries = 0;
 					while (event.type == SDL_NOEVENT && num_tries < 3) {
 					 	SDL_Delay(10);
+#ifdef DC
+						// Read the pad inside the wait as well as before it.
+						// dc_input_poll() is what turns the controller into SDL
+						// key events, and it only ran at the top of the loop --
+						// so on a menu, which sleeps up to 30ms here waiting for
+						// something to happen, a D-pad press sat unnoticed for
+						// the whole sleep. Polling here cuts that to one tick.
+						dc_input_poll();
+#endif
 						SDL_PollEvent(&event);
 						num_tries++;
 					}

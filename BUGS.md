@@ -211,3 +211,62 @@ second stick. Added `0-:btn_analog_left` and `2-:axis2_left` to
   steady 30.3 to 21-24. It is a background thread writing to the VMU, so the
   number on the LCD understates what the game does without it. Fine for comparing
   one build against another, since both carry the same overhead; not an absolute.
+
+## A preferences file from another build stops the game starting a level
+
+Fixed in b45, and worth describing carefully because it cost a whole night and
+gives almost nothing away while it is happening.
+
+**How it presents.** Start New Game, the splash appears, then black, and the
+level never arrives. No error, no text, nothing on the serial console. It follows
+you across every disc you burn, including builds that worked yesterday, because
+the cause is on the memory card rather than the disc. Deleting the preferences
+file on the VMU fixes it instantly.
+
+**How to recognise it in one test.** Pull the memory card out and boot. If the
+game starts a level with no card, it is this.
+
+**Why it happens.** Adding a field to any of the preference structs changes the
+size of a stored chunk. Aleph One notices the mismatch in
+w_get_data_from_preferences and appends a replacement -- and
+append_data_to_wad does replace the tag correctly rather than duplicating it, so
+that part is sound and is NOT the fault. The damage is done elsewhere, and it
+breaks in both directions: a newer build reading an older file, and an older
+build reading a newer one.
+
+**What b45 does about it.** The card copy carries a stamp in front of the
+payload: a magic, and a number derived from the sizes of the preference structs
+the build was compiled against. A card that does not match is ignored and Aleph
+One writes fresh defaults over it. Verified in Flycast both ways -- a matching
+stamp restores, a changed one logs "prefs carry no format stamp -- ignoring",
+writes defaults, and reaches gameplay.
+
+**What it cost.** Three builds were blamed and rolled back, a toolchain was
+rebuilt on a hypothesis, and the port was reverted to a build whose binary turned
+out to be byte-identical to the one already failing. The lesson is cheaper than
+the diagnosis: when a symptom survives a change of disc, the cause is not on the
+disc.
+
+## Where a level load actually goes
+
+Measured under Flycast, which is faster than the real drive, so treat these as a
+floor rather than an estimate of hardware:
+
+| phase | ms |
+|---|---|
+| New Game, total | 46552 |
+| 11 shape collections read and decompressed | 7115 |
+| update_color_environment | 538 |
+| **unaccounted** | **~38900** |
+
+The two phases anyone would suspect are 16% of it between them. Whatever
+dominates is still unmeasured -- the map wad read and the interface fades are the
+next candidates, and the fades matter because they are wall-clock delays rather
+than work.
+
+Also recorded, since it was tried and made things worse: giving each file stream
+a 64KB buffer with setvbuf. KOS's ISO9660 driver does have a bulk-read fast path
+for sector-aligned requests, but Aleph One reads a wad chunk by seeking to its
+offset and then reading a few hundred bytes (wad.cpp), so a large buffer means
+every seek discards it and re-reads 64KB to serve a short read. That build failed
+to load a level at all on hardware.

@@ -103,6 +103,7 @@ Nov 26, 2000 (Loren Petrich):
 #ifdef DC
 extern "C" void dc_vmu_save_game(const char *ram_path, const char *map_path, int level);
 extern "C" void dc_trace(int slot, const char *fmt, ...);
+extern "C" unsigned dc_ticks(void);
 #endif
 
 // LP addition: for physics-model stuff, we need these pointers to definitions
@@ -296,6 +297,9 @@ bool load_level_from_map(
 {
 #ifdef DC
 	dc_trace(7, "load: enter, index=%d", (int)level_index);
+#ifdef DC
+	unsigned dc_t0 = dc_ticks();
+#endif
 #endif
 	OpenedFile OFile;
 	struct wad_header header;
@@ -316,7 +320,7 @@ bool load_level_from_map(
 		
 		OpenedFile MapFile;
 #ifdef DC
-		dc_trace(8, "load: opening map wad");
+		dc_trace(8, "load: opening map wad (+%u ms)", dc_ticks() - dc_t0);
 #endif
 		if (open_wad_file_for_reading(MapFileSpec,MapFile))
 		{
