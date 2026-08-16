@@ -649,14 +649,3 @@ OGL_ConfigureData& Get_OGL_ConfigureData() {return graphics_preferences->OGL_Con
 bool dont_switch_to_new_weapon() {
 	return TEST_FLAG(input_preferences->modifiers,_inputmod_dont_switch_to_new_weapon);
 }
-
-#ifdef DC
-extern "C" int dc_prefs_format(void)
-{
-	return (int)(sizeof(struct graphics_preferences_data)    * 1 +
-	             sizeof(struct player_preferences_data)      * 3 +
-	             sizeof(struct input_preferences_data)       * 5 +
-	             sizeof(struct sound_manager_parameters)     * 7 +
-	             sizeof(struct environment_preferences_data) * 11);
-}
-#endif
