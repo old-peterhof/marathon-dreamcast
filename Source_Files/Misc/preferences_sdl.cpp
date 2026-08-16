@@ -18,6 +18,7 @@
 #include "screen.h"
 #ifdef DC
 #include "dc_slots.h"
+#include "dc_explain.h"
 #endif
 #include "images.h"
 #include "find_files.h"
@@ -118,6 +119,10 @@ static bool ethernet_active(void)
  *  Main preferences dialog
  */
 
+static const char *gamma_labels[9] = {
+	"Darkest", "Darker", "Dark", "Normal", "Light", "Really Light", "Even Lighter", "Lightest", NULL
+};
+
 void handle_preferences(void)
 {
 	// Save the existing preferences, in case we have to reload them
@@ -134,25 +139,84 @@ void handle_preferences(void)
 	dialog d;
 	d.add(new w_static_text("PREFERENCES", TITLE_FONT, TITLE_COLOR));
 	d.add(new w_spacer());
+#ifdef DC
+	/*
+	 *	Three rows where there were five, per UI-HANDOFF section 4, which is the
+	 *	MENU-TREE.md audit applied.
+	 *
+	 *	PLAYER is gone: difficulty moved to New Game where it belongs to the run,
+	 *	the name needs a keyboard, and both colours are network appearance for a
+	 *	game with no network. ENVIRONMENT is gone entirely -- all five rows browse
+	 *	for replacement data files, and there is nothing to browse on a fixed
+	 *	disc. GRAPHICS collapses to its one live row: colour depth, resolution,
+	 *	screen size and fullscreen all describe hardware we already know, and one
+	 *	of them is the flag that once stuck off and rendered the whole game at
+	 *	320x160.
+	 *
+	 *	Brightness is promoted to the root rather than kept behind a button of
+	 *	its own, because a screen with one control on it is not a screen.
+	 */
+	w_explain *explain = new w_explain;
+	dc_explain_begin(explain);
+
+	w_select *gamma_w = new w_select("Brightness",
+		graphics_preferences->screen_mode.gamma_level, gamma_labels);
+	d.add(gamma_w);
+	dc_explain_add(gamma_w, "How bright the picture is. Worth setting on a CRT, "
+	                        "where the darkest levels can be hard to read.");
+
+	d.add(new w_spacer());
+
+	w_button *sound_b = new w_button("SOUND", sound_dialog, &d);
+	d.add(sound_b);
+	dc_explain_add(sound_b, "Volume, quality, and which sounds the game loads.");
+
+	w_button *controls_b = new w_button("CONTROLS", controls_dialog, &d);
+	d.add(controls_b);
+	dc_explain_add(controls_b, "The analog stick, sensitivity, and which button "
+	                           "does what.");
+
+	w_button *saves_b = new w_button("MANAGE SAVES", dc_manage_saves_proc, &d);
+	d.add(saves_b);
+	dc_explain_add(saves_b, "Load or delete any of the four saved games.");
+
+	d.add(new w_spacer());
+	d.add(explain);
+	d.add(new w_spacer());
+	d.add(new w_button("RETURN", dialog_cancel, &d));
+
+	dc_explain_arm(&d);
+#else
 	d.add(new w_button("PLAYER", player_dialog, &d));
 	d.add(new w_button("GRAPHICS", graphics_dialog, &d));
 	d.add(new w_button("SOUND", sound_dialog, &d));
 	d.add(new w_button("CONTROLS", controls_dialog, &d));
 	d.add(new w_button("ENVIRONMENT", environment_dialog, &d));
-#ifdef DC
-	// Temporary home. MANAGE SAVES belongs on the main menu, which is the next
-	// phase of the interface work; until then it needs to be reachable to be
-	// tested at all.
-	d.add(new w_button("MANAGE SAVES", dc_manage_saves_proc, &d));
-#endif
 	d.add(new w_spacer());
 	d.add(new w_button("RETURN", dialog_cancel, &d));
+#endif
 
 	// Clear menu screen
 	clear_screen();
 
 	// Run dialog
 	d.run();
+
+#ifdef DC
+	dc_explain_end();
+
+	// Brightness lives on the root screen now, so it is applied here rather than
+	// in the graphics dialog that no longer runs.
+	{
+		int gamma = gamma_w->get_selection();
+
+		if (gamma != graphics_preferences->screen_mode.gamma_level) {
+			graphics_preferences->screen_mode.gamma_level = gamma;
+			change_screen_mode(&graphics_preferences->screen_mode, false);
+			write_preferences();
+		}
+	}
+#endif
 
 	// Redraw main menu
 	display_main_menu();
@@ -244,9 +308,6 @@ static const char *size_labels[13] = {
 	"1280x640", "1280x1024 (no HUD)", "1600x800", "1600x1200 (no HUD)", NULL
 };
 
-static const char *gamma_labels[9] = {
-	"Darkest", "Darker", "Dark", "Normal", "Light", "Really Light", "Even Lighter", "Lightest", NULL
-};
 
 static void graphics_dialog(void *arg)
 {
@@ -443,6 +504,9 @@ static void sound_dialog(void *arg)
 	dialog d;
 	d.add(new w_static_text("SOUND SETUP", TITLE_FONT, TITLE_COLOR));
 	d.add(new w_spacer());
+#ifdef DC
+	w_explain *explain = new w_explain;
+#endif
 	static const char *quality_labels[3] = {"8 Bit", "16 Bit", NULL};
 	w_toggle *quality_w = new w_toggle("Quality", sound_preferences->flags & _16bit_sound_flag, quality_labels);
 	d.add(quality_w);
@@ -454,10 +518,39 @@ static void sound_dialog(void *arg)
 	d.add(ambient_w);
 	w_toggle *more_w = new w_toggle("More Sounds", sound_preferences->flags & _more_sounds_flag);
 	d.add(more_w);
+#ifdef DC
+	/*
+	 *	Channels is dropped: it sets how many sounds can play at once, which is
+	 *	a property of the hardware and not a taste. Everything else stays.
+	 */
+	w_select *channels_w = NULL;
+#else
 	w_select *channels_w = new w_select("Channels", sound_preferences->channel_count, channel_labels);
 	d.add(channels_w);
+#endif
 	w_volume_slider *volume_w = new w_volume_slider("Volume", sound_preferences->volume);
 	d.add(volume_w);
+#ifdef DC
+	/*
+	 *	More Sounds is the only preference in the game with a large measured
+	 *	cost, and it sat among six that cost nothing. Saying so is the clearest
+	 *	case for these lines existing at all.
+	 */
+	dc_explain_begin(explain);
+	dc_explain_add(quality_w, "8-bit halves the memory sounds take and makes "
+	                          "them hissier.");
+	dc_explain_add(stereo_w, "Places sounds left and right.");
+	dc_explain_add(dynamic_w, "Keeps sounds in place as you turn, rather than "
+	                          "fixed to the screen.");
+	dc_explain_add(ambient_w, "Background noise: machinery, water, wind.");
+	dc_explain_add(more_w, "Loads the full set of monster sounds. Costs about "
+	                       "7.5 seconds of every level load.");
+	dc_explain_add(volume_w, "Overall loudness.");
+
+	d.add(new w_spacer());
+	d.add(explain);
+	dc_explain_arm(&d);
+#endif
 	d.add(new w_spacer());
 	d.add(new w_left_button("ACCEPT", dialog_ok, &d));
 	d.add(new w_right_button("CANCEL", dialog_cancel, &d));
@@ -481,10 +574,12 @@ static void sound_dialog(void *arg)
 			changed = true;
 		}
 
-		int channel_count = channels_w->get_selection();
-		if (channel_count != sound_preferences->channel_count) {
-			sound_preferences->channel_count = channel_count;
-			changed = true;
+		if (channels_w) {
+			int channel_count = channels_w->get_selection();
+			if (channel_count != sound_preferences->channel_count) {
+				sound_preferences->channel_count = channel_count;
+				changed = true;
+			}
 		}
 
 		int volume = volume_w->get_selection();
@@ -498,6 +593,10 @@ static void sound_dialog(void *arg)
 			write_preferences();
 		}
 	}
+
+#ifdef DC
+	dc_explain_end();
+#endif
 }
 
 
@@ -570,7 +669,35 @@ static void controls_dialog(void *arg)
 #endif
 	d.add(new w_spacer());
 #ifdef DC
-	d.add(new w_button("CONFIGURE CONTROLLER", pad_dialog, &d));
+	w_button *pad_b = new w_button("CONFIGURE CONTROLLER", pad_dialog, &d);
+	d.add(pad_b);
+
+	/*
+	 *	Half of these describe engine behaviour that is not guessable from the
+	 *	label. Always Swim and Run/Swim interact; the two sensitivities are
+	 *	separate for a reason; and the stick mode changes which button fires.
+	 */
+	w_explain *explain = new w_explain;
+
+	dc_explain_begin(explain);
+	dc_explain_add(stick_mode_w, "Look: the stick turns and looks. Move: it "
+	                             "walks and turns, and Look Up and Look Down "
+	                             "aim.");
+	dc_explain_add(invert_mouse_w, "Pushing the stick up looks down instead.");
+	dc_explain_add(always_run_w, "Run without holding the run button. The button "
+	                             "then makes you walk.");
+	dc_explain_add(always_swim_w, "The same, in liquid. Run/Swim is one button, "
+	                              "so this and Always Run affect each other.");
+	dc_explain_add(weapon_w, "Switch to a better weapon when you pick one up.");
+	dc_explain_add(sens_h_w, "How fast the stick turns you.");
+	dc_explain_add(sens_v_w, "How fast it looks up and down. Separate because "
+	                         "Marathon's vertical range is small, so a good turn "
+	                         "speed feels twitchy on pitch.");
+	dc_explain_add(pad_b, "Bind every action to whichever button you want.");
+
+	d.add(new w_spacer());
+	d.add(explain);
+	dc_explain_arm(&d);
 #else
 	d.add(new w_button("CONFIGURE KEYBOARD", keyboard_dialog, &d));
 #endif
@@ -635,6 +762,10 @@ static void controls_dialog(void *arg)
 		if (changed)
 			write_preferences();
 	}
+
+#ifdef DC
+	dc_explain_end();
+#endif
 }
 
 

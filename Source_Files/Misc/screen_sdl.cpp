@@ -1055,6 +1055,15 @@ void clear_screen(void)
 	 *	screen, and it is the single place the plate has to be laid down for all
 	 *	of them. Falls back to a flat fill if the plate did not load.
 	 */
+	/*
+	 *	The plain plate, always. Brand art is main-menu only (UI-HANDOFF section
+	 *	3: the wordmark and watermark bake into that one plate), and the main
+	 *	menu paints itself rather than coming through here -- so selecting PLAIN
+	 *	at this one point is what stops every dialog opened after the menu from
+	 *	inheriting the wordmark behind it.
+	 */
+	dc_plate_select(DC_PLATE_PLAIN);
+
 	if (dc_plate_ready()) {
 		dc_plate_to_screen();
 		return;
