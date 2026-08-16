@@ -34,7 +34,34 @@ void dc_input_set_ingame(int yes);
 // Global variables
 dialog *top_dialog = NULL;
 
+#ifdef DC
+#include "dc_plate.h"
+#endif
+
 static SDL_Surface *dialog_surface = NULL;
+
+/*
+ *	Clear a piece of dialog_surface back to the background.
+ *
+ *	With a plate loaded this restores the plate rather than filling flat, which
+ *	is what makes a widget redraw not punch a black hole in the artwork.
+ *	dialog_surface is dialog-local, so the plate has to be read at the dialog's
+ *	screen position -- hence the offset, which is exactly what dialog::update()
+ *	adds when it blits the other way.
+ */
+static void erase_to_background(SDL_Surface *dst, const SDL_Rect *r,
+                                int screen_x, int screen_y)
+{
+#ifdef DC
+	if (dc_plate_region(dst, r, screen_x, screen_y))
+		return;
+#else
+	(void)screen_x;
+	(void)screen_y;
+#endif
+
+	SDL_FillRect(dst, (SDL_Rect *)r, get_dialog_color(BACKGROUND_COLOR));
+}
 
 static sdl_font_info *default_font = NULL;
 static SDL_Surface *default_image = NULL;
@@ -554,6 +581,37 @@ void load_theme(FileSpecifier &theme)
  *  Set theme default values
  */
 
+#ifdef DC
+/*
+ *	The palette from UI-HANDOFF.md section 2, which names its tokens after these
+ *	constants precisely so they could be dropped in here.
+ *
+ *	One warm colour, and it does two jobs and no others: the brand mark, and "you
+ *	are here". Everything else is the cold green-grey of the hull plate, so the
+ *	eye has exactly one place to go. That matters more than it sounds at 15fps
+ *	across a room on a composite TV, where a single subtle cue is not enough --
+ *	which is why the design signals selection three ways at once.
+ *
+ *	ITEM_ACTIVE_COLOR is left at #ffc000 pending Max's CRT. It computes to about
+ *	116 IRE, hot enough to bloom slightly on a consumer set; #f5be2e is visually
+ *	near-identical at about 107 and is the fallback if it does.
+ */
+static const SDL_Color default_dialog_color[NUM_DIALOG_COLORS] = {
+	{0x05, 0x08, 0x0a}, // BACKGROUND_COLOR       --bg
+	{0xe2, 0xef, 0xe8}, // TITLE_COLOR            --face
+	{0x6f, 0x8a, 0x7e}, // BUTTON_COLOR           --item
+	{0xff, 0xc0, 0x00}, // BUTTON_ACTIVE_COLOR    --hot
+	{0x4e, 0x64, 0x59}, // LABEL_COLOR            --label
+	{0x6f, 0x8a, 0x7e}, // LABEL_ACTIVE_COLOR     --item
+	{0x6f, 0x8a, 0x7e}, // ITEM_COLOR             --item
+	{0xff, 0xc0, 0x00}, // ITEM_ACTIVE_COLOR      --hot
+	{0xe2, 0xef, 0xe8}, // MESSAGE_COLOR          --face
+	{0x6f, 0x8a, 0x7e}, // TEXT_ENTRY_COLOR       --item
+	{0xff, 0xc0, 0x00}, // TEXT_ENTRY_ACTIVE_COLOR
+	{0xff, 0xc0, 0x00}, // TEXT_ENTRY_CURSOR_COLOR
+	{0x2a, 0x1e, 0x04}  // KEY_BINDING_COLOR      --hot-bar
+};
+#else
 static const SDL_Color default_dialog_color[NUM_DIALOG_COLORS] = {
 	{0x00, 0x00, 0x00}, // BACKGROUND COLOR
 	{0xc0, 0xc0, 0xc0}, // TITLE_COLOR
@@ -569,6 +627,7 @@ static const SDL_Color default_dialog_color[NUM_DIALOG_COLORS] = {
 	{0xff, 0xff, 0xff}, // TEXT_ENTRY_CURSOR_COLOR
 	{0x60, 0x60, 0x60}  // KEY_BINDING_COLOR
 };
+#endif
 
 static const int default_dialog_space[NUM_DIALOG_SPACES] = {
 	6,	// FRAME_T_SPACE
@@ -788,7 +847,7 @@ void dialog::update(SDL_Rect r) const
 void dialog::draw_widget(widget *w, bool do_update) const
 {
 	// Clear and redraw widget
-	SDL_FillRect(dialog_surface, &w->rect, get_dialog_color(BACKGROUND_COLOR));
+	erase_to_background(dialog_surface, &w->rect, rect.x, rect.y);
 	w->draw(dialog_surface);
 	w->dirty = false;
 
@@ -805,6 +864,9 @@ static void draw_frame_image(SDL_Surface *s, int x, int y)
 
 void dialog::draw(void) const
 {
+	// Plate first, so the frame and the widgets sit on it
+	erase_to_background(dialog_surface, NULL, rect.x, rect.y);
+
 	// Draw frame
 	draw_frame_image(frame_tl, 0, 0);
 	draw_frame_image(frame_t, frame_tl->w, 0);
@@ -854,6 +916,12 @@ void dialog::activate_widget(int num, bool draw)
 		draw_widget(active_widget);
 //		play_dialog_sound(DIALOG_SELECT_SOUND);
 	}
+
+	// Tell anyone who cares that the highlight moved. After the redraw above, so
+	// a handler that rewrites another widget draws over a settled screen rather
+	// than one this call is still painting.
+	if (focus_proc)
+		focus_proc(this, active_widget, num, focus_arg);
 }
 
 
@@ -1012,7 +1080,9 @@ int dialog::run(bool intro_exit_sounds)
 	dialog *parent_dialog = top_dialog;
 	top_dialog = this;
 
-	// Clear dialog surface
+	// Clear dialog surface. rect is not laid out yet, so where this dialog sits
+	// on the plate is not yet knowable -- fill flat here and let draw() below,
+	// after layout(), put the plate down at the right offset.
 	SDL_FillRect(dialog_surface, NULL, get_dialog_color(BACKGROUND_COLOR));
 
 	// Activate first widget

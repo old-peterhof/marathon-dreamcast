@@ -42,6 +42,9 @@
 #include "ViewControl.h"
 #include "scripting.h"
 #include "screen_drawing.h"
+#ifdef DC
+#include "dc_plate.h"
+#endif
 #include "mouse.h"
 
 #include "sdl_fonts.h"
@@ -1045,6 +1048,19 @@ void DrawHUD(SDL_Rect &dest_rect)
 
 void clear_screen(void)
 {
+#ifdef DC
+	/*
+	 *	Every dialog in the game calls this before it runs, and a dialog only
+	 *	ever repaints its own rectangle -- so this is what covers the rest of the
+	 *	screen, and it is the single place the plate has to be laid down for all
+	 *	of them. Falls back to a flat fill if the plate did not load.
+	 */
+	if (dc_plate_ready()) {
+		dc_plate_to_screen();
+		return;
+	}
+#endif
+
 	SDL_FillRect(main_surface, NULL, SDL_MapRGB(main_surface->format, 0, 0, 0));
 	SDL_UpdateRect(main_surface, 0, 0, 0, 0);
 #ifdef HAVE_OPENGL

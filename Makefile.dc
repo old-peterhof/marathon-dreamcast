@@ -117,7 +117,7 @@ SRCS = \
   $(MI)/preferences.cpp $(MI)/preprocess_map_sdl.cpp $(MI)/projectiles.cpp \
   $(MI)/render.cpp $(MI)/resource_manager.cpp $(MI)/scenery.cpp \
   $(MI)/scottish_textures.cpp $(MI)/screen_drawing.cpp \
-  $(MI)/screen_sdl.cpp $(MI)/sdl_dialogs.cpp $(MI)/sdl_fonts.cpp \
+  $(MI)/screen_sdl.cpp $(MI)/dc_plate.cpp $(MI)/sdl_dialogs.cpp $(MI)/sdl_fonts.cpp \
   $(MI)/sdl_widgets.cpp $(MI)/shapes.cpp $(MI)/shell.cpp $(MI)/textures.cpp \
   $(MI)/vbl.cpp $(MI)/vbl_sdl.cpp $(MI)/wad.cpp $(MI)/wad_sdl.cpp \
   $(MI)/wad_prefs.cpp $(MI)/weapons.cpp $(MI)/world.cpp \
@@ -246,7 +246,13 @@ $(GAMEDATA)/Map:
 # disc/AlephOne is the tree the game reads as /cd/AlephOne. Two sources: the
 # MML, Fonts and Themes from BERO's port (the SDL interface needs them), and the
 # four retail data files fetched by tools/fetch-data.sh.
-$(DISC)/.stamp: $(GAMEDATA)/Map
+# The stamp depends on everything under disc-AlephOne, not just the Map. It used
+# to depend on the Map alone, which meant adding a file to disc-AlephOne -- the
+# UI plates, say -- never triggered the re-copy, and the disc silently shipped
+# without it.
+DISCSRC := $(shell find disc-AlephOne -type f 2>/dev/null)
+
+$(DISC)/.stamp: $(GAMEDATA)/Map $(DISCSRC)
 	rm -rf $(DISC)
 	mkdir -p $(DISC)/AlephOne
 	cp -R disc-AlephOne/. $(DISC)/AlephOne/
