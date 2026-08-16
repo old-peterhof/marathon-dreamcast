@@ -30,8 +30,6 @@ artwork changes.
 | Quit | **dead** | a console has nowhere to quit to |
 | Credits | keep | |
 
-**Four of ten are worth keeping.** Five are dead, one is Quit.
-
 ## In-game menu (`mGame`)
 
 Defined in `interface_menus.h`. Reachable on desktop via Alt+key chords, which a
@@ -107,7 +105,7 @@ Liquids, OpenGL Overhead Map, OpenGL HUD, 3D Models.
 | Auto-Switch Weapons | toggle | keep |
 | Turn Sensitivity | slider | keep — added for this port |
 | Look Sensitivity | slider | keep — added for this port |
-| CONFIGURE KEYBOARD | button | dead — should become CONFIGURE CONTROLLER |
+| CONFIGURE KEYBOARD | button | dead — becomes CONFIGURE CONTROLLER, see below |
 
 ### Configure keyboard — 20 bindable actions
 
@@ -117,12 +115,46 @@ Previous Weapon · Next Weapon · Trigger · 2nd Trigger · Sidestep · Run/Swim
 Look · Action · Auto Map
 
 Currently hardcoded in `dc/dc_input.c` as two tables, one for gameplay and one
-for menus. A controller-native version of this screen is the obvious replacement
-and would let bindings be changed without a rebuild.
+for menus.
 
-Pad inputs available to map onto those 20: analog stick (2 axes), D-pad (4), A B
-X Y, two analog triggers, Start. **Twelve or so inputs for twenty actions**, which
-is the core design problem.
+### CONFIGURE CONTROLLER — the replacement (Max's spec)
+
+Takes the place of CONFIGURE KEYBOARD in the Controls dialog. Lists every action
+and lets the player bind it to any button on the pad. The analog stick gets a
+mode switch rather than a binding:
+
+- **Look** — stick turns and looks, as the port is configured today. Feeds the
+  analog path in `mouse_sdl.cpp`, which produces `delta_yaw` and `delta_pitch`.
+- **Move** — stick moves forward and back and turns left and right, the way the
+  D-pad or arrow keys do. Feeds the same action flags as the movement keys.
+
+Inputs available: analog stick (2 axes), D-pad (4), A B X Y, two analog triggers,
+Start. Twelve or so digital inputs for twenty actions — but with the stick in
+Move mode, four of those actions are covered by the stick, and in Look mode two
+more are. So the shortfall is smaller than it looks, and the player decides how
+to spend what is left.
+
+Three things this changes that are worth knowing before designing it:
+
+**Bindings have to live in preferences.** They are compiled-in tables today.
+Storing them means new fields in `input_preferences_data`, which changes the
+struct size, which means cards written by older builds get rejected on first
+boot — exactly what the format stamp in `dc/dc_vmu.c` exists to do. Expect
+everyone's settings to reset once, and say so rather than let it surprise anyone.
+
+**A player can bind themselves out of the interface.** If every button is
+rebindable there is a configuration in which nothing dismisses a dialog. The menu
+binding table is separate from the gameplay one today, and keeping it fixed is
+the cheap answer; a DEFAULTS button that is always reachable is the other half.
+Whatever the design, there has to be a way back that does not involve deleting
+the VMU file.
+
+**Analog and digital actions are not interchangeable.** Turning and looking take
+a magnitude; firing and cycling weapons do not. A binding screen that offers
+every action for every input will let people put Turn Left on a trigger, which
+half works, and Move Forward on the stick, which is what Move mode already does.
+The list probably wants to separate the two rather than present twenty
+identical rows.
 
 ### Environment settings
 
@@ -159,8 +191,8 @@ browse.
 settings, 4 of 6 graphics settings, all 9 OpenGL options, 2 control toggles,
 player name and both colours, Quit in two places.
 
-**Missing and wanted:** a pause menu, a controller configuration screen, and a
-way to name a save.
+**Missing and wanted:** a pause menu, a controller configuration screen (spec
+above), and a way to name a save.
 
 **The hard design problem** is not trimming. It is that twenty actions have to
 fit on about twelve inputs, and the current answer — hardcoded tables the player
