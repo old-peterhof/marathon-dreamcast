@@ -1283,10 +1283,112 @@ static void handle_game_key(const SDL_Event &event)
 		write_preferences();
 }
 
+#ifdef DC
+/*
+ *	dc_pause_menu -- what the Start button does.
+ *
+ *	Every in-game command in this engine is an Alt+key chord: Alt+P to pause,
+ *	Alt+S to save, Alt+C to leave the level. A Dreamcast pad has no Alt and no
+ *	letters, so from a console there was no way to pause, no way to save away
+ *	from a terminal, and no way out of a level at all short of resetting the
+ *	machine. Start was bound to Escape, which gameplay ignores.
+ *
+ *	The dialog is itself the pause: dialogs run their own event loop, so the
+ *	world stops while one is open. Start closes it again, because Escape is what
+ *	a dialog treats as cancel.
+ *
+ *	Difficulty is deliberately not here. It belongs to the run and is chosen when
+ *	the run starts -- Max's call on UI-HANDOFF open question 3.
+ */
+enum { dcPauseResume, dcPauseSave, dcPausePrefs, dcPauseQuit };
+
+static int dc_pause_choice = dcPauseResume;
+
+struct dc_pause_item {
+	dialog *d;
+	int what;
+};
+
+static void dc_pause_proc(void *arg)
+{
+	struct dc_pause_item *it = (struct dc_pause_item *)arg;
+
+	dc_pause_choice = it->what;
+	it->d->quit(0);
+}
+
+static void dc_pause_menu(void)
+{
+	static const char *labels[4] = {
+		"RESUME", "SAVE GAME", "PREFERENCES", "QUIT TO MAIN MENU"
+	};
+	struct dc_pause_item items[4];
+	dialog d;
+	unsigned i;
+
+	dc_pause_choice = dcPauseResume;
+	dc_trace(29, "pause menu: opened");
+
+	d.add(new w_static_text("PAUSED", TITLE_FONT, TITLE_COLOR));
+	d.add(new w_spacer());
+
+	for (i = 0; i < 4; i++) {
+		items[i].d = &d;
+		items[i].what = (int)i;
+		d.add(new w_button(labels[i], dc_pause_proc, &items[i]));
+	}
+
+	/*
+	 *	No clear_screen() here, unlike every other screen: this one is supposed
+	 *	to sit over the running game. The dialog paints its own rectangle, and
+	 *	since Phase 1 that rectangle is filled with the plate, so it reads as a
+	 *	panel laid over the world rather than a hole cut in it.
+	 */
+	d.run();
+
+	switch (dc_pause_choice) {
+		case dcPauseSave:
+			/*
+			 *	save_game() directly, not do_menu_item_command(mGame, iSave).
+			 *	That arm is #if 0'd upstream for single player, so routing
+			 *	through it would give a button that silently does nothing.
+			 *	save_game() is what the save terminal calls, and on this port it
+			 *	opens the four-slot picker.
+			 */
+			save_game();
+			validate_world_window();
+			break;
+
+		case dcPausePrefs:
+			do_preferences();
+			break;
+
+		case dcPauseQuit:
+			// iCloseGame puts up its own "cancel the game in progress?" check,
+			// so a mis-press does not throw the level away.
+			do_menu_item_command(mGame, iCloseGame, false);
+			break;
+
+		default:
+			break;
+	}
+
+	if (get_game_state() == _game_in_progress)
+		update_game_window();
+}
+#endif
+
 static void process_game_key(const SDL_Event &event)
 {
 	switch (get_game_state()) {
 		case _game_in_progress:
+#ifdef DC
+			// Start, via the fixed binding in dc_input.c.
+			if (event.key.keysym.sym == SDLK_ESCAPE) {
+				dc_pause_menu();
+				break;
+			}
+#endif
 			if (event.key.keysym.mod & KMOD_ALT) {
 				int item = -1;
 				switch (event.key.keysym.sym) {

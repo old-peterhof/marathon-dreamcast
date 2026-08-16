@@ -36,7 +36,27 @@ for attempt in $(seq 1 $ATTEMPTS); do
 	"$BIN" "$DISC" > "$LOG" 2>&1 &
 	pid=$!
 
-	python3 -c "import time; time.sleep($SETTLE)"
+	# The assertion fires within a second or two of launch, so look for it early
+	# rather than after the full settle. Waiting first meant a run with a long
+	# settle burned that whole time on every lost ASLR lottery -- at 260 seconds
+	# and a coin-flip failure rate, that is most of the wall clock spent asleep
+	# in front of an error dialog.
+	python3 -c "import time; time.sleep(6)"
+
+	if grep -q "Verify Failed" "$LOG" 2>/dev/null; then
+		kill $pid 2>/dev/null
+		python3 -c "import time; time.sleep(2)"
+		echo "attempt $attempt: VMEM assertion, retrying"
+		continue
+	fi
+
+	if ! kill -0 "$pid" 2>/dev/null; then
+		echo "attempt $attempt: exited early, retrying"
+		continue
+	fi
+
+	# Launched cleanly; now give it the time the caller asked for.
+	python3 -c "import time; time.sleep($SETTLE - 6 if $SETTLE > 6 else 0)"
 
 	# Liveness by PID is not enough. When Flycast loses the ASLR lottery it stays
 	# alive showing an error dialog, so the process exists and nothing runs --
