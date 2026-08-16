@@ -11,6 +11,7 @@
 extern "C" {
 void dc_input_poll(void);
 void dc_input_set_ingame(int yes);
+void dc_input_note_dialog(void);
 }
 #endif
 #include "sdl_fonts.h"
@@ -1066,6 +1067,7 @@ int dialog::run(bool intro_exit_sounds)
 
 #ifdef DC
 		dc_input_poll();
+		dc_input_note_dialog();
 #endif
 
 		// Get next event

@@ -5,7 +5,7 @@
 
 	Friday, July 8, 1994 2:32:44 PM (alain)
 		All old code in here is obsolete. This now has interface for the top-level
-		interface (Begin Game, etcÉ)
+		interface (Begin Game, etcï¿½)
 	Saturday, September 10, 1994 12:45:48 AM  (alain)
 		the interface gutted again. just the stuff that handles the menu though, the rest stayed
 		the same.
@@ -96,6 +96,10 @@ extern TP2PerfGlobals perf_globals;
 // To tell it to stop playing,
 // and also to run the end-game script
 #include "XML_LevelScript.h"
+
+#ifdef DC
+extern "C" void dc_trace(int slot, const char *fmt, ...);
+#endif
 
 #ifdef env68k
 	#pragma segment shell
@@ -621,7 +625,7 @@ void idle_game_state(
 		game_state.last_ticks_on_idle= machine_tick_count();
 	}
 
-	/* if weÕre not paused and thereÕs something to draw (i.e., anything different from
+	/* if weï¿½re not paused and thereï¿½s something to draw (i.e., anything different from
 		last time), render a frame */
 	if(game_state.state==_game_in_progress)
 	{
@@ -810,7 +814,13 @@ void do_menu_item_command(
 			switch(menu_item)
 			{
 				case iNewGame:
+#ifdef DC
+					dc_trace(9, "new: begin_game");
+#endif
 					begin_game(_single_player, cheat);
+#ifdef DC
+					dc_trace(11, "new: begin_game returned");
+#endif
 					break;
 		
 				case iJoinGame:
@@ -1288,6 +1298,9 @@ static bool begin_game(
 			break;
 			
 		case _single_player:
+#ifdef DC
+			dc_trace(10, "new: single player setup");
+#endif
 			if(cheat)
 			{
 				entry.level_number= get_level_number_from_user();
