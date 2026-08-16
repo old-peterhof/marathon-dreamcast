@@ -383,23 +383,6 @@ bool FileSpecifier::Open(OpenedFile &OFile, bool Writable)
 		set_game_error(systemError, err);
 		return false;
 	}
-#ifdef DC
-	// Give the stream a big, sector-aligned buffer.
-	//
-	// KallistiOS's ISO9660 driver reads whole 2048-byte sectors and has a fast
-	// path that fetches several at once, but only when the request it is handed
-	// is sector-aligned and at least a sector long. stdio's default buffer on
-	// newlib is about 1KB, so every refill asked for less than one sector and
-	// took the slow path: fetch a sector, copy a fraction of it, discard the
-	// rest, repeat. Against a 20MB map file and a multi-megabyte shapes file on
-	// an optical drive that is tens of thousands of tiny reads, and it is the
-	// likeliest reason a level takes a minute or two to load on hardware.
-	//
-	// A null buffer pointer lets stdio allocate and free it with the stream, so
-	// there is nothing here to track or leak.
-	if (f->hidden.stdio.fp)
-		setvbuf(f->hidden.stdio.fp, NULL, _IOFBF, 64 * 1024);
-#endif
 	if (Writable)
 		return true;
 

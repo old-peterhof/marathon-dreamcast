@@ -75,14 +75,11 @@ void dc_trace(int slot, const char *fmt, ...)
 	printf("[dctrace %d] %s\n", slot, buf);
 	fflush(stdout);
 
-	// Inset for overscan: a television eats the edges, and traces drawn 8 pixels
-	// from the corner were visible on a real set but unreadable. Inert unless the
-	// disc carries DEBUG, since dc_trace returns before this point without it.
-	y = 40 + slot * 24;
-	if(y < 0 || y > 424)
+	y = 8 + slot * 24;
+	if(y < 0 || y > 456)
 		return;
 
-	bfont_draw_str(vram_s + y * 640 + 40, 640, 0, buf);
+	bfont_draw_str(vram_s + y * 640 + 8, 640, 0, buf);
 }
 
 /*
