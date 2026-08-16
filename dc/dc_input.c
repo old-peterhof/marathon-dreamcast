@@ -219,6 +219,9 @@ static void send_key(SDLKey sym, int pressed)
  *	an emulated pad in any configuration tried, so this synthesises a stick
  *	deflection to exercise the analog path unattended.
  */
+
+static void dc_input_poll_body(void);
+
 static int padtest_wanted(void)
 {
 	static int checked = 0, wanted = 0;
@@ -233,7 +236,33 @@ static int padtest_wanted(void)
 	return wanted;
 }
 
+/*
+ *	Re-entry guard.
+ *
+ *	This function keeps static state to detect button edges, so calling it from
+ *	inside itself loses or invents presses. That is not hypothetical: b48 added a
+ *	call in wait_for_click_or_keypress so the chapter screen could be skipped,
+ *	b49 added one inside the main event loop's idle wait so a menu would feel
+ *	responsive, and each worked on hardware alone. Together they crashed on level
+ *	load, because a chapter screen is drawn from inside process_event, which the
+ *	main loop calls with its own poll already in progress.
+ *
+ *	Re-entering is now simply ignored. The outer poll is already reading the pad;
+ *	a second read a few microseconds later has nothing to add.
+ */
 void dc_input_poll(void)
+{
+	static int busy = 0;
+
+	if (busy)
+		return;
+
+	busy = 1;
+	dc_input_poll_body();
+	busy = 0;
+}
+
+static void dc_input_poll_body(void)
 {
 	static int previous = 0;
 	static int have_previous = 0;

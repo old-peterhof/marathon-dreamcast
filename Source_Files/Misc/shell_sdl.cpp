@@ -982,8 +982,17 @@ static void main_event_loop(void)
 		// Which build is this? Drawn every pass while the menu is up, so a
 		// button redraw cannot wipe it. Matches the image filename and the row
 		// in BUILDS.md.
-		if (get_game_state() == _display_main_menu)
-			dc_build_stamp(DC_BUILD_TAG);
+		if (get_game_state() == _display_main_menu) {
+			// Four times a second rather than every pass: a bfont blit into
+			// video RAM in the same loop that reads the pad.
+			static uint32 dc_last_stamp = 0;
+			uint32 dc_now = SDL_GetTicks();
+
+			if (dc_now - dc_last_stamp > 250) {
+				dc_last_stamp = dc_now;
+				dc_build_stamp(DC_BUILD_TAG);
+			}
+		}
 
 		{
 			static int shown = 0;
@@ -1070,6 +1079,14 @@ static void main_event_loop(void)
 					int num_tries = 0;
 					while (event.type == SDL_NOEVENT && num_tries < 3) {
 					 	SDL_Delay(10);
+#ifdef DC
+						// Read the pad inside the wait as well as before it: a
+						// menu sleeps up to 30ms here and dc_input_poll() only
+						// ran at the top of the loop, so a press waited it out.
+						// Safe alongside the chapter-screen poll now that
+						// dc_input_poll ignores re-entry.
+						dc_input_poll();
+#endif
 						SDL_PollEvent(&event);
 						num_tries++;
 					}

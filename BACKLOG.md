@@ -158,19 +158,23 @@ compiles and its link too, so Aleph One gets them as well.
 | b48 | baseline, -O2 | 1272373 | loads, fast |
 | b51 | -O3 | 1412357 | loads |
 | b54 | + -fbuiltin -ffast-math -ffp-contract=fast | 1411365 | loads, maybe +1fps, nothing wrong |
-| b55 | + -flto=auto -ffat-lto-objects | 1397381 | **untested** |
+| b55 | + -flto=auto -ffat-lto-objects | 1397381 | loads, no change in fps |
 
 -mfsca and -mfsrra were already arriving from the sub-architecture config; what
 they needed was -ffast-math to let gcc actually use them for sin and cos.
 
-The honest result so far is about +1fps, which is within what Max could tell
-apart by eye. The VMU now shows the framerate, so b55 is the first build where
-the number can be compared directly rather than guessed at.
+**Conclusion: the flags bought roughly nothing.** About +1fps across all three,
+inside what can be told apart by eye, with the framerate readable on the VMU for
+the last two. That is a result rather than a failure: the software renderer is
+not compiler-bound, so further speed has to come from the renderer itself.
 
-If more is wanted from this direction, the untried lever is the pair KOS
-describes as "empirically a decent set for optimal release build performance"
-and which Falco did not mention: -freorder-blocks-algorithm=simple and
--fipa-pta, both sitting commented out in environ.sh.
+The flags are kept anyway -- they cost nothing, do no harm, and b55 is the
+current baseline -- but this direction is closed. Two levers remain untried and
+neither looks promising given the above: -freorder-blocks-algorithm=simple and
+-fipa-pta, which KOS's environ.sh calls empirically good for release builds.
+
+Where the frames actually are, if they are anywhere: the PowerVR renderer, which
+draws the world in hardware instead of on the SH4.
 
 ## Player health and air on the VMU
 
