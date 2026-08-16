@@ -635,7 +635,15 @@ void dc_vmu_load_saves(const char *ram_dir, const char *map_path)
 
 		hdr_len = save_hdr_get(hdr, &raw_len, &stored_len, &flags, &level, &info);
 
-		if (!hdr_len || raw_len == 0 || stored_len == 0) {
+		/*
+		 *	A whole card is 128KB, so anything claiming more than that is a
+		 *	corrupt header rather than a save -- and mallocing what it asks for
+		 *	would be trusting a number that has already proved untrustworthy.
+		 */
+		if (!hdr_len || raw_len == 0 || stored_len == 0 ||
+		    stored_len > 256 * 1024 || raw_len > 4 * 1024 * 1024) {
+			dc_trace(17, "vmu: %s slot %d has an implausible header, skipped",
+			         unit, slot);
 			fclose(in);
 			continue;
 		}

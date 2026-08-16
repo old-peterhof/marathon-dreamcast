@@ -560,6 +560,18 @@ static void dc_input_poll_body(void)
 		 *	without this the binding would be recorded and never collected.
 		 *	SDLK_UNKNOWN is the wake-up: the widget consumes it, and the dialog's
 		 *	own key handling has no case for it.
+		 *
+		 *	SDLK_UNKNOWN is not an arbitrary choice, and changing it would break
+		 *	this in a way that looks like a hang. SDL_PrivateKeyboard drops any
+		 *	event that does not change a key's state:
+		 *
+		 *	    if ( keysym->sym != SDLK_UNKNOWN ) {
+		 *	        if ( SDL_KeyState[keysym->sym] == state ) return 0;
+		 *
+		 *	Only a press is sent here and never a release, so with any other key
+		 *	the second binding in a session would be silently dropped and the
+		 *	screen would sit there until the capture timed out. SDLK_UNKNOWN is
+		 *	the one sym that guard excludes.
 		 */
 		if (captured >= 0)
 			send_key(SDLK_UNKNOWN, 1);

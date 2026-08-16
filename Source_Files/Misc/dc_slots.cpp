@@ -290,7 +290,7 @@ static bool confirm(const char *title, const char *line1, const char *line2)
 int dc_choose_save_slot(void)
 {
 	int slot = run_slot_screen("SAVE GAME",
-	                           "A saves here    X nothing    Start cancels",
+	                           "A saves here    Start cancels",
 	                           false, true, NULL);
 
 	if (!slot)
@@ -367,8 +367,9 @@ void dc_manage_saves(void)
 			if (!info[slot - 1].used)
 				continue;
 
+			// Absolute already: saved_games_dir is "/ram" on this port, because
+			// the KOS ramdisk is flat and cannot hold a subdirectory.
 			snprintf(path, sizeof path, "/ram/%s", info[slot - 1].ram_name);
-			file.SetToSavedGamesDir();
 			file = path;
 
 			if (!load_and_start_game(file)) {
@@ -405,7 +406,6 @@ bool dc_continue_newest_game(void)
 		return false;
 
 	snprintf(path, sizeof path, "/ram/%s", info[slot - 1].ram_name);
-	file.SetToSavedGamesDir();
 	file = path;
 
 	return load_and_start_game(file);

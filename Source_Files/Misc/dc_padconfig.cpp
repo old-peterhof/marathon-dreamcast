@@ -359,7 +359,13 @@ static int run_page(const char *title, const int *acts, int count)
 	d.add(new w_spacer());
 	d.add(new w_pad_grid(acts, count, &d));
 	d.add(new w_spacer());
-	d.add(new w_static_text("A binds    X other page    Y defaults    Start done",
+	/*
+	 *	"Start cancels", not "Start done". Start backs out of every screen in this
+	 *	interface and that consistency is the guarantee the whole design rests on
+	 *	-- so here it discards the edits, and ACCEPT is what keeps them. Saying
+	 *	"done" would have cost somebody their rebindings.
+	 */
+	d.add(new w_static_text("A binds    X other page    Y defaults    Start cancels",
 	                        LABEL_FONT, LABEL_COLOR));
 	d.add(new w_spacer());
 	d.add(new w_button("OTHER PAGE", want_flip, &d));
