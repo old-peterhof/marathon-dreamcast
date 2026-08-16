@@ -166,6 +166,7 @@ dc/build_id.h: BUILD_NUMBER BUILD_NAME
 	@printf '#define DC_BUILD_TAG  "b%s %s"\n' "$(BUILD_NUM)" "$(BUILD_SLUG)" >> $@
 
 $(MI)/shell.o: dc/build_id.h
+dc/dc_profiler.o: dc/build_id.h
 
 $(TARGET): $(OBJS)
 	$(KOS_CCPLUS) $(KOS_LDFLAGS) $(OBJS) -o $@ $(LIBS)

@@ -1,2 +1,3 @@
-dc/dc_profiler.o: dc/dc_profiler.c dc/vendor/vmu_profiler.h
+dc/dc_profiler.o: dc/dc_profiler.c dc/vendor/vmu_profiler.h dc/build_id.h
 dc/vendor/vmu_profiler.h:
+dc/build_id.h:

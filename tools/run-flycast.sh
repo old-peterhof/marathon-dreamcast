@@ -38,6 +38,15 @@ for attempt in $(seq 1 $ATTEMPTS); do
 
 	python3 -c "import time; time.sleep($SETTLE)"
 
+	# Liveness by PID is not enough. When Flycast loses the ASLR lottery it stays
+	# alive showing an error dialog, so the process exists and nothing runs --
+	# which cost a wasted three-minute run before this check existed.
+	if grep -q "Verify Failed" "$LOG" 2>/dev/null; then
+		kill $pid 2>/dev/null
+		python3 -c "import time; time.sleep(2)"
+		continue
+	fi
+
 	if kill -0 "$pid" 2>/dev/null; then
 		echo "flycast running (pid $pid, attempt $attempt)"
 		exit 0

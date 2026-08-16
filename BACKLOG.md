@@ -168,3 +168,24 @@ config stamp will notice.
 
 No measurement yet. Flycast holds at 30fps because that is the engine's tick
 rate, not the renderer's limit, so the difference can only be seen on hardware.
+
+## Player health and air on the VMU
+
+Wanted. The VMU already shows the title, the build number and the framerate; Max
+would like health x/100 and air x/100 under them.
+
+The mechanics are already in place -- `dc/dc_profiler.c` adds measurements to the
+VMU Profiler and a `use_string` measurement renders its buffer verbatim, so a
+line reading `HP  85/100` is a callback away. What it needs is a safe way to read
+the player from the profiler's background thread: `players[]` and
+`dynamic_world` are engine state, and the profiler polls on its own thread rather
+than in the render loop.
+
+The cheap approach is to have the render loop copy health and oxygen into two
+plain integers once a frame, and have the profiler read those. A torn read of an
+int shows a wrong number for one refresh of a VMU screen, which does not matter.
+
+Note the LCD is 48x32 pixels and fits four lines of about eleven characters, so
+the title, build and FPS lines already use three of them. Health and air would
+need one line between them, something like `HP 85 O2 60`, or the build line
+would have to go once a level is running.

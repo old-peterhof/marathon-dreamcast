@@ -19,11 +19,14 @@
  */
 
 #include <unistd.h>
+#include <string.h>
+#include <stdio.h>
 #include <stddef.h>
 #include <kos/thread.h>
 #include <arch/timer.h>
 
 #include "vendor/vmu_profiler.h"
+#include "build_id.h"
 
 static int profiling = 0;
 
@@ -57,12 +60,31 @@ static void dc_update_fps(vmu_profiler_measurement_t *m)
 	m->fstorage = dc_fps;
 }
 
+/*
+ *	The two static lines above the framerate. The profiler renders a use_string
+ *	measurement's buffer verbatim, so these are free text rather than a label and
+ *	a number; every line after the first starts with a newline.
+ */
+static void dc_line_title(vmu_profiler_measurement_t *m)
+{
+	strcpy(m->sstorage, "MARATHON 2");
+}
+
+static void dc_line_build(vmu_profiler_measurement_t *m)
+{
+	snprintf(m->sstorage, sizeof m->sstorage, "\nBuild %s", DC_BUILD_NUM);
+}
+
 void dc_profiler_start(void)
 {
 	vmu_profiler_t *prof;
 
-	if (access("/cd/AlephOne/PROFILE", 4) != 0)
-		return;
+	/*
+	 *	Always on. Max wants the framerate readable on the VMU in every build,
+	 *	not only in a profiling image, because a number read off the console beats
+	 *	a number read off an emulator that runs at the engine's tick cap. It costs
+	 *	a background thread and some framerate; that is the trade he asked for.
+	 */
 
 	/* Default configuration: the profiler picks its own thread priority,
 	   polling interval and frame-averaging window, all of which are sensible
@@ -71,6 +93,10 @@ void dc_profiler_start(void)
 	if (!prof)
 		return;
 
+	vmu_profiler_add_measure(prof,
+		init_measurement("", use_string, dc_line_title, NULL));
+	vmu_profiler_add_measure(prof,
+		init_measurement("", use_string, dc_line_build, NULL));
 	vmu_profiler_add_measure(prof,
 		init_measurement("FPS", use_float, dc_update_fps, NULL));
 
