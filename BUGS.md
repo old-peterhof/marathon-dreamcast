@@ -241,6 +241,21 @@ One writes fresh defaults over it. Verified in Flycast both ways -- a matching
 stamp restores, a changed one logs "prefs carry no format stamp -- ignoring",
 writes defaults, and reaches gameplay.
 
+**What is NOT proven.** The struct-size mismatch is not the mechanism. Tried to
+reproduce it in Flycast by growing input_preferences_data by two bytes exactly as
+b35 did, writing preferences with that build, then reading them back with the
+normal one -- with the stamp check disabled so the pre-b45 behaviour was in play.
+Both directions loaded, applied defaults correctly (sens=30/30) and reached
+gameplay. Aleph One's fallback handles the mismatch properly, which agrees with
+reading append_data_to_wad: it replaces a tag rather than duplicating it.
+
+So something about Max's card stops a level starting on hardware in a way an
+emulated card does not. The stamp is still worth having -- it makes a whole class
+of cross-build damage impossible, and it is verified working in both directions --
+but it should not be described as the fix for the black screen until the actual
+mechanism is understood. Deleting the preferences file demonstrably cures it on
+hardware; why, is still open.
+
 **What it cost.** Three builds were blamed and rolled back, a toolchain was
 rebuilt on a hypothesis, and the port was reverted to a build whose binary turned
 out to be byte-identical to the one already failing. The lesson is cheaper than
