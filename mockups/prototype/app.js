@@ -28,12 +28,12 @@ const S = { screen:'main', cursor:{}, modal:null, prevScreen:null };
 const $  = (s,r=document) => r.querySelector(s);
 const $$ = (s,r=document) => [...r.querySelectorAll(s)];
 
-const sectionOf = name => $(`[data-screen="${name}"]`);
+const sectionOf = name => $(`section[data-screen="${name}"]`);
 const itemsOf   = name => $$('[data-nav]', sectionOf(name)).filter(el => !el.classList.contains('off'));
 
 /* ── render ──────────────────────────────────────────────────────────────*/
 function paint(){
-  $$('[data-screen]').forEach(el => el.hidden = el.dataset.screen !== S.screen
+  $$('section[data-screen]').forEach(el => el.hidden = el.dataset.screen !== S.screen
     && !(S.screen === 'pause' && el.dataset.screen === 'term'));
 
   const items = S.modal ? $$('[data-nav]', $('.modal .mf')) : itemsOf(S.screen);

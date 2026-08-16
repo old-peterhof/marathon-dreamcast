@@ -575,6 +575,17 @@ static void dc_input_poll_body(void)
 	 *	simply two ways to press it.
 	 */
 	if (in_game && cfg_count > 0) {
+		/*
+		 *	Start is not one of the engine's twenty actions, so it cannot be a
+		 *	row in the binding screen, and the configured table would drop it.
+		 *	It stays wired here for the same reason the menu table is fixed:
+		 *	whatever the player has done to the other buttons, this one always
+		 *	gets them out. Capture reads Start as cancel, so it can never be
+		 *	bound to something else either.
+		 */
+		if (changed & CONT_START)
+			send_key(SDLK_ESCAPE, (current & CONT_START) != 0);
+
 		for (i = 0; i < (unsigned)cfg_count; i++) {
 			int id = cfg_button[i];
 			int mask = (id > 0 && id < NUM_DC_BUTTONS) ? dc_buttons[id].mask : 0;
