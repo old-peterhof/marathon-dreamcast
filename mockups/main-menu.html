@@ -1,0 +1,264 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Main menu — mockup</title>
+<style>
+  :root{
+    /* Theme tokens. These map 1:1 onto sdl_dialogs.h names. */
+    --bg:              #05080a;   /* BACKGROUND_COLOR   */
+    --plate:           #0c1214;   /* static plate       */
+    --panel:           #101a1b;   /* inset readout      */
+    --rule:            #2d4640;   /* hairlines          */
+    --rule-hot:        #4d6f63;
+    --title:           #9fbdae;   /* TITLE_COLOR        */
+    --item:            #6f8a7e;   /* ITEM_COLOR         */
+    --item-hot:        #f0b83c;   /* ITEM_ACTIVE_COLOR  */
+    --item-hot-bar:    #241a06;
+    --label:           #4e6459;   /* LABEL_COLOR        */
+    --scan:            rgba(0,0,0,.22);
+  }
+
+  html,body{margin:0;background:#191c1e;color:#8d9c97;
+    font:13px/1.5 -apple-system,BlinkMacSystemFont,"Helvetica Neue",sans-serif;}
+  .page{padding:28px 32px 64px;}
+  h1{font-size:15px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;
+     color:#cfe0d8;margin:0 0 4px;}
+  .sub{margin:0 0 22px;max-width:62ch;color:#7d8c87;}
+  .bar{display:flex;gap:18px;align-items:center;flex-wrap:wrap;
+       padding:10px 14px;background:#12181a;border:1px solid #26302f;border-radius:5px;
+       margin-bottom:26px;position:sticky;top:0;z-index:20;}
+  .bar label{display:flex;gap:6px;align-items:center;cursor:pointer;user-select:none;}
+  .bar b{color:#cfe0d8;font-weight:600;}
+  kbd{background:#1e2628;border:1px solid #33403e;border-bottom-width:2px;border-radius:3px;
+      padding:1px 5px;font:11px/1 ui-monospace,Menlo,monospace;color:#a8bcb4;}
+
+  .variant{margin-bottom:44px;}
+  .variant > h2{font-size:13px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;
+     color:#cfe0d8;margin:0 0 3px;}
+  .variant > p{margin:0 0 14px;max-width:64ch;color:#7d8c87;}
+
+  /* ── the 640×480 stage ───────────────────────────────────────────── */
+  .frame{width:640px;height:480px;transform-origin:top left;}
+  .scale2 .frame{transform:scale(2);}
+  .scale2 .holder{width:1280px;height:960px;}
+  .holder{width:640px;height:480px;}
+
+  .screen{
+    position:relative;width:640px;height:480px;overflow:hidden;
+    background:var(--bg);
+    image-rendering:pixelated;
+    font-family:ui-monospace,"SF Mono",Menlo,Monaco,monospace;
+    box-shadow:0 0 0 1px #2b3634;
+  }
+
+  /* Static plate: the one piece of artwork. Vignette + faint panel seams. */
+  .plate{position:absolute;inset:0;
+    background:
+      radial-gradient(115% 85% at 50% 34%, #14201f 0%, #0a1013 46%, #05080a 100%);}
+  .plate::after{ /* riveted seams, evokes M2 hull panelling */
+    content:"";position:absolute;inset:0;opacity:.5;
+    background:
+      repeating-linear-gradient(90deg, transparent 0 79px, #0f1a1a 79px 80px),
+      repeating-linear-gradient(0deg,  transparent 0 79px, #0e1818 79px 80px);}
+  .scanlines{position:absolute;inset:0;pointer-events:none;
+    background:repeating-linear-gradient(0deg,var(--scan) 0 1px,transparent 1px 2px);}
+
+  /* Safe area + overscan overlays */
+  .safe{position:absolute;left:40px;top:40px;width:560px;height:400px;
+        outline:1px dashed #d9534f;pointer-events:none;display:none;}
+  .safe::after{content:"safe 560×400";position:absolute;top:-15px;left:0;
+        font:10px/1 ui-monospace,monospace;color:#d9534f;letter-spacing:.06em;}
+  .showsafe .safe{display:block;}
+  .overscan{position:absolute;inset:0;pointer-events:none;display:none;
+    box-shadow:inset 0 0 0 40px rgba(0,0,0,.72);}
+  .showoverscan .overscan{display:block;}
+
+  /* ── shared menu bits ────────────────────────────────────────────── */
+  .wordmark{position:absolute;left:0;right:0;text-align:center;}
+  .wordmark .m{
+    font:700 44px/1 "Helvetica Neue",Helvetica,Arial,sans-serif;
+    letter-spacing:.20em;color:var(--title);
+    text-shadow:0 0 14px rgba(120,190,160,.20);}
+  .wordmark .d{
+    margin-top:9px;font:600 13px/1 ui-monospace,Menlo,monospace;
+    letter-spacing:.62em;color:var(--label);text-indent:.62em;}
+
+  .hair{position:absolute;height:1px;background:var(--rule);}
+  .hair.hot{background:var(--rule-hot);}
+
+  .hint{position:absolute;left:40px;right:40px;bottom:40px;height:18px;
+        display:flex;align-items:center;gap:26px;
+        font:11px/1 ui-monospace,Menlo,monospace;letter-spacing:.10em;color:var(--label);}
+  .hint .sp{margin-left:auto;}
+  .pad{display:inline-flex;align-items:center;justify-content:center;
+       width:14px;height:14px;border-radius:50%;border:1px solid var(--rule-hot);
+       color:var(--item);font:9px/1 ui-monospace,monospace;margin-right:6px;
+       vertical-align:-2px;}
+  .padsq{display:inline-flex;align-items:center;justify-content:center;
+       width:14px;height:14px;border:1px solid var(--rule-hot);
+       color:var(--item);font:9px/1 ui-monospace,monospace;margin-right:6px;
+       vertical-align:-2px;}
+
+  /* ── variant A: centred title-screen ─────────────────────────────── */
+  .vA .wordmark{top:64px;}
+  .vA .list{position:absolute;left:40px;right:40px;top:222px;}
+  .vA .row{height:32px;display:flex;align-items:center;justify-content:center;
+           font:600 19px/1 "Helvetica Neue",Helvetica,Arial,sans-serif;
+           letter-spacing:.22em;color:var(--item);position:relative;}
+  .vA .row .car{position:absolute;left:50%;transform:translateX(-172px);
+           color:var(--item-hot);opacity:0;font-size:15px;}
+  .vA .row.on{color:var(--item-hot);}
+  .vA .row.on .car{opacity:1;}
+  .vA .row.on::before{content:"";position:absolute;left:126px;right:126px;top:0;bottom:0;
+           background:var(--item-hot-bar);z-index:-1;}
+
+  /* ── variant B: inset readout panel ──────────────────────────────── */
+  .vB .wordmark{top:52px;text-align:left;padding-left:40px;}
+  .vB .wordmark .m{font-size:38px;}
+  .vB .panel{position:absolute;left:40px;top:186px;width:340px;
+             background:var(--panel);border:1px solid var(--rule);
+             box-shadow:inset 0 0 0 1px #060c0d;}
+  .vB .panel .cap{height:20px;display:flex;align-items:center;padding:0 10px;
+             border-bottom:1px solid var(--rule);
+             font:10px/1 ui-monospace,Menlo,monospace;letter-spacing:.20em;color:var(--label);}
+  .vB .row{height:34px;display:flex;align-items:center;padding-left:32px;position:relative;
+           font:600 17px/1 "Helvetica Neue",Helvetica,Arial,sans-serif;
+           letter-spacing:.16em;color:var(--item);}
+  .vB .row .car{position:absolute;left:12px;color:var(--item-hot);opacity:0;font-size:14px;}
+  .vB .row.on{color:var(--item-hot);background:var(--item-hot-bar);
+              box-shadow:inset 2px 0 0 var(--item-hot);}
+  .vB .row.on .car{opacity:1;}
+  .vB .meta{position:absolute;right:40px;top:190px;width:200px;text-align:right;
+            font:11px/1.9 ui-monospace,Menlo,monospace;letter-spacing:.08em;color:var(--label);}
+  .vB .meta em{font-style:normal;color:var(--item);}
+
+  .note{margin-top:12px;font-size:12px;color:#6f7d78;max-width:64ch;}
+  .note b{color:#a8bcb4;font-weight:600;}
+</style>
+</head>
+<body>
+<div class="page" id="page">
+
+  <h1>Main menu — two treatments</h1>
+  <p class="sub">640×480. Text drawn over a static plate; no buttons painted into the
+     artwork. Arrow keys move the selection. Everything here is existing widgets and
+     existing theme tokens.</p>
+
+  <div class="bar">
+    <b>View</b>
+    <label><input type="checkbox" id="sc"> 2× zoom</label>
+    <label><input type="checkbox" id="sa" checked> safe area</label>
+    <label><input type="checkbox" id="ov"> overscan crop</label>
+    <span class="sp"></span>
+    <span><kbd>↑</kbd><kbd>↓</kbd> move selection</span>
+  </div>
+
+  <!-- ══ A ══════════════════════════════════════════════════════════ -->
+  <section class="variant">
+    <h2>A — Centred</h2>
+    <p>Title-screen posture. The wordmark is the picture; the list sits under it on
+       the centre line. Closest to how the original reads.</p>
+    <div class="holder"><div class="frame">
+      <div class="screen vA" data-menu>
+        <div class="plate"></div>
+
+        <div class="wordmark">
+          <div class="m">MARATHON&nbsp;2</div>
+          <div class="d">DURANDAL</div>
+        </div>
+        <div class="hair" style="left:190px;width:260px;top:178px;"></div>
+
+        <div class="list">
+          <div class="row on"><span class="car">▶</span>NEW GAME</div>
+          <div class="row"><span class="car">▶</span>CONTINUE GAME</div>
+          <div class="row"><span class="car">▶</span>MANAGE SAVES</div>
+          <div class="row"><span class="car">▶</span>PREFERENCES</div>
+          <div class="row"><span class="car">▶</span>CREDITS</div>
+        </div>
+
+        <div class="hair" style="left:40px;right:40px;width:560px;bottom:66px;"></div>
+        <div class="hint">
+          <span><i class="pad">A</i>SELECT</span>
+          <span><i class="padsq">✛</i>MOVE</span>
+          <span class="sp">b56</span>
+        </div>
+
+        <div class="scanlines"></div>
+        <div class="safe"></div><div class="overscan"></div>
+      </div>
+    </div></div>
+    <p class="note"><b>Cost:</b> one plate bitmap, five <code>w_button</code>s in a
+       vertical placer, existing highlight colours. No new widget types.</p>
+  </section>
+
+  <!-- ══ B ══════════════════════════════════════════════════════════ -->
+  <section class="variant">
+    <h2>B — Readout panel</h2>
+    <p>The menu is a terminal the player is operating. Left-aligned list in an inset
+       frame, wordmark pushed to the corner, right column free for state
+       (<em>Continue</em> can show what it would actually load).</p>
+    <div class="holder"><div class="frame">
+      <div class="screen vB" data-menu>
+        <div class="plate"></div>
+
+        <div class="wordmark">
+          <div class="m">MARATHON&nbsp;2</div>
+          <div class="d">DURANDAL</div>
+        </div>
+        <div class="hair hot" style="left:40px;width:560px;top:160px;"></div>
+
+        <div class="panel">
+          <div class="cap">MAIN</div>
+          <div class="row on"><span class="car">▶</span>NEW GAME</div>
+          <div class="row"><span class="car">▶</span>CONTINUE GAME</div>
+          <div class="row"><span class="car">▶</span>MANAGE SAVES</div>
+          <div class="row"><span class="car">▶</span>PREFERENCES</div>
+          <div class="row"><span class="car">▶</span>CREDITS</div>
+        </div>
+
+        <div class="meta">
+          LAST SAVE<br>
+          <em>WAITING PERIOD</em><br>
+          <em>VMU A1 · 12 BLK</em>
+        </div>
+
+        <div class="hair" style="left:40px;right:40px;width:560px;bottom:66px;"></div>
+        <div class="hint">
+          <span><i class="pad">A</i>SELECT</span>
+          <span><i class="padsq">✛</i>MOVE</span>
+          <span class="sp">b56</span>
+        </div>
+
+        <div class="scanlines"></div>
+        <div class="safe"></div><div class="overscan"></div>
+      </div>
+    </div></div>
+    <p class="note"><b>Cost:</b> same as A plus a bordered container and a
+       <code>w_static_text</code> column. The right column is where the
+       most-recent-save lookup surfaces — it does not exist in code yet.</p>
+  </section>
+
+</div>
+
+<script>
+  const page = document.getElementById('page');
+  const bind = (id, cls) => document.getElementById(id)
+    .addEventListener('change', e => page.classList.toggle(cls, e.target.checked));
+  bind('sc','scale2'); bind('sa','showsafe'); bind('ov','showoverscan');
+  page.classList.add('showsafe');
+
+  // arrow keys walk the selection in every mock at once
+  let i = 0;
+  const menus = [...document.querySelectorAll('[data-menu]')];
+  addEventListener('keydown', e => {
+    if (e.key !== 'ArrowUp' && e.key !== 'ArrowDown') return;
+    e.preventDefault();
+    const n = menus[0].querySelectorAll('.row').length;
+    i = (i + (e.key === 'ArrowDown' ? 1 : n - 1)) % n;
+    menus.forEach(m => m.querySelectorAll('.row')
+      .forEach((r, k) => r.classList.toggle('on', k === i)));
+  });
+</script>
+</body>
+</html>
