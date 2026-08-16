@@ -8,9 +8,9 @@ to a pristine Aleph One 0.12.0 tarball, plus the work needed to make it build,
 render and play on a modern KOS. The game itself was not rewritten.
 
 Current state: boots on real hardware, renders the full retail campaign, draws
-the HUD, plays with a Dreamcast controller, and keeps preferences *and saved
-games* on a VMU. Roughly 15-20 fps on a console; the software renderer is the
-one that ships.
+the HUD, plays with a Dreamcast controller, keeps preferences *and saved games*
+on a VMU, and has an interface built for a pad rather than a mouse. Roughly 15-20
+fps on a console; the software renderer is the one that ships.
 
 A hardware-accelerated PowerVR renderer exists and works -- it draws textured
 walls, sprites and the HUD through GLdc -- but it is not in the shipping build
@@ -113,6 +113,54 @@ Swim is `SDLK_LCTRL`, the run key, which is the same in every table. There is no
 separate swim action: `player.cpp` converts run into swim when the player's head
 is under liquid, so the same button runs on land.
 
+## The interface
+
+Marathon 2's interface is a *mouse* interface with keyboard navigation bolted on,
+and most of it could not be driven from a Dreamcast pad at all. Since b58-b60 it
+is a pad interface. `MENU-TREE.md` is the full audit and `UI-HANDOFF.md` is the
+design it implements; the short version:
+
+**The main menu is no longer artwork.** It was two full-screen PICTs with the
+buttons painted in, highlighted by clipping to one of eighteen hardcoded
+rectangles, and four files had to agree on item order through
+`rect = item - 1 + _new_game_button_rect`. It is now a static plate with text
+drawn over it (`dc_mainmenu.cpp`), so changing which items exist costs an array
+entry rather than a paint program. Five items: New Game, Continue Game, Manage
+Saves, Preferences, Credits.
+
+Nothing was deleted from the engine to do that. `iManageSaves` is appended to the
+enum so every other id keeps its value, and the rectangle table is untouched, so
+non-DC builds behave exactly as before.
+
+**The plate is baked from the design prototype**, not hand-drawn:
+`tools/bake-plate.py` renders `mockups/prototype` in headless Chrome and writes a
+24-bit BMP, so the artwork cannot drift from the design. BMP because
+`SDL_LoadBMP` is core SDL; PNG would mean linking libpng, which this port does
+not.
+
+**Start opens a pause menu** -- Resume, Save Game, Preferences, Quit to Main
+Menu. Every in-game command in this engine is an Alt+key chord, which a pad
+cannot produce, so before this there was no way to pause, no way to save away
+from a terminal, and no way off a level short of resetting the console. The
+dialog *is* the pause: dialogs run their own event loop, so the world stops while
+one is open.
+
+**Start always means back out**, in every context, and is not bindable. So are X
+and Y, which are the secondary and tertiary actions -- delete on the saves
+screen, page-flip and defaults on the binding screen. The one destructive action
+in the interface must not be something a player can rebind away, and the binding
+screen's own escape hatches cannot depend on the bindings being edited on it.
+
+**Every settings row explains itself** in a line of plain English, driven by a
+focus callback in `dialog::activate_widget`. Someone across a room with a pad
+cannot hover, read a manual, or try a setting and put it back in two seconds.
+
+Two things a screen here has to respect, both learned the hard way. Nothing
+readable may sit within 40px of any edge, because a television eats it -- traces
+drawn 8px in were completely unreadable on a real set. And **no 1px horizontal
+lines**: the output is 480i, so a one-pixel row exists on one field only and
+buzzes at 30Hz. Vertical lines are fine. `UI-BRIEF.md` has the measurements.
+
 ## Saves
 
 Preferences are mirrored to a VMU. The game writes them to the KOS ramdisk —
@@ -139,6 +187,35 @@ needs to understand nothing about the data -- no table of which fields of
 `side_data` a switch may alter. Restore runs the identical call. The geometry
 could not simply be dropped instead: sides come back 1.5% changed and polygons
 1.3%, which is switches and platforms, and a reverted switch is a real bug.
+
+### Four slots
+
+Since b59 the player sees four save slots rather than a directory. Stock Aleph
+One asks for a typed filename, which is why every save this port made before then
+was called "Untitled Game"; the slots generate their own names, so nothing has to
+be typed.
+
+The card header is versioned. v1 was 64 bytes and full -- the name field ran to
+byte 63 with nothing spare -- so v2 is a longer header under a different magic
+(`A1S2`), carrying the level name, an RTC timestamp, a sequence counter, elapsed
+play time and difficulty. That is what lets the slot screen list four saves from
+four 128-byte reads instead of decompressing and unfolding each one to find out
+what it is. **Bytes 4 to 14 keep their v1 meaning exactly**, because that range
+holds the level number the payload was folded against, and unfolding against the
+wrong level produces garbage that the wad reader accepts without complaint.
+
+Both versions still read, so a card written by an older build keeps working and
+simply lists as "Level 7" with no name or date.
+
+The slot model is a table, not a card layout. The player sees four; the card is
+scanned to eight, and each table entry remembers which card and which card slot
+it actually came from. A save an older build put in card slot 7 becomes the
+player's slot 2 with nothing moved -- renumbering would mean rewriting a player's
+data for cosmetic tidiness.
+
+Ordering is on the sequence counter and not the clock, because a Dreamcast with a
+flat battery reports a fixed date, and Continue Game opening the wrong save is
+worse than showing the wrong date beside it.
 
 ### Preferences written by one build can confuse another
 
@@ -173,6 +250,8 @@ or `gdi`:
 |---|---|
 | `AUTOSTART` | selects "Begin New Game" a few seconds after the menu appears |
 | `AUTOSTART` containing `controls` | opens Preferences -> CONTROLS instead |
+| `AUTOSTART` containing `load` | selects "Continue Game" instead |
+| `AUTOSTART` containing `saves` | opens MANAGE SAVES instead |
 | `PADTEST` | synthesises a held stick deflection, to exercise the controller path without a pad |
 | `DEBUG` | enables `dc_trace()` over serial and to the framebuffer |
 | `PROFILE` | starts the VMU Profiler, so a framerate can be read off the LCD on hardware |
