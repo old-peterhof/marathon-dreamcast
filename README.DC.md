@@ -7,8 +7,14 @@ This is BERO's `AlephOne-0.12.0-dc-1` port (2002, sdl-dc.sourceforge.net) applie
 to a pristine Aleph One 0.12.0 tarball, plus the work needed to make it build,
 render and play on a modern KOS. The game itself was not rewritten.
 
-Current state: boots, renders the full retail campaign, draws the HUD, plays with
-either a keyboard or a Dreamcast controller, and keeps its preferences on a VMU.
+Current state: boots on real hardware, renders the full retail campaign, draws
+the HUD, plays with a Dreamcast controller, and keeps preferences *and saved
+games* on a VMU. Roughly 15-20 fps on a console; the software renderer is the
+one that ships.
+
+A hardware-accelerated PowerVR renderer exists and works -- it draws textured
+walls, sprites and the HUD through GLdc -- but it is not in the shipping build
+and is not finished. See "The PowerVR renderer" below.
 
 ## Build
 
@@ -33,6 +39,7 @@ Always go through `build.sh`; it sources `environ.sh`, which is where `KOS_BASE`
 | *(default)* | `alephone.elf`                                             |
 | `disc`      | stage `disc/AlephOne` from the skeleton plus the game data  |
 | `test`      | unpadded `.cdi`, ~59 MB — **emulator only**, carries test markers |
+| `play`      | unpadded image, autostart + traces, no synthetic stick: for driving by hand in Flycast |
 | `cdi`       | padded `.cdi` — this is the one that boots on hardware      |
 | `gdi`       | GDEMU's native format                                       |
 | `flycast`   | build the test image and launch it                          |
@@ -76,7 +83,7 @@ lives there — only stationary actions.
 | D-pad Down | toggle overhead map |
 | D-pad Left | cycle weapon forward |
 | D-pad Right | spare |
-| Start | pause |
+| Start | bound to Escape, which gameplay ignores -- see Known gaps |
 
 In menus the D-pad and stick navigate and **A** confirms, because BERO's menu
 handler only understands UP, DOWN and RETURN. `shell_sdl.cpp` switches binding
@@ -101,7 +108,36 @@ wiped at power-off, so `dc/dc_vmu.c` restores the VMU copy before preferences
 are read and writes it back after they are saved. Aleph One is unchanged apart
 from two calls in `wad_prefs.cpp` and still only ever touches `/ram`.
 
-Saved games are **not** mirrored; they far exceed a VMU's 128K.
+Saved games **are** mirrored, and getting them to fit took some doing. A
+Marathon 2 save is 214629 bytes. A VMU does not hold the 128K on its box: 200 of
+its 256 blocks are available to files, so about 102400 bytes, less whatever else
+is on the card. The first attempt refused the write and said so -- `card full,
+need 421 blocks, 194 free` -- which is how the real figure was measured rather
+than guessed.
+
+94% of a save is a verbatim copy of the map already pressed on the disc. So
+before compressing, `dc/dc_wad.c` XORs the save chunk by chunk against the same
+chunk of the same level read back off `/cd`. Bytes that did not change become
+zero and deflate swallows runs of zeroes: 82495 bytes down to 10834, 163 blocks
+down to 23.
+
+XOR rather than a cleverer record-level diff because it is its own inverse and
+needs to understand nothing about the data -- no table of which fields of
+`side_data` a switch may alter. Restore runs the identical call. The geometry
+could not simply be dropped instead: sides come back 1.5% changed and polygons
+1.3%, which is switches and platforms, and a reverted switch is a real bug.
+
+### Preferences written by one build can confuse another
+
+Adding a field to any preference struct changes the size of a stored chunk, and
+the file lives on the card rather than the disc, so it outlives every image you
+burn. `dc/dc_vmu.c` stamps the card copy with a number derived from the sizes of
+the preference structs the build was compiled against; a card that does not match
+is ignored and Aleph One writes fresh defaults over it.
+
+Treat this as a guard rather than a diagnosis. Deleting the preferences file
+demonstrably fixes a console that will not start a level, but the mechanism has
+not been reproduced -- see BUGS.md.
 
 ## Identifying a build
 
@@ -117,25 +153,46 @@ number, sets the name and appends the row.
 ## Testing aids
 
 Synthesised keystrokes into Flycast proved unreliable, so the port can drive
-itself. Four marker files on the disc, all staged by `make test` and never by
-`cdi` or `gdi`:
+itself. Marker files on the disc, staged by the test targets and never by `cdi`
+or `gdi`:
 
 | Marker | Effect |
 |---|---|
 | `AUTOSTART` | selects "Begin New Game" a few seconds after the menu appears |
-| `AUTOSTART` containing `controls` | opens Preferences → CONTROLS instead |
+| `AUTOSTART` containing `controls` | opens Preferences -> CONTROLS instead |
 | `PADTEST` | synthesises a held stick deflection, to exercise the controller path without a pad |
-| `DEBUG` | enables `dc_trace()` output over serial and to the framebuffer |
+| `DEBUG` | enables `dc_trace()` over serial and to the framebuffer |
+| `PROFILE` | starts the VMU Profiler, so a framerate can be read off the LCD on hardware |
 
-Without `DEBUG` the build is silent; the traces stay in the source rather than
+Without `DEBUG` the build is silent and the traces stay in the source rather than
 being deleted.
+
+Traces draw 40 pixels in from the corner and wipe their row first. Both matter on
+a real set: at 8 pixels overscan eats them, and without the wipe a short line
+leaves the tail of a longer one behind it, which reads as gibberish.
 
 `tools/run-flycast.sh <disc> <log>` launches an image and retries past Flycast's
 startup bug. Flycast on macOS fails to initialise perhaps half the time with a
-`Verify Failed ... driver.cpp:349` assertion — it depends on ASLR, not on the
-disc image, and `Dynarec.Enabled` makes no difference. The script checks
-liveness by PID rather than `pgrep -f Flycast`, which also matches the launching
-shell and reports success for a process that already died.
+`Verify Failed ... driver.cpp:349` assertion -- it depends on ASLR, not on the
+disc image, and `Dynarec.Enabled` makes no difference. The script checks liveness
+by PID rather than `pgrep -f Flycast`, which also matches the launching shell and
+reports success for a process that already died.
+
+`tools/verify-image.sh` mounts the *currently staged* tree and refuses anything
+carrying a test marker. `tools/check-image.py` reads the markers out of an image
+that already exists, which verify-image cannot do -- it is blind to a target that
+stages a marker and removes it again, as `cdi-debug` and `cdi-profile` both do.
+
+Flycast reproduces load timings to the millisecond run to run, which makes
+single-variable experiments trustworthy. It does **not** reproduce at least one
+hardware-only failure; see BUGS.md before trusting it for anything else.
+
+Two further aids exist on the `measurements-b31` branch rather than here, because
+they were built on a baseline that fails on hardware: a `SLOWTRACE` marker that
+holds each trace ~800ms so a sequence can be read on a television, with a
+`cdi-slow` target, and an `AUTOKEY` marker that injects a keypress into a dialog
+with a `loadtest` target. Both are worth lifting across when there is a
+hardware-confirmed baseline to lift them onto.
 
 ## What had to change, and why
 
@@ -217,31 +274,93 @@ newlib symbols modern KOS provides, the second reimplements what is now
 His README says to raise `MAX_ISO_FILES` from 8 and rebuild KOS. The modern
 iso9660 driver uses dynamic handles and has no such constant.
 
+## Load times
+
+A New Game takes about 46 seconds under Flycast, and a good deal longer on
+hardware. Measured stage by stage:
+
+| stage | ms |
+|---|---|
+| menu fade out | 503 |
+| chapter screen | 22553 |
+| `goto_level` / `load_level_from_map` | 1603 |
+| `load_collections` | 7663 |
+| `load_all_monster_sounds` | 13700 |
+| `start_game` | 512 |
+| **total** | **46605** |
+
+Neither of the two dominant items is reading the level.
+
+About ten seconds of the chapter screen was `wait_for_click_or_keypress`, which
+is meant to be skippable and was not: the loop in `csmisc_sdl.cpp` only polled
+SDL's event queue, and nothing puts a Dreamcast controller into that queue except
+`dc_input_poll()`. It now does, so a button skips it.
+
+Loading monster sounds is 13.7 seconds, one seek and read per sound. The **More
+Sounds** preference makes each sound load all of its permutations rather than
+just the first; turning it off halves that stage, 13700ms to 6240ms. Left as a
+preference because it is the player's choice and Preferences already exposes it.
+
+Do not try to fix this with a bigger stdio buffer. It was tried. KOS's ISO9660
+driver does have a bulk-read fast path for sector-aligned requests, but
+`wad.cpp` reads a chunk by seeking to its offset and then reading a few hundred
+bytes, so a 64KB buffer means every seek discards it and re-reads 64KB to serve a
+short read. That build failed to load a level at all on hardware.
+
+## The PowerVR renderer
+
+`GL=1` builds Aleph One's hardware renderer against GLdc. It compiles, links,
+gets a real context -- `PowerVR2 CLX2 100mHz / 1.2 (partial) - GLdc 1.1` -- and
+draws textured walls, floors, ceilings, sprites and the HUD. It is not in the
+shipping build and is not finished.
+
+The note that used to live here said this was blocked on clip planes and needed a
+renderer rewrite. That was wrong. All six `glClipPlane` calls are inside
+`RenderModelSetup()`, reached only when `rectangle_definition::ModelPtr` is set --
+the external-3D-model path, which stock Marathon 2 never enters.
+
+What actually blocked it was one number. From GLdc's `attributes.c`:
+
+    case GL_DOUBLE:
+        return (ATTRIB_LIST.vertex.size == 3) ? _readPosition3d3f
+                                              : _readPosition2d3f;
+
+Only a size of 3 is understood for `GL_DOUBLE`; anything else silently falls to
+the two-component reader, which sets z = 0. `OGL_Render.cpp` asks for
+`glVertexPointer(4, GL_DOUBLE, ...)` on walls and 3 on sprites, so every wall
+vertex collapsed onto one plane and the world rendered black while sprites drew
+perfectly.
+
+Still open there: memory is tight (the heap sits near 12.5MB of 16MB), skies are
+flat colours because a real one needs a 2MB conversion buffer, the static effect
+is gone because it needs `glLogicOp`, and none of it has been measured on
+hardware. The work is on the branch history from b33 to b36.
+
 ## Known gaps
 
-- **Nothing here has run on real hardware.** Everything was developed and tested
-  under Flycast. `./build.sh cdi` produces the padded image for a console.
-- **Framerate on hardware is unmeasured.** The software renderer holds a steady
-  29–30 fps under Flycast, but that is the engine's own tick cap and Flycast's
-  SH-4 dynarec does not throttle to 200MHz. This says nothing trustworthy about
-  a real Dreamcast.
-- **The PowerVR path is a renderer rewrite, not a port.** `GL=1` exists in
-  `Makefile.dc` but does not build. Every entry point `OGL_Render.cpp` and
-  `FontHandler.cpp` need beyond GLdc's subset is missing, and while most
-  substitute trivially, the five clip planes used for portal and liquid-surface
-  clipping have no equivalent — emulating them means clipping polygons in
-  software before submission. The Makefile comment lists the full set.
-- **The controller mapping has not been exercised with a real pad.** Detection is
-  confirmed and the whole chain from binding table to the player turning is
-  verified via the `PADTEST` self-test, but Flycast would not route host input to
-  an emulated controller in any configuration tried.
-- **Setting-level persistence is assumed.** The VMU file round trips and parses,
-  but that a *changed* slider survives a reboot has not been observed, because
-  confirming it needs input into the preferences dialog.
+- **Framerate on hardware is roughly 15-20 fps**, software rendered. Flycast
+  holds a steady 30, but that is the engine's own tick cap (`TICKS_PER_SECOND`
+  is 30 in `map.h`) rather than the renderer's limit, so Flycast says nothing
+  about how fast the renderer is. Only the VMU Profiler on a console does.
+- **The engine tick is 30Hz and cannot simply be raised.** Physics, monster AI
+  and film recording all key off it. Rendering more often would draw duplicate
+  frames without view interpolation, which upstream Aleph One added many years
+  later.
+- **At least one failure reproduces only on hardware.** A console that will not
+  start a level is cured by deleting the preferences file from the VMU, and the
+  obvious mechanism -- a preference struct changing size -- does not reproduce
+  in Flycast in either direction. See BUGS.md.
+- **The rumble pack hangs the boot.** KOS's `maple_wait_scan()` waits without a
+  timeout for all four ports to report, and a third-party pack never does;
+  pulling it out mid-hang lets boot continue. It is bound to `INIT_MAPLE_ALL`
+  alongside `maple_init`, so it cannot be disabled without losing the
+  controller. Third-party packs are reportedly prone to this.
 - **Sound is unverified past "it plays".**
 - `-fpermissive` and `-fno-strict-aliasing` are load-bearing. The renderer
-  type-puns freely and the 2002 code leans on conversions the modern front end
-  rejects.
+  type-puns constantly and this is 2002 C++.
+- **gcc 15's SH4 backend miscompiles `weapons.cpp` at -O2**, emitting
+  `mov.w r0,@(10,macl)` -- the multiply-accumulate register as an address base --
+  which the assembler rejects. That file is pinned to `-O1` in `Makefile.dc`.
 
 ## Working on this code
 
