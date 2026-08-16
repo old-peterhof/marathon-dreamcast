@@ -75,16 +75,13 @@ void dc_trace(int slot, const char *fmt, ...)
 	printf("[dctrace %d] %s\n", slot, buf);
 	fflush(stdout);
 
-	// 40 pixels in from the corner. A television throws away the edges, so
-	// traces drawn at 8 were visible on a real set and unreadable. Inert in a
-	// release image: dc_trace returns above unless the disc carries DEBUG.
+	// 40 pixels in: a television eats the edges. Inert in a release image --
+	// dc_trace returns above unless the disc carries DEBUG.
 	y = 40 + slot * 24;
 	if(y < 0 || y > 424)
 		return;
 
 	{
-		// Wipe the row first, or a short line leaves the tail of a longer one
-		// behind it and the two read as gibberish.
 		int row, col;
 
 		for (row = 0; row < 24; row++)

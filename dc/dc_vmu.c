@@ -40,10 +40,7 @@
 
 extern void dc_trace(int slot, const char *fmt, ...);
 
-/* preferences.cpp: combined sizes of the preference structs this build was
-   compiled against. Any change to any of them changes this number. */
 extern int dc_prefs_format(void);
-
 static void put_u32(uint8_t *p, uint32_t v);
 static uint32_t get_u32(const uint8_t *p);
 
@@ -158,8 +155,6 @@ void dc_vmu_load_prefs(const char *ram_path)
 		memmove(buf, buf + VMU_PREFS_HDR_LEN, len);
 		got = len;
 	} else if (got > 0) {
-		/* No stamp: written before this check existed, so its layout cannot be
-		   confirmed and is not trusted. */
 		dc_trace(16, "vmu: prefs carry no format stamp -- ignoring");
 		free(buf);
 		return;

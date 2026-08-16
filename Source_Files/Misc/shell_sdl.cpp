@@ -983,9 +983,8 @@ static void main_event_loop(void)
 		// button redraw cannot wipe it. Matches the image filename and the row
 		// in BUILDS.md.
 		if (get_game_state() == _display_main_menu) {
-			// Four times a second, not every pass. This is a bfont blit straight
-			// into video RAM and it ran on every iteration of the loop that also
-			// reads the pad -- free on a console, not through an emulator.
+			// Four times a second rather than every pass: this is a bfont blit
+			// into video RAM in the same loop that reads the pad.
 			static uint32 dc_last_stamp = 0;
 			uint32 dc_now = SDL_GetTicks();
 
@@ -1081,10 +1080,9 @@ static void main_event_loop(void)
 					while (event.type == SDL_NOEVENT && num_tries < 3) {
 					 	SDL_Delay(10);
 #ifdef DC
-						// Read the pad inside the wait as well as before it. A
-						// menu sleeps up to 30ms here, and dc_input_poll() only
-						// ran at the top of the loop, so a D-pad press sat
-						// unnoticed for the whole sleep.
+						// Read the pad inside the wait as well as before it: a
+						// menu sleeps up to 30ms here and dc_input_poll() only
+						// ran at the top of the loop.
 						dc_input_poll();
 #endif
 						SDL_PollEvent(&event);

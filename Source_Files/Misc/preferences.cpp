@@ -651,14 +651,6 @@ bool dont_switch_to_new_weapon() {
 }
 
 #ifdef DC
-/*
- *	dc_prefs_format -- what shape this build expects preferences to be.
- *
- *	The struct sizes combined, each weighted so two changes cannot cancel out.
- *	Any field added, removed or resized changes this number, and dc_vmu.c then
- *	declines to restore a card written by a differently-shaped build rather than
- *	handing Aleph One a chunk it would read at the wrong offsets.
- */
 extern "C" int dc_prefs_format(void)
 {
 	return (int)(sizeof(struct graphics_preferences_data)    * 1 +
