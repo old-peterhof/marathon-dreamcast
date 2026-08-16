@@ -385,7 +385,7 @@ cdi-debug: $(TARGET) $(DISC)/.stamp
 # not set DEBUG: the bfont traces draw over the 3D view.
 cdi-profile: $(TARGET) $(DISC)/.stamp
 	rm -f $(DISC)/AlephOne/AUTOSTART $(DISC)/AlephOne/PADTEST $(DISC)/AlephOne/DEBUG $(DISC)/AlephOne/PROFILE $(DISC)/AlephOne/AUTOKEY
-	echo on > $(DISC)/AlephOne/PROFILE $(DISC)/AlephOne/AUTOKEY
+	echo on > $(DISC)/AlephOne/PROFILE
 	$(MKDCDISC) -e $(TARGET) -d $(DISC)/AlephOne -o alephone-$(BUILD_TAG)-profile.cdi \
 		-n "$(DISCNAME) $(BUILD_TAG) prof" -a "$(DISCAUTH)"
 	rm -f $(DISC)/AlephOne/PROFILE $(DISC)/AlephOne/AUTOKEY

@@ -206,3 +206,8 @@ second stick. Added `0-:btn_analog_left` and `2-:axis2_left` to
   sees exactly: the hang is in KOS's unbounded `maple_wait_scan()` waiting for
   all four ports to report, and pulling the pack out mid-hang lets boot continue.
   Worth trying an official pack before spending anything more on it.
+
+- **The VMU profiler costs framerate.** With PROFILE staged, Flycast fell from a
+  steady 30.3 to 21-24. It is a background thread writing to the VMU, so the
+  number on the LCD understates what the game does without it. Fine for comparing
+  one build against another, since both carry the same overhead; not an absolute.
