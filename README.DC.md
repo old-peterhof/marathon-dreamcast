@@ -101,13 +101,17 @@ into a bounded field (`MAXIMUM_ABSOLUTE_YAW`), so the turn rate saturates near
 sensitivity for finer aim.
 
 D-pad right cycles weapons forward and D-pad left swims. Neither key is the one
-its name suggests: next weapon is `SDLK_KP9`, because the engine's key table
-binds `_cycle_weapons_forward` there, and swim is `SDLK_LCTRL`, the run key,
-because `player.cpp` converts run into swim by itself when the player's head is
-under liquid. The same button therefore runs on land.
+its name suggests.
 
-D-pad left was previously bound to `SDLK_QUOTE`, which appears nowhere in the
-engine's key table, so cycling weapons from the pad never worked.
+Next weapon is `SDLK_QUOTE`. Aleph One keeps three key tables in
+`key_definitions.h`, and this port's bindings match the **left-handed** one
+throughout — arrows to move, `z`/`x` to sidestep, tab for action, `m` for the map
+— and that table binds `_cycle_weapons_forward` to the quote key. The standard
+table uses keypad 9; binding that here breaks weapon cycling.
+
+Swim is `SDLK_LCTRL`, the run key, which is the same in every table. There is no
+separate swim action: `player.cpp` converts run into swim when the player's head
+is under liquid, so the same button runs on land.
 
 ## Saves
 

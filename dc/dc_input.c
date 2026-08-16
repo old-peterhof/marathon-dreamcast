@@ -91,7 +91,7 @@ static const struct dc_binding game_bindings[] = {
 	{ CONT_B,           SDLK_x },         /* strafe right     */
 	{ CONT_DPAD_UP,     SDLK_TAB },       /* action / use     */
 	{ CONT_DPAD_DOWN,   SDLK_m },         /* toggle map       */
-	{ CONT_DPAD_RIGHT,  SDLK_KP9 },       /* next weapon      */
+	{ CONT_DPAD_RIGHT,  SDLK_QUOTE },     /* next weapon      */
 	{ CONT_DPAD_LEFT,   SDLK_LCTRL },     /* swim, see below  */
 	{ CONT_START,       SDLK_ESCAPE },    /* pause            */
 };
