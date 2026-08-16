@@ -162,8 +162,7 @@ void dc_trace(int slot, const char *fmt, ...);
 void dc_input_init_video(void);		// suppress SDL's 60Hz prompt; see dc_input.c
 void dc_profiler_start(void);		// VMU Profiler, gated on a PROFILE marker
 void dc_input_dump_maple(void);		// lists the maple bus once, DEBUG builds only
-void dc_build_stamp(const char *tag);
-void dc_heap_trace(int slot, const char *where);	// draws the build tag on the menu
+void dc_build_stamp(const char *tag);	// draws the build tag on the menu
 #endif
 }
 
@@ -407,42 +406,6 @@ static void initialize_application(void)
 	if (!option_nogl && graphics_preferences->screen_mode.bit_depth == 16)
 		graphics_preferences->screen_mode.acceleration = _opengl_acceleration;
 #endif
-#if defined(DC) && defined(HAVE_OPENGL)
-	// Preferences restored from a memory card can carry texture settings from
-	// before these limits existed, and the desktop defaults will not fit in a
-	// Dreamcast's heap. Force them every boot rather than trust what was saved.
-	{
-		OGL_ConfigureData& OGLData = Get_OGL_ConfigureData();
-
-		for (int k = 0; k < OGL_NUMBER_OF_TEXTURE_TYPES; k++) {
-			OGLData.TxtrConfigList[k].FarFilter = 1;
-			OGLData.TxtrConfigList[k].ColorFormat = 0;
-			// Only the sky is reduced; see OGL_SetDefaults for why.
-			OGLData.TxtrConfigList[k].Resolution =
-				(k == OGL_Txtr_Landscape) ? 2 : 0;
-		}
-
-		OGLData.Flags &= ~OGL_Flag_3D_Models;
-		OGLData.Flags |= OGL_Flag_FlatLand;
-		OGLData.Flags |= OGL_Flag_ZBuffer;
-	}
-#endif
-#ifdef DC
-	// Reset Dreamcast settings whose stored meaning has changed, or which should
-	// never have been stored the way they were. A preferences file is mirrored
-	// to a memory card and outlives every build, so a bad value is permanent
-	// until something like this clears it. See DC_PREFS_VERSION.
-	if (input_preferences->dc_prefs_version != DC_PREFS_VERSION) {
-		dc_trace(46, "prefs: version %d -> %d, resetting DC settings",
-		         (int)input_preferences->dc_prefs_version, DC_PREFS_VERSION);
-
-		graphics_preferences->screen_mode.high_resolution = true;
-		graphics_preferences->screen_mode.size = _100_percent;
-		input_preferences->sens_horizontal = SENS_DEFAULT;
-		input_preferences->sens_vertical = SENS_DEFAULT;
-		input_preferences->dc_prefs_version = DC_PREFS_VERSION;
-	}
-#endif
 	if (force_fullscreen)
 		graphics_preferences->screen_mode.fullscreen = true;
 	if (force_windowed)	// takes precedence over fullscreen because windowed is safer
@@ -454,11 +417,8 @@ static void initialize_application(void)
 	initialize_sound_manager(sound_preferences);
 	initialize_marathon_music_handler();
 	initialize_keyboard_controller();
-	dc_heap_trace(33, "before screen");
 	initialize_screen(&graphics_preferences->screen_mode);
-	dc_heap_trace(34, "before marathon");
 	initialize_marathon();
-	dc_heap_trace(35, "after marathon");
 	initialize_screen_drawing();
 	FileSpecifier theme = environment_preferences->theme_dir;
 	initialize_dialogs(theme);
@@ -1030,19 +990,8 @@ static void main_event_loop(void)
 		// Which build is this? Drawn every pass while the menu is up, so a
 		// button redraw cannot wipe it. Matches the image filename and the row
 		// in BUILDS.md.
-		if (get_game_state() == _display_main_menu) {
-			// Was drawn on every pass, which is a bfont blit per iteration of
-			// the loop that also reads the pad. Free on a console, evidently not
-			// through Flycast, where Max found the menu laggy. Four times a
-			// second is still often enough to survive a button redraw.
-			static uint32 last_stamp = 0;
-			uint32 now = SDL_GetTicks();
-
-			if (now - last_stamp > 250) {
-				last_stamp = now;
-				dc_build_stamp(DC_BUILD_TAG);
-			}
-		}
+		if (get_game_state() == _display_main_menu)
+			dc_build_stamp(DC_BUILD_TAG);
 
 		{
 			static int shown = 0;
@@ -1489,45 +1438,24 @@ static void process_game_key(const SDL_Event &event)
 			extern int last_menu;
 			int c_menu;
 
-			for(c_menu=0;c_menu<(int)N_MENU && menus[c_menu]!=last_menu;c_menu++);
-			if (c_menu >= (int)N_MENU) c_menu = 0;
+			for(c_menu=0;c_menu<N_MENU && menus[c_menu]!=last_menu;c_menu++);
 
 			switch(event.key.keysym.sym) {
 				case SDLK_UP:
-				case SDLK_DOWN: {
-					int step = (event.key.keysym.sym == SDLK_UP) ? -1 : 1;
-					int tries;
-
-					// Step over anything the engine has disabled. Network play
-					// is not built at all and a film cannot outlive a power
-					// cycle, so stopping on those entries only makes the player
-					// press the D-pad again to get past them.
-					for (tries = 0; tries < (int)N_MENU; tries++) {
-						c_menu += step;
-						if (c_menu < 0)
-							c_menu = (int)N_MENU - 1;
-						else if (c_menu >= (int)N_MENU)
-							c_menu = 0;
-						if (enabled_item(menus[c_menu]))
-							break;
-					}
+					c_menu--;
+					if (c_menu<0) c_menu = N_MENU-1;
 					break;
-				}
+				case SDLK_DOWN:
+					c_menu++;
+					if (c_menu>=N_MENU) c_menu=0;
+					break;
 				case SDLK_RETURN:
 					item = last_menu;
 					break;
-				default:
-					break;
 			}
 			if (menus[c_menu]!=last_menu) {
-				// Un-draw the old highlight before lighting the new one. Without
-				// this every button visited stays lit, and after a few presses
-				// the menu shows a trail of false highlights with no way to tell
-				// which one Return will actually pick.
-				draw_menu_button(last_menu, false);
 				last_menu = menus[c_menu];
 				draw_menu_button(last_menu,true);
-				dc_trace(30, "menu: highlight item %d", (int)last_menu);
 			}
 #endif
 

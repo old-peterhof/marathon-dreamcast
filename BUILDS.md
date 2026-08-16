@@ -50,3 +50,5 @@ to the engine clamp, and the VMU Profiler. Git history has the detail.
 | b36 | gl-renders | f25083d | GL renders the world: hardware-accelerated on the PowerVR |
 | b37 | sw-fast-compare | 4fea323 | Software renderer, for measuring Falco's flags on hardware |
 | b38 | falco-flags | 58786d0 | Full Falco treatment: KOS, ports and project at -O3 -ffast-math -flto |
+| b39 | o3-only | a2f9d3c | KOS at -O3 only; LTO and fast-math backed out |
+| b32 | b31-restore | a2f9d3c | b31 code exactly, original toolchain: known-good baseline |

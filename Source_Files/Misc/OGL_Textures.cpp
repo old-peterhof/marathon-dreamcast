@@ -81,11 +81,6 @@ June 14, 2001 (Loren Petrich):
 #include "OGL_Render.h"
 #include "OGL_Textures.h"
 
-#ifdef DC
-extern "C" void dc_trace(int slot, const char *fmt, ...);
-extern "C" unsigned dc_heap_used(void);
-#endif
-
 
 // Texture mapping
 struct TxtrTypeInfoData
@@ -256,13 +251,6 @@ void OGL_StartTextures()
 			TxtrTypeInfo.ColorFormat = ColorFormatList[ColorFormat];
 		else
 			TxtrTypeInfo.ColorFormat = GL_RGBA8;
-#ifdef DC
-		dc_trace(37 + (k > 2 ? 2 : k),
-		         "txtr[%d]: res=%d fmt=%04x far=%04x", k,
-		         (int)TxtrTypeInfo.Resolution,
-		         (unsigned)TxtrTypeInfo.ColorFormat,
-		         (unsigned)TxtrTypeInfo.FarFilter);
-#endif
 	}
 }
 
@@ -443,34 +431,24 @@ bool TextureManager::Setup()
 			}
 		}
 		
+		// If not, then load the expected textures
+		if (!NormalBuffer)
+			NormalBuffer = GetOGLTexture(NormalColorTable);
+		if (IsGlowing && !GlowBuffer)
+			GlowBuffer = GetOGLTexture(GlowColorTable);
+		
 		// Display size: may be shrunk
 		LoadedWidth = MAX(TxtrWidth >> TxtrTypeInfo.Resolution, 1);
 		LoadedHeight = MAX(TxtrHeight >> TxtrTypeInfo.Resolution, 1);
 		
-		bool NeedsShrink = (LoadedWidth != TxtrWidth || LoadedHeight != TxtrHeight);
-		
-		// If not, then load the expected textures.
-		//
-		// Each buffer is built at full size and then reduced, so building both
-		// before reducing either meant two full-size buffers alive at once. On a
-		// 16MB machine that is the difference between fitting and not: a 1024x512
-		// landscape is 2MB per buffer. Reduce each one as soon as it exists, so
-		// the peak is one full-size buffer plus one reduced, never two full.
-		if (!NormalBuffer)
+		if (LoadedWidth != TxtrWidth || LoadedHeight != TxtrHeight)
 		{
-			NormalBuffer = GetOGLTexture(NormalColorTable);
-			if (NeedsShrink)
-			{
-				uint32 *NewNormalBuffer = Shrink(NormalBuffer);
-				delete []NormalBuffer;
-				NormalBuffer = NewNormalBuffer;
-			}
-		}
-		
-		if (IsGlowing && !GlowBuffer)
-		{
-			GlowBuffer = GetOGLTexture(GlowColorTable);
-			if (NeedsShrink)
+			// Shrink it
+			uint32 *NewNormalBuffer = Shrink(NormalBuffer);
+			delete []NormalBuffer;
+			NormalBuffer = NewNormalBuffer;
+			
+			if (IsGlowing)
 			{
 				uint32 *NewGlowBuffer = Shrink(GlowBuffer);
 				delete []GlowBuffer;
@@ -1105,16 +1083,7 @@ void TextureManager::PlaceTexture(uint32 *Buffer)
 	{
 	case GL_NEAREST:
 	case GL_LINEAR:
-	#ifdef DC
-	{
-		static int nupload = 0;
-		if ((++nupload % 25) == 0)
-			dc_trace(39, "txtr: %d uploaded, heap %u KB, last %dx%d",
-			         nupload, dc_heap_used() / 1024,
-			         (int)LoadedWidth, (int)LoadedHeight);
-	}
-#endif
-	glTexImage2D(GL_TEXTURE_2D, 0, TxtrTypeInfo.ColorFormat, LoadedWidth, LoadedHeight,
+		glTexImage2D(GL_TEXTURE_2D, 0, TxtrTypeInfo.ColorFormat, LoadedWidth, LoadedHeight,
 			0, GL_RGBA, GL_UNSIGNED_BYTE, Buffer);
 		break;
 	case GL_NEAREST_MIPMAP_NEAREST:
@@ -1279,14 +1248,11 @@ void LoadModelSkin(ImageDescriptor& Image, short Collection, short CLUT)
 	{
 		for (int k=0; k<ImageSize; k++)
 		{
-			// uint32 is unsigned long here and GLuint is unsigned int, so a
-			// uint32& will not bind to Buffer[k] even though they are the same
-			// width. Copy through a value instead of aliasing.
-			uint32 IntPxl = Buffer[k];
+			uint32& IntPxl = Buffer[k];
 			GLfloat FloatPxl[4];
 			MakeFloatColor(IntPxl,FloatPxl);
 			FindInfravisionVersion(Collection,FloatPxl);
-			Buffer[k] = MakeIntColor(FloatPxl);
+			IntPxl = MakeIntColor(FloatPxl);
 		}
 	}
 	

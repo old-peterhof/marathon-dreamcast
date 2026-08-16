@@ -133,15 +133,6 @@ struct FontSpecifier
 	int GetTxtrSize() {return int(TxtrWidth)*int(TxtrHeight);}
 	GLuint TxtrID;
 	uint32 DispList;
-#ifdef DC
-	// GLdc has no display lists. This font compiled one per glyph, each drawing
-	// a textured quad and advancing the matrix, so the geometry is kept here and
-	// drawn directly instead. Cheaper too: no list interpretation per character
-	// on a 200MHz part.
-	struct DCGlyph { float l, r, t, b; short w; };
-	DCGlyph DCGlyphs[256];
-	short DCAscent, DCDescent, DCPad;
-#endif
 #endif
 };
 

@@ -16,7 +16,6 @@
  */
 
 #include <stdio.h>
-#include <stdint.h>
 #include <unistd.h>
 #include <stdarg.h>
 #include <sys/stat.h>
@@ -76,11 +75,16 @@ void dc_trace(int slot, const char *fmt, ...)
 	printf("[dctrace %d] %s\n", slot, buf);
 	fflush(stdout);
 
-	y = 8 + slot * 24;
-	if(y < 0 || y > 456)
+	// Inset for overscan. A television throws away the edges of the picture --
+	// Max could see white text on a real set but not read a word of it, because
+	// it started 8 pixels from the top-left corner and the tube ate it. 40
+	// pixels in is inside the safe area on any set worth worrying about, and
+	// costs nothing on an emulator.
+	y = 40 + slot * 24;
+	if(y < 0 || y > 424)
 		return;
 
-	bfont_draw_str(vram_s + y * 640 + 8, 640, 0, buf);
+	bfont_draw_str(vram_s + y * 640 + 40, 640, 0, buf);
 }
 
 /*
@@ -126,30 +130,4 @@ int access(const char *path, int mode)
 void dc_build_stamp(const char *tag)
 {
 	bfont_draw_str(vram_s + 452 * 640 + 8, 640, 0, (char *)tag);
-}
-
-/*
- *	dc_heap_used -- how much of main RAM the heap has taken.
- *
- *	The Dreamcast has 16MB starting at 0x8c000000. sbrk(0) is the current top, so
- *	the difference from the start of the heap is what has been handed out plus
- *	whatever the allocator is holding back. Good enough to answer "who ate the
- *	memory", which is the question when the GL renderer dies with bad_alloc
- *	partway through the first frame.
- */
-unsigned dc_heap_used(void)
-{
-	extern void *sbrk(int);
-	static unsigned base = 0;
-	unsigned now = (unsigned)(uintptr_t)sbrk(0);
-
-	if (!base)
-		base = now;
-
-	return now - base;
-}
-
-void dc_heap_trace(int slot, const char *where)
-{
-	dc_trace(slot, "heap: %-18s %u KB", where, dc_heap_used() / 1024);
 }

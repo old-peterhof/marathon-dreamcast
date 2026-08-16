@@ -95,23 +95,7 @@ struct input_preferences_data
 	// Appended rather than inserted so older preferences files still line up.
 	int16 sens_horizontal;
 	int16 sens_vertical;
-	// Which generation of Dreamcast-specific settings this file holds. Bump
-	// DC_PREFS_VERSION whenever a stored value would be misread by a newer
-	// build, and the settings below are reset instead of reinterpreted.
-	int16 dc_prefs_version;
 };
-
-// Raise this when a Dreamcast setting changes meaning. A preferences file
-// written before the change has its DC settings reset to defaults on the next
-// boot rather than being carried forward.
-//
-// 1: first version. Introduced because a memory card was found holding
-//    high_resolution = false, which had followed the game across every build
-//    since and rendered the world at 320x160 with nothing on screen to explain
-//    why. Sensitivity is reset here too, for the same reason: its base scale
-//    changed in b21 and a stored percentage from before that means something
-//    different now.
-#define DC_PREFS_VERSION 1
 
 // The slider tops out at 100% deliberately. Aleph One packs delta_yaw into a
 // bounded field in the action flags (physics.cpp:278, MAXIMUM_ABSOLUTE_YAW), so

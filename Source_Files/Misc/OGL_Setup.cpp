@@ -151,46 +151,13 @@ void OGL_SetDefaults(OGL_ConfigureData& Data)
 			TxtrData.FarFilter = 5;		// GL_LINEAR_MIPMAP_LINEAR
 		else
 			TxtrData.FarFilter = 1;		// GL_LINEAR
-#ifdef DC
-		// Per-type quality, which is what these settings are for: the header
-		// says as much -- "high-quality walls and weapons in hand, medium-quality
-		// inhabitant sprites, and low-quality landscapes".
-		//
-		// Everything was previously halved, which made the whole game soft, to
-		// solve a problem only one texture had: a 1024x512 sky needs a 2MB
-		// conversion buffer and that is the allocation that ran a 16MB machine
-		// out of heap. A 128x128 wall needs 64KB, and only one is converted at a
-		// time, so full resolution costs essentially nothing.
-		TxtrData.FarFilter = 1;			// GL_LINEAR, no mipmap chain
-		TxtrData.ColorFormat = 0;		// let GLdc pick its own 16-bit format
-		TxtrData.Resolution = (k == OGL_Txtr_Landscape) ? 2 : 0;
-#else
 		TxtrData.Resolution = 0;		// 1x
 		TxtrData.ColorFormat = 0;		// 32-bit color
-#endif
 	}
 #ifdef SDL
 	// Reasonable default flags ("static" effect causes massive slowdown, so we turn it off)
-#ifdef DC
-	// No 3D models: this disc declares none, so the flag only enables a code
-	// path that cannot be exercised -- and it is the path that wants the clip
-	// planes GLdc does not have.
-	// Flat landscapes, still. Lowering the landscape Resolution does not help:
-	// GetOGLTexture() allocates TxtrWidth x TxtrHeight and Resolution is only
-	// applied afterwards in Shrink(), so a real 1024x512 sky costs a 2MB
-	// conversion buffer whatever quality is asked for -- and that is precisely
-	// the allocation a 16MB machine cannot spare. Real skies need the converter
-	// to work in strips, which is its own job.
-	//
-	// Z-buffering on: without it the renderer leans entirely on draw order, and
-	// liquids show through the walls that should hide them.
-	Data.Flags = OGL_Flag_FlatStatic | OGL_Flag_Fader | OGL_Flag_Map |
-		OGL_Flag_HUD | OGL_Flag_LiqSeeThru | OGL_Flag_ZBuffer |
-		OGL_Flag_FlatLand;
-#else
 	Data.Flags = OGL_Flag_FlatStatic | OGL_Flag_Fader | OGL_Flag_Map |
 		OGL_Flag_HUD | OGL_Flag_LiqSeeThru | OGL_Flag_3D_Models;
-#endif
 #else
 	// Reasonable default flags
 	Data.Flags = OGL_Flag_Map | OGL_Flag_LiqSeeThru | OGL_Flag_3D_Models;
