@@ -75,11 +75,9 @@ void dc_trace(int slot, const char *fmt, ...)
 	printf("[dctrace %d] %s\n", slot, buf);
 	fflush(stdout);
 
-	// Inset for overscan. A television throws away the edges of the picture --
-	// Max could see white text on a real set but not read a word of it, because
-	// it started 8 pixels from the top-left corner and the tube ate it. 40
-	// pixels in is inside the safe area on any set worth worrying about, and
-	// costs nothing on an emulator.
+	// Inset for overscan: a television eats the edges, and traces drawn 8 pixels
+	// from the corner were visible on a real set but unreadable. Inert unless the
+	// disc carries DEBUG, since dc_trace returns before this point without it.
 	y = 40 + slot * 24;
 	if(y < 0 || y > 424)
 		return;

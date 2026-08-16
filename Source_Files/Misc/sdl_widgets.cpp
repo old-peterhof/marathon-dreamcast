@@ -777,18 +777,6 @@ void w_list_base::event(SDL_Event &e)
 			case SDLK_END:
 				set_selection(num_items - 1);
 				break;
-			case SDLK_RETURN:
-			case SDLK_KP_ENTER:
-				// Choosing an item was only ever reachable by clicking it, which
-				// a Dreamcast pad cannot do. Without this, Return falls through
-				// to the dialog and lands on CANCEL, so a saved game could be
-				// listed and highlighted but never actually opened. Mirrors what
-				// the mouse path does on a click.
-				if (num_items > 0 && is_item_selectable(selection)) {
-					item_selected();
-					e.type = SDL_NOEVENT;
-				}
-				break;
 			default:
 				break;
 		}
