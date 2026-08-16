@@ -247,22 +247,57 @@ out to be byte-identical to the one already failing. The lesson is cheaper than
 the diagnosis: when a symptom survives a change of disc, the cause is not on the
 disc.
 
+## The chapter screen cannot be skipped from a controller
+
+Fixed. A level load holds the chapter screen for ten seconds:
+
+    wait_for_click_or_keypress(text_block ? -1 : 10*MACHINE_TICKS_PER_SECOND);
+
+That is meant to be skippable -- the name says so -- but the loop in
+csmisc_sdl.cpp only ever looked at SDL's event queue, and nothing puts a
+Dreamcast controller into that queue except dc_input_poll(), which it never
+called. So from a console the wait was unskippable: the screen is up, every
+button does nothing, and the full ten seconds is spent on every single load.
+
+It now polls the pad. The ten-second timeout is left alone deliberately -- it is
+the original design, and shortening it is Max's call rather than mine.
+
+The same loop also tested `event` without clearing it, so the first pass read
+uninitialised stack and later passes re-tested the previous event.
+
 ## Where a level load actually goes
 
 Measured under Flycast, which is faster than the real drive, so treat these as a
 floor rather than an estimate of hardware:
 
-| phase | ms |
-|---|---|
-| New Game, total | 46552 |
-| 11 shape collections read and decompressed | 7115 |
-| update_color_environment | 538 |
-| **unaccounted** | **~38900** |
+Measured stage by stage:
 
-The two phases anyone would suspect are 16% of it between them. Whatever
-dominates is still unmeasured -- the map wad read and the interface fades are the
-next candidates, and the fades matter because they are wall-clock delays rather
-than work.
+| stage | ms |
+|---|---|
+| menu fade out | 503 |
+| movie | 0 |
+| **chapter screen** | **22553** |
+| **new_game()** | **22972** |
+| start_game | 518 |
+| **total** | **46587** |
+
+and inside those two:
+
+| | ms |
+|---|---|
+| chapter: picture clut | 22 |
+| chapter: start fade | 0 |
+| chapter: draw picture | 4707 |
+| chapter: long fade | 2721 |
+| chapter: the rest, mostly the ten-second wait above | ~15000 |
+| new_game: 11 shape collections | 7112 |
+| new_game: update_color_environment | 539 |
+| new_game: unaccounted | ~15300 |
+
+So half the load is the chapter screen rather than loading anything, and ten
+seconds of that was a wait nobody on a console could skip. The remaining ~15
+seconds inside new_game() is still unmeasured and is the next thing to break
+down.
 
 Also recorded, since it was tried and made things worse: giving each file stream
 a 64KB buffer with setvbuf. KOS's ISO9660 driver does have a bulk-read fast path
