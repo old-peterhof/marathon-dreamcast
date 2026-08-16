@@ -153,6 +153,7 @@ static void usage(const char *prg_name)
 // the definition C++ linkage -- which links only by accident and did not.
 #include "dc_vmu.h"
 #include "dc_slots.h"
+#include "dc_mainmenu.h"
 
 extern "C" {
 extern int fs_mem_init(void);
@@ -934,6 +935,20 @@ extern "C" void dc_open_controls_dialog(void);
 // The marker's contents pick which; "controls" opens preferences instead of
 // starting a game, so the sensitivity sliders can be screenshotted with no
 // input at all.
+/*
+ *	Whether the AUTOSTART harness is driving.
+ *
+ *	It calls do_menu_item_command directly, with nobody there to answer anything.
+ *	The difficulty screen would sit waiting for a press that never comes, so New
+ *	Game skips it and takes whatever difficulty preferences already hold.
+ */
+static int dc_autostart_active = 0;
+
+extern "C" int dc_autostart_running(void)
+{
+	return dc_autostart_active;
+}
+
 static int dc_autostart_mode(void)
 {
 	static int checked = 0, mode = 0;
@@ -1019,6 +1034,7 @@ static void main_event_loop(void)
 			else if (SDL_GetTicks() - dc_menu_since > 3000) {
 				int mode = dc_autostart_mode();
 				dc_autostarted = true;
+				dc_autostart_active = 1;
 				if (mode == 2) {
 					dc_trace(2, "autostart: opening CONTROLS dialog");
 					dc_open_controls_dialog();
@@ -1032,6 +1048,7 @@ static void main_event_loop(void)
 					dc_trace(2, "autostart: selecting iNewGame");
 					do_menu_item_command(mInterface, iNewGame, false);
 				}
+				dc_autostart_active = 0;
 				dc_trace(3, "autostart: returned, state=%d", (int)get_game_state());
 				continue;
 			}
@@ -1327,12 +1344,44 @@ static void process_game_key(const SDL_Event &event)
 	REPLAY SAVED FILM	SAVE_LAST_FILM
 		REPLAY LAST FILM
 */
+			extern int last_menu;
+#ifdef DC
+			/*
+			 *	Five items, and the walk skips anything unavailable -- the stock
+			 *	loop below never consulted enabled_item(), so it would land on a
+			 *	dead row and let Return be pressed on it. With Continue Game
+			 *	greyed out on a fresh card that row is second in the list, so
+			 *	skipping is the difference between the menu working and not.
+			 */
+			{
+				short want = last_menu;
+
+				switch (event.key.keysym.sym) {
+					case SDLK_UP:
+						want = dc_main_menu_step(last_menu, -1);
+						break;
+					case SDLK_DOWN:
+						want = dc_main_menu_step(last_menu, +1);
+						break;
+					case SDLK_RETURN:
+						if (dc_main_menu_enabled(last_menu))
+							item = last_menu;
+						break;
+					default:
+						break;
+				}
+
+				if (want != last_menu) {
+					last_menu = want;
+					draw_menu_button(last_menu, true);
+				}
+			}
+#else
 			const static char menus[] = {
 	iNewGame,iLoadGame,iGatherGame,iJoinGame,iReplaySavedFilm,iReplayLastFilm,
 	iSaveLastFilm,iPreferences,iQuit,iCredits,
 			};
 #define	N_MENU	(sizeof(menus)/sizeof(menus[0]))
-			extern int last_menu;
 			int c_menu;
 
 			for(c_menu=0;c_menu<N_MENU && menus[c_menu]!=last_menu;c_menu++);
@@ -1355,8 +1404,19 @@ static void process_game_key(const SDL_Event &event)
 				draw_menu_button(last_menu,true);
 			}
 #endif
+#endif
 
 			switch (event.key.keysym.sym) {
+#ifdef DC
+				// Only the five that exist. A keyboard can be plugged into a
+				// Dreamcast, and offering it a shortcut to Gather Network Game
+				// would reach an item the pad cannot see and that does nothing.
+				case SDLK_n: item = iNewGame; break;
+				case SDLK_o: if (dc_have_any_save()) item = iLoadGame; break;
+				case SDLK_m: item = iManageSaves; break;
+				case SDLK_p: item = iPreferences; break;
+				case SDLK_c: item = iCredits; break;
+#else
 				case SDLK_n: item = iNewGame; break;
 				case SDLK_o: item = iLoadGame; break;
 				case SDLK_g: item = iGatherGame; break;
@@ -1365,6 +1425,7 @@ static void process_game_key(const SDL_Event &event)
 				case SDLK_r: item = iReplaySavedFilm; break;
 				case SDLK_c: item = iCredits; break;
 				case SDLK_q: item = iQuit; break;
+#endif
 				case SDLK_F9: dump_screen(); break;
 				default: break;
 			}

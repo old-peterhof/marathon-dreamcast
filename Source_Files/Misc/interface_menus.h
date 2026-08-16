@@ -29,7 +29,12 @@ enum { /* Menu interface... */
 	iReplaySavedFilm,
 	iCredits,
 	iQuit,
-	iCenterButton
+	iCenterButton,
+	/* Appended deliberately. Every id above keeps its value, so the identity
+	   rect = item - 1 + _new_game_button_rect still holds for the mouse path
+	   and for non-DC builds, and nothing had to be renumbered to add an item.
+	   The Dreamcast menu is drawn rather than painted and has no rectangle. */
+	iManageSaves
 };
 
 /* This is the menu with nothing in the title, so that it doesn't show up */

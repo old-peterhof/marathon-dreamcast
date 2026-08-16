@@ -5,7 +5,7 @@
 
 	Friday, July 8, 1994 2:32:44 PM (alain)
 		All old code in here is obsolete. This now has interface for the top-level
-		interface (Begin Game, etcÉ)
+		interface (Begin Game, etcï¿½)
 	Saturday, September 10, 1994 12:45:48 AM  (alain)
 		the interface gutted again. just the stuff that handles the menu though, the rest stayed
 		the same.
@@ -88,6 +88,11 @@ extern TP2PerfGlobals perf_globals;
 
 #include "screen_definitions.h"
 #include "interface_menus.h"
+#ifdef DC
+#include "dc_mainmenu.h"
+#include "dc_slots.h"
+extern "C" int dc_autostart_running(void);
+#endif
 
 // LP addition: getting OpenGL rendering stuff
 #include "render.h"
@@ -472,17 +477,26 @@ void resume_game(
 
 void draw_menu_button(short index,bool pressed)
 {
+#ifdef DC
+	(void)pressed;
+	dc_main_menu_draw(index);
+#else
 	short rectangle_index= index-1+_new_game_button_rect;
 	draw_button(rectangle_index, pressed);
+#endif
 }
 
 void draw_menu_button_for_command(
 	short index)
 {
+	assert(get_game_state()==_display_main_menu);
+
+#ifdef DC
+	dc_main_menu_flash(index);
+	return;
+#else
 	short rectangle_index= index-1+_new_game_button_rect;
 
-	assert(get_game_state()==_display_main_menu);
-	
 	/* Draw it initially depressed.. */
 	draw_button(rectangle_index, true);
 #ifdef SDL
@@ -493,6 +507,7 @@ void draw_menu_button_for_command(
 		;
 #endif
 	draw_button(rectangle_index, false);
+#endif
 
 	return;
 }
@@ -621,7 +636,7 @@ void idle_game_state(
 		game_state.last_ticks_on_idle= machine_tick_count();
 	}
 
-	/* if weÕre not paused and thereÕs something to draw (i.e., anything different from
+	/* if weï¿½re not paused and thereï¿½s something to draw (i.e., anything different from
 		last time), render a frame */
 	if(game_state.state==_game_in_progress)
 	{
@@ -648,8 +663,18 @@ void display_main_menu(
 	game_state.user= _single_player;
 	game_state.flags= 0;
 	
+#ifdef DC
+	/*
+	 *	Drawn, not painted. See dc_mainmenu.cpp. The highlight is snapped to a
+	 *	live item first, because Continue Game is greyed out on a fresh card and
+	 *	last_menu may still be pointing at it from a previous visit.
+	 */
+	last_menu = dc_main_menu_enabled(last_menu) ? last_menu : dc_main_menu_first();
+	dc_main_menu_draw(last_menu);
+#else
 	display_screen(MAIN_MENU_BASE);
 	draw_menu_button(last_menu,true);
+#endif
 	
 	/* Start up the song! */
 	if(!music_playing() && game_state.main_menu_display_count==0)
@@ -810,6 +835,22 @@ void do_menu_item_command(
 			switch(menu_item)
 			{
 				case iNewGame:
+#ifdef DC
+					/*
+					 *	Difficulty is chosen here rather than in Preferences,
+					 *	because it belongs to the run and not to the machine.
+					 *	begin_game() reads the preference itself further down, so
+					 *	writing it is all this has to do.
+					 *
+					 *	Placed here rather than inside begin_game() on purpose:
+					 *	that function is also the demo, replay and network entry
+					 *	point, none of which should stop and ask.
+					 */
+					if (!dc_autostart_running() && !dc_choose_difficulty()) {
+						display_main_menu();
+						break;
+					}
+#endif
 					begin_game(_single_player, cheat);
 					break;
 		
@@ -844,8 +885,30 @@ void do_menu_item_command(
 					break;
 					
 				case iLoadGame:
+#ifdef DC
+					/*
+					 *	Continue Game, which opens the newest save outright
+					 *	rather than showing a list. Failing back to the menu is
+					 *	the honest outcome: dc_continue_newest_game only returns
+					 *	false when there is nothing to open or the save would not
+					 *	load, and it has already said so in the second case.
+					 */
+					if (!dc_continue_newest_game())
+						display_main_menu();
+#else
 					handle_load_game();
+#endif
 					break;
+
+#ifdef DC
+				case iManageSaves:
+					dc_manage_saves();
+					/* Loading from that screen starts a game; anything else
+					   comes back here and wants the menu repainted. */
+					if (get_game_state() == _display_main_menu)
+						display_main_menu();
+					break;
+#endif
 		
 				case iReplayLastFilm:
 				case iReplaySavedFilm:
@@ -944,12 +1007,24 @@ bool enabled_item(
 	switch(item)
 	{
 		case iNewGame:
-		case iLoadGame:
 		case iPreferences:
 		case iReplaySavedFilm:
 		case iCredits:
 		case iQuit:
 			break;
+
+		case iLoadGame:
+#ifdef DC
+			// Continue Game opens the newest save outright, so it is only
+			// available when there is one. This is what greys it out.
+			enabled= dc_have_any_save();
+#endif
+			break;
+
+#ifdef DC
+		case iManageSaves:
+			break;
+#endif
 
 		case iCenterButton:
 			enabled= false;

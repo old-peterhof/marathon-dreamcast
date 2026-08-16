@@ -46,7 +46,8 @@ Source_Files/Misc/interface.o: Source_Files/Misc/interface.cpp \
  Source_Files/Misc/ChaseCam.h Source_Files/Misc/Crosshairs.h \
  Source_Files/Misc/OGL_Setup.h Source_Files/Misc/ImageLoader.h \
  Source_Files/ModelView/Model3D.h Source_Files/Misc/screen_definitions.h \
- Source_Files/Misc/interface_menus.h Source_Files/Misc/render.h \
+ Source_Files/Misc/interface_menus.h Source_Files/Misc/dc_mainmenu.h \
+ Source_Files/Misc/dc_slots.h Source_Files/Misc/render.h \
  Source_Files/Misc/textures.h Source_Files/Misc/ViewControl.h \
  Source_Files/Misc/FontHandler.h Source_Files/Misc/sdl_fonts.h \
  Source_Files/Misc/scottish_textures.h Source_Files/Misc/OGL_Render.h \
@@ -118,6 +119,8 @@ Source_Files/Misc/ImageLoader.h:
 Source_Files/ModelView/Model3D.h:
 Source_Files/Misc/screen_definitions.h:
 Source_Files/Misc/interface_menus.h:
+Source_Files/Misc/dc_mainmenu.h:
+Source_Files/Misc/dc_slots.h:
 Source_Files/Misc/render.h:
 Source_Files/Misc/textures.h:
 Source_Files/Misc/ViewControl.h:
