@@ -270,11 +270,20 @@ static const struct dc_binding menu_bindings[] = {
 	{ DCK_STICK_RIGHT,  SDLK_RIGHT },
 	{ CONT_A,           SDLK_RETURN },
 	{ CONT_START,       SDLK_ESCAPE },
-	/* X is the secondary action -- delete, on the saves screen. It is in the
-	   fixed table rather than being bindable for the same reason Start is: the
-	   one destructive action in the interface must not be something a player can
-	   accidentally rebind away, or move somewhere they will hit it. */
+	/*
+	 *	X and Y are the secondary and tertiary actions, and what they do depends
+	 *	on the screen: X deletes on the saves list and flips the page on the
+	 *	binding screen; Y restores defaults there. They carry keys nothing else
+	 *	in the dialog machinery looks at.
+	 *
+	 *	Both are in the FIXED table rather than being bindable, for the same
+	 *	reason Start is. The one destructive action in the interface must not be
+	 *	something a player can rebind away or move under their thumb -- and the
+	 *	binding screen's own escape hatches cannot depend on the bindings being
+	 *	edited on it.
+	 */
 	{ CONT_X,           SDLK_DELETE },
+	{ CONT_Y,           SDLK_INSERT },
 	/* w_list_base::event swallows UP and DOWN on purpose -- "Prevent selection
 	   of previous/next widget" -- so once a list has focus the D-pad can never
 	   leave it, which stranded the save dialog with no way to reach "new save
