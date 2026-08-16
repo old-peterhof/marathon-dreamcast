@@ -152,17 +152,18 @@ void OGL_SetDefaults(OGL_ConfigureData& Data)
 		else
 			TxtrData.FarFilter = 1;		// GL_LINEAR
 #ifdef DC
-		// A Dreamcast has 16MB of main RAM and 8MB of video RAM. Full-resolution
-		// 32-bit textures exhaust the heap partway through loading a level --
-		// "Out of memory. Requested sbrk_base ..." then bad_alloc. Half
-		// resolution at 16-bit colour is an eighth of the memory, and the PVR
-		// wants 16-bit texels anyway, so nothing is gained by handing it 32.
+		// Per-type quality, which is what these settings are for: the header
+		// says as much -- "high-quality walls and weapons in hand, medium-quality
+		// inhabitant sprites, and low-quality landscapes".
 		//
-		// Mipmaps are off for the same reason: they add a third again, and this
-		// is the wrong hardware to spend that on before anything renders at all.
+		// Everything was previously halved, which made the whole game soft, to
+		// solve a problem only one texture had: a 1024x512 sky needs a 2MB
+		// conversion buffer and that is the allocation that ran a 16MB machine
+		// out of heap. A 128x128 wall needs 64KB, and only one is converted at a
+		// time, so full resolution costs essentially nothing.
 		TxtrData.FarFilter = 1;			// GL_LINEAR, no mipmap chain
-		TxtrData.Resolution = 1;		// 1/2
-		TxtrData.ColorFormat = 1;		// 16-bit color
+		TxtrData.ColorFormat = 0;		// let GLdc pick its own 16-bit format
+		TxtrData.Resolution = (k == OGL_Txtr_Landscape) ? 2 : 0;
 #else
 		TxtrData.Resolution = 0;		// 1x
 		TxtrData.ColorFormat = 0;		// 32-bit color
@@ -174,11 +175,18 @@ void OGL_SetDefaults(OGL_ConfigureData& Data)
 	// No 3D models: this disc declares none, so the flag only enables a code
 	// path that cannot be exercised -- and it is the path that wants the clip
 	// planes GLdc does not have.
-	// Flat landscapes. A real one is a single 1024x512 texture, and converting
-	// it costs a 2MB buffer -- which is exactly the allocation that fell off the
-	// end of a 16MB machine. GetFakeLandscape() paints the flat colours instead.
+	// Flat landscapes, still. Lowering the landscape Resolution does not help:
+	// GetOGLTexture() allocates TxtrWidth x TxtrHeight and Resolution is only
+	// applied afterwards in Shrink(), so a real 1024x512 sky costs a 2MB
+	// conversion buffer whatever quality is asked for -- and that is precisely
+	// the allocation a 16MB machine cannot spare. Real skies need the converter
+	// to work in strips, which is its own job.
+	//
+	// Z-buffering on: without it the renderer leans entirely on draw order, and
+	// liquids show through the walls that should hide them.
 	Data.Flags = OGL_Flag_FlatStatic | OGL_Flag_Fader | OGL_Flag_Map |
-		OGL_Flag_HUD | OGL_Flag_LiqSeeThru | OGL_Flag_FlatLand;
+		OGL_Flag_HUD | OGL_Flag_LiqSeeThru | OGL_Flag_ZBuffer |
+		OGL_Flag_FlatLand;
 #else
 	Data.Flags = OGL_Flag_FlatStatic | OGL_Flag_Fader | OGL_Flag_Map |
 		OGL_Flag_HUD | OGL_Flag_LiqSeeThru | OGL_Flag_3D_Models;

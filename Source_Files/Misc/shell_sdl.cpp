@@ -416,12 +416,15 @@ static void initialize_application(void)
 
 		for (int k = 0; k < OGL_NUMBER_OF_TEXTURE_TYPES; k++) {
 			OGLData.TxtrConfigList[k].FarFilter = 1;
-			OGLData.TxtrConfigList[k].Resolution = 1;
-			OGLData.TxtrConfigList[k].ColorFormat = 1;
+			OGLData.TxtrConfigList[k].ColorFormat = 0;
+			// Only the sky is reduced; see OGL_SetDefaults for why.
+			OGLData.TxtrConfigList[k].Resolution =
+				(k == OGL_Txtr_Landscape) ? 2 : 0;
 		}
 
 		OGLData.Flags &= ~OGL_Flag_3D_Models;
 		OGLData.Flags |= OGL_Flag_FlatLand;
+		OGLData.Flags |= OGL_Flag_ZBuffer;
 	}
 #endif
 #ifdef DC
