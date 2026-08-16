@@ -22,7 +22,6 @@
 #include <kos/fs_ramdisk.h>
 #include <dc/video.h>
 #include <dc/biosfont.h>
-#include <kos/thread.h>
 
 /*
  *	dc_trace -- draw a line of text straight into video RAM.
@@ -45,18 +44,6 @@
  *
  *	`make test` stages the marker; `cdi` and `gdi` never do.
  */
-static int slowtrace_enabled(void)
-{
-	static int checked = 0, enabled = 0;
-
-	if (!checked) {
-		checked = 1;
-		enabled = (access("/cd/AlephOne/SLOWTRACE", 4) == 0);
-	}
-
-	return enabled;
-}
-
 static int dc_trace_enabled(void)
 {
 	static int checked = 0, enabled = 0;
@@ -88,25 +75,11 @@ void dc_trace(int slot, const char *fmt, ...)
 	printf("[dctrace %d] %s\n", slot, buf);
 	fflush(stdout);
 
-	// 40 pixels in: a television eats the edges, so text at 8 was visible but
-	// unreadable. Wipe the row first, or a short line leaves the tail of a
-	// longer one behind and they read as each other's gibberish.
-	y = 40 + slot * 24;
-	if(y < 0 || y > 424)
+	y = 8 + slot * 24;
+	if(y < 0 || y > 456)
 		return;
 
-	{
-		int row, col;
-
-		for (row = 0; row < 24; row++)
-			for (col = 0; col < 560; col++)
-				vram_s[(y + row) * 640 + 40 + col] = 0;
-	}
-
-	bfont_draw_str(vram_s + y * 640 + 40, 640, 0, buf);
-
-	if (slowtrace_enabled())
-		thd_sleep(800);
+	bfont_draw_str(vram_s + y * 640 + 8, 640, 0, buf);
 }
 
 /*
