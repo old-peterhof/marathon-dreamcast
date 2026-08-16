@@ -619,7 +619,7 @@ void render_screen(short ticks_elapsed)
 			         fps10 / 10, fps10 % 10,
 			         (int)world_view->yaw, (int)world_view->pitch,
 			         (int)world_view->origin.x, (int)world_view->origin.y);
-#ifdef DC
+#if defined(DC) && defined(HAVE_OPENGL)
 			{
 				extern int dc_gl_polys, dc_wall_calls, dc_wall_setup_fail, dc_wall_vec_fail;
 				dc_trace(47, "gl: polys=%d walls=%d setupfail=%d vecfail=%d",
