@@ -5,6 +5,10 @@
  */
 
 #include "cseries.h"
+#ifdef DC
+#include "dc_slots.h"
+#include "dc_vmu.h"
+#endif
 #include "FileHandler.h"
 
 #include <vector>
@@ -99,6 +103,33 @@ bool save_game(void)
 	pause_game();
 	show_cursor();
 
+#ifdef DC
+	/*
+	 *	The stock dialog wants a typed filename, which is why every save this
+	 *	port has made is called "Untitled Game". Four slots with generated names
+	 *	remove the need to type anything, and show what is in each slot besides.
+	 *
+	 *	Returning false on cancel is all that is needed to undo the save: the
+	 *	caller in devices.cpp sets ticks_at_last_successful_save optimistically
+	 *	before calling and puts it back when this fails.
+	 */
+	bool success = false;
+	int slot = dc_choose_save_slot();
+
+	if (slot) {
+		FileSpecifier file;
+		char path[128];
+
+		snprintf(path, sizeof path, "/ram/%s", dc_vmu_slot_ram_name(slot));
+		file = path;
+
+		// The card layer picks this up in save_game_file's DC hook. It has no
+		// other way to learn which slot was chosen.
+		dc_vmu_set_target_slot(slot);
+
+		success = save_game_file(file);
+	}
+#else
 	// Translate the name
 	FileSpecifier file;
 	get_current_saved_game_name(file);
@@ -112,6 +143,7 @@ bool save_game(void)
 	// Save game
 	if (success)
 		success = save_game_file(file);
+#endif
 
 	hide_cursor();
 	resume_game();

@@ -48,8 +48,8 @@ Source_Files/Misc/preferences.o: Source_Files/Misc/preferences.cpp \
  Source_Files/Misc/screen.h Source_Files/Misc/fades.h \
  Source_Files/Misc/extensions.h Source_Files/Misc/preferences_sdl.cpp \
  Source_Files/Misc/sdl_dialogs.h Source_Files/Misc/sdl_fonts.h \
- Source_Files/Misc/sdl_widgets.h Source_Files/Misc/images.h \
- Source_Files/Misc/screen_drawing.h
+ Source_Files/Misc/sdl_widgets.h Source_Files/Misc/dc_slots.h \
+ Source_Files/Misc/images.h Source_Files/Misc/screen_drawing.h
 Source_Files/CSeries/cseries.h:
 Source_Files/CSeries/sdl_cseries.h:
 /opt/toolchains/dc/kos/../kos-ports/include/SDL/SDL.h:
@@ -120,5 +120,6 @@ Source_Files/Misc/preferences_sdl.cpp:
 Source_Files/Misc/sdl_dialogs.h:
 Source_Files/Misc/sdl_fonts.h:
 Source_Files/Misc/sdl_widgets.h:
+Source_Files/Misc/dc_slots.h:
 Source_Files/Misc/images.h:
 Source_Files/Misc/screen_drawing.h:

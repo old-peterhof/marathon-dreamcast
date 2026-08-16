@@ -270,6 +270,11 @@ static const struct dc_binding menu_bindings[] = {
 	{ DCK_STICK_RIGHT,  SDLK_RIGHT },
 	{ CONT_A,           SDLK_RETURN },
 	{ CONT_START,       SDLK_ESCAPE },
+	/* X is the secondary action -- delete, on the saves screen. It is in the
+	   fixed table rather than being bindable for the same reason Start is: the
+	   one destructive action in the interface must not be something a player can
+	   accidentally rebind away, or move somewhere they will hit it. */
+	{ CONT_X,           SDLK_DELETE },
 	/* w_list_base::event swallows UP and DOWN on purpose -- "Prevent selection
 	   of previous/next widget" -- so once a list has focus the D-pad can never
 	   leave it, which stranded the save dialog with no way to reach "new save

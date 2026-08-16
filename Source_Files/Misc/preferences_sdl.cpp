@@ -16,6 +16,9 @@
 #include "sdl_fonts.h"
 #include "sdl_widgets.h"
 #include "screen.h"
+#ifdef DC
+#include "dc_slots.h"
+#endif
 #include "images.h"
 #include "find_files.h"
 #include "screen_drawing.h"
@@ -62,6 +65,9 @@ extern "C" void dc_open_controls_dialog(void) { controls_dialog(0); }
 static void controls_dialog(void *arg);
 static void environment_dialog(void *arg);
 static void keyboard_dialog(void *arg);
+#ifdef DC
+static void dc_manage_saves_proc(void *arg);
+#endif
 #ifdef DC
 static void pad_dialog(void *arg);
 static void pad_advanced_dialog(void *arg);
@@ -133,6 +139,12 @@ void handle_preferences(void)
 	d.add(new w_button("SOUND", sound_dialog, &d));
 	d.add(new w_button("CONTROLS", controls_dialog, &d));
 	d.add(new w_button("ENVIRONMENT", environment_dialog, &d));
+#ifdef DC
+	// Temporary home. MANAGE SAVES belongs on the main menu, which is the next
+	// phase of the interface work; until then it needs to be reachable to be
+	// tested at all.
+	d.add(new w_button("MANAGE SAVES", dc_manage_saves_proc, &d));
+#endif
 	d.add(new w_spacer());
 	d.add(new w_button("RETURN", dialog_cancel, &d));
 
@@ -496,6 +508,17 @@ static void sound_dialog(void *arg)
 static w_toggle *mouse_w;
 #ifdef DC
 static w_select *stick_mode_w;
+#endif
+
+#ifdef DC
+static void dc_manage_saves_proc(void *arg)
+{
+	dialog *parent = (dialog *)arg;
+
+	dc_manage_saves();
+
+	parent->draw();
+}
 #endif
 
 static void controls_dialog(void *arg)

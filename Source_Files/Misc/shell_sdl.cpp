@@ -148,9 +148,14 @@ static void usage(const char *prg_name)
 	exit(0);
 }
 
+// Outside the extern "C" block below: dc_vmu.h declares its own linkage, and
+// dc_slots.cpp is C++, so wrapping these here gave the call site C linkage and
+// the definition C++ linkage -- which links only by accident and did not.
+#include "dc_vmu.h"
+#include "dc_slots.h"
+
 extern "C" {
 extern int fs_mem_init(void);
-#include "dc_vmu.h"
 #ifdef DC
 void dc_trace(int slot, const char *fmt, ...);
 void dc_input_init_video(void);		// suppress SDL's 60Hz prompt; see dc_input.c
@@ -925,7 +930,7 @@ extern "C" void dc_open_controls_dialog(void);
  *	binary for both images, and the hardware target simply does not stage the
  *	marker. `make test` adds it, `make cdi` does not.
  */
-// 0 = no marker, 1 = start a new game, 2 = open the CONTROLS dialog.
+// 0 = no marker, 1 = start a new game, 2 = CONTROLS, 3 = load, 4 = MANAGE SAVES.
 // The marker's contents pick which; "controls" opens preferences instead of
 // starting a game, so the sensitivity sliders can be screenshotted with no
 // input at all.
@@ -946,6 +951,8 @@ static int dc_autostart_mode(void)
 						mode = 2;
 					else if (strncmp(buf, "load", 4) == 0)
 						mode = 3;
+					else if (strncmp(buf, "saves", 5) == 0)
+						mode = 4;
 				}
 				fclose(f);
 			}
@@ -1018,6 +1025,9 @@ static void main_event_loop(void)
 				} else if (mode == 3) {
 					dc_trace(2, "autostart: selecting iLoadGame");
 					do_menu_item_command(mInterface, iLoadGame, false);
+				} else if (mode == 4) {
+					dc_trace(2, "autostart: opening MANAGE SAVES");
+					dc_manage_saves();
 				} else {
 					dc_trace(2, "autostart: selecting iNewGame");
 					do_menu_item_command(mInterface, iNewGame, false);
