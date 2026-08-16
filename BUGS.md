@@ -299,6 +299,41 @@ seconds of that was a wait nobody on a console could skip. The remaining ~15
 seconds inside new_game() is still unmeasured and is the next thing to break
 down.
 
+### Full accounting, stage by stage
+
+| stage | ms |
+|---|---|
+| menu fade out | 503 |
+| movie | 0 |
+| chapter screen | 22553 |
+| new_game(): goto_level / load_level_from_map | 1603 |
+| new_game(): load_collections | 7663 |
+| new_game(): load_all_monster_sounds | 13700 |
+| new_game(): load_all_game_sounds | 0 |
+| start_game | 512 |
+| **total** | **46605** |
+
+Flycast reproduces these to the millisecond across runs, which makes
+single-variable experiments trustworthy. Two things dominate and neither is
+reading the level:
+
+**The chapter screen, 22.5 seconds.** About ten of those are
+wait_for_click_or_keypress, which could not be skipped from a controller until
+this was fixed. The rest is drawing the picture (4.7s) and the long fade (2.7s).
+
+**Loading monster sounds, 13.7 seconds.** Every sound is a separate seek and read
+into the Sounds file. The "More Sounds" preference makes each one load all of its
+permutations rather than just the first, and turning it off halves this:
+
+| More Sounds | load_all_monster_sounds |
+|---|---|
+| on | 13700 ms |
+| off | 6240 ms |
+
+Worth knowing when testing this: preferences stored on the card override
+default_sound_manager_parameters entirely, so changing the default has no effect
+on a console that already has a card. The toggle in Preferences is the lever.
+
 Also recorded, since it was tried and made things worse: giving each file stream
 a 64KB buffer with setvbuf. KOS's ISO9660 driver does have a bulk-read fast path
 for sector-aligned requests, but Aleph One reads a wad chunk by seeking to its

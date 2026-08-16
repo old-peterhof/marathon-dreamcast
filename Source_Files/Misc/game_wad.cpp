@@ -750,7 +750,13 @@ bool goto_level(
 	else 
 	{
 		/* Load it and then rock.. */
+#ifdef DC
+		unsigned dc_g0 = dc_ticks();
+#endif
 		load_level_from_map(entry->level_number);
+#ifdef DC
+		dc_trace(24, "goto: load_level_from_map %u ms", dc_ticks() - dc_g0);
+#endif
 		if(error_pending()) success= false;
 	}
 	
@@ -760,7 +766,14 @@ bool goto_level(
 		// textures to load.
 		// Being careful to carry over errors so that Pfhortran errors can be ignored
 		short SavedType, SavedError = SavedError = get_game_error(&SavedType);
+#ifdef DC
+		unsigned dc_g1 = dc_ticks();
+#endif
 		RunLevelScript(entry->level_number);
+#ifdef DC
+		dc_trace(25, "goto: RunLevelScript %u ms", dc_ticks() - dc_g1);
+		dc_g1 = dc_ticks();
+#endif
 		set_game_error(SavedType,SavedError);
 		
 		if (!new_game)
@@ -773,6 +786,10 @@ bool goto_level(
 			/* entering_map might fail if netsync fails, but we will have already displayed */
 			/* the error.. */
 			success= entering_map(false);
+#ifdef DC
+			dc_trace(26, "goto: entering_map %u ms", dc_ticks() - dc_g1);
+			dc_g1 = dc_ticks();
+#endif
 		}
 
 		if(success) /* successfully switched. (guaranteed except in net games) */
@@ -782,6 +799,9 @@ bool goto_level(
 			 * levels (the placement stuff calls point_is_player_visible) and loading the game
 			 * wad munges the monster information (which p_i_p_v() needs) */
 			place_initial_objects();
+#ifdef DC
+			dc_trace(27, "goto: place_initial_objects %u ms", dc_ticks() - dc_g1);
+#endif
 	
 			initialize_control_panels_for_level(); /* must be called after the players are initialized */
 			
