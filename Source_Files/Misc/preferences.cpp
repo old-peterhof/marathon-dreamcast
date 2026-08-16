@@ -649,3 +649,22 @@ OGL_ConfigureData& Get_OGL_ConfigureData() {return graphics_preferences->OGL_Con
 bool dont_switch_to_new_weapon() {
 	return TEST_FLAG(input_preferences->modifiers,_inputmod_dont_switch_to_new_weapon);
 }
+
+#ifdef DC
+/*
+ *	dc_prefs_format -- what shape this build expects preferences to be.
+ *
+ *	The struct sizes combined, each weighted so that two changes cannot cancel
+ *	out. Any field added, removed or resized changes this number, and dc_vmu.c
+ *	then declines to restore a card written by a differently-shaped build rather
+ *	than handing Aleph One a chunk it will read at the wrong offsets.
+ */
+extern "C" int dc_prefs_format(void)
+{
+	return (int)(sizeof(struct graphics_preferences_data)      * 1 +
+	             sizeof(struct player_preferences_data)        * 3 +
+	             sizeof(struct input_preferences_data)         * 5 +
+	             sizeof(struct sound_manager_parameters)       * 7 +
+	             sizeof(struct environment_preferences_data)   * 11);
+}
+#endif

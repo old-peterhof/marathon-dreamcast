@@ -40,6 +40,13 @@
 
 extern void dc_trace(int slot, const char *fmt, ...);
 
+/* preferences.cpp: the combined sizes of the preference structs this build was
+   compiled against. Any change to any of them changes this number. */
+extern int dc_prefs_format(void);
+
+static void put_u32(uint8_t *p, uint32_t v);
+static uint32_t get_u32(const uint8_t *p);
+
 /* Defined in shell_sdl.cpp. A message box with text supplied directly, so a
    declined save can say how much room the card actually had. */
 extern void dc_alert_text(const char *title, const char *line1, const char *line2);
@@ -50,6 +57,28 @@ extern int dc_wad_xor_level(uint8_t *save, long save_len,
                             const char *map_path, int level);
 
 #define VMU_FILE_NAME	"ALEPHONE.PRF"
+
+/*
+ *	Format stamp for the mirrored preferences.
+ *
+ *	A preferences file written by one build makes other builds fail to start a
+ *	level, and it took most of a night to see it, because the symptom is a black
+ *	screen with nothing to read and the file outlives every disc you try.
+ *
+ *	Aleph One's own guard is not enough. w_get_data_from_preferences notices that
+ *	a stored chunk is the wrong size and appends a replacement, then re-extracts
+ *	by tag -- and gets the original back, so the struct is read at the wrong
+ *	offsets. It breaks in both directions: a newer build reading an older file,
+ *	and an older build reading a newer one.
+ *
+ *	So the card copy carries a stamp: a magic, and a number derived from the
+ *	sizes of the preference structs this build was compiled against. If a card
+ *	holds preferences shaped for a different build they are left alone, and Aleph
+ *	One writes fresh defaults over them. Losing key bindings is a trivial price;
+ *	being unable to start a game is not.
+ */
+#define VMU_PREFS_MAGIC		0x41315046UL	/* 'A1PF' */
+#define VMU_PREFS_HDR_LEN	16
 #define VMU_BLOCK		512
 #define VMU_MAX_BYTES	(64 * VMU_BLOCK)	/* generous ceiling; prefs are tiny */
 
@@ -115,6 +144,27 @@ void dc_vmu_load_prefs(const char *ram_path)
 	got = fread(buf, 1, VMU_MAX_BYTES, in);
 	fclose(in);
 
+	if (got > VMU_PREFS_HDR_LEN &&
+	    get_u32((uint8_t *)buf) == VMU_PREFS_MAGIC) {
+		uint32_t fmt = get_u32((uint8_t *)buf + 4);
+		uint32_t len = get_u32((uint8_t *)buf + 8);
+
+		if (fmt != (uint32_t)dc_prefs_format() || len > got - VMU_PREFS_HDR_LEN) {
+			dc_trace(16, "vmu: prefs are for another build -- ignoring");
+			free(buf);
+			return;
+		}
+
+		memmove(buf, buf + VMU_PREFS_HDR_LEN, len);
+		got = len;
+	} else if (got > 0) {
+		/* No stamp: written before this check existed, so its layout cannot be
+		   confirmed and is not trusted. */
+		dc_trace(16, "vmu: prefs carry no format stamp -- ignoring");
+		free(buf);
+		return;
+	}
+
 	if (got > 0) {
 		out = fopen(ram_path, "wb");
 		if (out) {
@@ -164,6 +214,14 @@ void dc_vmu_save_prefs(const char *ram_path)
 		free(buf);
 		return;
 	}
+
+	/* Shift the payload up and stamp the format in front of it. */
+	memmove(buf + VMU_PREFS_HDR_LEN, buf, got);
+	put_u32((uint8_t *)buf, VMU_PREFS_MAGIC);
+	put_u32((uint8_t *)buf + 4, (uint32_t)dc_prefs_format());
+	put_u32((uint8_t *)buf + 8, (uint32_t)got);
+	put_u32((uint8_t *)buf + 12, 0);
+	got += VMU_PREFS_HDR_LEN;
 
 	/* Round up to a whole number of blocks; calloc already zeroed the tail. */
 	padded = ((got + VMU_BLOCK - 1) / VMU_BLOCK) * VMU_BLOCK;
