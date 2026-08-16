@@ -1,6 +1,6 @@
 Source_Files/Misc/RenderRasterize.o: \
- Source_Files/Misc/RenderRasterize.cpp dc/dc_gl_compat.h \
- Source_Files/CSeries/cseries.h Source_Files/CSeries/sdl_cseries.h \
+ Source_Files/Misc/RenderRasterize.cpp Source_Files/CSeries/cseries.h \
+ Source_Files/CSeries/sdl_cseries.h \
  /opt/toolchains/dc/kos/../kos-ports/include/SDL/SDL.h \
  /opt/toolchains/dc/kos/../kos-ports/include/SDL/SDL_main.h \
  /opt/toolchains/dc/kos/../kos-ports/include/SDL/SDL_stdinc.h \
@@ -44,10 +44,8 @@ Source_Files/Misc/RenderRasterize.o: \
  Source_Files/Misc/scottish_textures.h Source_Files/Misc/RenderSortPoly.h \
  Source_Files/Misc/RenderVisTree.h Source_Files/Misc/RenderPlaceObjs.h \
  Source_Files/Misc/interface.h Source_Files/Misc/Rasterizer.h \
- Source_Files/Misc/OGL_Render.h Source_Files/Misc/OGL_Setup.h \
- Source_Files/Misc/ImageLoader.h Source_Files/ModelView/Model3D.h \
- Source_Files/Misc/AnimatedTextures.h
-dc/dc_gl_compat.h:
+ Source_Files/Misc/AnimatedTextures.h Source_Files/Misc/OGL_Setup.h \
+ Source_Files/Misc/ImageLoader.h Source_Files/ModelView/Model3D.h
 Source_Files/CSeries/cseries.h:
 Source_Files/CSeries/sdl_cseries.h:
 /opt/toolchains/dc/kos/../kos-ports/include/SDL/SDL.h:
@@ -108,8 +106,7 @@ Source_Files/Misc/RenderVisTree.h:
 Source_Files/Misc/RenderPlaceObjs.h:
 Source_Files/Misc/interface.h:
 Source_Files/Misc/Rasterizer.h:
-Source_Files/Misc/OGL_Render.h:
+Source_Files/Misc/AnimatedTextures.h:
 Source_Files/Misc/OGL_Setup.h:
 Source_Files/Misc/ImageLoader.h:
 Source_Files/ModelView/Model3D.h:
-Source_Files/Misc/AnimatedTextures.h:

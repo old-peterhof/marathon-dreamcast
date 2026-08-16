@@ -1,6 +1,6 @@
 Source_Files/Misc/OverheadMapRenderer.o: \
- Source_Files/Misc/OverheadMapRenderer.cpp dc/dc_gl_compat.h \
- Source_Files/CSeries/cseries.h Source_Files/CSeries/sdl_cseries.h \
+ Source_Files/Misc/OverheadMapRenderer.cpp Source_Files/CSeries/cseries.h \
+ Source_Files/CSeries/sdl_cseries.h \
  /opt/toolchains/dc/kos/../kos-ports/include/SDL/SDL.h \
  /opt/toolchains/dc/kos/../kos-ports/include/SDL/SDL_main.h \
  /opt/toolchains/dc/kos/../kos-ports/include/SDL/SDL_stdinc.h \
@@ -45,7 +45,6 @@ Source_Files/Misc/OverheadMapRenderer.o: \
  Source_Files/Misc/player.h Source_Files/Misc/render.h \
  Source_Files/Misc/textures.h Source_Files/Misc/ViewControl.h \
  Source_Files/Misc/scottish_textures.h
-dc/dc_gl_compat.h:
 Source_Files/CSeries/cseries.h:
 Source_Files/CSeries/sdl_cseries.h:
 /opt/toolchains/dc/kos/../kos-ports/include/SDL/SDL.h:

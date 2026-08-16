@@ -1,6 +1,6 @@
 Source_Files/Misc/scottish_textures.o: \
- Source_Files/Misc/scottish_textures.cpp dc/dc_gl_compat.h \
- Source_Files/CSeries/cseries.h Source_Files/CSeries/sdl_cseries.h \
+ Source_Files/Misc/scottish_textures.cpp Source_Files/CSeries/cseries.h \
+ Source_Files/CSeries/sdl_cseries.h \
  /opt/toolchains/dc/kos/../kos-ports/include/SDL/SDL.h \
  /opt/toolchains/dc/kos/../kos-ports/include/SDL/SDL_main.h \
  /opt/toolchains/dc/kos/../kos-ports/include/SDL/SDL_stdinc.h \
@@ -40,11 +40,7 @@ Source_Files/Misc/scottish_textures.o: \
  Source_Files/Misc/tags.h Source_Files/CSeries/cstypes.h \
  Source_Files/Misc/shape_descriptors.h \
  Source_Files/Misc/scottish_textures.h Source_Files/Misc/Rasterizer_SW.h \
- Source_Files/Misc/Rasterizer.h Source_Files/Misc/OGL_Render.h \
- Source_Files/Misc/OGL_Setup.h Source_Files/Misc/ImageLoader.h \
- Source_Files/ModelView/Model3D.h \
- Source_Files/Misc/low_level_textures.cpp
-dc/dc_gl_compat.h:
+ Source_Files/Misc/Rasterizer.h Source_Files/Misc/low_level_textures.cpp
 Source_Files/CSeries/cseries.h:
 Source_Files/CSeries/sdl_cseries.h:
 /opt/toolchains/dc/kos/../kos-ports/include/SDL/SDL.h:
@@ -97,8 +93,4 @@ Source_Files/Misc/shape_descriptors.h:
 Source_Files/Misc/scottish_textures.h:
 Source_Files/Misc/Rasterizer_SW.h:
 Source_Files/Misc/Rasterizer.h:
-Source_Files/Misc/OGL_Render.h:
-Source_Files/Misc/OGL_Setup.h:
-Source_Files/Misc/ImageLoader.h:
-Source_Files/ModelView/Model3D.h:
 Source_Files/Misc/low_level_textures.cpp:

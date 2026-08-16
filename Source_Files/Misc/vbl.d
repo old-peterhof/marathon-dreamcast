@@ -1,4 +1,4 @@
-Source_Files/Misc/vbl.o: Source_Files/Misc/vbl.cpp dc/dc_gl_compat.h \
+Source_Files/Misc/vbl.o: Source_Files/Misc/vbl.cpp \
  Source_Files/CSeries/cseries.h Source_Files/CSeries/sdl_cseries.h \
  /opt/toolchains/dc/kos/../kos-ports/include/SDL/SDL.h \
  /opt/toolchains/dc/kos/../kos-ports/include/SDL/SDL_main.h \
@@ -44,7 +44,6 @@ Source_Files/Misc/vbl.o: Source_Files/Misc/vbl.cpp dc/dc_gl_compat.h \
  Source_Files/Misc/key_definitions.h Source_Files/Misc/vbl.h \
  Source_Files/Misc/ISp_Support.h Source_Files/Misc/Packing.h \
  Source_Files/Misc/vbl_definitions.h
-dc/dc_gl_compat.h:
 Source_Files/CSeries/cseries.h:
 Source_Files/CSeries/sdl_cseries.h:
 /opt/toolchains/dc/kos/../kos-ports/include/SDL/SDL.h:

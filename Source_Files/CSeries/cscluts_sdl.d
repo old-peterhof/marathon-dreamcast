@@ -1,6 +1,5 @@
 Source_Files/CSeries/cscluts_sdl.o: Source_Files/CSeries/cscluts_sdl.cpp \
- dc/dc_gl_compat.h Source_Files/CSeries/cseries.h \
- Source_Files/CSeries/sdl_cseries.h \
+ Source_Files/CSeries/cseries.h Source_Files/CSeries/sdl_cseries.h \
  /opt/toolchains/dc/kos/../kos-ports/include/SDL/SDL.h \
  /opt/toolchains/dc/kos/../kos-ports/include/SDL/SDL_main.h \
  /opt/toolchains/dc/kos/../kos-ports/include/SDL/SDL_stdinc.h \
@@ -36,7 +35,6 @@ Source_Files/CSeries/cscluts_sdl.o: Source_Files/CSeries/cscluts_sdl.cpp \
  Source_Files/Misc/FileHandler.h Source_Files/Misc/tags.h \
  Source_Files/CSeries/cstypes.h \
  /opt/toolchains/dc/kos/../kos-ports/include/SDL/SDL_endian.h
-dc/dc_gl_compat.h:
 Source_Files/CSeries/cseries.h:
 Source_Files/CSeries/sdl_cseries.h:
 /opt/toolchains/dc/kos/../kos-ports/include/SDL/SDL.h:

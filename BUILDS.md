@@ -46,3 +46,4 @@ to the engine clamp, and the VMU Profiler. Git history has the detail.
 | b32 | menu-nav | 7caf9d9 | Main menu: no highlight trail, skips dead entries |
 | b33 | gl-links | a1cfca4 | GL renderer compiles and links against GLdc |
 | b34 | gl-full-link | e720ab5 | Whole GL renderer builds: textures, faders, HUD, fonts |
+| b35 | prefs-version | 730c268 | Reset stale DC settings; hi-res can no longer stick off |

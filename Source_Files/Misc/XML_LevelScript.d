@@ -1,6 +1,6 @@
 Source_Files/Misc/XML_LevelScript.o: \
- Source_Files/Misc/XML_LevelScript.cpp dc/dc_gl_compat.h \
- Source_Files/CSeries/cseries.h Source_Files/CSeries/sdl_cseries.h \
+ Source_Files/Misc/XML_LevelScript.cpp Source_Files/CSeries/cseries.h \
+ Source_Files/CSeries/sdl_cseries.h \
  /opt/toolchains/dc/kos/../kos-ports/include/SDL/SDL.h \
  /opt/toolchains/dc/kos/../kos-ports/include/SDL/SDL_main.h \
  /opt/toolchains/dc/kos/../kos-ports/include/SDL/SDL_stdinc.h \
@@ -41,7 +41,6 @@ Source_Files/Misc/XML_LevelScript.o: \
  Source_Files/Misc/XML_LevelScript.h \
  Source_Files/Misc/XML_ParseTreeRoot.h Source_Files/Pfhortran/scripting.h \
  Source_Files/Misc/Random.h
-dc/dc_gl_compat.h:
 Source_Files/CSeries/cseries.h:
 Source_Files/CSeries/sdl_cseries.h:
 /opt/toolchains/dc/kos/../kos-ports/include/SDL/SDL.h:

@@ -1,4 +1,4 @@
-Source_Files/Misc/items.o: Source_Files/Misc/items.cpp dc/dc_gl_compat.h \
+Source_Files/Misc/items.o: Source_Files/Misc/items.cpp \
  Source_Files/CSeries/cseries.h Source_Files/CSeries/sdl_cseries.h \
  /opt/toolchains/dc/kos/../kos-ports/include/SDL/SDL.h \
  /opt/toolchains/dc/kos/../kos-ports/include/SDL/SDL_main.h \
@@ -42,7 +42,6 @@ Source_Files/Misc/items.o: Source_Files/Misc/items.cpp dc/dc_gl_compat.h \
  Source_Files/Misc/game_window.h Source_Files/Misc/weapons.h \
  Source_Files/Network/network_games.h Source_Files/Misc/ShapesParser.h \
  Source_Files/Pfhortran/scripting.h Source_Files/Misc/item_definitions.h
-dc/dc_gl_compat.h:
 Source_Files/CSeries/cseries.h:
 Source_Files/CSeries/sdl_cseries.h:
 /opt/toolchains/dc/kos/../kos-ports/include/SDL/SDL.h:

@@ -106,13 +106,32 @@ endif
 # stamp no longer exists, which deletes every object and forces an honest
 # rebuild. Cheap, and it cannot be forgotten.
 # ---------------------------------------------------------------------------
-CONFIG_SIG   := $(shell echo '$(DEFINES)' | cksum | cut -d' ' -f1)
-CONFIG_STAMP := .config-$(CONFIG_SIG)
 
 DEPFLAGS = -MMD -MP
 
+# ---------------------------------------------------------------------------
+# FAST=1 -- heavier optimisation, suggested by Falco Girgis (KallistiOS).
+#
+# KOS_CFLAGS already carries -mfsca and -mfsrra, the SH4's fast sine/cosine and
+# reciprocal-square-root instructions. This adds what it does not: -O3, relaxed
+# floating point, and link-time optimisation across every translation unit.
+#
+# This only affects Aleph One's own objects. KOS itself, SDL, GLdc and zlib were
+# built with whatever environ.sh specified, so the larger win Falco describes
+# needs those rebuilt too -- see README.DC.md.
+#
+# -ffast-math is the one to suspect if the picture goes wrong. The software
+# renderer is overwhelmingly fixed-point, but the view transform is not.
+# ---------------------------------------------------------------------------
+ifdef FAST
+OPTFLAGS = -O3 -ffast-math -flto
+endif
+
+CONFIG_SIG   := $(shell echo '$(DEFINES) $(OPTFLAGS)' | cksum | cut -d' ' -f1)
+CONFIG_STAMP := .config-$(CONFIG_SIG)
+
 COMPAT   = -fno-strict-aliasing -fpermissive -Wno-write-strings -Wno-narrowing
-CFLAGS   = $(KOS_CFLAGS) $(INCS) $(DEFINES) $(COMPAT) $(DEPFLAGS)
+CFLAGS   = $(KOS_CFLAGS) $(INCS) $(DEFINES) $(COMPAT) $(OPTFLAGS) $(DEPFLAGS)
 CXXFLAGS = $(CFLAGS) -std=gnu++98 -fno-rtti -fno-exceptions $(GL_FORCE_INC)
 
 HOST_CC  = cc
@@ -212,7 +231,7 @@ dc/build_id.h: BUILD_NUMBER BUILD_NAME
 $(MI)/shell.o: dc/build_id.h
 
 $(TARGET): $(OBJS)
-	$(KOS_CCPLUS) $(KOS_LDFLAGS) $(OBJS) -o $@ $(LIBS)
+	$(KOS_CCPLUS) $(KOS_LDFLAGS) $(OPTFLAGS) $(OBJS) -o $@ $(LIBS)
 
 %.o: %.cpp
 	$(KOS_CCPLUS) $(CXXFLAGS) -c $< -o $@

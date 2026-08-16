@@ -1,6 +1,6 @@
 Source_Files/Misc/RenderPlaceObjs.o: \
- Source_Files/Misc/RenderPlaceObjs.cpp dc/dc_gl_compat.h \
- Source_Files/CSeries/cseries.h Source_Files/CSeries/sdl_cseries.h \
+ Source_Files/Misc/RenderPlaceObjs.cpp Source_Files/CSeries/cseries.h \
+ Source_Files/CSeries/sdl_cseries.h \
  /opt/toolchains/dc/kos/../kos-ports/include/SDL/SDL.h \
  /opt/toolchains/dc/kos/../kos-ports/include/SDL/SDL_main.h \
  /opt/toolchains/dc/kos/../kos-ports/include/SDL/SDL_stdinc.h \
@@ -45,7 +45,6 @@ Source_Files/Misc/RenderPlaceObjs.o: \
  Source_Files/Misc/RenderSortPoly.h Source_Files/Misc/RenderVisTree.h \
  Source_Files/Misc/OGL_Setup.h Source_Files/Misc/ImageLoader.h \
  Source_Files/ModelView/Model3D.h
-dc/dc_gl_compat.h:
 Source_Files/CSeries/cseries.h:
 Source_Files/CSeries/sdl_cseries.h:
 /opt/toolchains/dc/kos/../kos-ports/include/SDL/SDL.h:

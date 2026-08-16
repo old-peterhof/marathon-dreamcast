@@ -1,6 +1,5 @@
 Source_Files/Misc/preferences.o: Source_Files/Misc/preferences.cpp \
- dc/dc_gl_compat.h Source_Files/CSeries/cseries.h \
- Source_Files/CSeries/sdl_cseries.h \
+ Source_Files/CSeries/cseries.h Source_Files/CSeries/sdl_cseries.h \
  /opt/toolchains/dc/kos/../kos-ports/include/SDL/SDL.h \
  /opt/toolchains/dc/kos/../kos-ports/include/SDL/SDL_main.h \
  /opt/toolchains/dc/kos/../kos-ports/include/SDL/SDL_stdinc.h \
@@ -51,7 +50,6 @@ Source_Files/Misc/preferences.o: Source_Files/Misc/preferences.cpp \
  Source_Files/Misc/sdl_dialogs.h Source_Files/Misc/sdl_fonts.h \
  Source_Files/Misc/sdl_widgets.h Source_Files/Misc/images.h \
  Source_Files/Misc/screen_drawing.h
-dc/dc_gl_compat.h:
 Source_Files/CSeries/cseries.h:
 Source_Files/CSeries/sdl_cseries.h:
 /opt/toolchains/dc/kos/../kos-ports/include/SDL/SDL.h:

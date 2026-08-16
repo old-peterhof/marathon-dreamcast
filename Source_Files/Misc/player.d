@@ -1,6 +1,5 @@
 Source_Files/Misc/player.o: Source_Files/Misc/player.cpp \
- dc/dc_gl_compat.h Source_Files/CSeries/cseries.h \
- Source_Files/CSeries/sdl_cseries.h \
+ Source_Files/CSeries/cseries.h Source_Files/CSeries/sdl_cseries.h \
  /opt/toolchains/dc/kos/../kos-ports/include/SDL/SDL.h \
  /opt/toolchains/dc/kos/../kos-ports/include/SDL/SDL_main.h \
  /opt/toolchains/dc/kos/../kos-ports/include/SDL/SDL_stdinc.h \
@@ -43,7 +42,6 @@ Source_Files/Misc/player.o: Source_Files/Misc/player.cpp \
  Source_Files/Misc/computer_interface.h Source_Files/Misc/projectiles.h \
  Source_Files/Network/network_games.h Source_Files/Misc/screen.h \
  Source_Files/Misc/ChaseCam.h Source_Files/Misc/Packing.h
-dc/dc_gl_compat.h:
 Source_Files/CSeries/cseries.h:
 Source_Files/CSeries/sdl_cseries.h:
 /opt/toolchains/dc/kos/../kos-ports/include/SDL/SDL.h:

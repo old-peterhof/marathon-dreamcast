@@ -1,6 +1,5 @@
 Source_Files/Misc/weapons.o: Source_Files/Misc/weapons.cpp \
- dc/dc_gl_compat.h Source_Files/CSeries/cseries.h \
- Source_Files/CSeries/sdl_cseries.h \
+ Source_Files/CSeries/cseries.h Source_Files/CSeries/sdl_cseries.h \
  /opt/toolchains/dc/kos/../kos-ports/include/SDL/SDL.h \
  /opt/toolchains/dc/kos/../kos-ports/include/SDL/SDL_main.h \
  /opt/toolchains/dc/kos/../kos-ports/include/SDL/SDL_stdinc.h \
@@ -41,7 +40,6 @@ Source_Files/Misc/weapons.o: Source_Files/Misc/weapons.cpp \
  Source_Files/Misc/items.h Source_Files/Misc/monsters.h \
  Source_Files/Misc/game_window.h Source_Files/Misc/Packing.h \
  Source_Files/Misc/shell.h Source_Files/Misc/weapon_definitions.h
-dc/dc_gl_compat.h:
 Source_Files/CSeries/cseries.h:
 Source_Files/CSeries/sdl_cseries.h:
 /opt/toolchains/dc/kos/../kos-ports/include/SDL/SDL.h:

@@ -1,6 +1,5 @@
 Source_Files/Misc/sdl_fonts.o: Source_Files/Misc/sdl_fonts.cpp \
- dc/dc_gl_compat.h Source_Files/CSeries/cseries.h \
- Source_Files/CSeries/sdl_cseries.h \
+ Source_Files/CSeries/cseries.h Source_Files/CSeries/sdl_cseries.h \
  /opt/toolchains/dc/kos/../kos-ports/include/SDL/SDL.h \
  /opt/toolchains/dc/kos/../kos-ports/include/SDL/SDL_main.h \
  /opt/toolchains/dc/kos/../kos-ports/include/SDL/SDL_stdinc.h \
@@ -38,7 +37,6 @@ Source_Files/Misc/sdl_fonts.o: Source_Files/Misc/sdl_fonts.cpp \
  Source_Files/CSeries/byte_swapping.h \
  Source_Files/Misc/resource_manager.h \
  /opt/toolchains/dc/kos/../kos-ports/include/SDL/SDL_endian.h
-dc/dc_gl_compat.h:
 Source_Files/CSeries/cseries.h:
 Source_Files/CSeries/sdl_cseries.h:
 /opt/toolchains/dc/kos/../kos-ports/include/SDL/SDL.h:

@@ -1,4 +1,4 @@
-Source_Files/Misc/shell.o: Source_Files/Misc/shell.cpp dc/dc_gl_compat.h \
+Source_Files/Misc/shell.o: Source_Files/Misc/shell.cpp \
  Source_Files/CSeries/cseries.h Source_Files/CSeries/sdl_cseries.h \
  /opt/toolchains/dc/kos/../kos-ports/include/SDL/SDL.h \
  /opt/toolchains/dc/kos/../kos-ports/include/SDL/SDL_main.h \
@@ -58,7 +58,6 @@ Source_Files/Misc/shell.o: Source_Files/Misc/shell.cpp dc/dc_gl_compat.h \
  Source_Files/Expat/xmlparse.h Source_Files/Misc/resource_manager.h \
  Source_Files/Misc/sdl_dialogs.h Source_Files/Misc/sdl_widgets.h \
  Source_Files/Misc/TextStrings.h Source_Files/Misc/../../dc/build_id.h
-dc/dc_gl_compat.h:
 Source_Files/CSeries/cseries.h:
 Source_Files/CSeries/sdl_cseries.h:
 /opt/toolchains/dc/kos/../kos-ports/include/SDL/SDL.h:

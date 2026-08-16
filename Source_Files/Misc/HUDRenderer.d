@@ -1,6 +1,6 @@
 Source_Files/Misc/HUDRenderer.o: Source_Files/Misc/HUDRenderer.cpp \
- dc/dc_gl_compat.h Source_Files/Misc/HUDRenderer.h \
- Source_Files/CSeries/cseries.h Source_Files/CSeries/sdl_cseries.h \
+ Source_Files/Misc/HUDRenderer.h Source_Files/CSeries/cseries.h \
+ Source_Files/CSeries/sdl_cseries.h \
  /opt/toolchains/dc/kos/../kos-ports/include/SDL/SDL.h \
  /opt/toolchains/dc/kos/../kos-ports/include/SDL/SDL_main.h \
  /opt/toolchains/dc/kos/../kos-ports/include/SDL/SDL_stdinc.h \
@@ -40,7 +40,6 @@ Source_Files/Misc/HUDRenderer.o: Source_Files/Misc/HUDRenderer.cpp \
  Source_Files/Misc/motion_sensor.h Source_Files/Misc/items.h \
  Source_Files/Misc/weapons.h Source_Files/Network/network_games.h \
  Source_Files/Misc/screen_drawing.h
-dc/dc_gl_compat.h:
 Source_Files/Misc/HUDRenderer.h:
 Source_Files/CSeries/cseries.h:
 Source_Files/CSeries/sdl_cseries.h:

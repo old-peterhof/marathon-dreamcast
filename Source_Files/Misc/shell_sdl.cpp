@@ -423,6 +423,22 @@ static void initialize_application(void)
 		OGLData.Flags &= ~OGL_Flag_3D_Models;
 	}
 #endif
+#ifdef DC
+	// Reset Dreamcast settings whose stored meaning has changed, or which should
+	// never have been stored the way they were. A preferences file is mirrored
+	// to a memory card and outlives every build, so a bad value is permanent
+	// until something like this clears it. See DC_PREFS_VERSION.
+	if (input_preferences->dc_prefs_version != DC_PREFS_VERSION) {
+		dc_trace(46, "prefs: version %d -> %d, resetting DC settings",
+		         (int)input_preferences->dc_prefs_version, DC_PREFS_VERSION);
+
+		graphics_preferences->screen_mode.high_resolution = true;
+		graphics_preferences->screen_mode.size = _100_percent;
+		input_preferences->sens_horizontal = SENS_DEFAULT;
+		input_preferences->sens_vertical = SENS_DEFAULT;
+		input_preferences->dc_prefs_version = DC_PREFS_VERSION;
+	}
+#endif
 	if (force_fullscreen)
 		graphics_preferences->screen_mode.fullscreen = true;
 	if (force_windowed)	// takes precedence over fullscreen because windowed is safer

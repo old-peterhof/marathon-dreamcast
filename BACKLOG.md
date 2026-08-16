@@ -154,3 +154,26 @@ Against stripping: the main menu is a fixed 1990s bitmap with the buttons drawn
 into it, so removing an item means either editing artwork or leaving a dead
 region on screen. That argues for doing this as part of the controller-native UI
 work rather than before it.
+
+## Rebuild KallistiOS and its ports with heavier optimisation
+
+Falco Girgis (KallistiOS) suggested this after seeing the port run: enable -O3,
+-ffast-math, -mfsca, -mfsrra and -flto in the KOS environ.sh, re-source it, then
+rebuild KOS, every dependency and the project so the flags reach all translation
+units.
+
+Half of it is done. `FAST=1` puts -O3 -ffast-math -flto on Aleph One's own
+objects and the link, and b35 was built and verified both ways: the picture is
+identical, 12388 of 12800 pixels drawn against 12400 for the ordinary build, so
+-ffast-math does not disturb the software renderer. -mfsca and -mfsrra were
+already coming from KOS_CFLAGS.
+
+What is left is the larger half: KOS itself, SDL, GLdc and zlib were all built
+with whatever environ.sh specified at the time, and the renderer spends most of
+its life in code this project did not compile. That means editing
+/opt/toolchains/dc/kos/environ.sh, re-sourcing, and rebuilding kos and kos-ports
+from scratch -- an hour or so, and it invalidates every object here, which the
+config stamp will notice.
+
+No measurement yet. Flycast holds at 30fps because that is the engine's tick
+rate, not the renderer's limit, so the difference can only be seen on hardware.
