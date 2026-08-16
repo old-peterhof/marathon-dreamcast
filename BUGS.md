@@ -47,7 +47,17 @@ Verified unattended -- AUTOKEY now also presses Start once a level is running:
     fps 30.3  yaw=392 pos=11456,19616
 
 
-### A listed saved game could not be opened (fixed in b30)
+### A listed saved game could not be opened (fixed in b30, lost, restored in b59)
+
+**This entry was wrong for twenty-eight builds.** The fix below landed in b30 and
+was then removed by `e3fdc7b`, "Return the tree to b29, the only build confirmed
+working on hardware" -- which reverted the whole tree, this fix included, while
+this page went on claiming it was fixed. Anyone reading here would have concluded
+list dialogs worked when they did not.
+
+It was restored verbatim from `9d6a0ad` in b59, when the four-slot save screens
+needed it. Worth remembering as a failure mode: a wholesale revert silently
+un-fixes everything it passes over, and the notes do not notice.
 
 Continue Saved Game showed the save, but choosing it dropped back to the main
 menu. The load was never attempted: `w_list_base::event` in sdl_widgets.cpp

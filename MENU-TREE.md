@@ -1,6 +1,6 @@
 # Every menu, dialog and setting
 
-Extracted from the source at b57, not from memory. The design reference: every
+Extracted from the source at b59, not from memory. The design reference: every
 screen the player can reach, every widget on it, what each one is worth on a
 console, and what the pad can and cannot do. Pairs with `UI-BRIEF.md`, which
 covers the visual constraints.
@@ -17,38 +17,36 @@ covers the visual constraints.
 ## 1. The whole tree at a glance
 
 ```
-MAIN MENU  (bitmap, ten painted buttons)
-├── Begin New Game ................................ keep
-├── Continue Saved Game → file list ............... keep
-├── Gather Network Game ........................... dead
-├── Join Network Game ............................. dead
-├── Replay Saved Film → file list ................. dead
-├── Replay Last Film .............................. dead
-├── Save Last Film ................................ dead
+MAIN MENU  (plate + drawn text, b58)
+├── New Game → DIFFICULTY → play
+├── Continue Game ................................. opens the newest save;
+│                                                   greyed and skipped if none
+├── Manage Saves → four slots, A loads, X deletes
 ├── Preferences
-│   ├── PLAYER ....................... 4 settings, 3 of them network-only
-│   ├── GRAPHICS ..................... 5 settings + OPENGL OPTIONS
-│   │   └── OPENGL OPTIONS ........... 9 toggles, all dead while GL is parked
-│   ├── SOUND ........................ 7 settings
-│   ├── CONTROLS ..................... 8 settings + CONFIGURE CONTROLLER
-│   │   └── CONFIGURE CONTROLLER ..... 13 bindable actions
-│   │       └── ADVANCED ............. 7 more
-│   ├── ENVIRONMENT .................. 5 file pickers, all moot on a fixed disc
+│   ├── Brightness ................................ the one live graphics row
+│   ├── SOUND ..................... 6 settings (Channels dropped)
+│   ├── CONTROLS .................. 7 settings + CONFIGURE CONTROLLER
+│   │   └── CONFIGURE CONTROLLER .. 13 actions, two columns
+│   │       └── ADVANCED .......... 7 more, X flips between them
+│   ├── MANAGE SAVES .............. temporary second entrance
 │   └── RETURN
-├── Quit .......................................... dead
-└── Credits ....................................... keep
+└── Credits
 
 IN GAME
-├── Start button → ESCAPE ......................... pause menu is absent
-├── Terminals (full-screen text) .................. keep
-├── Overhead map .................................. keep
-└── Save, only at a save terminal ................. keep
-
-IN-GAME MENU (mGame: Pause/Save/Revert/Close/Quit)
-└── unreachable — desktop opens it with Alt+key chords a pad cannot make
+├── Start → PAUSED ................ Resume · Save Game · Preferences · Quit
+├── Terminals (full-screen text)
+├── Overhead map
+└── Save, at a terminal or from the pause menu → four-slot picker
 ```
 
-Everything below expands one box of that tree.
+**Gone from the menu:** both network items, all three film items, and Quit —
+five of the original ten, none of which could work on a console. Nothing was
+deleted from the code to do it: `iManageSaves` is appended to the enum, every
+other id keeps its value, and the eighteen-rectangle table is untouched, so
+non-DC builds are unchanged.
+
+The sections below describe both what was there and what replaced it, because
+the reasoning is the part worth keeping.
 
 ---
 
@@ -89,12 +87,25 @@ rather than an error.
 
 ---
 
-## 3. Main menu
+## 3. Main menu — replaced in b58
 
-Ten items, walked in this order (`shell_sdl.cpp:1321`, `menus[]`). The buttons
-are **painted into a bitmap** and navigation moves a highlight between hardcoded
-rectangles, so removing an item leaves a hole unless the artwork changes. This is
-the biggest single obstacle to a redesign.
+The old menu was ten items, and the buttons were **painted into a bitmap** with
+navigation moving a highlight between eighteen hardcoded rectangles. Removing an
+item left a hole unless the artwork changed, and four files had to agree on item
+order through `rect = item - 1 + _new_game_button_rect`. That was the biggest
+single obstacle to any redesign.
+
+It is now a static plate with text drawn over it (`dc_mainmenu.cpp`). The item
+list is an array, greying an item out is a colour rather than a third bitmap, and
+no rectangle is involved. **Changing which items exist no longer needs artwork.**
+
+One thing the rewrite had to fix: the stock walk never consulted
+`enabled_item()`, so it would land on a disabled row and let Return be pressed
+there. With Continue Game greyed out on a fresh card that row is second in the
+list, so skipping disabled items is the difference between the menu working and
+not.
+
+The original ten, for the record:
 
 | Item | Status | Note |
 |---|---|---|
@@ -111,28 +122,49 @@ the biggest single obstacle to a redesign.
 
 Five of ten do nothing.
 
-## 4. In-game menu (`mGame`)
+## 4. In-game menu (`mGame`) — reached via the pause menu since b59
 
-Defined in `interface_menus.h:13`. Opened on the desktop with Alt+key chords,
-which a pad cannot produce, so on Dreamcast **none of it is reachable**.
+Defined in `interface_menus.h:13` and opened on the desktop with Alt+key chords,
+which a pad cannot produce. For most of this port's life **none of it was
+reachable**: no way to pause, no way to save away from a terminal, and no way off
+a level short of resetting the console.
+
+Start now opens a PAUSED dialog — Resume, Save Game, Preferences, Quit to Main
+Menu. The dialog *is* the pause: dialogs run their own event loop, so the world
+stops while one is open, and Start closes it again because a dialog reads Escape
+as cancel.
+
+Save Game calls `save_game()` directly rather than going through `iSave`, whose
+single-player arm is `#if 0`'d upstream and would have been a button that
+silently did nothing.
 
 | Item | Status | Note |
 |---|---|---|
-| Pause | absent | |
-| Save | keep | today only reachable at a save terminal |
-| Revert | keep | reload last save |
-| Close Game | keep | back to the main menu — no other way off a level |
-| Quit Game | dead | see Quit above |
+| Pause | **the dialog is the pause** | no separate item needed |
+| Save | **reachable** | → the four-slot picker |
+| Revert | not offered | Manage Saves loads any slot, which covers it |
+| Close Game | **reachable** | Quit to Main Menu; asks for confirmation first |
+| Quit Game | dead | a console has nowhere to quit to |
 
-A Start-button pause menu offering Resume, Save, Preferences and Quit-to-menu is
-written and parked on `measurements-b31`. Start already sends ESCAPE in game, so
-the button is free and waiting for it.
+Difficulty is deliberately not on this menu. It belongs to the run and is chosen
+when the run starts — Max's call on UI-HANDOFF open question 3.
 
 ---
 
-## 5. Preferences
+## 5. Preferences — restructured in b59
 
-Root: **PLAYER · GRAPHICS · SOUND · CONTROLS · ENVIRONMENT · RETURN**
+Root was **PLAYER · GRAPHICS · SOUND · CONTROLS · ENVIRONMENT · RETURN**. It is
+now **Brightness · SOUND · CONTROLS · MANAGE SAVES · RETURN**.
+
+Player is gone: difficulty moved to New Game, the name needs a keyboard, and
+both colours are network appearance for a game with no network. Environment is
+gone entirely — all five rows browse for replacement data files and a fixed disc
+has nothing to browse. Graphics collapsed to Brightness, its one live row,
+promoted to the root because a screen with one control on it is not a screen.
+
+**Every settings row now carries a line of plain English** describing whatever
+is focused, driven by the focus callback in `dialog::activate_widget`. The
+audit below is what decided which rows survived to have one.
 
 ### 5.1 Player settings
 
