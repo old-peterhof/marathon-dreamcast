@@ -102,8 +102,6 @@ Nov 26, 2000 (Loren Petrich):
 
 #ifdef DC
 extern "C" void dc_vmu_save_game(const char *ram_path, const char *map_path, int level);
-extern "C" void dc_trace(int slot, const char *fmt, ...);
-extern "C" unsigned dc_ticks(void);
 #endif
 
 // LP addition: for physics-model stuff, we need these pointers to definitions
@@ -295,12 +293,6 @@ bool use_map_file(
 bool load_level_from_map(
 	short level_index)
 {
-#ifdef DC
-	dc_trace(7, "load: enter, index=%d", (int)level_index);
-#ifdef DC
-	unsigned dc_t0 = dc_ticks();
-#endif
-#endif
 	OpenedFile OFile;
 	struct wad_header header;
 	struct wad_data *wad;
@@ -319,9 +311,6 @@ bool load_level_from_map(
 		}
 		
 		OpenedFile MapFile;
-#ifdef DC
-		dc_trace(8, "load: opening map wad (+%u ms)", dc_ticks() - dc_t0);
-#endif
 		if (open_wad_file_for_reading(MapFileSpec,MapFile))
 		{
 			/* Read the file */
@@ -750,13 +739,7 @@ bool goto_level(
 	else 
 	{
 		/* Load it and then rock.. */
-#ifdef DC
-		unsigned dc_g0 = dc_ticks();
-#endif
 		load_level_from_map(entry->level_number);
-#ifdef DC
-		dc_trace(24, "goto: load_level_from_map %u ms", dc_ticks() - dc_g0);
-#endif
 		if(error_pending()) success= false;
 	}
 	
@@ -766,14 +749,7 @@ bool goto_level(
 		// textures to load.
 		// Being careful to carry over errors so that Pfhortran errors can be ignored
 		short SavedType, SavedError = SavedError = get_game_error(&SavedType);
-#ifdef DC
-		unsigned dc_g1 = dc_ticks();
-#endif
 		RunLevelScript(entry->level_number);
-#ifdef DC
-		dc_trace(25, "goto: RunLevelScript %u ms", dc_ticks() - dc_g1);
-		dc_g1 = dc_ticks();
-#endif
 		set_game_error(SavedType,SavedError);
 		
 		if (!new_game)
@@ -786,10 +762,6 @@ bool goto_level(
 			/* entering_map might fail if netsync fails, but we will have already displayed */
 			/* the error.. */
 			success= entering_map(false);
-#ifdef DC
-			dc_trace(26, "goto: entering_map %u ms", dc_ticks() - dc_g1);
-			dc_g1 = dc_ticks();
-#endif
 		}
 
 		if(success) /* successfully switched. (guaranteed except in net games) */
@@ -799,9 +771,6 @@ bool goto_level(
 			 * levels (the placement stuff calls point_is_player_visible) and loading the game
 			 * wad munges the monster information (which p_i_p_v() needs) */
 			place_initial_objects();
-#ifdef DC
-			dc_trace(27, "goto: place_initial_objects %u ms", dc_ticks() - dc_g1);
-#endif
 	
 			initialize_control_panels_for_level(); /* must be called after the players are initialized */
 			
@@ -1124,10 +1093,6 @@ bool load_game_from_file(FileSpecifier& File)
 	
 	/* Load the level from the map */
 	success= load_level_from_map(NONE); /* Save games are ALWAYS index NONE */
-#ifdef DC
-	dc_trace(23, "load: %s -> load_level_from_map=%d err=%d",
-	         File.GetPath(), (int)success, (int)get_game_error(NULL));
-#endif
 	if (success)
 	{
 		uint32 parent_checksum;
@@ -1138,10 +1103,6 @@ bool load_game_from_file(FileSpecifier& File)
 
 		/* Find the original scenario this saved game was a part of.. */
 		parent_checksum= read_wad_file_parent_checksum(File);
-#ifdef DC
-		dc_trace(24, "load: parent_checksum=%08x found=%d",
-		         (unsigned)parent_checksum, (int)use_map_file(parent_checksum));
-#endif
 		if(use_map_file(parent_checksum))
 		{
 			// LP: getting the level scripting off of the map file

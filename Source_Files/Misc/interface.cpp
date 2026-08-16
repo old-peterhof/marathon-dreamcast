@@ -5,7 +5,7 @@
 
 	Friday, July 8, 1994 2:32:44 PM (alain)
 		All old code in here is obsolete. This now has interface for the top-level
-		interface (Begin Game, etcï¿½)
+		interface (Begin Game, etcÉ)
 	Saturday, September 10, 1994 12:45:48 AM  (alain)
 		the interface gutted again. just the stuff that handles the menu though, the rest stayed
 		the same.
@@ -96,13 +96,6 @@ extern TP2PerfGlobals perf_globals;
 // To tell it to stop playing,
 // and also to run the end-game script
 #include "XML_LevelScript.h"
-
-#ifdef DC
-extern "C" void dc_trace(int slot, const char *fmt, ...);
-extern "C" unsigned dc_ticks(void);
-static unsigned dc_newgame_t0 = 0;
-#endif
-
 
 #ifdef env68k
 	#pragma segment shell
@@ -628,7 +621,7 @@ void idle_game_state(
 		game_state.last_ticks_on_idle= machine_tick_count();
 	}
 
-	/* if weï¿½re not paused and thereï¿½s something to draw (i.e., anything different from
+	/* if weÕre not paused and thereÕs something to draw (i.e., anything different from
 		last time), render a frame */
 	if(game_state.state==_game_in_progress)
 	{
@@ -817,19 +810,7 @@ void do_menu_item_command(
 			switch(menu_item)
 			{
 				case iNewGame:
-#ifdef DC
-					dc_trace(9, "new: begin_game");
-					dc_newgame_t0 = dc_ticks();
-#endif
 					begin_game(_single_player, cheat);
-#ifdef DC
-					{
-						extern unsigned dc_coll_n, dc_coll_ms;
-						dc_trace(11, "new: TOTAL %u ms", dc_ticks() - dc_newgame_t0);
-						dc_trace(12, "new: %u collections, %u ms in them",
-						         dc_coll_n, dc_coll_ms);
-					}
-#endif
 					break;
 		
 				case iJoinGame:
@@ -1307,9 +1288,6 @@ static bool begin_game(
 			break;
 			
 		case _single_player:
-#ifdef DC
-			dc_trace(10, "new: single player setup");
-#endif
 			if(cheat)
 			{
 				entry.level_number= get_level_number_from_user();
@@ -1351,51 +1329,25 @@ static bool begin_game(
 		}
 		
 		hide_cursor();
-#ifdef DC
-		// Timing each stage of starting a game. A New Game takes 46 seconds even
-		// under Flycast and neither shape loading nor the colour tables account
-		// for it, so the remainder is here somewhere -- and two of these stages
-		// are fades, which cost wall-clock time rather than doing work.
-		unsigned dc_s0 = dc_ticks();
-#endif
 		/* This has already been done to get to gather/join */
 		if(can_interface_fade_out()) 
 		{
 			interface_fade_out(MAIN_MENU_BASE, true);
 		}
-#ifdef DC
-		dc_trace(15, "new: menu fade out %u ms", dc_ticks() - dc_s0);
-		dc_s0 = dc_ticks();
-#endif
 
 		/* Try to display the first chapter screen.. */
 		if (user != _network_player && user != _demo)
 		{
 			FindLevelMovie(entry.level_number);
 			show_movie(entry.level_number);
-#ifdef DC
-			dc_trace(16, "new: movie %u ms", dc_ticks() - dc_s0);
-			dc_s0 = dc_ticks();
-#endif
 			try_and_display_chapter_screen(CHAPTER_SCREEN_BASE + entry.level_number, false, false);
-#ifdef DC
-			dc_trace(17, "new: chapter screen %u ms", dc_ticks() - dc_s0);
-			dc_s0 = dc_ticks();
-#endif
 		}
 
 		/* Begin the game! */
 		success= new_game(number_of_players, is_networked, &game_information, starts, &entry);
-#ifdef DC
-		dc_trace(18, "new: new_game() %u ms", dc_ticks() - dc_s0);
-		dc_s0 = dc_ticks();
-#endif
 		if(success)
 		{
 			start_game(user, false);
-#ifdef DC
-			dc_trace(19, "new: start_game %u ms", dc_ticks() - dc_s0);
-#endif
 		} else {
 			/* Stop recording.. */
 			if(record_game)
@@ -1857,15 +1809,8 @@ static void try_and_display_chapter_screen(
 
 		/* Fade the screen to black.. */
 		assert(!current_picture_clut);
-#ifdef DC
-		unsigned dc_c0 = dc_ticks();
-#endif
 		current_picture_clut= calculate_picture_clut(CLUTSource_Scenario,pict_resource_number);
 		current_picture_clut_depth= interface_bit_depth;
-#ifdef DC
-		dc_trace(20, "chapter: clut %u ms", dc_ticks() - dc_c0);
-		dc_c0 = dc_ticks();
-#endif
 		
 		if (current_picture_clut)
 		{
@@ -1881,17 +1826,9 @@ static void try_and_display_chapter_screen(
 				assert_world_color_table(current_picture_clut, (struct color_table *) NULL);
 			}
 			full_fade(_start_cinematic_fade_in, current_picture_clut);
-#ifdef DC
-			dc_trace(21, "chapter: start fade %u ms", dc_ticks() - dc_c0);
-			dc_c0 = dc_ticks();
-#endif
 
 			/* Draw the picture */
 			draw_full_screen_pict_resource_from_scenario(pict_resource_number);
-#ifdef DC
-			dc_trace(22, "chapter: draw pict %u ms", dc_ticks() - dc_c0);
-			dc_c0 = dc_ticks();
-#endif
 
 			if (get_sound_resource_from_scenario(pict_resource_number,SoundRsrc))
 			{
@@ -1913,10 +1850,6 @@ static void try_and_display_chapter_screen(
 			/* Fade in.... */
 			assert(current_picture_clut);	
 			full_fade(_long_cinematic_fade_in, current_picture_clut);
-#ifdef DC
-			dc_trace(23, "chapter: long fade %u ms", dc_ticks() - dc_c0);
-			dc_c0 = dc_ticks();
-#endif
 			
 			scroll_full_screen_pict_resource_from_scenario(pict_resource_number, text_block);
 

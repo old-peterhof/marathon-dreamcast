@@ -65,11 +65,6 @@ Aug 10, 2000 (Loren Petrich):
 
 #include <limits.h>
 
-#ifdef DC
-extern "C" void dc_trace(int slot, const char *fmt, ...);
-extern "C" unsigned dc_ticks(void);
-#endif
-
 #ifdef env68k
 #pragma segment marathon
 #endif
@@ -250,35 +245,21 @@ bool entering_map(bool restoring_saved)
 	mark_environment_collections(static_world->environment_code, true);
 	mark_all_monster_collections(true);
 	mark_player_collections(true);
-#ifdef DC
-	unsigned dc_e0 = dc_ticks();
-#endif
 	load_collections();
-#ifdef DC
-	dc_trace(28, "map: load_collections %u ms", dc_ticks() - dc_e0);
-	dc_e0 = dc_ticks();
-#endif
-	
+
 	load_all_monster_sounds();
-#ifdef DC
-	dc_trace(29, "map: monster sounds %u ms", dc_ticks() - dc_e0);
-	dc_e0 = dc_ticks();
-#endif
 	load_all_game_sounds(static_world->environment_code);
-#ifdef DC
-	dc_trace(30, "map: game sounds %u ms", dc_ticks() - dc_e0);
-#endif
 
 	/* tell the keyboard controller to start recording keyboard flags */
 	if (game_is_networked) success= NetSync(); /* make sure everybody is ready */
 	
-	/* make sure nobodyï¿½s holding a weapon illegal in the new environment */
+	/* make sure nobodyÕs holding a weapon illegal in the new environment */
 	check_player_weapons_for_environment_change();
 
 	if (dynamic_world->player_count>1) initialize_net_game();	
 	randomize_scenery_shapes();
 
-	reset_player_queues(); //ï¿½ï¿½
+	reset_player_queues(); //¦¦
 	//CP Addition: Run startup script (if available)
 	script_init(restoring_saved);
 //	sync_heartbeat_count();
@@ -369,13 +350,13 @@ short calculate_level_completion_state(
 {
 	short completion_state= _level_finished;
 	
-	/* if there are any monsters left on an extermination map, we havenï¿½t finished yet */
+	/* if there are any monsters left on an extermination map, we havenÕt finished yet */
 	if (static_world->mission_flags&_mission_extermination)
 	{
 		if (live_aliens_on_map()) completion_state= _level_unfinished;
 	}
 	
-	/* if there are any polygons which must be explored and have not been entered, weï¿½re not done */
+	/* if there are any polygons which must be explored and have not been entered, weÕre not done */
 	if (static_world->mission_flags&_mission_exploration)
 	{
 		short polygon_index;
@@ -391,19 +372,19 @@ short calculate_level_completion_state(
 		}
 	}
 	
-	/* if there are any items left on this map, weï¿½re not done */
+	/* if there are any items left on this map, weÕre not done */
 	if (static_world->mission_flags&_mission_retrieval)
 	{
 		if (unretrieved_items_on_map()) completion_state= _level_unfinished;
 	}
 	
-	/* if there are any untoggled repair switches on this level then weï¿½re not there */
+	/* if there are any untoggled repair switches on this level then weÕre not there */
 	if (static_world->mission_flags&_mission_repair)
 	{
 		if (untoggled_repair_switches_on_level()) completion_state= _level_unfinished;
 	}
 
-	/* if weï¿½ve finished the level, check failure conditions */
+	/* if weÕve finished the level, check failure conditions */
 	if (completion_state==_level_finished)
 	{
 		/* if this is a rescue mission and more than half of the civilians died, the mission failed */

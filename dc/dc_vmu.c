@@ -40,7 +40,7 @@
 
 extern void dc_trace(int slot, const char *fmt, ...);
 
-/* preferences.cpp: the combined sizes of the preference structs this build was
+/* preferences.cpp: combined sizes of the preference structs this build was
    compiled against. Any change to any of them changes this number. */
 extern int dc_prefs_format(void);
 
