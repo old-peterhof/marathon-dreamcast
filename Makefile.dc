@@ -47,7 +47,7 @@ SDL_INCS = -I$(KOS_PORTS)/include/SDL
 # renderer. Verified with nm: our own OGL_*.o reference zero gl symbols.
 SDL_LIBS = -lSDL -lGL -lz
 
-INCS    = $(SDL_INCS) -Idc/vendor -I$(CS) -I$(EP) -I$(MI) -I$(NW) -I$(PF) -I$(MV)
+INCS    = $(SDL_INCS) -Idc -Idc/vendor -I$(CS) -I$(EP) -I$(MI) -I$(NW) -I$(PF) -I$(MV)
 DEFINES = -DSDL -DHAVE_UNISTD_H -DPACKAGE='"AlephOne"' -DVERSION='"0.12.0"' -DDC
 
 # GL=1 selects BERO's untested hardware-accelerated path. IT DOES NOT COMPILE,

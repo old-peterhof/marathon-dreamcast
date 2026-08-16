@@ -101,7 +101,10 @@ Nov 26, 2000 (Loren Petrich):
 #include "Packing.h"
 
 #ifdef DC
-extern "C" void dc_vmu_save_game(const char *ram_path, const char *map_path, int level);
+#include "dc_vmu.h"
+
+// Which slot the save screen chose; see dc_vmu_set_target_slot in dc_slots.cpp.
+extern "C" int dc_vmu_take_target_slot(void);
 #endif
 
 // LP addition: for physics-model stuff, we need these pointers to definitions
@@ -1296,9 +1299,16 @@ bool save_game_file(FileSpecifier& File)
 	// it simply may not outlive the power switch. See dc/dc_vmu.c.
 	// The map path and level let dc_wad.c fold the save against the level it was
 	// made on, which is the difference between 163 blocks on a memory card and 22.
+	// The level name and elapsed time are written into the card header so the
+	// slot screen can list four saves from four 128-byte reads, without
+	// decompressing and unfolding each one just to find out what it is.
 	if (success)
 		dc_vmu_save_game(File.GetPath(), MapFileSpec.GetPath(),
-		                 dynamic_world->current_level_number);
+		                 dynamic_world->current_level_number,
+		                 static_world->level_name,
+		                 (unsigned int)dynamic_world->tick_count,
+		                 dynamic_world->game_information.difficulty_level,
+		                 dc_vmu_take_target_slot());
 #endif
 	
 	return success;

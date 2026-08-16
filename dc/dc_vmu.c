@@ -271,17 +271,66 @@ void dc_vmu_save_prefs(const char *ram_path)
 #include <dc/maple.h>
 #include <dc/maple/vmu.h>
 #include <dc/vmufs.h>
+#include <kos/rtc.h>
+
+#include "dc_vmu.h"
 #include <zlib/zlib.h>	/* kos-ports installs it under a zlib/ subdirectory */
 
+/*
+ *	SAVE_SLOTS is how many card slots are scanned. DC_SAVE_SLOTS is how many the
+ *	player sees. They differ on purpose: cards written before four-slot saving
+ *	may hold games in slots 5 to 8, and those must still be found and restored
+ *	even though the new interface only addresses four.
+ */
 #define SAVE_SLOTS		8
-#define SAVE_HDR_LEN	64
 #define SAVE_MAGIC_0	'A'
 #define SAVE_MAGIC_1	'1'
 #define SAVE_MAGIC_2	'S'
-#define SAVE_MAGIC_3	'V'
+#define SAVE_MAGIC_3	'V'		/* v1 */
+#define SAVE_MAGIC_3_V2	'2'		/* v2: 'A1S2' */
 #define SAVE_NAME_OFF	16			/* name lives here, after the length fields */
 #define SAVE_FLAG_ZLIB	0x01		/* payload is deflated */
 #define SAVE_FLAG_DELTA	0x02		/* payload was XORed against its map level */
+
+/*
+ *	Two header versions.
+ *
+ *	v1 is 64 bytes and full: name[48] runs to byte 63 with nothing spare. The
+ *	four-slot interface needs a level name, a date and an ordering, so rather
+ *	than extend v1 in place -- which would misread every card already written --
+ *	v2 is a longer header under a different magic, exactly as the preferences
+ *	stamp above versions itself.
+ *
+ *	Bytes 4 to 14 mean the same thing in both, deliberately. That range holds the
+ *	fold key: the level number the payload was XORed against. Unfolding against
+ *	the wrong level yields garbage that the wad reader accepts without complaint,
+ *	so it is the one part of this format that must never drift.
+ *
+ *	  0-3    magic
+ *	  4-7    raw_len          v1 and v2
+ *	  8-11   stored_len       v1 and v2
+ *	  12     flags            v1 and v2
+ *	  13-14  level            v1 and v2
+ *	  15     player slot      v2 (v1: unused)
+ *	  16-63  /ram filename    v1 and v2
+ *	  64-105 level name       v2
+ *	  106-9  save time, RTC   v2
+ *	  110-3  save sequence    v2
+ *	  114-7  elapsed ticks    v2
+ *	  118-9  difficulty       v2
+ *	  120-7  spare            v2
+ */
+#define SAVE_HDR_V1_LEN	64
+#define SAVE_HDR_V2_LEN	128
+#define SAVE_HDR_MAX	SAVE_HDR_V2_LEN
+
+#define SAVE_LVLNAME_OFF	64
+#define SAVE_LVLNAME_LEN	42
+#define SAVE_TIME_OFF		106
+#define SAVE_SEQ_OFF		110
+#define SAVE_TICKS_OFF		114
+#define SAVE_DIFF_OFF		118
+
 
 static void put_u32(uint8_t *p, uint32_t v)
 {
@@ -299,27 +348,68 @@ static uint32_t get_u32(const uint8_t *p)
    mirrored: it exists for a few milliseconds between write and exchange. */
 #define SAVE_TEMP_NAME	"savetemp.dat"
 
+/*
+ *	Write a v2 header.
+ *
+ *	`info` carries the metadata; everything the fold depends on comes from the
+ *	explicit arguments, so the two cannot get out of step.
+ */
 static void save_hdr_put(uint8_t *h, const char *name, uint32_t raw_len,
-                         uint32_t stored_len, uint8_t flags, int level)
+                         uint32_t stored_len, uint8_t flags, int level,
+                         int slot, const char *level_name,
+                         uint32_t save_time, uint32_t save_seq,
+                         uint32_t ticks, int difficulty)
 {
-	memset(h, 0, SAVE_HDR_LEN);
+	memset(h, 0, SAVE_HDR_V2_LEN);
+
 	h[0] = SAVE_MAGIC_0; h[1] = SAVE_MAGIC_1;
-	h[2] = SAVE_MAGIC_2; h[3] = SAVE_MAGIC_3;
+	h[2] = SAVE_MAGIC_2; h[3] = SAVE_MAGIC_3_V2;
+
 	put_u32(h + 4, raw_len);
 	put_u32(h + 8, stored_len);
 	h[12] = flags;
-	/* Which level the save was folded against; meaningless without the flag. */
+
+	/* Which level the save was folded against; meaningless without the flag,
+	   and wrong here means a silently corrupt restore. */
 	h[13] = (uint8_t)(level & 0xff);
 	h[14] = (uint8_t)((level >> 8) & 0xff);
-	strncpy((char *)h + SAVE_NAME_OFF, name, SAVE_HDR_LEN - SAVE_NAME_OFF - 1);
+	h[15] = (uint8_t)slot;
+
+	strncpy((char *)h + SAVE_NAME_OFF, name, SAVE_HDR_V1_LEN - SAVE_NAME_OFF - 1);
+
+	if (level_name)
+		strncpy((char *)h + SAVE_LVLNAME_OFF, level_name, SAVE_LVLNAME_LEN - 1);
+
+	put_u32(h + SAVE_TIME_OFF, save_time);
+	put_u32(h + SAVE_SEQ_OFF, save_seq);
+	put_u32(h + SAVE_TICKS_OFF, ticks);
+
+	h[SAVE_DIFF_OFF]     = (uint8_t)(difficulty & 0xff);
+	h[SAVE_DIFF_OFF + 1] = (uint8_t)((difficulty >> 8) & 0xff);
 }
 
-static int save_hdr_get(const uint8_t *h, char *name, size_t name_len,
-                        uint32_t *raw_len, uint32_t *stored_len, uint8_t *flags,
-                        int *level)
+/*
+ *	Read either header version.
+ *
+ *	Returns the header length -- 64 or 128, which is also where the payload
+ *	starts -- or 0 if this is not one of ours. A v1 header fills in what it can
+ *	and leaves the rest zeroed, so an old save lists as "Level 7" with no name
+ *	and no date rather than refusing to appear.
+ */
+static int save_hdr_get(const uint8_t *h, uint32_t *raw_len,
+                        uint32_t *stored_len, uint8_t *flags, int *level,
+                        dc_save_info_t *info)
 {
-	if (h[0] != SAVE_MAGIC_0 || h[1] != SAVE_MAGIC_1 ||
-	    h[2] != SAVE_MAGIC_2 || h[3] != SAVE_MAGIC_3)
+	int v2;
+
+	if (h[0] != SAVE_MAGIC_0 || h[1] != SAVE_MAGIC_1 || h[2] != SAVE_MAGIC_2)
+		return 0;
+
+	if (h[3] == SAVE_MAGIC_3_V2)
+		v2 = 1;
+	else if (h[3] == SAVE_MAGIC_3)
+		v2 = 0;
+	else
 		return 0;
 
 	*raw_len    = get_u32(h + 4);
@@ -329,10 +419,33 @@ static int save_hdr_get(const uint8_t *h, char *name, size_t name_len,
 	if (level)
 		*level = (int)h[13] | ((int)h[14] << 8);
 
-	strncpy(name, (const char *)h + SAVE_NAME_OFF, name_len - 1);
-	name[name_len - 1] = 0;
+	if (info) {
+		memset(info, 0, sizeof *info);
 
-	return name[0] != 0;
+		strncpy(info->ram_name, (const char *)h + SAVE_NAME_OFF,
+		        sizeof info->ram_name - 1);
+
+		info->level      = (int)h[13] | ((int)h[14] << 8);
+		info->difficulty = -1;
+
+		if (v2) {
+			strncpy(info->level_name, (const char *)h + SAVE_LVLNAME_OFF,
+			        sizeof info->level_name - 1);
+
+			info->save_time  = get_u32(h + SAVE_TIME_OFF);
+			info->save_seq   = get_u32(h + SAVE_SEQ_OFF);
+			info->ticks      = get_u32(h + SAVE_TICKS_OFF);
+			info->difficulty = (int)h[SAVE_DIFF_OFF] |
+			                   ((int)h[SAVE_DIFF_OFF + 1] << 8);
+		}
+
+		info->used = info->ram_name[0] != 0;
+	}
+
+	if (h[SAVE_NAME_OFF] == 0)
+		return 0;
+
+	return v2 ? SAVE_HDR_V2_LEN : SAVE_HDR_V1_LEN;
 }
 
 /* Everything after the last slash, or the whole string if there is none. */
@@ -418,19 +531,70 @@ static int pick_vmu(int need, char *out, size_t out_len, int *best_free, int *fo
 }
 
 /*
- *	Restore every save on the card into the ramdisk. Called once at start-up,
- *	before Aleph One looks at saved_games_dir, so the load dialog simply finds
- *	them there.
+ *	The slot table.
+ *
+ *	Built once by dc_vmu_load_saves and consulted by everything after. Each entry
+ *	remembers the card and card slot it came from, so a save found in card slot 7
+ *	can be the player's slot 2 without anything being moved. Moving saves around
+ *	to make the numbering tidy would mean rewriting a player's data to no purpose
+ *	and some risk.
+ */
+static dc_save_info_t slots[DC_SAVE_SLOTS];
+static char slot_unit[DC_SAVE_SLOTS][32];
+static int  slot_card[DC_SAVE_SLOTS];		/* card slot 1..SAVE_SLOTS */
+static unsigned int highest_seq = 0;
+
+static int pending_target_slot = 0;
+
+void dc_vmu_set_target_slot(int slot)
+{
+	pending_target_slot = slot;
+}
+
+int dc_vmu_take_target_slot(void)
+{
+	int slot = pending_target_slot;
+
+	pending_target_slot = 0;
+
+	return slot;
+}
+
+const char *dc_vmu_slot_ram_name(int slot)
+{
+	static char name[16];
+
+	if (slot < 1 || slot > DC_SAVE_SLOTS)
+		return NULL;
+
+	snprintf(name, sizeof name, "Slot %d", slot);
+
+	return name;
+}
+
+/*
+ *	Restore every save on the card into the ramdisk, and record the first
+ *	DC_SAVE_SLOTS of them as the player's slots. Called once at start-up, before
+ *	Aleph One looks at saved_games_dir, so the load path simply finds them there.
+ *
+ *	Saves past the fourth are still restored -- they were the player's and this
+ *	is not the place to decide they are not -- but they are not addressable from
+ *	the four-slot interface. They are logged so that is visible rather than
+ *	mysterious.
  */
 void dc_vmu_load_saves(const char *ram_dir, const char *map_path)
 {
 	char unit[32];
-	int slot, restored = 0;
+	int slot, restored = 0, taken = 0, spilled = 0;
 	DIR *dir;
 	struct dirent *de;
 
 	if (!ram_dir)
 		ram_dir = "/ram";
+
+	memset(slots, 0, sizeof slots);
+	memset(slot_card, 0, sizeof slot_card);
+	highest_seq = 0;
 
 	dir = opendir("/vmu");
 	if (!dir)
@@ -446,10 +610,11 @@ void dc_vmu_load_saves(const char *ram_dir, const char *map_path)
 	snprintf(unit, sizeof unit, "/vmu/%s", de->d_name);
 
 	for (slot = 1; slot <= SAVE_SLOTS; slot++) {
-		char src[80], dst[160], name[SAVE_HDR_LEN];
-		uint8_t hdr[SAVE_HDR_LEN], flags;
+		char src[80], dst[160];
+		uint8_t hdr[SAVE_HDR_MAX], flags;
 		uint32_t raw_len, stored_len;
-		int level = 0;
+		dc_save_info_t info;
+		int level = 0, hdr_len;
 		FILE *in, *out;
 		uint8_t *stored, *raw;
 		size_t got;
@@ -460,9 +625,22 @@ void dc_vmu_load_saves(const char *ram_dir, const char *map_path)
 		if (!in)
 			continue;
 
-		if (fread(hdr, 1, SAVE_HDR_LEN, in) != SAVE_HDR_LEN ||
-		    !save_hdr_get(hdr, name, sizeof name, &raw_len, &stored_len, &flags, &level) ||
-		    raw_len == 0 || stored_len == 0) {
+		/* Read the larger header unconditionally: a v1 file is 64 bytes of
+		   header followed by payload, so the extra 64 read here is simply the
+		   first of its payload and is discarded once the version is known. */
+		if (fread(hdr, 1, SAVE_HDR_MAX, in) < SAVE_HDR_V1_LEN) {
+			fclose(in);
+			continue;
+		}
+
+		hdr_len = save_hdr_get(hdr, &raw_len, &stored_len, &flags, &level, &info);
+
+		if (!hdr_len || raw_len == 0 || stored_len == 0) {
+			fclose(in);
+			continue;
+		}
+
+		if (fseek(in, hdr_len, SEEK_SET) != 0) {
 			fclose(in);
 			continue;
 		}
@@ -492,7 +670,7 @@ void dc_vmu_load_saves(const char *ram_dir, const char *map_path)
 
 			if (uncompress(raw, &out_len, stored, stored_len) != Z_OK ||
 			    out_len != raw_len) {
-				dc_trace(17, "vmu: %s failed to decompress", name);
+				dc_trace(17, "vmu: %s failed to decompress", info.ram_name);
 				free(raw);
 				free(stored);
 				continue;
@@ -507,18 +685,35 @@ void dc_vmu_load_saves(const char *ram_dir, const char *map_path)
 		if (flags & SAVE_FLAG_DELTA) {
 			if (dc_wad_xor_level(raw, (long)raw_len, map_path, level) < 0) {
 				dc_trace(17, "vmu: %s needs level %d, which could not be read",
-				         name, level);
+				         info.ram_name, level);
 				free(raw);
 				continue;
 			}
 		}
 
-		snprintf(dst, sizeof dst, "%s/%s", ram_dir, name);
+		snprintf(dst, sizeof dst, "%s/%s", ram_dir, info.ram_name);
 		out = fopen(dst, "wb");
 		if (out) {
 			fwrite(raw, 1, raw_len, out);
 			fclose(out);
 			restored++;
+
+			if (taken < DC_SAVE_SLOTS) {
+				info.slot = taken + 1;
+				info.blocks = (int)((stored_len + SAVE_HDR_V2_LEN +
+				                     VMU_BLOCK - 1) / VMU_BLOCK) + 1;
+
+				slots[taken] = info;
+				snprintf(slot_unit[taken], sizeof slot_unit[taken], "%s", unit);
+				slot_card[taken] = slot;
+
+				if (info.save_seq > highest_seq)
+					highest_seq = info.save_seq;
+
+				taken++;
+			} else {
+				spilled++;
+			}
 		}
 
 		free(raw);
@@ -529,7 +724,102 @@ void dc_vmu_load_saves(const char *ram_dir, const char *map_path)
 	closedir(dir);
 
 	if (restored)
-		dc_trace(17, "vmu: restored %d saved game(s)", restored);
+		dc_trace(17, "vmu: restored %d saved game(s), %d in slots", restored, taken);
+
+	if (spilled)
+		dc_trace(17, "vmu: %d save(s) past slot %d are on the card but not "
+		             "reachable from the slot screen", spilled, DC_SAVE_SLOTS);
+}
+
+int dc_vmu_list_saves(dc_save_info_t *out, int max)
+{
+	int i, used = 0;
+
+	if (!out)
+		return 0;
+
+	if (max > DC_SAVE_SLOTS)
+		max = DC_SAVE_SLOTS;
+
+	for (i = 0; i < max; i++) {
+		out[i] = slots[i];
+		out[i].slot = i + 1;
+
+		if (out[i].used)
+			used++;
+	}
+
+	return used;
+}
+
+/*
+ *	The slot the player most recently saved into.
+ *
+ *	Ordered on the sequence counter rather than the clock: a Dreamcast with a
+ *	flat battery reports a fixed date, and Continue Game opening the wrong save
+ *	is worse than showing the wrong date beside it. The clock is only a tie-break
+ *	for cards written before the counter existed, where both are zero and the
+ *	slot order is all there is.
+ */
+int dc_vmu_newest_slot(void)
+{
+	int i, best = 0;
+	unsigned int best_seq = 0, best_time = 0;
+
+	for (i = 0; i < DC_SAVE_SLOTS; i++) {
+		if (!slots[i].used)
+			continue;
+
+		if (!best ||
+		    slots[i].save_seq > best_seq ||
+		    (slots[i].save_seq == best_seq && slots[i].save_time > best_time)) {
+			best = i + 1;
+			best_seq = slots[i].save_seq;
+			best_time = slots[i].save_time;
+		}
+	}
+
+	return best;
+}
+
+/*
+ *	Delete a slot, from the card and from the ramdisk both.
+ *
+ *	There is no undo, so every caller confirms first. The ramdisk copy matters as
+ *	much as the card copy: leaving it behind would have the save reappear in
+ *	Aleph One's own file list, and be mirrored back to the card by the next save.
+ */
+int dc_vmu_delete_save(int slot)
+{
+	char path[96];
+	int i;
+
+	if (slot < 1 || slot > DC_SAVE_SLOTS)
+		return 0;
+
+	i = slot - 1;
+
+	if (!slots[i].used)
+		return 0;
+
+	if (slot_card[i]) {
+		snprintf(path, sizeof path, "%s/AOSAVE%02d.SAV",
+		         slot_unit[i], slot_card[i]);
+
+		if (fs_unlink(path) < 0)
+			dc_trace(17, "vmu: could not unlink %s", path);
+	}
+
+	snprintf(path, sizeof path, "/ram/%s", slots[i].ram_name);
+	remove(path);
+
+	dc_trace(17, "vmu: deleted slot %d (%s)", slot, slots[i].ram_name);
+
+	memset(&slots[i], 0, sizeof slots[i]);
+	slot_card[i] = 0;
+	slot_unit[i][0] = 0;
+
+	return 1;
 }
 
 /*
@@ -553,9 +843,10 @@ static int find_slot(const char *unit, const char *name, int *first_free)
 	*first_free = 0;
 
 	for (slot = 1; slot <= SAVE_SLOTS; slot++) {
-		char probe[80], existing[SAVE_HDR_LEN];
-		uint8_t hdr[SAVE_HDR_LEN], flags;
+		char probe[80];
+		uint8_t hdr[SAVE_HDR_MAX], flags;
 		uint32_t raw_len, stored_len;
+		dc_save_info_t info;
 		FILE *f;
 
 		snprintf(probe, sizeof probe, "%s/AOSAVE%02d.SAV", unit, slot);
@@ -567,9 +858,9 @@ static int find_slot(const char *unit, const char *name, int *first_free)
 			continue;
 		}
 
-		if (fread(hdr, 1, SAVE_HDR_LEN, f) == SAVE_HDR_LEN &&
-		    save_hdr_get(hdr, existing, sizeof existing, &raw_len, &stored_len, &flags, NULL) &&
-		    strcmp(existing, name) == 0) {
+		if (fread(hdr, 1, SAVE_HDR_MAX, f) >= SAVE_HDR_V1_LEN &&
+		    save_hdr_get(hdr, &raw_len, &stored_len, &flags, NULL, &info) &&
+		    strcmp(info.ram_name, name) == 0) {
 			fclose(f);
 			return slot;
 		}
@@ -580,7 +871,9 @@ static int find_slot(const char *unit, const char *name, int *first_free)
 	return 0;
 }
 
-void dc_vmu_save_game(const char *ram_path, const char *map_path, int level)
+void dc_vmu_save_game(const char *ram_path, const char *map_path, int level,
+                      const char *level_name, unsigned int ticks,
+                      int difficulty, int target_slot)
 {
 	static int warned_no_card = 0;
 	char unit[32], dst[80], msg1[96], msg2[96];
@@ -649,7 +942,7 @@ void dc_vmu_save_game(const char *ram_path, const char *map_path, int level)
 		dc_trace(17, "vmu: level %d unreadable, storing %s whole", level, name);
 
 	bound = compressBound((uLong)size);
-	alloc = SAVE_HDR_LEN + (size_t)bound + VMU_BLOCK;
+	alloc = SAVE_HDR_V2_LEN + (size_t)bound + VMU_BLOCK;
 
 	out = malloc(alloc);
 	if (!out) {
@@ -657,7 +950,7 @@ void dc_vmu_save_game(const char *ram_path, const char *map_path, int level)
 		return;
 	}
 
-	if (compress2(out + SAVE_HDR_LEN, &bound, raw, (uLong)size,
+	if (compress2(out + SAVE_HDR_V2_LEN, &bound, raw, (uLong)size,
 	              Z_BEST_COMPRESSION) != Z_OK) {
 		dc_trace(17, "vmu: could not compress %s", name);
 		free(raw);
@@ -668,22 +961,55 @@ void dc_vmu_save_game(const char *ram_path, const char *map_path, int level)
 	free(raw);
 	raw = NULL;
 
-	payload = SAVE_HDR_LEN + (size_t)bound;
+	payload = SAVE_HDR_V2_LEN + (size_t)bound;
 	padded = (payload + VMU_BLOCK - 1) / VMU_BLOCK * VMU_BLOCK;
 
 	if (padded > payload)
 		memset(out + payload, 0, padded - payload);
 
+	/*
+	 *	The sequence counter is what Continue Game orders on, so it has to keep
+	 *	rising across power cycles. highest_seq is seeded from the card at
+	 *	start-up, so this carries on from whatever the card already knows rather
+	 *	than restarting at 1 every boot and making the newest save look oldest.
+	 */
+	highest_seq++;
+
 	save_hdr_put(out, name, (uint32_t)size, (uint32_t)bound,
-	             (uint8_t)(SAVE_FLAG_ZLIB | delta), level);
+	             (uint8_t)(SAVE_FLAG_ZLIB | delta), level,
+	             target_slot, level_name,
+	             (uint32_t)rtc_unix_secs(), highest_seq, ticks, difficulty);
 
 	need_blocks = (int)(padded / VMU_BLOCK) + 1;	/* +1 for the directory header */
 
 	/*
-	 *	Prefer a card that already holds this save: overwriting it costs nothing
-	 *	extra, and its blocks come back the moment the old copy is unlinked.
+	 *	An explicit slot wins over everything else. The player chose it in the
+	 *	save screen, and if it already holds a game they were shown that and
+	 *	confirmed -- so the old file goes and its blocks come back before the
+	 *	free-space check below, which is what makes overwriting a full card
+	 *	possible at all.
 	 */
-	dir = opendir("/vmu");
+	if (target_slot >= 1 && target_slot <= DC_SAVE_SLOTS &&
+	    slot_card[target_slot - 1] && slot_unit[target_slot - 1][0]) {
+		char old_path[96];
+
+		snprintf(unit, sizeof unit, "%s", slot_unit[target_slot - 1]);
+		snprintf(old_path, sizeof old_path, "%s/AOSAVE%02d.SAV",
+		         unit, slot_card[target_slot - 1]);
+
+		fs_unlink(old_path);
+
+		target = slot_card[target_slot - 1];
+		chose = 1;
+		found_any = 1;
+	}
+
+	/*
+	 *	Otherwise prefer a card that already holds this save: overwriting it
+	 *	costs nothing extra, and its blocks come back the moment the old copy is
+	 *	unlinked.
+	 */
+	dir = chose ? NULL : opendir("/vmu");
 	if (dir) {
 		while ((de = readdir(dir)) != NULL) {
 			char cand[32];
@@ -794,6 +1120,30 @@ void dc_vmu_save_game(const char *ram_path, const char *map_path, int level)
 	} else {
 		dc_trace(17, "vmu: saved %s to %s slot %d, %ld -> %u bytes (%d blocks)",
 		         name, unit, target, size, (unsigned)padded, need_blocks);
+
+		/* Update the slot table in place. Rebuilding it would mean re-reading
+		   and decompressing every save on the card, and the one thing that just
+		   changed is entirely known here. */
+		if (target_slot >= 1 && target_slot <= DC_SAVE_SLOTS) {
+			int i = target_slot - 1;
+
+			memset(&slots[i], 0, sizeof slots[i]);
+			slots[i].used = 1;
+			slots[i].slot = target_slot;
+			strncpy(slots[i].ram_name, name, sizeof slots[i].ram_name - 1);
+			if (level_name)
+				strncpy(slots[i].level_name, level_name,
+				        sizeof slots[i].level_name - 1);
+			slots[i].level      = level;
+			slots[i].save_time  = (unsigned int)rtc_unix_secs();
+			slots[i].save_seq   = highest_seq;
+			slots[i].ticks      = ticks;
+			slots[i].difficulty = difficulty;
+			slots[i].blocks     = need_blocks;
+
+			snprintf(slot_unit[i], sizeof slot_unit[i], "%s", unit);
+			slot_card[i] = target;
+		}
 	}
 
 	fs_close(fd);

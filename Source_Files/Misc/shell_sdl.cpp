@@ -150,7 +150,7 @@ static void usage(const char *prg_name)
 
 extern "C" {
 extern int fs_mem_init(void);
-extern void dc_vmu_load_saves(const char *ram_dir, const char *map_path);
+#include "dc_vmu.h"
 #ifdef DC
 void dc_trace(int slot, const char *fmt, ...);
 void dc_input_init_video(void);		// suppress SDL's 60Hz prompt; see dc_input.c

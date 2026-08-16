@@ -49,7 +49,8 @@ Source_Files/Misc/game_wad.o: Source_Files/Misc/game_wad.cpp \
  Source_Files/Misc/render.h Source_Files/Misc/textures.h \
  Source_Files/Misc/ViewControl.h Source_Files/Misc/FontHandler.h \
  Source_Files/Misc/sdl_fonts.h Source_Files/Misc/scottish_textures.h \
- Source_Files/Misc/XML_LevelScript.h Source_Files/Misc/Packing.h
+ Source_Files/Misc/XML_LevelScript.h Source_Files/Misc/Packing.h \
+ dc/dc_vmu.h
 Source_Files/CSeries/cseries.h:
 Source_Files/CSeries/sdl_cseries.h:
 /opt/toolchains/dc/kos/../kos-ports/include/SDL/SDL.h:
@@ -124,3 +125,4 @@ Source_Files/Misc/sdl_fonts.h:
 Source_Files/Misc/scottish_textures.h:
 Source_Files/Misc/XML_LevelScript.h:
 Source_Files/Misc/Packing.h:
+dc/dc_vmu.h:
