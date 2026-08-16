@@ -54,3 +54,4 @@ to the engine clamp, and the VMU Profiler. Git history has the detail.
 | b32 | b31-restore | a2f9d3c | b31 code exactly, original toolchain: known-good baseline |
 | b57 | pad-config | 2e11a6b | CONFIGURE CONTROLLER: bindings in preferences, capture widget, Look/Move stick modes |
 | b58 | new-ui | a2713df | Plate menu, four save slots, difficulty screen, Manage Saves |
+| b59 | ui-prefs | 500fe83 | Preferences restructure, explainer lines, two-column binding page |
