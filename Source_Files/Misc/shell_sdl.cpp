@@ -421,6 +421,7 @@ static void initialize_application(void)
 		}
 
 		OGLData.Flags &= ~OGL_Flag_3D_Models;
+		OGLData.Flags |= OGL_Flag_FlatLand;
 	}
 #endif
 #ifdef DC

@@ -174,8 +174,11 @@ void OGL_SetDefaults(OGL_ConfigureData& Data)
 	// No 3D models: this disc declares none, so the flag only enables a code
 	// path that cannot be exercised -- and it is the path that wants the clip
 	// planes GLdc does not have.
+	// Flat landscapes. A real one is a single 1024x512 texture, and converting
+	// it costs a 2MB buffer -- which is exactly the allocation that fell off the
+	// end of a 16MB machine. GetFakeLandscape() paints the flat colours instead.
 	Data.Flags = OGL_Flag_FlatStatic | OGL_Flag_Fader | OGL_Flag_Map |
-		OGL_Flag_HUD | OGL_Flag_LiqSeeThru;
+		OGL_Flag_HUD | OGL_Flag_LiqSeeThru | OGL_Flag_FlatLand;
 #else
 	Data.Flags = OGL_Flag_FlatStatic | OGL_Flag_Fader | OGL_Flag_Map |
 		OGL_Flag_HUD | OGL_Flag_LiqSeeThru | OGL_Flag_3D_Models;

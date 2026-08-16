@@ -443,24 +443,34 @@ bool TextureManager::Setup()
 			}
 		}
 		
-		// If not, then load the expected textures
-		if (!NormalBuffer)
-			NormalBuffer = GetOGLTexture(NormalColorTable);
-		if (IsGlowing && !GlowBuffer)
-			GlowBuffer = GetOGLTexture(GlowColorTable);
-		
 		// Display size: may be shrunk
 		LoadedWidth = MAX(TxtrWidth >> TxtrTypeInfo.Resolution, 1);
 		LoadedHeight = MAX(TxtrHeight >> TxtrTypeInfo.Resolution, 1);
 		
-		if (LoadedWidth != TxtrWidth || LoadedHeight != TxtrHeight)
+		bool NeedsShrink = (LoadedWidth != TxtrWidth || LoadedHeight != TxtrHeight);
+		
+		// If not, then load the expected textures.
+		//
+		// Each buffer is built at full size and then reduced, so building both
+		// before reducing either meant two full-size buffers alive at once. On a
+		// 16MB machine that is the difference between fitting and not: a 1024x512
+		// landscape is 2MB per buffer. Reduce each one as soon as it exists, so
+		// the peak is one full-size buffer plus one reduced, never two full.
+		if (!NormalBuffer)
 		{
-			// Shrink it
-			uint32 *NewNormalBuffer = Shrink(NormalBuffer);
-			delete []NormalBuffer;
-			NormalBuffer = NewNormalBuffer;
-			
-			if (IsGlowing)
+			NormalBuffer = GetOGLTexture(NormalColorTable);
+			if (NeedsShrink)
+			{
+				uint32 *NewNormalBuffer = Shrink(NormalBuffer);
+				delete []NormalBuffer;
+				NormalBuffer = NewNormalBuffer;
+			}
+		}
+		
+		if (IsGlowing && !GlowBuffer)
+		{
+			GlowBuffer = GetOGLTexture(GlowColorTable);
+			if (NeedsShrink)
 			{
 				uint32 *NewGlowBuffer = Shrink(GlowBuffer);
 				delete []GlowBuffer;

@@ -62,57 +62,48 @@ is more work but avoids fighting a widget system built around a pointer.
 
 ## PowerVR / hardware-accelerated renderer
 
-Status after b34: **it builds, links, initialises a real GL context on the
-PowerVR, loads a level, and dies of memory exhaustion on the first frame.**
+**It renders.** Textured walls, floors, ceilings, sprites and the HUD, on the
+PowerVR at 640x480, verified by screenshot in Flycast.
 
-    gl: requested=1 obtained=1
-    gl: PowerVR2 CLX2 100mHz / 1.2 (partial) - GLdc 1.1
+Not measured on hardware yet, and that is the only number that matters -- Flycast
+holds at 30fps because that is the engine tick, not the renderer.
 
-The old note here said this was blocked on clip planes and needed a renderer
-rewrite. That was wrong. All six glClipPlane calls are inside RenderModelSetup(),
-reached only when rectangle_definition::ModelPtr is set -- the external-3D-model
-path, which stock Marathon 2 never enters. See dc/dc_gl_compat.h.
+### The two things that actually blocked it
 
-Fixed along the way:
+**Not clip planes.** Every build note since the first session said this needed a
+renderer rewrite because GLdc has no glClipPlane. All six calls are inside
+RenderModelSetup(), reached only when ModelPtr is set -- the external-3D-model
+path stock Marathon 2 never enters.
 
-- 17 missing GL entry points, via dc/dc_gl_compat.h, force-included under GL=1
-- display lists, in both OGL_RenderText and FontHandler's 256-glyph table
-- gluScaleImage and gluBuild2DMipmaps, in dc/dc_glu.c
-- GL_LUMINANCE_ALPHA font textures, which GLdc refuses ("Couldn't find stride
-  for format: 0x190a") -- expanded to RGBA
-- SDL_OPENGLBLIT, which the Dreamcast backend has no notion of, to SDL_OPENGL
-- a second SDL_SetVideoMode at level entry tearing the PowerVR down underneath
-  GLdc, which tripped "Assertion pvr_state.valid failed" in pvr_wait_ready
+**The world was black because of one number.** GLdc's vertex-array reader, from
+attributes.c:
 
-### What is left: memory
+    case GL_DOUBLE:
+        return (ATTRIB_LIST.vertex.size == 3) ? _readPosition3d3f
+                                              : _readPosition2d3f;
 
-A Dreamcast has 16MB. Measured heap, GL build:
+Only a size of 3 is understood for GL_DOUBLE. Anything else silently falls to the
+two-component reader, which takes x and y and sets z = 0. OGL_Render.cpp asked
+for `glVertexPointer(4, GL_DOUBLE, ...)` on walls and 3 on sprites -- so every
+wall vertex collapsed onto one plane while sprites drew perfectly. The fourth
+component is the homogeneous w of an eye-space point and is 1, so asking for 3
+loses nothing.
 
-| stage | heap |
-|---|---|
-| after initialize_marathon | 812 KB |
-| OGL_StartRun entry | 8,760 KB |
-| after OGL_StartTextures | 9,148 KB |
-| after screen font | 9,532 KB |
-| after map fonts | 10,684 KB |
-| at first render | 12,084 KB |
-| next request | +2,048 KB, refused |
+That took counters rather than reading: walls=1860/sec reaching the renderer,
+setupfail=0, vecfail=0, geometry demonstrably submitted, screen still black.
 
-The interesting line is the second: 8MB goes in during level loading, before a
-single GL call. GL setup adds about 3.3MB on top of that, and the last 2MB
-request is what falls off the end.
+### Still to do
 
-So the work is not in the renderer, it is in the 8MB baseline. Options, roughly
-in order of promise:
-
-1. Find what the level load actually allocates. It is the same load the software
-   build survives, so the question is how much headroom software has -- measure
-   `heap: at first render` in a software build and subtract.
-2. Texture settings are already at half resolution, 16-bit colour, no mipmaps,
-   and verified applied (`txtr[0]: res=1 fmt=8056 far=2601`). Quarter resolution
-   is available if needed.
-3. GLdc's initial OP/TR/PT vertex list capacities are configurable through
-   glKosInitConfig; the SDL backend calls plain glKosInit and takes the defaults.
+1. **Measure on hardware.** The whole point.
+2. Memory is tight. Peak fits now -- flat landscapes, half-resolution 16-bit
+   textures, no mipmaps, and reducing each texture buffer as it is built rather
+   than building both then shrinking -- but the heap sits around 12.5MB of 16MB.
+3. The static/interference effect is gone: it needs glLogicOp and
+   glPolygonStipple, neither of which the PowerVR can do.
+4. Landscapes are flat colours rather than textured skies, to avoid a 2MB buffer.
+   Worth revisiting if memory frees up.
+5. The diagnostic counters in OGL_Render.cpp and screen_sdl.cpp can go once this
+   is settled.
 
 ## Get a saved game below 10 blocks
 
