@@ -84,6 +84,165 @@ struct dc_binding {
  *	looking and both triggers are handled on the analog path instead and so do
  *	not appear here.
  */
+/*
+ *	Player-configured bindings.
+ *
+ *	Preferences store a small button id per engine action, not a raw button
+ *	mask. Two reasons. The DCK_ codes above are 1<<28 and 1<<29, which do not
+ *	fit the int16 the preferences file uses; and an id is a stable name, so the
+ *	meaning of a saved card does not change if these masks ever move.
+ *
+ *	Only the button moves. Which key an action sends is still the engine's own
+ *	input_preferences->keycodes[], so rebinding the pad never disturbs the key
+ *	mapping the rest of the game agrees on.
+ *
+ *	The menu table below is deliberately NOT configurable. Dialog navigation
+ *	must not depend on player bindings, or a bad configuration leaves no way
+ *	back to fix itself.
+ */
+
+static const struct {
+	int mask;
+	const char *name;
+} dc_buttons[] = {
+	{ 0,                "---"       },	/* DC_PAD_NONE */
+	{ CONT_A,           "A"         },
+	{ CONT_B,           "B"         },
+	{ CONT_X,           "X"         },
+	{ CONT_Y,           "Y"         },
+	{ CONT_DPAD_UP,     "D-Pad Up"  },
+	{ CONT_DPAD_DOWN,   "D-Pad Down"},
+	{ CONT_DPAD_LEFT,   "D-Pad Left"},
+	{ CONT_DPAD_RIGHT,  "D-Pad Right"},
+	{ DCK_LTRIG,        "L Trigger" },
+	{ DCK_RTRIG,        "R Trigger" },
+	{ CONT_START,       "Start"     },
+};
+
+#define NUM_DC_BUTTONS	(int)(sizeof(dc_buttons) / sizeof(dc_buttons[0]))
+
+/* Engine action indices, matching the order preferences_sdl.cpp lists them in.
+   Only the four the analog stick can drive in Move mode are needed here. */
+#define ACT_MOVE_FORWARD	0
+#define ACT_MOVE_BACKWARD	1
+#define ACT_TURN_LEFT		2
+#define ACT_TURN_RIGHT		3
+
+#define DC_MAX_ACTIONS	32
+
+static short cfg_button[DC_MAX_ACTIONS];	/* button id per engine action */
+static short cfg_sym[DC_MAX_ACTIONS];		/* SDL key that action sends */
+static int   cfg_count = 0;
+static int   cfg_stick_move = 0;
+
+int dc_input_num_buttons(void)
+{
+	return NUM_DC_BUTTONS;
+}
+
+const char *dc_input_button_name(int id)
+{
+	if (id < 0 || id >= NUM_DC_BUTTONS)
+		return "?";
+
+	return dc_buttons[id].name;
+}
+
+/*
+ *	The defaults, and what DEFAULTS in the dialog restores to. Indexed by engine
+ *	action; anything not named here is left unbound, which is honest -- there
+ *	are twenty actions and eleven buttons, so some of them have to be.
+ */
+void dc_input_default_bindings(short *out, int count)
+{
+	static const struct { int action; int id; } defaults[] = {
+		{ 0,  4 },	/* Move Forward   -> Y */
+		{ 1,  1 },	/* Move Backward  -> A */
+		{ 4,  3 },	/* Sidestep Left  -> X */
+		{ 5,  2 },	/* Sidestep Right -> B */
+		{ 12, 8 },	/* Next Weapon    -> D-Pad Right */
+		{ 13, 10 },	/* Trigger        -> R Trigger */
+		{ 14, 9 },	/* 2nd Trigger    -> L Trigger */
+		{ 16, 7 },	/* Run/Swim       -> D-Pad Left */
+		{ 18, 5 },	/* Action         -> D-Pad Up */
+		{ 19, 6 },	/* Auto Map       -> D-Pad Down */
+	};
+	unsigned i;
+
+	for (i = 0; i < (unsigned)count; i++)
+		out[i] = 0;
+
+	for (i = 0; i < sizeof(defaults) / sizeof(defaults[0]); i++)
+		if (defaults[i].action < count)
+			out[defaults[i].action] = (short)defaults[i].id;
+}
+
+void dc_input_set_bindings(const short *buttons, const short *syms, int count,
+                           int stick_move)
+{
+	int i;
+
+	if (count > DC_MAX_ACTIONS)
+		count = DC_MAX_ACTIONS;
+
+	for (i = 0; i < count; i++) {
+		cfg_button[i] = buttons[i];
+		cfg_sym[i] = syms[i];
+	}
+
+	cfg_count = count;
+	cfg_stick_move = stick_move;
+}
+
+/*
+ *	Capture mode, for the binding dialog.
+ *
+ *	While capturing, the poll records the first newly-pressed button and injects
+ *	no keys at all -- otherwise the same press that names the binding would also
+ *	activate whatever the dialog has focus on. The dialog is responsible for
+ *	ending capture; it also times out, so a mode entered by accident cannot
+ *	strand the interface with a pad that does nothing.
+ */
+#define CAPTURE_TIMEOUT_POLLS	1800	/* about a minute at 30fps */
+
+static int capturing = 0;
+static int captured = -1;
+static int capture_polls = 0;
+
+void dc_input_begin_capture(void)
+{
+	capturing = 1;
+	captured = -1;
+	capture_polls = 0;
+}
+
+void dc_input_end_capture(void)
+{
+	capturing = 0;
+	captured = -1;
+}
+
+/*
+ *	Returns the button id pressed, 0 if the player cancelled with Start, or -1 if
+ *	nothing has happened yet. Capture ends itself on any of those.
+ */
+int dc_input_take_capture(void)
+{
+	int id = captured;
+
+	if (id >= 0) {
+		capturing = 0;
+		captured = -1;
+	}
+
+	return id;
+}
+
+int dc_input_capturing(void)
+{
+	return capturing;
+}
+
 static const struct dc_binding game_bindings[] = {
 	{ CONT_Y,           SDLK_UP },        /* move forward     */
 	{ CONT_A,           SDLK_DOWN },      /* move backward    */
@@ -315,9 +474,30 @@ static void dc_input_poll_body(void)
 	if (analog_x > -STICK_DEADZONE && analog_x < STICK_DEADZONE) analog_x = 0;
 	if (analog_y > -STICK_DEADZONE && analog_y < STICK_DEADZONE) analog_y = 0;
 
-	if (!in_game) {
-		if (trig_l > TRIGGER_ON) current |= DCK_LTRIG;
-		if (trig_r > TRIGGER_ON) current |= DCK_RTRIG;
+	/*
+	 *	Synthetic codes for the triggers and the stick.
+	 *
+	 *	Menus always want them. Gameplay wants them only in Move mode, where the
+	 *	stick drives forward, back and turning; in Look mode the stick belongs to
+	 *	the analog path in mouse_sdl.cpp and turning it into keypresses here
+	 *	would fight it.
+	 */
+	/*
+	 *	The triggers are always available as buttons. In Look mode test_mouse()
+	 *	in mouse_sdl.cpp also reads them for primary and alt fire, so the default
+	 *	bindings fire twice -- both set the same action flag, so that is
+	 *	harmless. In Move mode input_device is off, test_mouse() never runs, and
+	 *	these bindings are the only thing that fires the weapon.
+	 */
+	if (trig_l > TRIGGER_ON) current |= DCK_LTRIG;
+	if (trig_r > TRIGGER_ON) current |= DCK_RTRIG;
+
+	/*
+	 *	The stick is a D-pad for menus always, and in gameplay only in Move mode.
+	 *	In Look mode it belongs to the analog path in mouse_sdl.cpp, and turning
+	 *	it into keypresses here would fight it.
+	 */
+	if (!in_game || cfg_stick_move) {
 		if (analog_x < 0) current |= DCK_STICK_LEFT;
 		if (analog_x > 0) current |= DCK_STICK_RIGHT;
 		if (analog_y < 0) current |= DCK_STICK_UP;
@@ -336,6 +516,43 @@ static void dc_input_poll_body(void)
 	}
 
 	changed = current ^ previous;
+
+	/*
+	 *	Capture swallows the frame entirely: it names the button that was
+	 *	pressed and injects nothing, so the press cannot also drive the dialog
+	 *	it is being typed into. Start reports id 0, which the dialog reads as
+	 *	cancel, and the timeout is the backstop if nothing at all is pressed.
+	 */
+	if (capturing) {
+		int pressed = changed & current;
+
+		previous = current;
+
+		if (pressed) {
+			int b;
+
+			for (b = 1; b < NUM_DC_BUTTONS; b++)
+				if (pressed & dc_buttons[b].mask) {
+					captured = (dc_buttons[b].mask == CONT_START) ? 0 : b;
+					break;
+				}
+		} else if (++capture_polls > CAPTURE_TIMEOUT_POLLS) {
+			captured = 0;
+		}
+
+		/*
+		 *	The dialog loop is a poll, not a wait, but a widget's event() only
+		 *	runs when there is an event to hand it. Capture injects no keys, so
+		 *	without this the binding would be recorded and never collected.
+		 *	SDLK_UNKNOWN is the wake-up: the widget consumes it, and the dialog's
+		 *	own key handling has no case for it.
+		 */
+		if (captured >= 0)
+			send_key(SDLK_UNKNOWN, 1);
+
+		return;
+	}
+
 	if (!changed) {
 		previous = current;
 		return;
@@ -348,6 +565,35 @@ static void dc_input_poll_body(void)
 			dc_trace(17, "btn %08x->%08x ingame=%d", (unsigned)previous,
 			         (unsigned)current, in_game);
 		}
+	}
+
+	/*
+	 *	Configured bindings replace the static table for gameplay only.
+	 *
+	 *	In Move mode the stick's four directions are ORed into the movement
+	 *	actions' masks, so the stick and any button bound to the same action are
+	 *	simply two ways to press it.
+	 */
+	if (in_game && cfg_count > 0) {
+		for (i = 0; i < (unsigned)cfg_count; i++) {
+			int id = cfg_button[i];
+			int mask = (id > 0 && id < NUM_DC_BUTTONS) ? dc_buttons[id].mask : 0;
+
+			if (cfg_stick_move) {
+				if (i == ACT_MOVE_FORWARD)  mask |= DCK_STICK_UP;
+				if (i == ACT_MOVE_BACKWARD) mask |= DCK_STICK_DOWN;
+				if (i == ACT_TURN_LEFT)     mask |= DCK_STICK_LEFT;
+				if (i == ACT_TURN_RIGHT)    mask |= DCK_STICK_RIGHT;
+			}
+
+			if (!mask || !(changed & mask))
+				continue;
+
+			send_key((SDLKey)cfg_sym[i], (current & mask) != 0);
+		}
+
+		previous = current;
+		return;
 	}
 
 	for (i = 0; i < count; i++) {

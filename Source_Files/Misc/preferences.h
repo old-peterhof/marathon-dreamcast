@@ -95,7 +95,40 @@ struct input_preferences_data
 	// Appended rather than inserted so older preferences files still line up.
 	int16 sens_horizontal;
 	int16 sens_vertical;
+	// Dreamcast pad bindings, one per engine action, indexed the same way as
+	// keycodes[] above -- so NUMBER_OF_KEYS, which is 21, not the 20 the
+	// configuration screen lists. The 21st is the microphone key, which no
+	// screen exposes but which still occupies an index.
+	//
+	// Values are the raw controller button masks from dc/dc_input.c, including
+	// its synthetic DCK_* codes for the triggers and stick directions. Zero
+	// means unbound.
+	int16 dc_pad_bindings[NUMBER_OF_KEYS];
+	// What the analog stick does: DC_STICK_LOOK turns and looks through the
+	// analog path, DC_STICK_MOVE drives forward, back and turning the way the
+	// D-pad does.
+	int16 dc_stick_mode;
 };
+
+// Analog stick modes, stored in dc_stick_mode above.
+#define DC_STICK_LOOK	0
+#define DC_STICK_MOVE	1
+
+// dc/dc_input.c. Bindings are pushed to the driver rather than read by it: it
+// is C, and preferences.h is not something it can include.
+extern "C" {
+	void dc_input_default_bindings(short *out, int count);
+	void dc_input_set_bindings(const short *buttons, const short *syms,
+	                           int count, int stick_move);
+	int dc_input_num_buttons(void);
+	const char *dc_input_button_name(int id);
+	void dc_input_begin_capture(void);
+	void dc_input_end_capture(void);
+	int dc_input_take_capture(void);
+	int dc_input_capturing(void);
+}
+
+void dc_apply_pad_bindings(void);
 
 // The slider tops out at 100% deliberately. Aleph One packs delta_yaw into a
 // bounded field in the action flags (physics.cpp:278, MAXIMUM_ABSOLUTE_YAW), so

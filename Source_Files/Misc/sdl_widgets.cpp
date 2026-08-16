@@ -17,6 +17,9 @@
 #include "world.h"
 #include "mysound.h"
 #include "interface.h"
+#ifdef DC
+#include "preferences.h"	// dc_input_* capture and button names
+#endif
 
 
 /*
@@ -536,6 +539,87 @@ void w_key::set_key(SDLKey k)
 {
 	key = k;
 }
+
+
+#ifdef DC
+/*
+ *  Pad button widget
+ */
+
+static const char *PAD_WAITING_TEXT = "press a button";
+
+w_pad_key::w_pad_key(const char *n, int id) : widget(LABEL_FONT), name(n), binding(false)
+{
+	set_button(id);
+}
+
+int w_pad_key::layout(void)
+{
+	int name_width = text_width(name, font, style);
+	int spacing = get_dialog_space(LABEL_ITEM_SPACE);
+
+	rect.x = -(spacing / 2 + name_width);
+	rect.w = name_width + spacing + text_width(PAD_WAITING_TEXT, font, style);
+	rect.h = font->get_line_height();
+	key_x = name_width + spacing;
+
+	return rect.h;
+}
+
+void w_pad_key::draw(SDL_Surface *s) const
+{
+	int y = rect.y + font->get_ascent();
+
+	draw_text(s, name, rect.x, y, active ? get_dialog_color(LABEL_ACTIVE_COLOR) : get_dialog_color(LABEL_COLOR), font, style);
+
+	int x = rect.x + key_x;
+	if (binding) {
+		SDL_Rect r = {x, rect.y, text_width(PAD_WAITING_TEXT, font, style), rect.h};
+		SDL_FillRect(s, &r, get_dialog_color(KEY_BINDING_COLOR));
+		draw_text(s, PAD_WAITING_TEXT, x, y, get_dialog_color(ITEM_ACTIVE_COLOR), font, style);
+	} else {
+		draw_text(s, dc_input_button_name(button), x, y, active ? get_dialog_color(ITEM_ACTIVE_COLOR) : get_dialog_color(ITEM_COLOR), font, style);
+	}
+}
+
+void w_pad_key::click(int x, int y)
+{
+	if (!binding) {
+		binding = true;
+		dirty = true;
+		dc_input_begin_capture();
+	}
+}
+
+/*
+ *	Any event at all is a chance to collect a finished capture -- and while
+ *	capturing there is exactly one, the SDLK_UNKNOWN the driver injects to wake
+ *	this loop up. Everything is swallowed either way: a press that is naming a
+ *	binding must not also drive the dialog.
+ */
+void w_pad_key::event(SDL_Event &e)
+{
+	if (!binding)
+		return;
+
+	int id = dc_input_take_capture();
+
+	if (id >= 0) {
+		if (id > 0)				// 0 is Start, meaning cancel
+			set_button(id);
+		binding = false;
+		dirty = true;
+		dc_input_end_capture();
+	}
+
+	e.type = SDL_NOEVENT;
+}
+
+void w_pad_key::set_button(int id)
+{
+	button = id;
+}
+#endif
 
 
 /*

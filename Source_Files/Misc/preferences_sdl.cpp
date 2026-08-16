@@ -62,6 +62,10 @@ extern "C" void dc_open_controls_dialog(void) { controls_dialog(0); }
 static void controls_dialog(void *arg);
 static void environment_dialog(void *arg);
 static void keyboard_dialog(void *arg);
+#ifdef DC
+static void pad_dialog(void *arg);
+static void pad_advanced_dialog(void *arg);
+#endif
 
 
 /*
@@ -490,6 +494,9 @@ static void sound_dialog(void *arg)
  */
 
 static w_toggle *mouse_w;
+#ifdef DC
+static w_select *stick_mode_w;
+#endif
 
 static void controls_dialog(void *arg)
 {
@@ -500,14 +507,18 @@ static void controls_dialog(void *arg)
 	d.add(new w_static_text("CONTROLS", TITLE_FONT, TITLE_COLOR));
 	d.add(new w_spacer());
 #ifdef DC
-	// There is no mouse on a Dreamcast. This toggle now gates the analog stick,
-	// because input_device != _keyboard_or_game_pad is what makes vbl_sdl.cpp
-	// call test_mouse() at all -- so label it for what it actually does.
-	mouse_w = new w_toggle("Analog Stick", input_preferences->input_device);
+	// There is no mouse on a Dreamcast, and input_device is what makes
+	// vbl_sdl.cpp call test_mouse() -- the path carrying the stick's yaw and
+	// pitch. So the setting is presented as what the stick does, and the two
+	// choices are the two halves of that switch.
+	static const char *stick_labels[] = {"Look", "Move", NULL};
+	stick_mode_w = new w_select("Analog Stick",
+		input_preferences->dc_stick_mode == DC_STICK_MOVE ? 1 : 0, stick_labels);
+	d.add(stick_mode_w);
 #else
 	mouse_w = new w_toggle("Mouse Control", input_preferences->input_device);
-#endif
 	d.add(mouse_w);
+#endif
 #ifdef DC
 	w_toggle *invert_mouse_w = new w_toggle("Invert Look", input_preferences->modifiers & _inputmod_invert_mouse);
 #else
@@ -535,7 +546,11 @@ static void controls_dialog(void *arg)
 	d.add(sens_v_w);
 #endif
 	d.add(new w_spacer());
+#ifdef DC
+	d.add(new w_button("CONFIGURE CONTROLLER", pad_dialog, &d));
+#else
 	d.add(new w_button("CONFIGURE KEYBOARD", keyboard_dialog, &d));
+#endif
 	d.add(new w_spacer());
 	d.add(new w_left_button("ACCEPT", dialog_ok, &d));
 	d.add(new w_right_button("CANCEL", dialog_cancel, &d));
@@ -547,7 +562,21 @@ static void controls_dialog(void *arg)
 	if (d.run() == 0) {	// Accepted
 		bool changed = false;
 
+#ifdef DC
+		// One choice, two fields. dc_stick_mode is what the pad driver reads;
+		// input_device is what decides whether the analog look path runs at
+		// all. They must never disagree, so they are set together here and
+		// nowhere else.
+		int mode = stick_mode_w->get_selection() ? DC_STICK_MOVE : DC_STICK_LOOK;
+		int device = (mode == DC_STICK_MOVE) ? _keyboard_or_game_pad : _mouse_yaw_pitch;
+
+		if (mode != input_preferences->dc_stick_mode) {
+			input_preferences->dc_stick_mode = mode;
+			changed = true;
+		}
+#else
 		int device = mouse_w->get_selection();
+#endif
 		if (device != input_preferences->input_device) {
 			input_preferences->input_device = device;
 			changed = true;
@@ -575,6 +604,9 @@ static void controls_dialog(void *arg)
 			input_preferences->sens_vertical = sv;
 			changed = true;
 		}
+
+		// The stick mode above only reaches the pad driver through here.
+		dc_apply_pad_bindings();
 #endif
 
 		if (changed)
@@ -692,7 +724,7 @@ static void load_default_keys(void *arg)
 {
 	// Load default keys, depending on state of "Mouse control" widget
 	dialog *d = (dialog *)arg;
-	SDLKey *keys = (mouse_w->get_selection() ? default_mouse_keys : default_keys);
+	SDLKey *keys = ((mouse_w && mouse_w->get_selection()) ? default_mouse_keys : default_keys);
 	for (int i=0; i<NUM_KEYS; i++)
 		key_w[i]->set_key(keys[i]);
 	d->draw();
@@ -740,6 +772,181 @@ static void keyboard_dialog(void *arg)
 			write_preferences();
 	}
 }
+
+
+#ifdef DC
+/*
+ *  Configure controller
+ *
+ *  Takes the place of CONFIGURE KEYBOARD, which offers a device this console
+ *  does not have. Every action the engine knows is here, over two pages: the
+ *  ones worth having on a pad, and an ADVANCED page for the rest.
+ *
+ *  The split is not cosmetic. There are twenty actions and eleven buttons, so
+ *  some actions cannot have one, and a screen that presents all twenty as
+ *  equals invites the player to spend buttons on Glance Left before Trigger.
+ *  Turning is on the advanced page for the same reason -- the stick owns it in
+ *  both modes, so a button for it is a preference, not a necessity.
+ *
+ *  Bindings are edited in pad_work[] rather than in preferences directly, so
+ *  CANCEL on either page really does cancel, and so a button taken from one
+ *  page can be cleared on the other.
+ */
+
+static int16 pad_work[NUMBER_OF_KEYS];
+
+class w_prefs_pad_key;
+static w_prefs_pad_key *pad_w[NUMBER_OF_KEYS];
+
+// Which actions appear on each page, as engine action indices.
+static const int pad_main_actions[] = {
+	0, 1,			// Move Forward, Move Backward
+	4, 5,			// Sidestep Left, Sidestep Right
+	8, 9, 10,		// Look Up, Look Down, Look Ahead
+	11, 12,			// Previous Weapon, Next Weapon
+	13, 14,			// Trigger, 2nd Trigger
+	18, 19			// Action, Auto Map
+};
+
+static const int pad_advanced_actions[] = {
+	2, 3,			// Turn Left, Turn Right
+	6, 7,			// Glance Left, Glance Right
+	15, 16, 17		// Sidestep, Run/Swim, Look
+};
+
+#define NUM_PAD_MAIN		(int)(sizeof(pad_main_actions) / sizeof(pad_main_actions[0]))
+#define NUM_PAD_ADVANCED	(int)(sizeof(pad_advanced_actions) / sizeof(pad_advanced_actions[0]))
+
+/*
+ *	An action on neither page can never be bound and nothing would say so, which
+ *	is the kind of omission that survives for months. The two lists have no
+ *	duplicates, so counting them is enough to prove they cover all twenty.
+ *	C++98, so this is the array-size trick rather than static_assert.
+ */
+typedef char pad_pages_cover_every_action[
+	(NUM_PAD_MAIN + NUM_PAD_ADVANCED == NUM_KEYS) ? 1 : -1];
+
+class w_prefs_pad_key : public w_pad_key {
+public:
+	w_prefs_pad_key(const char *name, int a)
+		: w_pad_key(name, pad_work[a]), action(a) {}
+
+	void set_button(int id)
+	{
+		// A button doing two things at once is never what was meant, so taking
+		// it for this action releases it from whichever action had it. The
+		// scan is over pad_work rather than over the widgets, so it reaches
+		// actions listed on the other page.
+		if (id > 0) {
+			for (int i = 0; i < NUMBER_OF_KEYS; i++) {
+				if (i == action || pad_work[i] != id)
+					continue;
+
+				pad_work[i] = 0;
+				if (pad_w[i]) {
+					pad_w[i]->w_pad_key::set_button(0);
+					pad_w[i]->dirty = true;
+				}
+			}
+		}
+
+		pad_work[action] = (int16)id;
+		w_pad_key::set_button(id);
+	}
+
+private:
+	int action;
+};
+
+static void load_default_pad(void *arg)
+{
+	dialog *d = (dialog *)arg;
+
+	dc_input_default_bindings(pad_work, NUMBER_OF_KEYS);
+
+	for (int i = 0; i < NUMBER_OF_KEYS; i++)
+		if (pad_w[i])
+			pad_w[i]->w_pad_key::set_button(pad_work[i]);
+
+	d->draw();
+}
+
+// Both pages are the same screen with a different action list, so they share
+// one builder. Only the main page carries ADVANCED and DEFAULTS.
+static void pad_page(const char *title, const int *actions, int count, bool main_page)
+{
+	for (int i = 0; i < NUMBER_OF_KEYS; i++)
+		pad_w[i] = NULL;
+
+	dialog d;
+	d.add(new w_static_text(title, TITLE_FONT, TITLE_COLOR));
+	d.add(new w_spacer());
+
+	for (int i = 0; i < count; i++) {
+		int a = actions[i];
+		pad_w[a] = new w_prefs_pad_key(action_name[a], a);
+		d.add(pad_w[a]);
+	}
+
+	d.add(new w_spacer());
+	if (main_page) {
+		d.add(new w_button("ADVANCED", pad_advanced_dialog, &d));
+		d.add(new w_button("DEFAULTS", load_default_pad, &d));
+		d.add(new w_spacer());
+	}
+	d.add(new w_left_button("ACCEPT", dialog_ok, &d));
+	d.add(new w_right_button("CANCEL", dialog_cancel, &d));
+
+	clear_screen();
+
+	// CANCEL abandons this page's edits by putting back what pad_work held on
+	// the way in. The other page's edits are not this page's to discard.
+	int16 entry[NUMBER_OF_KEYS];
+	for (int i = 0; i < NUMBER_OF_KEYS; i++)
+		entry[i] = pad_work[i];
+
+	if (d.run() != 0)
+		for (int i = 0; i < count; i++)
+			pad_work[actions[i]] = entry[actions[i]];
+
+	for (int i = 0; i < NUMBER_OF_KEYS; i++)
+		pad_w[i] = NULL;
+}
+
+static void pad_advanced_dialog(void *arg)
+{
+	dialog *parent = (dialog *)arg;
+
+	pad_page("ADVANCED CONTROLS", pad_advanced_actions, NUM_PAD_ADVANCED, false);
+
+	parent->draw();
+}
+
+static void pad_dialog(void *arg)
+{
+	dialog *parent = (dialog *)arg;
+
+	for (int i = 0; i < NUMBER_OF_KEYS; i++)
+		pad_work[i] = input_preferences->dc_pad_bindings[i];
+
+	pad_page("CONFIGURE CONTROLLER", pad_main_actions, NUM_PAD_MAIN, true);
+
+	bool changed = false;
+	for (int i = 0; i < NUMBER_OF_KEYS; i++)
+		if (pad_work[i] != input_preferences->dc_pad_bindings[i]) {
+			input_preferences->dc_pad_bindings[i] = pad_work[i];
+			changed = true;
+		}
+
+	// Push regardless: the stick mode may have moved even if no button did.
+	dc_apply_pad_bindings();
+
+	if (changed)
+		write_preferences();
+
+	parent->draw();
+}
+#endif
 
 
 /*

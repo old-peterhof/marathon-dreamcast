@@ -96,7 +96,7 @@ Liquids, OpenGL Overhead Map, OpenGL HUD, 3D Models.
 
 | Setting | Widget | Status |
 |---|---|---|
-| Analog Stick | toggle | keep |
+| Analog Stick | select | **now Look / Move** — sets `dc_stick_mode` and `input_device` together |
 | Mouse Control | toggle | dead — no mouse |
 | Invert Look | toggle | keep |
 | Invert Mouse | toggle | dead |
@@ -105,7 +105,7 @@ Liquids, OpenGL Overhead Map, OpenGL HUD, 3D Models.
 | Auto-Switch Weapons | toggle | keep |
 | Turn Sensitivity | slider | keep — added for this port |
 | Look Sensitivity | slider | keep — added for this port |
-| CONFIGURE KEYBOARD | button | dead — becomes CONFIGURE CONTROLLER, see below |
+| CONFIGURE CONTROLLER | button | **built in b57** — replaces CONFIGURE KEYBOARD, see below |
 
 ### Configure keyboard — 20 bindable actions
 
@@ -117,11 +117,12 @@ Look · Action · Auto Map
 Currently hardcoded in `dc/dc_input.c` as two tables, one for gameplay and one
 for menus.
 
-### CONFIGURE CONTROLLER — the replacement (Max's spec)
+### CONFIGURE CONTROLLER — built in b57
 
-Takes the place of CONFIGURE KEYBOARD in the Controls dialog. Lists every action
-and lets the player bind it to any button on the pad. The analog stick gets a
-mode switch rather than a binding:
+Takes the place of CONFIGURE KEYBOARD in the Controls dialog. Every action is
+listed over two pages — thirteen on the main page, seven under ADVANCED — and
+each binds to any button on the pad. The analog stick gets a mode switch rather
+than a binding:
 
 - **Look** — stick turns and looks, as the port is configured today. Feeds the
   analog path in `mouse_sdl.cpp`, which produces `delta_yaw` and `delta_pitch`.
@@ -134,27 +135,32 @@ Move mode, four of those actions are covered by the stick, and in Look mode two
 more are. So the shortfall is smaller than it looks, and the player decides how
 to spend what is left.
 
-Three things this changes that are worth knowing before designing it:
+Three things this changed, and how each was settled:
 
-**Bindings have to live in preferences.** They are compiled-in tables today.
-Storing them means new fields in `input_preferences_data`, which changes the
-struct size, which means cards written by older builds get rejected on first
-boot — exactly what the format stamp in `dc/dc_vmu.c` exists to do. Expect
-everyone's settings to reset once, and say so rather than let it surprise anyone.
+**Bindings live in preferences.** `dc_pad_bindings[NUMBER_OF_KEYS]` and
+`dc_stick_mode`, appended to `input_preferences_data`. They store a small button
+id, not a raw button mask: the `DCK_` codes are `1<<28` and `1<<29`, which do not
+fit an `int16`, and an id is a stable name besides. The struct grew 44 bytes, so
+`dc_prefs_format()` moved and **every existing card is rejected once** — the
+format stamp doing its job. Confirmed in Flycast: b57 logs `prefs carry no format
+stamp -- ignoring`, then writes a fresh file.
 
-**A player can bind themselves out of the interface.** If every button is
-rebindable there is a configuration in which nothing dismisses a dialog. The menu
-binding table is separate from the gameplay one today, and keeping it fixed is
-the cheap answer; a DEFAULTS button that is always reachable is the other half.
-Whatever the design, there has to be a way back that does not involve deleting
-the VMU file.
+**A player cannot bind themselves out of the interface.** The menu table in
+`dc_input.c` stays fixed and unconfigurable, so dialog navigation never depends
+on player bindings; only the gameplay table is editable. The worst outcome is a
+level that cannot be played, and DEFAULTS on the main page restores from there.
 
-**Analog and digital actions are not interchangeable.** Turning and looking take
-a magnitude; firing and cycling weapons do not. A binding screen that offers
-every action for every input will let people put Turn Left on a trigger, which
-half works, and Move Forward on the stick, which is what Move mode already does.
-The list probably wants to separate the two rather than present twenty
-identical rows.
+**Analog and digital actions are not interchangeable**, which is what the two
+pages are for. Turn Left and Turn Right are on ADVANCED because the stick owns
+turning in both modes, so a button for it is a preference rather than a
+necessity. Look Up / Down / Ahead are on the main page: they are digital key
+actions in the engine, and in Move mode they are the only way to aim vertically.
+
+One trap worth recording. Firing lives in `test_mouse()` in `mouse_sdl.cpp`,
+which `vbl_sdl.cpp` only calls when `input_device` is set — so Move mode, which
+clears it, would have switched the weapon off. The triggers are therefore always
+readable as bindable buttons, and Trigger / 2nd Trigger default to R and L. In
+Look mode both paths fire; they set the same action flag, so it costs nothing.
 
 ### Environment settings
 

@@ -117,6 +117,10 @@ void initialize_preferences(
 		default_network_preferences,
 		validate_network_preferences);
 	environment_preferences= (struct environment_preferences_data *)get_environment_pref_data();
+
+#ifdef DC
+	dc_apply_pad_bindings();
+#endif
 }
 
 
@@ -331,6 +335,8 @@ static void default_input_preferences(
 	// arrow keys for forward/back/turn instead -- always present, and the
 	// natural target for a D-pad once controller support lands.
 	set_default_keys(preferences->keycodes, _left_handed_keyboard_setup);
+	dc_input_default_bindings(preferences->dc_pad_bindings, NUMBER_OF_KEYS);
+	preferences->dc_stick_mode = DC_STICK_LOOK;
 #else
 	set_default_keys(preferences->keycodes, _standard_keyboard_setup);
 #endif
@@ -543,6 +549,19 @@ static bool validate_input_preferences(
 			ip->sens_horizontal = SENS_DEFAULT;
 		if (ip->sens_vertical < SENS_MINIMUM || ip->sens_vertical > SENS_MAXIMUM)
 			ip->sens_vertical = SENS_DEFAULT;
+
+		// A button id out of range would index the driver's table off its end.
+		// Clamping to unbound is the safe direction: an action that does
+		// nothing is recoverable from the dialog, a wild read is not.
+		{
+			int limit = dc_input_num_buttons();
+			for (int i = 0; i < NUMBER_OF_KEYS; i++)
+				if (ip->dc_pad_bindings[i] < 0 || ip->dc_pad_bindings[i] >= limit)
+					ip->dc_pad_bindings[i] = 0;
+		}
+
+		if (ip->dc_stick_mode != DC_STICK_LOOK && ip->dc_stick_mode != DC_STICK_MOVE)
+			ip->dc_stick_mode = DC_STICK_LOOK;
 	}
 
 	(void) (prefs);
@@ -653,6 +672,28 @@ bool dont_switch_to_new_weapon() {
 #ifdef DC
 /* Combined sizes of the preference structs this build was compiled against, so
    dc_vmu.c can refuse a card written by a differently-shaped build. */
+/*
+ *	Hand the player's bindings to the pad driver.
+ *
+ *	The driver is C and has no business including preferences.h, so the two
+ *	arrays are pushed across rather than read. Called once at startup and again
+ *	whenever the binding dialog is accepted.
+ *
+ *	Which key each action sends stays the engine's own keycodes[]: the player
+ *	rebinds the button, never the key, so nothing else in the game has to know
+ *	this screen exists.
+ */
+void dc_apply_pad_bindings(void)
+{
+	if (!input_preferences)
+		return;
+
+	dc_input_set_bindings(input_preferences->dc_pad_bindings,
+	                      (const short *)input_preferences->keycodes,
+	                      NUMBER_OF_KEYS,
+	                      input_preferences->dc_stick_mode == DC_STICK_MOVE);
+}
+
 extern "C" int dc_prefs_format(void)
 {
 	return (int)(sizeof(struct graphics_preferences_data)    * 1 +

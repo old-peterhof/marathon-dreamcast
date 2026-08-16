@@ -1,0 +1,233 @@
+/* ─────────────────────────────────────────────────────────────────────────
+   Marathon 2 Dreamcast — controller-native UI prototype
+   Tokens map onto sdl_dialogs.h. Change them here, change them there.
+   ───────────────────────────────────────────────────────────────────────── */
+:root{
+  /* colour — sdl_dialogs.h names in comments */
+  --bg:        #05080a;   /* BACKGROUND_COLOR    */
+  --panel:     #101a1b;
+  --rule:      #2d4640;
+  --rule-hot:  #4d6f63;
+  --item:      #6f8a7e;   /* ITEM_COLOR          */
+  --hot:       #ffc000;   /* ITEM_ACTIVE_COLOR   */
+  --hot-bar:   #2a1e04;
+  --label:     #4e6459;   /* LABEL_COLOR         */
+  --face:      #e2efe8;   /* TITLE_COLOR         */
+  --dur:       #5d7a6d;
+  --term:      #7bd98f;   /* terminal green      */
+  --warn:      #d9743c;
+
+  /* type */
+  --f-item:  600 18px/1 "Helvetica Neue",Helvetica,Arial,sans-serif;  /* ITEM_FONT   */
+  --f-label: 11px/1 ui-monospace,Menlo,Monaco,monospace;              /* LABEL_FONT  */
+  --f-msg:   13px/1.6 ui-monospace,Menlo,Monaco,monospace;            /* MESSAGE_FONT*/
+
+  /* geometry — 640×480, 40px overscan margin on every side */
+  --edge: 40px;
+  --row:  34px;
+}
+
+/* ── page chrome (not part of the game) ─────────────────────────────────── */
+html,body{margin:0;background:#191c1e;color:#8d9c97;
+  font:13px/1.55 -apple-system,BlinkMacSystemFont,"Helvetica Neue",sans-serif;}
+.wrap{padding:20px 24px 56px;}
+.bar{display:flex;gap:18px;align-items:center;flex-wrap:wrap;padding:9px 13px;
+  background:#12181a;border:1px solid #26302f;border-radius:5px;margin:0 0 18px;
+  position:sticky;top:0;z-index:30;}
+.bar b{color:#cfe0d8;font-weight:600;}
+.bar label{display:flex;gap:6px;align-items:center;cursor:pointer;user-select:none;}
+.bar .sp{margin-left:auto;}
+kbd{background:#1e2628;border:1px solid #33403e;border-bottom-width:2px;border-radius:3px;
+  padding:1px 5px;font:11px/1 ui-monospace,monospace;color:#a8bcb4;}
+.legend{display:flex;gap:14px;flex-wrap:wrap;font-size:12px;color:#7d8c87;margin:14px 0 0;}
+.legend span{white-space:nowrap;}
+.side{width:250px;flex:0 0 250px;align-self:flex-start;font-size:12px;color:#7d8c87;
+  background:#12181a;border:1px solid #26302f;border-radius:5px;padding:12px 14px;}
+.side h3{margin:0 0 7px;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:#cfe0d8;}
+.side dl{margin:0;display:grid;grid-template-columns:auto 1fr;gap:3px 10px;}
+.side dt{color:#5f6e69;} .side dd{margin:0;color:#a8bcb4;font-family:ui-monospace,monospace;}
+
+/* ── the 640×480 screen ─────────────────────────────────────────────────── */
+.stage{width:640px;height:480px;position:relative;}
+.zoom2 .stage{width:1280px;height:960px;}
+.zoom2 .screen{transform:scale(2);transform-origin:top left;}
+.screen{position:absolute;width:640px;height:480px;overflow:hidden;background:var(--bg);
+  font-family:ui-monospace,"SF Mono",Menlo,Monaco,monospace;
+  box-shadow:0 0 0 1px #2b3634;user-select:none;}
+
+.plate{position:absolute;inset:0;
+  background:radial-gradient(115% 85% at 50% 34%,#14201f 0%,#0a1013 46%,#05080a 100%);}
+.plate::after{content:"";position:absolute;inset:0;opacity:.5;
+  background:repeating-linear-gradient(90deg,transparent 0 79px,#0f1a1a 79px 80px);}
+
+/* ── debug overlays ─────────────────────────────────────────────────────── */
+.ov{position:absolute;inset:0;pointer-events:none;display:none;}
+.showsafe .ov-safe{display:block;}
+.ov-safe::before{content:"";position:absolute;left:40px;top:40px;width:560px;height:400px;
+  outline:1px dashed #d9534f;}
+.ov-safe::after{content:"safe 560×400";position:absolute;left:42px;top:25px;
+  font:10px/1 ui-monospace,monospace;color:#d9534f;letter-spacing:.06em;}
+.showoverscan .ov-scan{display:block;box-shadow:inset 0 0 0 40px rgba(0,0,0,.74);}
+.showcrt .ov-crt{display:block;
+  background:repeating-linear-gradient(0deg,rgba(0,0,0,.24) 0 1px,transparent 1px 2px);}
+/* interlace: blanks alternate scanlines, parity flipped every frame.
+   A 1px horizontal feature then appears on one field only — that is the twitter. */
+.showfield .ov-field{display:block;
+  background:repeating-linear-gradient(0deg,rgba(0,0,0,.92) 0 1px,transparent 1px 2px);}
+.showfield.field1 .ov-field{transform:translateY(1px);}
+/* widget map */
+.showmap [data-w]{outline:1px solid rgba(120,190,255,.5);}
+.showmap [data-w]::after{content:attr(data-w);position:absolute;left:0;top:-1px;
+  font:8px/1.4 ui-monospace,monospace;color:#0a1013;background:rgba(120,190,255,.85);
+  padding:0 3px;pointer-events:none;z-index:9;}
+
+/* ── shared furniture ───────────────────────────────────────────────────── */
+/* Every horizontal rule is a 2px core with dim flanks, so it lands on both
+   interlace fields instead of buzzing on one. Never draw a 1px horizontal. */
+.hr{position:absolute;left:var(--edge);width:560px;height:2px;background:var(--c,var(--rule));}
+.hr::before,.hr::after{content:"";position:absolute;left:0;width:100%;height:1px;
+  background:var(--c,var(--rule));opacity:.35;}
+.hr::before{top:-1px;} .hr::after{bottom:-1px;}
+
+.hint{position:absolute;left:var(--edge);right:var(--edge);bottom:var(--edge);height:18px;
+  display:flex;align-items:center;gap:22px;font:var(--f-label);letter-spacing:.10em;
+  color:var(--label);}
+.hint .sp{margin-left:auto;}
+.hint b{color:var(--item);font-weight:400;}
+.glyph{display:inline-flex;align-items:center;justify-content:center;width:15px;height:15px;
+  border:2px solid var(--rule-hot);color:var(--item);font:9px/1 ui-monospace,monospace;
+  margin-right:6px;vertical-align:-3px;}
+.glyph.rnd{border-radius:50%;}
+
+.title{position:absolute;left:var(--edge);font:600 15px/1 "Helvetica Neue",Helvetica,sans-serif;
+  letter-spacing:.30em;color:var(--face);}
+.kicker{position:absolute;right:var(--edge);font:var(--f-label);letter-spacing:.20em;
+  color:var(--label);text-align:right;}
+
+/* ── panel + rows (w_list of w_button) ──────────────────────────────────── */
+.panel{position:absolute;background:var(--panel);border-left:1px solid var(--rule);
+  border-right:1px solid var(--rule);border-top:2px solid var(--rule);
+  border-bottom:2px solid var(--rule);}
+.panel > .cap{height:20px;display:flex;align-items:center;padding:0 10px;
+  border-bottom:2px solid var(--rule);font:var(--f-label);letter-spacing:.20em;color:var(--label);}
+.panel > .cap .sp{margin-left:auto;}
+
+.row{height:var(--row);display:flex;align-items:center;padding-left:34px;position:relative;
+  font:var(--f-item);letter-spacing:.16em;color:var(--item);}
+.row .car{position:absolute;left:13px;top:50%;width:0;height:0;
+  border-left:9px solid var(--hot);border-top:6px solid transparent;
+  border-bottom:6px solid transparent;transform:translateY(-50%);opacity:0;}
+.row .val{margin-left:auto;padding-right:12px;font:var(--f-label);letter-spacing:.10em;
+  color:var(--label);}
+.row.on{color:var(--hot);background:var(--hot-bar);box-shadow:inset 3px 0 0 var(--hot);}
+.row.on .car{opacity:1;}
+.row.on .val{color:var(--hot);}
+.row.off{color:#3d4c46;} .row.off .val{color:#33403b;}
+
+/* toggles and sliders inside a row (w_toggle / w_slider) */
+.tog{display:inline-flex;gap:3px;}
+.tog i{width:9px;height:9px;border:2px solid currentColor;font-style:normal;}
+.tog i.f{background:currentColor;}
+.sld{display:flex;align-items:center;gap:2px;}
+.sld i{width:5px;height:12px;background:currentColor;opacity:.22;font-style:normal;}
+.sld i.f{opacity:1;}
+
+/* ── main menu only ─────────────────────────────────────────────────────── */
+.wordmark{position:absolute;left:40px;top:46px;width:380px;height:102px;overflow:visible;}
+.wordmark .bloom{filter:url(#m2blur);}
+.wordmark .bloom path,.wordmark .halo path{fill:var(--hot);}
+.wordmark .face path{fill:var(--face);}
+.wordmark .dur  path{fill:var(--dur);}
+.watermark{position:absolute;left:302px;top:52px;width:430px;height:430px;opacity:.11;
+  pointer-events:none;}
+.watermark path{fill:var(--hot);}
+.statecol{position:absolute;right:var(--edge);top:204px;width:200px;text-align:right;
+  font:var(--f-label);line-height:1.95;letter-spacing:.08em;color:var(--label);}
+.statecol em{font-style:normal;color:var(--item);}
+
+/* ── save list ──────────────────────────────────────────────────────────── */
+.srow{height:30px;display:flex;align-items:center;gap:12px;padding:0 12px 0 30px;
+  position:relative;font:600 14px/1 "Helvetica Neue",Helvetica,sans-serif;
+  letter-spacing:.08em;color:var(--item);}
+.srow .car{left:11px;border-left-width:8px;border-top-width:5px;border-bottom-width:5px;}
+.srow .nm{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.srow .tm,.srow .vm{font:var(--f-label);letter-spacing:.06em;color:var(--label);}
+.srow .vm{width:74px;text-align:right;}
+.srow.on{color:var(--hot);background:var(--hot-bar);box-shadow:inset 3px 0 0 var(--hot);}
+.srow.on .car{opacity:1;} .srow.on .tm,.srow.on .vm{color:var(--hot);opacity:.8;}
+.srow.empty{color:#3d4c46;font-style:italic;}
+
+/* ── terminal ───────────────────────────────────────────────────────────── */
+.term{position:absolute;inset:0;background:#02060a;}
+.term .frame{position:absolute;left:40px;top:40px;right:40px;bottom:40px;
+  border:2px solid #17402a;}
+.term .tbar{position:absolute;left:0;right:0;top:0;height:22px;background:#0a2417;
+  display:flex;align-items:center;padding:0 10px;font:var(--f-label);letter-spacing:.22em;
+  color:var(--term);}
+.term .tbar .sp{margin-left:auto;}
+.term .body{position:absolute;left:0;right:0;top:22px;bottom:24px;display:flex;}
+.term .txt{flex:1;padding:16px 18px;font:var(--f-msg);color:var(--term);overflow:hidden;}
+.term .txt p{margin:0 0 12px;}
+.term .txt .hi{color:var(--hot);}
+.term .pic{width:196px;border-left:2px solid #17402a;position:relative;overflow:hidden;
+  background:radial-gradient(80% 80% at 50% 40%,#0d2c1d,#04100a);}
+.term .pic svg{position:absolute;left:14px;top:50%;width:168px;height:168px;
+  transform:translateY(-50%);opacity:.5;}
+.term .pic path{fill:var(--term);}
+.term .tfoot{position:absolute;left:0;right:0;bottom:0;height:24px;display:flex;
+  align-items:center;padding:0 10px;border-top:2px solid #17402a;font:var(--f-label);
+  letter-spacing:.14em;color:#3f7a56;}
+.term .tfoot .sp{margin-left:auto;}
+
+/* ── credits ────────────────────────────────────────────────────────────── */
+.credits{position:absolute;left:40px;right:40px;top:120px;bottom:76px;overflow:hidden;
+  text-align:center;-webkit-mask-image:linear-gradient(180deg,transparent,#000 12%,#000 88%,transparent);
+          mask-image:linear-gradient(180deg,transparent,#000 12%,#000 88%,transparent);}
+.credits .scroll{position:absolute;left:0;right:0;top:0;}
+.credits h4{margin:22px 0 6px;font:var(--f-label);letter-spacing:.28em;color:var(--label);}
+.credits p{margin:0 0 3px;font:600 15px/1.5 "Helvetica Neue",Helvetica,sans-serif;
+  letter-spacing:.10em;color:var(--item);}
+
+/* ── modal (confirm) ────────────────────────────────────────────────────── */
+.modal{position:absolute;inset:0;background:rgba(2,5,7,.72);display:none;}
+.modal.up{display:block;}
+.modal .box{position:absolute;left:120px;top:170px;width:400px;background:var(--panel);
+  border-left:1px solid var(--rule-hot);border-right:1px solid var(--rule-hot);
+  border-top:2px solid var(--rule-hot);border-bottom:2px solid var(--rule-hot);
+  box-shadow:0 0 30px rgba(0,0,0,.7);}
+.modal .mh{height:22px;display:flex;align-items:center;padding:0 12px;
+  border-bottom:2px solid var(--rule);font:var(--f-label);letter-spacing:.22em;color:var(--label);}
+.modal .mb{padding:18px 20px;font:600 15px/1.5 "Helvetica Neue",Helvetica,sans-serif;
+  letter-spacing:.06em;color:var(--face);}
+.modal .mb small{display:block;margin-top:8px;font:var(--f-label);line-height:1.7;
+  letter-spacing:.06em;color:var(--label);}
+.modal .mf{display:flex;border-top:2px solid var(--rule);}
+.modal .mf .row{flex:1;justify-content:center;padding-left:0;height:32px;font-size:15px;}
+.modal .mf .row .car{display:none;}
+.modal .mf .row.on{box-shadow:inset 0 3px 0 var(--hot);}
+
+/* ── screen router + odds and ends ──────────────────────────────────────── */
+section[data-screen]{position:absolute;inset:0;}
+section[hidden]{display:none;}
+.scrim{position:absolute;inset:0;background:rgba(2,6,8,.90);}
+.sec{height:20px;display:flex;align-items:center;padding:0 10px;margin-top:2px;
+  border-top:2px solid var(--rule);border-bottom:1px solid rgba(45,70,64,.5);
+  font:var(--f-label);letter-spacing:.22em;color:var(--label);background:rgba(0,0,0,.22);}
+.panel > .sec:first-of-type{margin-top:0;}
+.padmap{display:flex;gap:5px;}
+.padmap span{display:inline-flex;align-items:center;justify-content:center;min-width:20px;
+  height:20px;padding:0 5px;border:1px solid #33403e;border-radius:3px;
+  font:10px/1 ui-monospace,monospace;color:#5f6e69;background:#161d1f;transition:none;}
+.padmap span.lit{color:#05080a;background:var(--hot);border-color:var(--hot);}
+.glyph.rnd{width:auto;min-width:15px;padding:0 3px;border-radius:8px;}
+
+.cols{display:flex;gap:26px;align-items:flex-start;flex-wrap:wrap;}
+.panel.tight > .sec{height:18px;}
+.cols > .legend{flex:0 0 100%;order:3;}
+.cols > .stage{order:1;}
+.cols > .side{order:2;}
+
+/* paused: the game stays visible behind, but only one hint bar is ever live */
+body[data-screen="pause"] .term .tfoot{display:none;}
+
+[data-nav]{cursor:pointer;}

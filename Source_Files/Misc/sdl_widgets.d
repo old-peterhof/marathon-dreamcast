@@ -39,7 +39,10 @@ Source_Files/Misc/sdl_widgets.o: Source_Files/Misc/sdl_widgets.cpp \
  Source_Files/Misc/shape_descriptors.h Source_Files/Misc/screen_drawing.h \
  Source_Files/Misc/XML_ElementParser.h Source_Files/Misc/images.h \
  Source_Files/Misc/shell.h Source_Files/Misc/world.h \
- Source_Files/Misc/mysound.h Source_Files/Misc/interface.h
+ Source_Files/Misc/mysound.h Source_Files/Misc/interface.h \
+ Source_Files/Misc/preferences.h Source_Files/Misc/ChaseCam.h \
+ Source_Files/Misc/Crosshairs.h Source_Files/Misc/OGL_Setup.h \
+ Source_Files/Misc/ImageLoader.h Source_Files/ModelView/Model3D.h
 Source_Files/CSeries/cseries.h:
 Source_Files/CSeries/sdl_cseries.h:
 /opt/toolchains/dc/kos/../kos-ports/include/SDL/SDL.h:
@@ -93,3 +96,9 @@ Source_Files/Misc/shell.h:
 Source_Files/Misc/world.h:
 Source_Files/Misc/mysound.h:
 Source_Files/Misc/interface.h:
+Source_Files/Misc/preferences.h:
+Source_Files/Misc/ChaseCam.h:
+Source_Files/Misc/Crosshairs.h:
+Source_Files/Misc/OGL_Setup.h:
+Source_Files/Misc/ImageLoader.h:
+Source_Files/ModelView/Model3D.h:

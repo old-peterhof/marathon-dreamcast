@@ -92,7 +92,19 @@ Not decided — this is Max's call — but these cannot work on a console:
     Source_Files/Misc/sdl_widgets.cpp     widget drawing and behaviour
     Source_Files/Misc/shell_sdl.cpp       main menu handling, file dialogs
     Source_Files/Misc/interface.cpp       menu commands, game state
-    dc/dc_input.c                         pad bindings, two tables: game and menu
+    Source_Files/Misc/preferences_sdl.cpp CONFIGURE CONTROLLER, both pages
+    dc/dc_input.c                         pad driver, capture mode, menu table
+
+Since b57 the gameplay bindings are the player's, held in preferences and pushed
+to the driver by `dc_apply_pad_bindings()`. The **menu** table in `dc_input.c` is
+still fixed and must stay that way: it is what guarantees a dialog can always be
+navigated, whatever the player has done to the gameplay bindings. A mockup may
+assume A confirms and Start backs out.
+
+`w_pad_key` in `sdl_widgets.cpp` is a new widget worth knowing about — it reads a
+pad button rather than a key, by asking the driver to enter capture mode. It is
+the only existing answer to "read an input from the player", so an on-screen
+keyboard would be built next to it rather than from `w_text_entry`.
 
 Repo: `old-peterhof/marathon-dreamcast`, branch `dc-rebuild`. Current shipping
-build is b56.
+build is b57.
