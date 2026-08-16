@@ -100,6 +100,15 @@ into a bounded field (`MAXIMUM_ABSOLUTE_YAW`), so the turn rate saturates near
 67°/sec however large a value is fed in. The sliders' useful work is *reducing*
 sensitivity for finer aim.
 
+D-pad right cycles weapons forward and D-pad left swims. Neither key is the one
+its name suggests: next weapon is `SDLK_KP9`, because the engine's key table
+binds `_cycle_weapons_forward` there, and swim is `SDLK_LCTRL`, the run key,
+because `player.cpp` converts run into swim by itself when the player's head is
+under liquid. The same button therefore runs on land.
+
+D-pad left was previously bound to `SDLK_QUOTE`, which appears nowhere in the
+engine's key table, so cycling weapons from the pad never worked.
+
 ## Saves
 
 Preferences are mirrored to a VMU. The game writes them to the KOS ramdisk —
