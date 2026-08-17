@@ -9,7 +9,7 @@ for a controller instead of a mouse.
 It boots from a burned disc or a GDEMU, plays the full retail campaign, keeps
 preferences and saved games on a memory card, shows the framerate and the
 player's health and air on the VMU screen, and is driven entirely by a Dreamcast
-pad. Roughly 15–20 fps on a console. The software renderer is the one that ships.
+pad. Roughly 15–20 fps on a console.
 
 ## Where this came from
 
