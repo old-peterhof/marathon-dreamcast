@@ -38,7 +38,8 @@ Source_Files/Misc/dc_slots.o: Source_Files/Misc/dc_slots.cpp \
  Source_Files/Misc/shape_descriptors.h Source_Files/Misc/screen_drawing.h \
  Source_Files/Misc/XML_ElementParser.h Source_Files/Misc/shell.h \
  Source_Files/Misc/world.h Source_Files/Misc/screen.h dc/dc_vmu.h \
- Source_Files/Misc/dc_plate.h
+ Source_Files/Misc/dc_plate.h Source_Files/Misc/dc_screen.h \
+ Source_Files/Misc/dc_ui.h Source_Files/Misc/dc_slots.h
 Source_Files/CSeries/cseries.h:
 Source_Files/CSeries/sdl_cseries.h:
 /opt/toolchains/dc/kos/../kos-ports/include/SDL/SDL.h:
@@ -91,3 +92,6 @@ Source_Files/Misc/world.h:
 Source_Files/Misc/screen.h:
 dc/dc_vmu.h:
 Source_Files/Misc/dc_plate.h:
+Source_Files/Misc/dc_screen.h:
+Source_Files/Misc/dc_ui.h:
+Source_Files/Misc/dc_slots.h:

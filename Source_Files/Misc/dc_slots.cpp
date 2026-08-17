@@ -2,27 +2,18 @@
  *	dc_slots.cpp -- the four-slot save and load screens.
  *
  *	Replaces two dialogs that cannot work on a console. SAVE GAME asked for a
- *	typed filename, which is why every save this port has ever made is called
- *	"Untitled Game". CONTINUE SAVED GAME listed a directory, which the pad could
- *	not select from at all until the Return-in-list fix came back.
+ *	typed filename, which is why every save this port made before b59 was called
+ *	"Untitled Game". CONTINUE SAVED GAME listed a directory, which a pad could
+ *	not select from at all.
  *
- *	Four fixed slots answer both. The name is generated, so nothing has to be
- *	typed; the list is four rows, so nothing has to be scrolled; and every slot
- *	shows what is in it, which a filename never did.
- *
- *	These are built from buttons rather than w_list. Four rows is too few for a
- *	list widget to earn its keep, and it keeps the screens working even if the
- *	Return-in-list fix is ever lost again -- which has happened once already.
- *
- *	The card layer underneath is dc/dc_vmu.c. It hands over a dc_save_info_t per
- *	slot, read from a 128-byte header, so drawing this screen costs four small
- *	reads rather than four decompressions.
+ *	Drawn by dc_screen, so these look like every other screen and have the same
+ *	way out. A save row is three facts -- what the level was, how long the run
+ *	is, and what it costs on the card -- which is why it has three columns rather
+ *	than a label and a value.
  */
 
 #include "cseries.h"
 
-// Include order matters here: screen_drawing.h needs shape_descriptors.h, and
-// world.h ahead of both. This is the same order sdl_widgets.cpp uses.
 #include "sdl_dialogs.h"
 #include "sdl_fonts.h"
 #include "sdl_widgets.h"
@@ -40,288 +31,211 @@
 
 #include "dc_vmu.h"
 #include "dc_plate.h"
+#include "dc_screen.h"
+#include "dc_slots.h"
 
 extern bool load_and_start_game(FileSpecifier& File);
 extern "C" void dc_alert_text(const char *title, const char *l1, const char *l2);
-extern void display_main_menu(void);
 
 /*
- *	X is the destructive action and it must never be a player binding, so it
- *	lives in the fixed menu table in dc_input.c and arrives here as SDLK_DELETE.
- *	Nothing else in the dialog machinery looks at that key.
- */
-#define SLOT_DELETE_KEY	SDLK_DELETE
-
-/*
- *	Elapsed play time, from the tick count the header carries.
+ *	Elapsed play time, from the tick count the card header carries.
  *
  *	TICKS_PER_SECOND is 30 and is the engine's own tick, not a frame rate, so
  *	this is real elapsed game time and does not drift with how well the console
- *	is keeping up.
+ *	is keeping up. The design shows it as hours:minutes:seconds.
  */
 static void format_elapsed(char *out, size_t len, unsigned int ticks)
 {
 	unsigned int secs = ticks / 30;
-	unsigned int hours = secs / 3600;
-	unsigned int mins = (secs % 3600) / 60;
 
-	if (hours)
-		snprintf(out, len, "%uh %02um", hours, mins);
-	else
-		snprintf(out, len, "%um", mins);
+	snprintf(out, len, "%02u:%02u:%02u",
+	         secs / 3600, (secs % 3600) / 60, secs % 60);
 }
 
-/*
- *	One row.
- *
- *	Draws the slot number, then what is in it: the level name if the save was
- *	written by a build that records one, the level number if it came from an
- *	older card, and the elapsed time on the right. An empty slot says so rather
- *	than being blank, because a blank row on a television reads as a rendering
- *	fault rather than as an offer.
- */
-class w_save_slot : public widget {
-public:
-	w_save_slot(const dc_save_info_t &info, bool allow_delete, dialog *owner)
-		: widget(ITEM_FONT), slot(info.slot), used(info.used != 0),
-		  deletable(allow_delete), chosen(false), delete_asked(false), d(owner)
-	{
-		if (!used) {
-			snprintf(line, sizeof line, "%d   - empty -", slot);
-			right[0] = 0;
-			return;
-		}
-
-		if (info.level_name[0])
-			snprintf(line, sizeof line, "%d   %s", slot, info.level_name);
-		else
-			snprintf(line, sizeof line, "%d   Level %d", slot, info.level);
-
-		format_elapsed(right, sizeof right, info.ticks);
-	}
-
-	int layout(void)
-	{
-		int w = text_width(line, font, style);
-		int rw = text_width(right, font, style);
-
-		// Fixed width so the four rows line up whatever is in them, and so the
-		// elapsed column has somewhere constant to sit.
-		rect.w = 400;
-		rect.x = -rect.w / 2;
-		rect.h = font->get_line_height() + 6;
-
-		(void)w;
-		(void)rw;
-
-		return rect.h;
-	}
-
-	void draw(SDL_Surface *s) const
-	{
-		int y = rect.y + font->get_ascent() + 3;
-		uint32 colour;
-
-		if (active)
-			colour = get_dialog_color(ITEM_ACTIVE_COLOR);
-		else if (used)
-			colour = get_dialog_color(ITEM_COLOR);
-		else
-			colour = get_dialog_color(LABEL_COLOR);
-
-		// Selection reads three ways at once -- a bar, the colour, and a caret.
-		// One cue is not enough at this frame rate on a composite television,
-		// which is the finding UI-HANDOFF section 2 settled.
-		if (active) {
-			SDL_Rect bar = { rect.x, rect.y, rect.w, rect.h };
-			SDL_FillRect(s, &bar, get_dialog_color(KEY_BINDING_COLOR));
-		}
-
-		draw_text(s, active ? ">" : " ", rect.x + 6, y, colour, font, style);
-		draw_text(s, line, rect.x + 24, y, colour, font, style);
-
-		if (right[0]) {
-			int rw = text_width(right, font, style);
-			draw_text(s, right, rect.x + rect.w - rw - 10, y, colour, font, style);
-		}
-	}
-
-	/*
-	 *	Acting on a row ends the screen. The widget needs the dialog to do that:
-	 *	recording the choice and leaving the dialog running looks to the player
-	 *	like the button did nothing, and leaves BACK as the only way out.
-	 */
-	void click(int, int)
-	{
-		chosen = true;
-		if (d)
-			d->quit(0);
-	}
-
-	void event(SDL_Event &e)
-	{
-		if (!deletable || !used)
-			return;
-
-		if (e.type == SDL_KEYDOWN && e.key.keysym.sym == SLOT_DELETE_KEY) {
-			delete_asked = true;
-			e.type = SDL_NOEVENT;
-			if (d)
-				d->quit(0);
-		}
-	}
-
-	bool was_chosen(void) const { return chosen; }
-	bool wants_delete(void) const { return delete_asked; }
-	void clear(void) { chosen = false; delete_asked = false; }
-
-	int get_slot(void) const { return slot; }
-	bool is_used(void) const { return used; }
-
-private:
-	int slot;
-	bool used;
-	bool deletable;
-	bool chosen;
-	bool delete_asked;
-
-	dialog *d;
-
-	char line[80];
-	char right[16];
-};
-
-/*
- *	Both screens are the same four rows with a different caption and a different
- *	answer, so they share one runner.
- *
- *	Returns the slot the player acted on, 0 if they backed out. `deleted` is set
- *	when the action was a delete rather than a choice, so the caller knows to
- *	redraw rather than to proceed.
- */
-static int run_slot_screen(const char *title, const char *help,
-                           bool allow_delete, bool allow_empty, bool *deleted)
+/* Which card, how many slots, how much of it -- the kicker line. */
+static void card_summary(char *out, size_t len)
 {
 	dc_save_info_t info[DC_SAVE_SLOTS];
-	w_save_slot *rows[DC_SAVE_SLOTS];
-	int i, answer = 0;
-
-	if (deleted)
-		*deleted = false;
+	int i, used = 0, blocks = 0;
+	const char *unit = "";
 
 	dc_vmu_list_saves(info, DC_SAVE_SLOTS);
 
-	dialog d;
-	d.add(new w_static_text(title, TITLE_FONT, TITLE_COLOR));
-	d.add(new w_spacer());
-
 	for (i = 0; i < DC_SAVE_SLOTS; i++) {
-		rows[i] = new w_save_slot(info[i], allow_delete, &d);
-		d.add(rows[i]);
+		if (!info[i].used)
+			continue;
+
+		used++;
+		blocks += info[i].blocks;
+
+		if (!unit[0])
+			unit = dc_vmu_slot_unit(i + 1);
 	}
 
-	d.add(new w_spacer());
-	d.add(new w_static_text(help, LABEL_FONT, LABEL_COLOR));
-	d.add(new w_spacer());
-	d.add(new w_right_button("BACK", dialog_cancel, &d));
+	if (!used)
+		snprintf(out, len, "NO SAVED GAMES");
+	else
+		snprintf(out, len, "VMU %s  %d OF 4 USED  %d BLK", unit, used, blocks);
+}
 
-	dc_plate_select(DC_PLATE_PLAIN);
-	clear_screen();
+/*
+ *	Fill a screen's rows from the card.
+ *
+ *	The strings live in the caller's buffers because dc_row only borrows
+ *	pointers, and the screen redraws from them for as long as it runs.
+ */
+static int fill_slot_rows(struct dc_row *rows,
+                          char names[DC_SAVE_SLOTS][48],
+                          char times[DC_SAVE_SLOTS][16],
+                          char cards[DC_SAVE_SLOTS][24],
+                          bool empties_selectable)
+{
+	dc_save_info_t info[DC_SAVE_SLOTS];
+	int i, used;
 
-	if (d.run() != 0)
-		return 0;			/* BACK, or Start */
+	used = dc_vmu_list_saves(info, DC_SAVE_SLOTS);
 
 	for (i = 0; i < DC_SAVE_SLOTS; i++) {
-		if (rows[i]->wants_delete()) {
-			answer = rows[i]->get_slot();
-			if (deleted)
-				*deleted = true;
-			break;
+		memset(&rows[i], 0, sizeof rows[i]);
+
+		rows[i].kind = DC_ROW_SAVE;
+		rows[i].id = i + 1;
+		rows[i].label = names[i];
+		rows[i].col2 = times[i];
+		rows[i].col3 = cards[i];
+
+		if (!info[i].used) {
+			snprintf(names[i], 48, "EMPTY SLOT");
+			times[i][0] = 0;
+			cards[i][0] = 0;
+
+			/* Dimmed either way. Whether it can be chosen is what differs
+			   between saving into one and loading from one. */
+			rows[i].disabled = !empties_selectable;
+			continue;
 		}
 
-		if (rows[i]->was_chosen()) {
-			/* An empty row is a valid target when saving and a no-op when
-			   loading, so the screen does not have to make it unselectable and
-			   the highlight can move over all four. */
-			if (rows[i]->is_used() || allow_empty)
-				answer = rows[i]->get_slot();
-			break;
-		}
+		if (info[i].level_name[0])
+			snprintf(names[i], 48, "%s", info[i].level_name);
+		else
+			snprintf(names[i], 48, "LEVEL %d", info[i].level);
+
+		format_elapsed(times[i], 16, info[i].ticks);
+		snprintf(cards[i], 24, "%s %d BLK", dc_vmu_slot_unit(i + 1),
+		         info[i].blocks);
 	}
 
-	return answer;
+	return used;
 }
 
 /*
  *	A yes/no the player has to travel to.
  *
- *	CANCEL is the first widget, so it is what the highlight starts on and what a
+ *	"Leave it" is the first row, so it is where the highlight starts and what a
  *	reflexive press of A does. Deleting a save is the only irreversible thing in
  *	this interface and it should cost one deliberate movement.
  */
-static bool confirm(const char *title, const char *line1, const char *line2)
+static bool confirm(const char *title, const char *question)
 {
-	dialog d;
+	static const dc_ui_hint hints[] = {
+		{ "A", "CHOOSE", true },
+		{ "B", "BACK",   true }
+	};
+	struct dc_row rows[2];
+	struct dc_screen sc;
 
-	d.add(new w_static_text(title, TITLE_FONT, TITLE_COLOR));
-	d.add(new w_spacer());
-	d.add(new w_static_text(line1));
-	if (line2)
-		d.add(new w_static_text(line2));
-	d.add(new w_spacer());
-	d.add(new w_left_button("CANCEL", dialog_cancel, &d));
-	d.add(new w_right_button("YES", dialog_ok, &d));
+	memset(rows, 0, sizeof rows);
+	memset(&sc, 0, sizeof sc);
 
-	clear_screen();
+	rows[0].label = "NO, LEAVE IT ALONE";
+	rows[0].kind = DC_ROW_ACTION;
+	rows[0].id = 1;
 
-	return d.run() == 0;
+	rows[1].label = "YES, DELETE IT";
+	rows[1].kind = DC_ROW_ACTION;
+	rows[1].id = 2;
+
+	sc.title   = title;
+	sc.kicker  = "THIS CANNOT BE UNDONE";
+	sc.cap     = question;
+	sc.panel_y = 190;
+	sc.panel_w = 560;
+	sc.row_h   = DC_UI_ROW_H;
+	sc.rows    = rows;
+	sc.nrows   = 2;
+	sc.hints   = hints;
+	sc.nhints  = 2;
+
+	return dc_screen_run(&sc) == 2;
 }
 
 /*
- *	SAVE GAME. Called from save_game() in preprocess_map_sdl.cpp.
+ *	SAVE GAME, from a save terminal or the pause menu.
  *
  *	Every save shows this, empty slots included -- Max's call over the handoff's
- *	"only ask when the card is full". One more press each time buys the player a
- *	look at the whole card before they spend a slot, and makes overwriting always
- *	deliberate.
- *
- *	Returns the slot, or 0 if they backed out.
+ *	"only ask when the card is full". One more press buys a look at the whole
+ *	card before a slot is spent, and makes overwriting always deliberate.
  */
 int dc_choose_save_slot(void)
 {
-	int slot = run_slot_screen("SAVE GAME",
-	                           "A saves here    Start cancels",
-	                           false, true, NULL);
+	static const dc_ui_hint hints[] = {
+		{ "A", "SAVE HERE", true  },
+		{ "B", "CANCEL",    true  },
+		{ "+", "MOVE",      false }
+	};
+	char names[DC_SAVE_SLOTS][48], times[DC_SAVE_SLOTS][16];
+	char cards[DC_SAVE_SLOTS][24], kicker[64];
+	struct dc_row rows[DC_SAVE_SLOTS];
+	struct dc_screen sc;
+	int used, slot;
 
-	if (!slot)
+	used = fill_slot_rows(rows, names, times, cards, true);
+	card_summary(kicker, sizeof kicker);
+
+	memset(&sc, 0, sizeof sc);
+	sc.title     = "SAVE GAME";
+	sc.kicker    = kicker;
+	sc.cap       = "SAVED GAMES";
+	sc.cap_right = "4 SLOTS";
+	sc.panel_y   = 150;
+	sc.panel_w   = 560;
+	sc.row_h     = DC_UI_ROW_H;
+	sc.rows      = rows;
+	sc.nrows     = DC_SAVE_SLOTS;
+	sc.hints     = hints;
+	sc.nhints    = 3;
+
+	if (used >= DC_SAVE_SLOTS)
+		sc.banner = "ALL FOUR SLOTS FULL - CHOOSE ONE TO OVERWRITE";
+
+	slot = dc_screen_run(&sc);
+	slot &= ~DC_SCREEN_X;		/* X does nothing here */
+
+	if (slot < 1 || slot > DC_SAVE_SLOTS)
 		return 0;
 
-	// Overwriting is confirmed; taking an empty slot is not, because there is
-	// nothing to lose and a confirm on the common path is just a second press.
+	/* Overwriting is confirmed; taking an empty slot is not, because there is
+	   nothing to lose and a confirm on the common path is just a second press. */
 	{
 		dc_save_info_t info[DC_SAVE_SLOTS];
+		char q[96];
 
 		dc_vmu_list_saves(info, DC_SAVE_SLOTS);
 
-		if (info[slot - 1].used) {
-			char line[96];
+		if (!info[slot - 1].used)
+			return slot;
 
-			if (info[slot - 1].level_name[0])
-				snprintf(line, sizeof line, "Slot %d holds %s.",
-				         slot, info[slot - 1].level_name);
-			else
-				snprintf(line, sizeof line, "Slot %d holds a saved game.", slot);
+		snprintf(q, sizeof q, "OVERWRITE %s?", names[slot - 1]);
 
-			if (!confirm("OVERWRITE?", line, "This cannot be undone."))
-				return 0;
-		}
+		if (!confirm("SAVE GAME", q))
+			return 0;
 	}
 
 	return slot;
 }
 
 /*
- *	MANAGE SAVES. A loads, X deletes, Start backs out.
+ *	MANAGE SAVES. A loads, X deletes, B goes back.
  *
  *	Loading lives here as well as on Continue Game because Continue Game only
  *	ever opens the newest save. Without a load here the other three slots would
@@ -329,32 +243,61 @@ int dc_choose_save_slot(void)
  */
 void dc_manage_saves(void)
 {
-	while (true) {
-		bool deleting = false;
-		int slot = run_slot_screen("MANAGE SAVES",
-		                           "A loads    X deletes    Start goes back",
-		                           true, false, &deleting);
+	static const dc_ui_hint hints[] = {
+		{ "A", "LOAD",   true },
+		{ "X", "DELETE", true },
+		{ "B", "BACK",   true }
+	};
+	char names[DC_SAVE_SLOTS][48], times[DC_SAVE_SLOTS][16];
+	char cards[DC_SAVE_SLOTS][24], kicker[64];
+	struct dc_row rows[DC_SAVE_SLOTS];
+	struct dc_screen sc;
 
-		if (!slot)
+	memset(&sc, 0, sizeof sc);
+
+	for (;;) {
+		int chosen, slot;
+
+		fill_slot_rows(rows, names, times, cards, false);
+		card_summary(kicker, sizeof kicker);
+
+		sc.title     = "MANAGE SAVES";
+		sc.kicker    = kicker;
+		sc.cap       = "SAVED GAMES";
+		sc.cap_right = "4 SLOTS";
+		sc.panel_y   = 150;
+		sc.panel_w   = 560;
+		sc.row_h     = DC_UI_ROW_H;
+		sc.rows      = rows;
+		sc.nrows     = DC_SAVE_SLOTS;
+		sc.hints     = hints;
+		sc.nhints    = 3;
+
+		chosen = dc_screen_run(&sc);
+
+		if (chosen == DC_SCREEN_BACK)
 			return;
 
-		if (deleting) {
-			dc_save_info_t info[DC_SAVE_SLOTS];
-			char line[96];
+		if (chosen & DC_SCREEN_X) {
+			char q[96];
 
-			dc_vmu_list_saves(info, DC_SAVE_SLOTS);
+			slot = chosen & ~DC_SCREEN_X;
 
-			if (info[slot - 1].level_name[0])
-				snprintf(line, sizeof line, "Delete slot %d, %s?",
-				         slot, info[slot - 1].level_name);
-			else
-				snprintf(line, sizeof line, "Delete slot %d?", slot);
+			if (slot < 1 || slot > DC_SAVE_SLOTS)
+				continue;
 
-			if (confirm("DELETE SAVE", line, "This cannot be undone."))
+			snprintf(q, sizeof q, "DELETE %s?", names[slot - 1]);
+
+			if (confirm("MANAGE SAVES", q))
 				dc_vmu_delete_save(slot);
 
-			continue;	/* back to the list, which will have changed */
+			continue;	/* back to the list, which has changed */
 		}
+
+		slot = chosen;
+
+		if (slot < 1 || slot > DC_SAVE_SLOTS)
+			continue;
 
 		/* Load it. */
 		{
@@ -367,8 +310,8 @@ void dc_manage_saves(void)
 			if (!info[slot - 1].used)
 				continue;
 
-			// Absolute already: saved_games_dir is "/ram" on this port, because
-			// the KOS ramdisk is flat and cannot hold a subdirectory.
+			/* Absolute already: saved_games_dir is "/ram" on this port, because
+			   the KOS ramdisk is flat and cannot hold a subdirectory. */
 			snprintf(path, sizeof path, "/ram/%s", info[slot - 1].ram_name);
 			file = path;
 

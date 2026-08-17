@@ -56,6 +56,7 @@ static const SDL_Color col_hotbar  = { 0x2a, 0x1e, 0x04, 0 };	/* --hot-bar  */
 static const SDL_Color col_item    = { 0x6f, 0x8a, 0x7e, 0 };	/* --item     */
 static const SDL_Color col_label   = { 0x4e, 0x64, 0x59, 0 };	/* --label    */
 static const SDL_Color col_off     = { 0x3d, 0x4c, 0x46, 0 };	/* .row.off   */
+static const SDL_Color col_face    = { 0xe2, 0xef, 0xe8, 0 };	/* --face     */
 
 /*
  *	These are design tokens, not dialog theme colours, and they deliberately do
@@ -88,6 +89,7 @@ uint32 dc_ui_colour(int which, SDL_Surface *s)
 	case DC_UI_ITEM:     return map(s, col_item);
 	case DC_UI_LABEL:    return map(s, col_label);
 	case DC_UI_OFF:      return map(s, col_off);
+	case DC_UI_FACE:     return map(s, col_face);
 	}
 
 	return map(s, col_rule);
@@ -386,6 +388,120 @@ void dc_ui_hints(SDL_Surface *s, int y,
 
 		dc_ui_tracked_text(s, right, DC_UI_SAFE_R - rw, baseline,
 		                   map(s, col_label), font, style, DC_UI_TRACK_LABEL);
+	}
+}
+
+/*
+ *	A saved game's row.
+ *
+ *	.srow in app.css: the name takes the space that is left, then elapsed, then
+ *	the card, both in the label font. An empty slot is drawn in the disabled
+ *	colour and says so, because a blank row on a television reads as a fault.
+ */
+void dc_ui_save_row(SDL_Surface *s, int x, int y, int w, int h,
+                    const char *name, const char *elapsed, const char *card,
+                    bool selected, bool empty,
+                    const sdl_font_info *item_font, uint16 item_style,
+                    const sdl_font_info *label_font, uint16 label_style)
+{
+	uint32 name_colour;
+	int baseline = y + (h - item_font->get_line_height()) / 2 +
+	               item_font->get_ascent();
+	int lbase = y + (h - label_font->get_line_height()) / 2 +
+	            label_font->get_ascent();
+	int right = x + w - 12;
+
+	if (selected) {
+		dc_ui_fill(s, x, y, w, h, map(s, col_hotbar));
+		dc_ui_fill(s, x, y, 3, h, map(s, col_hot));
+		dc_ui_caret(s, x + 11, y + h / 2, map(s, col_hot), 10);
+	}
+
+	if (empty)
+		name_colour = map(s, col_off);
+	else if (selected)
+		name_colour = map(s, col_hot);
+	else
+		name_colour = map(s, col_item);
+
+	/* Card first, from the right, then elapsed beside it, then the name gets
+	   whatever is left -- so a long level name is what gets truncated rather
+	   than the numbers, which are fixed width and always wanted. */
+	if (card && card[0]) {
+		int cw = dc_ui_tracked_width(card, label_font, label_style,
+		                             DC_UI_TRACK_LABEL);
+
+		dc_ui_tracked_text(s, card, right - cw, lbase,
+		                   selected ? map(s, col_hot) : map(s, col_label),
+		                   label_font, label_style, DC_UI_TRACK_LABEL);
+		right -= cw + 12;
+	}
+
+	if (elapsed && elapsed[0]) {
+		int ew = dc_ui_tracked_width(elapsed, label_font, label_style,
+		                             DC_UI_TRACK_LABEL);
+
+		dc_ui_tracked_text(s, elapsed, right - ew, lbase,
+		                   selected ? map(s, col_hot) : map(s, col_label),
+		                   label_font, label_style, DC_UI_TRACK_LABEL);
+		right -= ew + 12;
+	}
+
+	dc_ui_tracked_text(s, name, x + 30, baseline, name_colour,
+	                   item_font, item_style, DC_UI_TRACK_ITEM);
+}
+
+/*
+ *	Greedy word wrap. Text that will not fit in `lines` is dropped rather than
+ *	spilling off the side of a television, which is the failure this layout is
+ *	written around.
+ */
+void dc_ui_wrapped_text(SDL_Surface *s, const char *text, int x, int y,
+                        int width, int lines, uint32 colour,
+                        const sdl_font_info *font, uint16 style)
+{
+	const char *p = text;
+	int line = 0;
+	int lh = font->get_line_height() + 3;
+
+	if (!text || !font)
+		return;
+
+	while (*p && line < lines) {
+		char buf[160];
+		int len = 0, last_space = -1;
+
+		while (p[len] && len < (int)sizeof buf - 1) {
+			buf[len] = p[len];
+			buf[len + 1] = 0;
+
+			if (p[len] == ' ')
+				last_space = len;
+
+			if (dc_ui_tracked_width(buf, font, style, DC_UI_TRACK_LABEL) > width) {
+				if (last_space > 0)
+					len = last_space;
+				break;
+			}
+
+			len++;
+		}
+
+		{
+			char out[160];
+
+			memcpy(out, p, len);
+			out[len] = 0;
+
+			dc_ui_tracked_text(s, out, x, y + line * lh + font->get_ascent(),
+			                   colour, font, style, DC_UI_TRACK_LABEL);
+		}
+
+		line++;
+		p += len;
+
+		while (*p == ' ')
+			p++;
 	}
 }
 

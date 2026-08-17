@@ -43,6 +43,7 @@
 #include "dc_vmu.h"
 #include "dc_ui.h"
 #include "build_id.h"
+#include "dc_screen.h"
 
 extern "C" void dc_trace(int slot, const char *fmt, ...);
 
@@ -353,87 +354,55 @@ short dc_main_menu_first(void)
  *
  *	Returns false if the player backed out, in which case no game begins.
  */
-
-class w_difficulty : public widget {
-public:
-	w_difficulty(const char *name, int value, dialog *owner)
-		: widget(ITEM_FONT), label(name), level(value), picked(false), d(owner) {}
-
-	int layout(void)
-	{
-		rect.w = 340;
-		rect.x = -rect.w / 2;
-		rect.h = DC_UI_ROW_H;
-
-		return rect.h;
-	}
-
-	void draw(SDL_Surface *s) const
-	{
-		/* Same row vocabulary as every other screen, so DIFFICULTY does not
-		   quietly look like a different game. */
-		dc_ui_row(s, rect.x, rect.y, rect.w, rect.h, label, NULL,
-		          active, false, font, style, font, style);
-	}
-
-	void click(int, int)
-	{
-		picked = true;
-		if (d)
-			d->quit(0);
-	}
-
-	bool was_picked(void) const { return picked; }
-	int get_level(void) const { return level; }
-
-private:
-	const char *label;
-	int level;
-	bool picked;
-	dialog *d;
-};
-
 bool dc_choose_difficulty(void)
 {
 	static const char *names[] = {
 		"KINDERGARTEN", "EASY", "NORMAL", "MAJOR DAMAGE", "TOTAL CARNAGE"
 	};
-	const int count = (int)(sizeof(names) / sizeof(names[0]));
-	w_difficulty *rows[5];
-	int i;
+	static const dc_ui_hint hints[] = {
+		{ "A", "BEGIN", true  },
+		{ "B", "BACK",  true  },
+		{ "+", "MOVE",  false }
+	};
+	struct dc_row rows[5];
+	struct dc_screen sc;
+	int i, chosen;
 
-	dialog d;
-	d.add(new w_static_text("DIFFICULTY", TITLE_FONT, TITLE_COLOR));
-	d.add(new w_spacer());
+	memset(rows, 0, sizeof rows);
+	memset(&sc, 0, sizeof sc);
 
-	for (i = 0; i < count; i++) {
-		rows[i] = new w_difficulty(names[i], i, &d);
-		d.add(rows[i]);
+	for (i = 0; i < 5; i++) {
+		rows[i].label = names[i];
+		rows[i].kind = DC_ROW_ACTION;
+		rows[i].id = i + 1;			/* ids are 1-based; the level is id - 1 */
 	}
 
-	d.add(new w_spacer());
-	d.add(new w_static_text("A begins    Start goes back", LABEL_FONT, LABEL_COLOR));
-	d.add(new w_spacer());
-	d.add(new w_right_button("BACK", dialog_cancel, &d));
+	sc.title   = "NEW GAME";
+	sc.kicker  = "SELECT DIFFICULTY";
+	sc.cap     = "DIFFICULTY";
+	sc.panel_y = 150;
+	sc.panel_w = 340;
+	sc.row_h   = DC_UI_ROW_H;
+	sc.rows    = rows;
+	sc.nrows   = 5;
+	sc.hints   = hints;
+	sc.nhints  = 3;
 
-	dc_plate_select(DC_PLATE_PLAIN);
-	clear_screen();
+	/* Start on whatever they last played, rather than always at the top. */
+	sc.cursor = player_preferences->difficulty_level;
 
-	if (d.run() != 0)
+	chosen = dc_screen_run(&sc);
+	chosen &= ~DC_SCREEN_X;
+
+	if (chosen < 1 || chosen > 5)
 		return false;
 
-	for (i = 0; i < count; i++) {
-		if (rows[i]->was_picked()) {
-			if (player_preferences->difficulty_level != rows[i]->get_level()) {
-				player_preferences->difficulty_level = rows[i]->get_level();
-				write_preferences();
-			}
-
-			return true;
-		}
+	if (player_preferences->difficulty_level != chosen - 1) {
+		player_preferences->difficulty_level = chosen - 1;
+		write_preferences();
 	}
 
-	return false;
+	return true;
 }
 
 /*

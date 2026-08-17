@@ -43,7 +43,7 @@ Source_Files/Misc/dc_mainmenu.o: Source_Files/Misc/dc_mainmenu.cpp \
  Source_Files/Misc/Crosshairs.h Source_Files/Misc/OGL_Setup.h \
  Source_Files/Misc/ImageLoader.h Source_Files/ModelView/Model3D.h \
  Source_Files/Misc/dc_plate.h Source_Files/Misc/dc_slots.h dc/dc_vmu.h \
- Source_Files/Misc/dc_ui.h dc/build_id.h
+ Source_Files/Misc/dc_ui.h dc/build_id.h Source_Files/Misc/dc_screen.h
 Source_Files/CSeries/cseries.h:
 Source_Files/CSeries/sdl_cseries.h:
 /opt/toolchains/dc/kos/../kos-ports/include/SDL/SDL.h:
@@ -107,3 +107,4 @@ Source_Files/Misc/dc_slots.h:
 dc/dc_vmu.h:
 Source_Files/Misc/dc_ui.h:
 dc/build_id.h:
+Source_Files/Misc/dc_screen.h:

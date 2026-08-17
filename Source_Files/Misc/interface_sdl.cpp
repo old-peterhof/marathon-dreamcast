@@ -7,6 +7,7 @@
 #include "cseries.h"
 #ifdef DC
 #include "dc_mainmenu.h"
+#include "dc_prefs.h"
 #endif
 
 #include "map.h"
@@ -38,7 +39,30 @@ void do_preferences(void)
 {
 	struct screen_mode_data mode = graphics_preferences->screen_mode;
 
+#ifdef DC
+	/*
+	 *	The prototype's Preferences, not the stock dialogs. See dc_prefs.cpp.
+	 *	handle_preferences() and everything under it stays compiled for other
+	 *	platforms and is simply not reached here.
+	 *
+	 *	It also does NOT end by calling display_main_menu(), which the stock
+	 *	handle_preferences() does unconditionally. That is why opening
+	 *	Preferences from the pause menu threw the running level away: the state
+	 *	became _display_main_menu, so Resume had nothing to resume, and loading a
+	 *	save on top of that half-dismantled state locked the machine up.
+	 *
+	 *	Which means redrawing is this function's job now, and what to redraw
+	 *	depends on where the player was.
+	 */
+	dc_preferences();
+
+	if (get_game_state() == _display_main_menu)
+		display_main_menu();
+	else
+		update_game_window();
+#else
 	handle_preferences();
+#endif
 
 	if (mode.bit_depth != graphics_preferences->screen_mode.bit_depth) {
 		paint_window_black();

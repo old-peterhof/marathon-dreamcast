@@ -32,9 +32,9 @@ Source_Files/Misc/interface_sdl.o: Source_Files/Misc/interface_sdl.cpp \
  Source_Files/CSeries/cscluts.h Source_Files/CSeries/csstrings.h \
  Source_Files/CSeries/csfonts.h Source_Files/CSeries/cspixels.h \
  Source_Files/CSeries/csalerts.h Source_Files/CSeries/csmisc.h \
- Source_Files/Misc/dc_mainmenu.h Source_Files/Misc/map.h \
- Source_Files/Misc/world.h Source_Files/Misc/dynamic_limits.h \
- Source_Files/Misc/XML_ElementParser.h \
+ Source_Files/Misc/dc_mainmenu.h Source_Files/Misc/dc_prefs.h \
+ Source_Files/Misc/map.h Source_Files/Misc/world.h \
+ Source_Files/Misc/dynamic_limits.h Source_Files/Misc/XML_ElementParser.h \
  Source_Files/Misc/shape_descriptors.h Source_Files/Misc/shell.h \
  Source_Files/Misc/interface.h Source_Files/Misc/player.h \
  Source_Files/Network/network.h Source_Files/Network/network_sound.h \
@@ -86,6 +86,7 @@ Source_Files/CSeries/cspixels.h:
 Source_Files/CSeries/csalerts.h:
 Source_Files/CSeries/csmisc.h:
 Source_Files/Misc/dc_mainmenu.h:
+Source_Files/Misc/dc_prefs.h:
 Source_Files/Misc/map.h:
 Source_Files/Misc/world.h:
 Source_Files/Misc/dynamic_limits.h:

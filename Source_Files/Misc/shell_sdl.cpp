@@ -154,6 +154,7 @@ static void usage(const char *prg_name)
 #include "dc_vmu.h"
 #include "dc_slots.h"
 #include "dc_mainmenu.h"
+#include "dc_screen.h"
 
 extern "C" {
 extern int fs_mem_init(void);
@@ -1285,63 +1286,75 @@ static void handle_game_key(const SDL_Event &event)
  *	Alt+S to save, Alt+C to leave the level. A Dreamcast pad has no Alt and no
  *	letters, so from a console there was no way to pause, no way to save away
  *	from a terminal, and no way out of a level at all short of resetting the
- *	machine. Start was bound to Escape, which gameplay ignores.
+ *	machine.
  *
- *	The dialog is itself the pause: dialogs run their own event loop, so the
- *	world stops while one is open. Start closes it again, because Escape is what
- *	a dialog treats as cancel.
+ *	The screen is itself the pause: dc_screen_run holds its own loop, so the
+ *	world stops while it is up. It draws over the running game rather than over a
+ *	plate, dimmed, which is what the design asks for and what makes it read as an
+ *	overlay rather than as having left the level.
  *
  *	Difficulty is deliberately not here. It belongs to the run and is chosen when
  *	the run starts -- Max's call on UI-HANDOFF open question 3.
  */
-enum { dcPauseResume, dcPauseSave, dcPausePrefs, dcPauseQuit };
-
-static int dc_pause_choice = dcPauseResume;
-
-struct dc_pause_item {
-	dialog *d;
-	int what;
-};
-
-static void dc_pause_proc(void *arg)
-{
-	struct dc_pause_item *it = (struct dc_pause_item *)arg;
-
-	dc_pause_choice = it->what;
-	it->d->quit(0);
-}
+enum { pmResume = 1, pmSave, pmPrefs, pmQuit };
 
 static void dc_pause_menu(void)
 {
-	static const char *labels[4] = {
-		"RESUME", "SAVE GAME", "PREFERENCES", "QUIT TO MAIN MENU"
+	static const dc_ui_hint hints[] = {
+		{ "A",     "SELECT", true  },
+		{ "START", "RESUME", false },
+		{ "+",     "MOVE",   false }
 	};
-	struct dc_pause_item items[4];
-	dialog d;
-	unsigned i;
+	struct dc_row rows[4];
+	struct dc_screen sc;
+	char elapsed[24], level[72];
+	const char *state[4];
 
-	dc_pause_choice = dcPauseResume;
-	dc_trace(29, "pause menu: opened");
+	memset(rows, 0, sizeof rows);
+	memset(&sc, 0, sizeof sc);
 
-	d.add(new w_static_text("PAUSED", TITLE_FONT, TITLE_COLOR));
-	d.add(new w_spacer());
+	rows[0].label = "RESUME";        rows[0].kind = DC_ROW_ACTION; rows[0].id = pmResume;
+	rows[1].label = "SAVE GAME";     rows[1].kind = DC_ROW_ACTION; rows[1].id = pmSave;
+	rows[2].label = "PREFERENCES";   rows[2].kind = DC_ROW_ACTION; rows[2].id = pmPrefs;
+	rows[3].label = "QUIT TO MAIN MENU";
+	rows[3].kind = DC_ROW_ACTION;    rows[3].id = pmQuit;
 
-	for (i = 0; i < 4; i++) {
-		items[i].d = &d;
-		items[i].what = (int)i;
-		d.add(new w_button(labels[i], dc_pause_proc, &items[i]));
+	{
+		unsigned int secs = (unsigned int)dynamic_world->tick_count / 30;
+
+		snprintf(elapsed, sizeof elapsed, "%02u:%02u:%02u",
+		         secs / 3600, (secs % 3600) / 60, secs % 60);
+		snprintf(level, sizeof level, "%s", static_world->level_name);
 	}
 
-	/*
-	 *	No clear_screen() here, unlike every other screen: this one is supposed
-	 *	to sit over the running game. The dialog paints its own rectangle, and
-	 *	since Phase 1 that rectangle is filled with the plate, so it reads as a
-	 *	panel laid over the world rather than a hole cut in it.
-	 */
-	d.run();
+	state[0] = "ELAPSED";
+	state[1] = elapsed;
+	sc.state[0] = state[0];
+	sc.state[1] = state[1];
+	sc.nstate = 2;
 
-	switch (dc_pause_choice) {
-		case dcPauseSave:
+	sc.title     = "PAUSED";
+	sc.kicker    = level;
+	sc.cap       = "GAME";
+	sc.title_y   = 96;
+	sc.panel_y   = 160;
+	sc.panel_w   = 340;
+	sc.row_h     = DC_UI_ROW_H;
+	sc.rows      = rows;
+	sc.nrows     = 4;
+	sc.hints     = hints;
+	sc.nhints    = 3;
+	sc.over_game = true;
+
+	dc_trace(29, "pause menu: opened");
+
+	for (;;) {
+		int chosen = dc_screen_run(&sc);
+
+		chosen &= ~DC_SCREEN_X;
+
+		switch (chosen) {
+		case pmSave:
 			/*
 			 *	save_game() directly, not do_menu_item_command(mGame, iSave).
 			 *	That arm is #if 0'd upstream for single player, so routing
@@ -1351,20 +1364,23 @@ static void dc_pause_menu(void)
 			 */
 			save_game();
 			validate_world_window();
-			break;
+			continue;			/* back to the pause menu, still paused */
 
-		case dcPausePrefs:
+		case pmPrefs:
 			do_preferences();
-			break;
+			continue;			/* likewise -- Preferences is not an exit */
 
-		case dcPauseQuit:
-			// iCloseGame puts up its own "cancel the game in progress?" check,
-			// so a mis-press does not throw the level away.
+		case pmQuit:
+			/* iCloseGame puts up its own "cancel the game in progress?" check,
+			   so a mis-press does not throw the level away. */
 			do_menu_item_command(mGame, iCloseGame, false);
 			break;
 
-		default:
+		default:				/* RESUME, B, or Start */
 			break;
+		}
+
+		break;
 	}
 
 	if (get_game_state() == _game_in_progress)

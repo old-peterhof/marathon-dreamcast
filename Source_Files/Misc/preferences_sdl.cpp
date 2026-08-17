@@ -19,6 +19,7 @@
 #ifdef DC
 #include "dc_slots.h"
 #include "dc_explain.h"
+#include "dc_prefs.h"
 #include "dc_padconfig.h"
 #endif
 #include "images.h"
@@ -61,15 +62,17 @@ static void sound_dialog(void *arg);
 // unattended -- synthesised keystrokes into Flycast proved unreliable.
 // controls_dialog never dereferences its parent argument, so NULL is fine.
 static void controls_dialog(void *arg);
-extern "C" void dc_open_controls_dialog(void) { controls_dialog(0); }
+/*
+ *	The AUTOSTART=controls harness. It opens the new Preferences tree, not the
+ *	stock dialog -- the stock one is no longer reachable in play, so testing it
+ *	would be testing something nobody can see.
+ */
+extern "C" void dc_open_controls_dialog(void) { dc_preferences(); }
 #endif
 
 static void controls_dialog(void *arg);
 static void environment_dialog(void *arg);
 static void keyboard_dialog(void *arg);
-#ifdef DC
-static void dc_manage_saves_proc(void *arg);
-#endif
 #ifdef DC
 static void pad_dialog(void *arg);
 #endif
@@ -175,10 +178,6 @@ void handle_preferences(void)
 	d.add(controls_b);
 	dc_explain_add(controls_b, "The analog stick, sensitivity, and which button "
 	                           "does what.");
-
-	w_button *saves_b = new w_button("MANAGE SAVES", dc_manage_saves_proc, &d);
-	d.add(saves_b);
-	dc_explain_add(saves_b, "Load or delete any of the four saved games.");
 
 	d.add(new w_spacer());
 	d.add(explain);
@@ -607,17 +606,6 @@ static void sound_dialog(void *arg)
 static w_toggle *mouse_w;
 #ifdef DC
 static w_select *stick_mode_w;
-#endif
-
-#ifdef DC
-static void dc_manage_saves_proc(void *arg)
-{
-	dialog *parent = (dialog *)arg;
-
-	dc_manage_saves();
-
-	parent->draw();
-}
 #endif
 
 static void controls_dialog(void *arg)

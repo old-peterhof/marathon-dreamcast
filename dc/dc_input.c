@@ -284,6 +284,13 @@ static const struct dc_binding menu_bindings[] = {
 	 */
 	{ CONT_X,           SDLK_DELETE },
 	{ CONT_Y,           SDLK_INSERT },
+	/*
+	 *	B is BACK, everywhere. The design leans on it -- every screen's hint bar
+	 *	says so -- and it is fixed for the same reason Start is: a way out must
+	 *	never be something a player can rebind away or a screen can suppress.
+	 *	Start still backs out too, so there are two.
+	 */
+	{ CONT_B,           SDLK_BACKSPACE },
 	/* w_list_base::event swallows UP and DOWN on purpose -- "Prevent selection
 	   of previous/next widget" -- so once a list has focus the D-pad can never
 	   leave it, which stranded the save dialog with no way to reach "new save
