@@ -1,6 +1,14 @@
 # Backlog
 
-Wanted, not yet started. Ordered roughly by appetite rather than difficulty.
+Ordered roughly by appetite rather than difficulty. Completed sections are kept
+rather than deleted, because the reasoning in them is usually the part worth
+having later — and because it is useful to see which predictions held.
+
+**Still open:** rumble pack (blocked on hardware), the PowerVR renderer (works,
+unmeasured on a console), and shrinking a save below 10 blocks (marginal).
+
+**Done:** the controller-native UI, the console trim, Falco's flags, and health
+and air on the VMU.
 
 ## Rumble pack support
 
@@ -25,40 +33,37 @@ Notes for whoever picks it up:
 - The natural hook points are the same places the game already makes noise:
   weapon fire in `weapons.cpp` and damage in `player.cpp`.
 
-## Controller-native UI
+## Controller-native UI — DONE, b58-b61
 
-Rebuild the dialogs, save/load windows, preference screens and the main menu to
-be designed for a controller, while still looking like Marathon. The present UI
-is a mouse interface with keyboard navigation bolted on, and every controller
-problem so far has been a symptom of that rather than a bug in the pad code.
+Built over five phases. `UI-HANDOFF.md` is the design, `MENU-TREE.md` is the
+audit it was built against, and README.DC.md's "The interface" section is the
+summary.
 
-What is already known, so this does not start from scratch:
+The question this section asked -- reskin the existing widgets, or a parallel
+controller-first set -- was answered in the middle, and the middle turned out to
+be right. The widget set was kept and extended by four widgets (`w_pad_key`,
+`w_explain`, `w_save_slot`, `w_pad_grid`), while the main menu, which was the one
+part genuinely built around a pointer, was replaced outright.
 
-- **The main menu is a 2D layout driven by a 1D list.** `shell_sdl.cpp` carries
-  a hardcoded `menus[]` array (BERO's) in a fixed order, and UP/DOWN walk that
-  array. It does not follow what the eye sees: the screen has two columns, so
-  "down" sometimes jumps across the screen. A controller wants the traversal to
-  match the layout.
-- **Lists trap focus.** `w_list_base::event` swallows UP and DOWN by design --
-  "Prevent selection of previous/next widget" -- so a focused list cannot be
-  left with a D-pad. We work around it by sending TAB from the triggers, which
-  works but is not discoverable: nothing on screen says so.
-- **Dialog navigation is inconsistent.** In `dialog::event`, UP *and* LEFT both
-  mean "previous widget" while DOWN and RIGHT mean "next", except when the
-  focused widget consumes them first -- `w_slider` eats LEFT/RIGHT to adjust,
-  `w_list` eats UP/DOWN to scroll. So which key does what depends on what is
-  selected, which is fine with a mouse and confusing with a pad.
-- **There is no consistent focus indicator.** The main menu highlights the
-  selected button (BERO added that), but dialog widgets rely on subtler cues
-  that were designed to be clicked rather than cursored to.
-- **The look is data-driven, which helps.** Themes live in
-  `disc-AlephOne/Themes/Default` as MML plus bitmaps, so a lot of restyling is
-  data rather than code. `sdl_dialogs.cpp` and `sdl_widgets.cpp` hold the
-  layout and behaviour.
+Each of the five problems listed here was real and each was fixed:
 
-Worth deciding early whether this is a reskin of the existing widget set or a
-parallel controller-first set of screens that reuses the theme art. The second
-is more work but avoids fighting a widget system built around a pointer.
+- **2D layout driven by a 1D list.** The menu is now drawn text over a plate, so
+  the list *is* the layout and cannot disagree with it.
+- **Lists trap focus.** Still true of `w_list`, and the reason the new save
+  screens are built from buttons instead. `w_pad_grid` releases focus at its
+  edges rather than swallowing everything, which is the pattern to copy.
+- **Inconsistent navigation.** Left/Right adjust in place everywhere, which
+  turned out to be behaviour `w_select` and `w_slider` already had.
+- **No consistent focus indicator.** Selection now reads three ways at once -- a
+  bar, amber text, and a caret -- because one cue is not enough at 15fps on a
+  composite television.
+- **The look is data-driven.** Taken advantage of: the palette went in as theme
+  colours, and the plate is baked from the design prototype's own CSS by
+  `tools/bake-plate.py`.
+
+The artwork objection at the end of the next section -- that the menu is a fixed
+bitmap with the buttons drawn into it -- is what the plate removed, and is why
+the trimming below could finally happen.
 
 ## PowerVR / hardware-accelerated renderer
 
@@ -122,29 +127,22 @@ where it runs now.
 Worth maybe 6 blocks of the 23. Not obviously worth the complexity unless a card
 is very full. Doom 64 manages 10 blocks, but it has far less state to keep.
 
-## Which preferences and menu items to strip on console
+## Which preferences and menu items to strip on console — DONE, b58-b59
 
-For discussion with Max, not to be actioned unilaterally.
+Discussed and actioned. Everything on the candidate list went: both network
+items, all three film items, Quit, the whole Environment screen, four of six
+graphics settings, Channels, the player name and both colours, and CONFIGURE
+KEYBOARD. The main menu went from ten items to five and Preferences from five
+buttons to three rows.
 
-The UI still offers a lot that means nothing on a Dreamcast, and every item is
-one more thing to navigate past with a d-pad. Candidates, roughly in order of how
-obviously they should go:
+Nothing was deleted from the engine to do it -- `iManageSaves` is appended to the
+enum so no id shifts, and the rectangle table is untouched, so non-DC builds are
+unchanged. `MENU-TREE.md` records what went and why, including the reasoning for
+the items that stayed.
 
-- Network: GATHER NETWORK GAME and JOIN NETWORK GAME. `network_dummy.cpp` is
-  linked, so these cannot work at all; they currently blink and return.
-- Films: REPLAY SAVED FILM, REPLAY LAST FILM, SAVE LAST FILM. Recordings are
-  written to the ramdisk and die at power-off, so a film cannot outlive the
-  session that made it.
-- QUIT. A console has no desktop to return to.
-- Preferences that describe hardware we know: resolution, colour depth, fullscreen
-  toggle, OpenGL options while the GL path is unbuilt.
-- Keyboard-only preferences: key bindings, mouse sensitivity as distinct from the
-  stick sensitivity already added.
-
-Against stripping: the main menu is a fixed 1990s bitmap with the buttons drawn
-into it, so removing an item means either editing artwork or leaving a dead
-region on screen. That argues for doing this as part of the controller-native UI
-work rather than before it.
+The objection recorded here was correct and was the blocker: the menu was a fixed
+bitmap with the buttons drawn into it. Replacing it with a drawn menu is what
+made this possible, which is why the two were done together.
 
 ## Falco's optimisation flags -- done, one at a time
 
@@ -176,23 +174,17 @@ neither looks promising given the above: -freorder-blocks-algorithm=simple and
 Where the frames actually are, if they are anywhere: the PowerVR renderer, which
 draws the world in hardware instead of on the SH4.
 
-## Player health and air on the VMU
+## Player health and air on the VMU — DONE, b61
 
-Wanted. The VMU already shows the title, the build number and the framerate; Max
-would like health x/100 and air x/100 under them.
+The VMU shows MARATHON 2 / Build N / FPS / HP150 A100.
 
-The mechanics are already in place -- `dc/dc_profiler.c` adds measurements to the
-VMU Profiler and a `use_string` measurement renders its buffer verbatim, so a
-line reading `HP  85/100` is a callback away. What it needs is a safe way to read
-the player from the profiler's background thread: `players[]` and
-`dynamic_world` are engine state, and the profiler polls on its own thread rather
-than in the render loop.
+Built the cheap way this section predicted: the render loop copies health and
+oxygen into two plain integers once a frame and the profiler reads those, so
+nothing reaches into engine state from the profiler's own thread.
 
-The cheap approach is to have the render loop copy health and oxygen into two
-plain integers once a frame, and have the profiler read those. A torn read of an
-int shows a wrong number for one refresh of a VMU screen, which does not matter.
-
-Note the LCD is 48x32 pixels and fits four lines of about eleven characters, so
-the title, build and FPS lines already use three of them. Health and air would
-need one line between them, something like `HP 85 O2 60`, or the build line
-would have to go once a level is running.
+Two details the note did not anticipate. Health is shown raw rather than out of
+100, because Marathon's own scale is the meaningful one -- 100 is a full normal
+suit and the 150 ceiling is what canisters add. And the readout has to be cleared
+when the main menu is drawn: `render_screen()` is what feeds it and does not run
+there, so it would otherwise keep showing whatever the player's condition was
+when they left the level, which reads as a live number and is not one.
