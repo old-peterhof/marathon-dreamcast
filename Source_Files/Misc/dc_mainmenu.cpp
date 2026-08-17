@@ -252,7 +252,7 @@ void dc_main_menu_draw(short selected)
 		                        DC_UI_TRACK_LABEL);
 		dc_ui_tracked_text(video, "LAST SAVE", DC_UI_SAFE_R - w,
 		                   y + label_font->get_ascent(),
-		                   get_dialog_color(LABEL_COLOR),
+		                   dc_ui_colour(DC_UI_LABEL, video),
 		                   label_font, label_style, DC_UI_TRACK_LABEL);
 
 		if (level[0]) {
@@ -261,7 +261,7 @@ void dc_main_menu_draw(short selected)
 			                        DC_UI_TRACK_LABEL);
 			dc_ui_tracked_text(video, level, DC_UI_SAFE_R - w,
 			                   y + label_font->get_ascent(),
-			                   get_dialog_color(ITEM_COLOR),
+			                   dc_ui_colour(DC_UI_ITEM, video),
 			                   label_font, label_style, DC_UI_TRACK_LABEL);
 
 			y += MENU_STATE_LH;
@@ -269,7 +269,7 @@ void dc_main_menu_draw(short selected)
 			                        DC_UI_TRACK_LABEL);
 			dc_ui_tracked_text(video, where, DC_UI_SAFE_R - w,
 			                   y + label_font->get_ascent(),
-			                   get_dialog_color(ITEM_COLOR),
+			                   dc_ui_colour(DC_UI_ITEM, video),
 			                   label_font, label_style, DC_UI_TRACK_LABEL);
 		} else {
 			y += MENU_STATE_LH;
@@ -277,7 +277,7 @@ void dc_main_menu_draw(short selected)
 			                        DC_UI_TRACK_LABEL);
 			dc_ui_tracked_text(video, "NONE", DC_UI_SAFE_R - w,
 			                   y + label_font->get_ascent(),
-			                   get_dialog_color(ITEM_COLOR),
+			                   dc_ui_colour(DC_UI_ITEM, video),
 			                   label_font, label_style, DC_UI_TRACK_LABEL);
 		}
 	}
@@ -361,26 +361,19 @@ public:
 
 	int layout(void)
 	{
-		rect.w = 300;
+		rect.w = 340;
 		rect.x = -rect.w / 2;
-		rect.h = font->get_line_height() + 6;
+		rect.h = DC_UI_ROW_H;
 
 		return rect.h;
 	}
 
 	void draw(SDL_Surface *s) const
 	{
-		int y = rect.y + font->get_ascent() + 3;
-		uint32 colour = active ? get_dialog_color(ITEM_ACTIVE_COLOR)
-		                       : get_dialog_color(ITEM_COLOR);
-
-		if (active) {
-			SDL_Rect bar = { rect.x, rect.y, rect.w, rect.h };
-			SDL_FillRect(s, &bar, get_dialog_color(KEY_BINDING_COLOR));
-			draw_text(s, ">", rect.x + 6, y, colour, font, style);
-		}
-
-		draw_text(s, label, rect.x + 24, y, colour, font, style);
+		/* Same row vocabulary as every other screen, so DIFFICULTY does not
+		   quietly look like a different game. */
+		dc_ui_row(s, rect.x, rect.y, rect.w, rect.h, label, NULL,
+		          active, false, font, style, font, style);
 	}
 
 	void click(int, int)

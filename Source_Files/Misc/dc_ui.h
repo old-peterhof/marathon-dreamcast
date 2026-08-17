@@ -30,7 +30,10 @@ enum {
 	DC_UI_RULE,
 	DC_UI_RULE_HOT,
 	DC_UI_HOT,
-	DC_UI_HOT_BAR
+	DC_UI_HOT_BAR,
+	DC_UI_ITEM,
+	DC_UI_LABEL,
+	DC_UI_OFF
 };
 
 struct dc_ui_hint {

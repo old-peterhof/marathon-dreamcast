@@ -5,6 +5,9 @@
  */
 
 #include "cseries.h"
+#ifdef DC
+#include "dc_mainmenu.h"
+#endif
 
 #include "map.h"
 #include "shell.h"
@@ -76,8 +79,30 @@ void update_game_window(void)
 		case _display_prologue:
 		case _display_epilogue:
 		case _display_credits:
-		case _display_main_menu:
 			update_interface_display();
+			break;
+
+		case _display_main_menu:
+#ifdef DC
+			/*
+			 *	NOT update_interface_display(). That repaints
+			 *	MAIN_MENU_BASE -- the original painted artwork, with its own
+			 *	logo and its own black background -- straight over the drawn
+			 *	menu. Anything causing a redraw here therefore replaced the new
+			 *	interface with the old one, which is exactly what it looked
+			 *	like: the plate and the panel gone, the stock logo back, and
+			 *	the whole design apparently ignored.
+			 *
+			 *	display_main_menu() was guarded and this was not, and the two
+			 *	have to agree about what the main menu is.
+			 */
+			{
+				extern int last_menu;
+				dc_main_menu_draw(last_menu);
+			}
+#else
+			update_interface_display();
+#endif
 			break;
 			
 		default:

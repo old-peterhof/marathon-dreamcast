@@ -32,6 +32,9 @@
 
 #include "dc_plate.h"
 
+extern "C" void dc_blit_rows(void *dst, const void *src, int bytes,
+                            int rows, int dst_pitch, int src_pitch);
+
 #ifdef DC
 
 #define PLATE_DIR	"/cd/AlephOne/UI/"
@@ -113,9 +116,37 @@ void dc_plate_to_screen(void)
 
 	if (!p) {
 		SDL_FillRect(video, NULL, SDL_MapRGB(video->format, 0x05, 0x08, 0x0a));
-	} else {
-		SDL_Rect dst = { 0, 0, (Uint16)p->w, (Uint16)p->h };
-		SDL_BlitSurface(p, NULL, video, &dst);
+		SDL_UpdateRect(video, 0, 0, 0, 0);
+		return;
+	}
+
+	/*
+	 *	A row copy, not SDL_BlitSurface.
+	 *
+	 *	The video surface here is SDL_HWSURFACE and its pixels are video RAM at
+	 *	0xa5000000. SDL's blit into it does not land -- verified by reading a
+	 *	pixel straight back afterwards and finding black where the plate has a
+	 *	bright letterform. It fails silently, which is why the menu drew over the
+	 *	stock artwork instead of over the plate, and why the design looked
+	 *	ignored.
+	 *
+	 *	This is the same path screen_sdl.cpp already uses for the rendered world,
+	 *	for the same reason. Both surfaces are display format and 640 wide, so a
+	 *	row is 1280 bytes -- forty whole store-queue chunks.
+	 */
+	{
+		int rows = (p->h < video->h) ? p->h : video->h;
+		int bytes = ((p->w < video->w) ? p->w : video->w) *
+		            video->format->BytesPerPixel;
+
+		if (SDL_MUSTLOCK(video) && SDL_LockSurface(video) < 0)
+			return;
+
+		dc_blit_rows(video->pixels, p->pixels, bytes, rows,
+		             video->pitch, p->pitch);
+
+		if (SDL_MUSTLOCK(video))
+			SDL_UnlockSurface(video);
 	}
 
 	SDL_UpdateRect(video, 0, 0, 0, 0);

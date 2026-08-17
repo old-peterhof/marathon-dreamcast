@@ -53,6 +53,24 @@ static const SDL_Color col_rule    = { 0x2d, 0x46, 0x40, 0 };	/* --rule     */
 static const SDL_Color col_rulehot = { 0x4d, 0x6f, 0x63, 0 };	/* --rule-hot */
 static const SDL_Color col_hot     = { 0xff, 0xc0, 0x00, 0 };	/* --hot      */
 static const SDL_Color col_hotbar  = { 0x2a, 0x1e, 0x04, 0 };	/* --hot-bar  */
+static const SDL_Color col_item    = { 0x6f, 0x8a, 0x7e, 0 };	/* --item     */
+static const SDL_Color col_label   = { 0x4e, 0x64, 0x59, 0 };	/* --label    */
+static const SDL_Color col_off     = { 0x3d, 0x4c, 0x46, 0 };	/* .row.off   */
+
+/*
+ *	These are design tokens, not dialog theme colours, and they deliberately do
+ *	NOT go through get_dialog_color().
+ *
+ *	disc-AlephOne/Themes/Default/theme.mml is an imitation of Marathon Infinity's
+ *	menus and sets its own item and label colours -- red and bright green. It is
+ *	loaded from the disc at start-up and overwrites the defaults compiled into
+ *	sdl_dialogs.cpp, so every screen drawn from those constants came out in the
+ *	wrong palette no matter what the defaults said. Measured on screen: rows at
+ *	(115,172,83) where the design asks for (111,138,126), labels at (140,223,177)
+ *	where it asks for (78,100,89).
+ *
+ *	The theme still governs the stock dialogs. It has no business governing this.
+ */
 
 static uint32 map(SDL_Surface *s, const SDL_Color &c)
 {
@@ -67,6 +85,9 @@ uint32 dc_ui_colour(int which, SDL_Surface *s)
 	case DC_UI_RULE_HOT: return map(s, col_rulehot);
 	case DC_UI_HOT:      return map(s, col_hot);
 	case DC_UI_HOT_BAR:  return map(s, col_hotbar);
+	case DC_UI_ITEM:     return map(s, col_item);
+	case DC_UI_LABEL:    return map(s, col_label);
+	case DC_UI_OFF:      return map(s, col_off);
 	}
 
 	return map(s, col_rule);
@@ -258,11 +279,11 @@ void dc_ui_row(SDL_Surface *s, int x, int y, int w, int h,
 	}
 
 	if (disabled)
-		text_colour = SDL_MapRGB(s->format, 0x3d, 0x4c, 0x46);	/* .row.off */
+		text_colour = map(s, col_off);
 	else if (selected)
 		text_colour = map(s, col_hot);
 	else
-		text_colour = get_dialog_color(ITEM_COLOR);
+		text_colour = map(s, col_item);
 
 	dc_ui_tracked_text(s, label, x + 34, baseline, text_colour,
 	                   item_font, item_style, DC_UI_TRACK_ITEM);
@@ -275,8 +296,7 @@ void dc_ui_row(SDL_Surface *s, int x, int y, int w, int h,
 		         label_font->get_ascent();
 
 		dc_ui_tracked_text(s, value, x + w - 12 - vw, vy,
-		                   selected ? map(s, col_hot)
-		                            : get_dialog_color(LABEL_COLOR),
+		                   selected ? map(s, col_hot) : map(s, col_label),
 		                   label_font, label_style, DC_UI_TRACK_LABEL);
 	}
 }
@@ -292,16 +312,14 @@ void dc_ui_caption(SDL_Surface *s, int x, int y, int w,
 	int baseline = y + (DC_UI_CAP_H - font->get_line_height()) / 2 +
 	               font->get_ascent();
 
-	dc_ui_tracked_text(s, text, x + 10, baseline,
-	                   get_dialog_color(LABEL_COLOR), font, style,
+	dc_ui_tracked_text(s, text, x + 10, baseline, map(s, col_label), font, style,
 	                   DC_UI_TRACK_CAP);
 
 	if (right && right[0]) {
 		int rw = dc_ui_tracked_width(right, font, style, DC_UI_TRACK_CAP);
 
 		dc_ui_tracked_text(s, right, x + w - 10 - rw, baseline,
-		                   right_hot ? map(s, col_hot)
-		                             : get_dialog_color(ITEM_COLOR),
+		                   right_hot ? map(s, col_hot) : map(s, col_item),
 		                   font, style, DC_UI_TRACK_CAP);
 	}
 
@@ -328,7 +346,7 @@ static void dc_ui_glyph(SDL_Surface *s, int x, int cy, const char *ch,
 
 	draw_text(s, ch, x + (w - tw) / 2,
 	          y + (h - font->get_line_height()) / 2 + font->get_ascent(),
-	          get_dialog_color(ITEM_COLOR), font, style);
+	          map(s, col_item), font, style);
 }
 
 /*
@@ -357,9 +375,8 @@ void dc_ui_hints(SDL_Surface *s, int y,
 
 		lw = dc_ui_tracked_width(hints[i].label, font, style, DC_UI_TRACK_LABEL);
 
-		dc_ui_tracked_text(s, hints[i].label, x, baseline,
-		                   get_dialog_color(LABEL_COLOR), font, style,
-		                   DC_UI_TRACK_LABEL);
+		dc_ui_tracked_text(s, hints[i].label, x, baseline, map(s, col_label),
+		                   font, style, DC_UI_TRACK_LABEL);
 
 		x += lw + 22;
 	}
@@ -368,8 +385,7 @@ void dc_ui_hints(SDL_Surface *s, int y,
 		int rw = dc_ui_tracked_width(right, font, style, DC_UI_TRACK_LABEL);
 
 		dc_ui_tracked_text(s, right, DC_UI_SAFE_R - rw, baseline,
-		                   get_dialog_color(LABEL_COLOR), font, style,
-		                   DC_UI_TRACK_LABEL);
+		                   map(s, col_label), font, style, DC_UI_TRACK_LABEL);
 	}
 }
 
