@@ -1004,17 +1004,11 @@ static void main_event_loop(void)
 		// Which build is this? Drawn every pass while the menu is up, so a
 		// button redraw cannot wipe it. Matches the image filename and the row
 		// in BUILDS.md.
-		if (get_game_state() == _display_main_menu) {
-			// Four times a second rather than every pass: a bfont blit into
-			// video RAM in the same loop that reads the pad.
-			static uint32 dc_last_stamp = 0;
-			uint32 dc_now = SDL_GetTicks();
-
-			if (dc_now - dc_last_stamp > 250) {
-				dc_last_stamp = dc_now;
-				dc_build_stamp(DC_BUILD_TAG);
-			}
-		}
+		// Retired. It went into VRAM at row 452, four times a second, because the
+		// painted menu kept erasing it -- and row 452 is inside the overscan a
+		// television eats, so the number identifying the build was unreadable on
+		// the one device where it matters. The menu's own hint bar carries it
+		// now, inside the safe area. See dc_main_menu_draw.
 
 		{
 			static int shown = 0;
