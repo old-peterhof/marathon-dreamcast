@@ -57,3 +57,4 @@ to the engine clamp, and the VMU Profiler. Git history has the detail.
 | b59 | ui-prefs | 500fe83 | Preferences restructure, explainer lines, two-column binding page |
 | b60 | pause-menu | 1680438 | Pause menu restored; completes the controller-native UI plan |
 | b61 | vmu-vitals | cb17a45 | Health and air on the VMU readout |
+| b62 | plate-blit | cda3e11 | Plate reaches the screen; menu palette from the design, not the theme |
