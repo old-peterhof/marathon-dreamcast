@@ -9,7 +9,7 @@ for a controller instead of a mouse.
 It boots from a burned disc or a GDEMU, plays the full retail campaign, keeps
 preferences and saved games on a memory card, shows the framerate and the
 player's health and air on the VMU screen, and is driven entirely by a Dreamcast
-pad. Roughly 15–20 fps on a console.
+pad. Roughly 15–20 fps on a console, for now.
 
 ## Where this came from
 
@@ -40,26 +40,20 @@ Game." There are four slots now, named automatically, each showing the level, th
 elapsed time and what it costs on the card, read from a versioned 128-byte header
 so listing four saves costs four small reads instead of four decompressions.
 
-**The interface was rebuilt for a pad.** The stock main menu is two full-screen
+**The interface was rebuilt for a controller.** The stock main menu is two full-screen
 images with the buttons painted into the artwork and eighteen hardcoded hit
 rectangles; changing an item meant opening a paint program. It is now a static
 plate with text drawn over it, so the item list is an array. Preferences, the
 save screens, difficulty, the pause menu and a button-binding screen were built
 to match a working HTML prototype in `mockups/prototype/`.
 
-**The pad can reach everything.** Aleph One's in-game commands are Alt+key chords
+**The controller can reach everything.** Aleph One's in-game commands are Alt+key chords
 that a pad cannot produce, so there was no way to pause, no way to save away from
 a terminal, and no way off a level short of resetting the console. Start opens a
 pause menu. Every action can be bound to any button.
 
 **A hardware renderer that works, and does not ship.** Aleph One's OpenGL path
-runs on the PowerVR through GLdc. Two things were blocking it, and the one in the
-build notes was not either of them: `glClipPlane` is only reached by the external
-3D model path, which stock Marathon 2 never enters. The real fault was
-`glVertexPointer(4, GL_DOUBLE, …)`. GLdc's reader only understands a size of 3
-for `GL_DOUBLE` and silently falls back to a two-component reader, so every wall
-vertex collapsed onto one plane while sprites drew perfectly. It renders now. It
-has not been measured on a console, which is the only measurement worth having.
+runs on the PowerVR through GLdc. It's a glitchy mess and I'm focusing on quality of life and other improvements before tackling it again.
 
 **Load times.** A level took one to two minutes. Timing it showed where: the
 chapter screen was 22.5 seconds, monster sounds 13.7, collections 7.7.
@@ -115,18 +109,6 @@ licences are beside the code.
 
 BERO's 2002 Dreamcast port came from `sdl-dc.sourceforge.net`, which predates the
 project being on GitHub.
-
-## Two traps
-
-**`grep` may lie to you.** 61 source files are ISO-8859 rather than UTF-8,
-including `wad.cpp`, `render.cpp` and `map.h`. Tools that treat those as binary —
-`ugrep` among them — skip them silently and report nothing found. Search with
-Python.
-
-**Flycast is not the hardware.** It holds a steady 30fps because that is the
-engine's tick and not the renderer's limit, so it says nothing about speed.
-Several faults in `BUGS.md` appear only on a console, and at least one bug went
-the other way: an SDL blit that fails under Flycast and works on hardware.
 
 ## Licence
 
