@@ -739,6 +739,34 @@ void dc_vmu_load_saves(const char *ram_dir, const char *map_path)
 		             "reachable from the slot screen", spilled, DC_SAVE_SLOTS);
 }
 
+/*
+ *	Which card a slot lives on, as "A1" -- the state column on the main menu
+ *	names it, because with two cards in the machine "12 blocks" is ambiguous
+ *	about which one is filling up.
+ */
+const char *dc_vmu_slot_unit(int slot)
+{
+	static char out[8];
+	const char *p;
+	int i = 0;
+
+	if (slot < 1 || slot > DC_SAVE_SLOTS || !slots[slot - 1].used)
+		return "";
+
+	/* slot_unit holds "/vmu/a1"; the last two characters are the name. */
+	p = strrchr(slot_unit[slot - 1], '/');
+	p = p ? p + 1 : slot_unit[slot - 1];
+
+	while (p[i] && i < (int)sizeof out - 1) {
+		out[i] = (char)((p[i] >= 'a' && p[i] <= 'z') ? p[i] - 'a' + 'A' : p[i]);
+		i++;
+	}
+
+	out[i] = 0;
+
+	return out;
+}
+
 int dc_vmu_list_saves(dc_save_info_t *out, int max)
 {
 	int i, used = 0;

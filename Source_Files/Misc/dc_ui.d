@@ -1,4 +1,4 @@
-Source_Files/Misc/dc_mainmenu.o: Source_Files/Misc/dc_mainmenu.cpp \
+Source_Files/Misc/dc_ui.o: Source_Files/Misc/dc_ui.cpp \
  Source_Files/CSeries/cseries.h Source_Files/CSeries/sdl_cseries.h \
  /opt/toolchains/dc/kos/../kos-ports/include/SDL/SDL.h \
  /opt/toolchains/dc/kos/../kos-ports/include/SDL/SDL_main.h \
@@ -37,13 +37,7 @@ Source_Files/Misc/dc_mainmenu.o: Source_Files/Misc/dc_mainmenu.cpp \
  Source_Files/CSeries/cstypes.h Source_Files/Misc/sdl_widgets.h \
  Source_Files/Misc/shape_descriptors.h Source_Files/Misc/screen_drawing.h \
  Source_Files/Misc/XML_ElementParser.h Source_Files/Misc/shell.h \
- Source_Files/Misc/world.h Source_Files/Misc/screen.h \
- Source_Files/Misc/interface.h Source_Files/Misc/interface_menus.h \
- Source_Files/Misc/preferences.h Source_Files/Misc/ChaseCam.h \
- Source_Files/Misc/Crosshairs.h Source_Files/Misc/OGL_Setup.h \
- Source_Files/Misc/ImageLoader.h Source_Files/ModelView/Model3D.h \
- Source_Files/Misc/dc_plate.h Source_Files/Misc/dc_slots.h dc/dc_vmu.h \
- Source_Files/Misc/dc_ui.h dc/build_id.h
+ Source_Files/Misc/world.h Source_Files/Misc/dc_ui.h
 Source_Files/CSeries/cseries.h:
 Source_Files/CSeries/sdl_cseries.h:
 /opt/toolchains/dc/kos/../kos-ports/include/SDL/SDL.h:
@@ -93,17 +87,4 @@ Source_Files/Misc/screen_drawing.h:
 Source_Files/Misc/XML_ElementParser.h:
 Source_Files/Misc/shell.h:
 Source_Files/Misc/world.h:
-Source_Files/Misc/screen.h:
-Source_Files/Misc/interface.h:
-Source_Files/Misc/interface_menus.h:
-Source_Files/Misc/preferences.h:
-Source_Files/Misc/ChaseCam.h:
-Source_Files/Misc/Crosshairs.h:
-Source_Files/Misc/OGL_Setup.h:
-Source_Files/Misc/ImageLoader.h:
-Source_Files/ModelView/Model3D.h:
-Source_Files/Misc/dc_plate.h:
-Source_Files/Misc/dc_slots.h:
-dc/dc_vmu.h:
 Source_Files/Misc/dc_ui.h:
-dc/build_id.h:

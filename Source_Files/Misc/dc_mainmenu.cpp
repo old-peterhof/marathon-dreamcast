@@ -41,6 +41,8 @@
 #include "dc_plate.h"
 #include "dc_slots.h"
 #include "dc_vmu.h"
+#include "dc_ui.h"
+#include "build_id.h"
 
 extern "C" void dc_trace(int slot, const char *fmt, ...);
 
@@ -67,24 +69,35 @@ static const struct dc_menu_item menu_items[] = {
 #define NUM_MENU_ITEMS	(int)(sizeof(menu_items) / sizeof(menu_items[0]))
 
 /*
- *	Geometry, from UI-HANDOFF section 2: 640x480 with 40px clear on every edge,
- *	so nothing readable leaves the 560x400 centre. The wordmark is baked into the
- *	plate at (40,46) and is 102 tall, so the rows start below it.
+ *	Geometry, taken from mockups/prototype/index.html and app.css rather than
+ *	from the prose. The main screen is:
+ *
+ *	    .hr            top:176, left:40, width:560, --rule-hot
+ *	    .panel         left:40, top:200, width:340   (content-sized height)
+ *	      .cap "MAIN"  20px, then a 2px rule
+ *	      .row x5      34px each
+ *	    .statecol      right:40, top:204, width:200, right-aligned, 3 lines
+ *	    .hr            bottom:66
+ *	    .hint          left:40, right:40, bottom:40, height 18
+ *
+ *	The wordmark and watermark are baked into plate-main.bmp, so nothing here
+ *	draws them.
  */
-#define MENU_X		76		/* the caret sits 20px left of this, inside the margin */
-#define MENU_TOP	212
-#define MENU_ROW	34
-#define MENU_W		300
+#define MENU_PANEL_X	DC_UI_EDGE
+#define MENU_PANEL_Y	200
+#define MENU_PANEL_W	340
 
-/*
- *	The last-save note is right-aligned to the safe margin rather than placed at
- *	a fixed left edge. Level names run to 66 characters, and anything
- *	left-aligned in the space that is left runs off the side of a television --
- *	which is invisible in an emulator and obvious on Max's set, the failure this
- *	whole layout is written around.
- */
-#define SAFE_L		40
-#define SAFE_R		600
+/* 2px top border, caption, 2px caption rule, then the rows. */
+#define MENU_ROWS_Y		(MENU_PANEL_Y + 2 + DC_UI_CAP_H + 2)
+#define MENU_PANEL_H	(2 + DC_UI_CAP_H + 2 + NUM_MENU_ITEMS * DC_UI_ROW_H + 2)
+
+#define MENU_RULE_TOP	176
+#define MENU_RULE_BOT	412			/* bottom:66 -> 480 - 66 - 2 */
+
+#define MENU_STATE_Y	204
+#define MENU_STATE_LH	21			/* line-height 1.95 on an 11px label */
+
+#define MENU_HINT_Y		422			/* bottom:40, height 18 */
 
 int dc_main_menu_count(void)
 {
@@ -144,6 +157,34 @@ static void newest_save_note(char *out, size_t len)
 		snprintf(out, len, "Level %d", info[slot - 1].level);
 }
 
+/* What Continue Game would open, for the state column. */
+static void newest_save_note(char *level, size_t llen, char *where, size_t wlen)
+{
+	dc_save_info_t info[DC_SAVE_SLOTS];
+	int slot = dc_vmu_newest_slot();
+
+	level[0] = 0;
+	where[0] = 0;
+
+	if (!slot)
+		return;
+
+	dc_vmu_list_saves(info, DC_SAVE_SLOTS);
+
+	if (!info[slot - 1].used)
+		return;
+
+	if (info[slot - 1].level_name[0])
+		snprintf(level, llen, "%s", info[slot - 1].level_name);
+	else
+		snprintf(level, llen, "LEVEL %d", info[slot - 1].level);
+
+	/* Which card as well as how big: with two in the machine, "12 BLK" alone
+	   does not say which one is filling up. */
+	snprintf(where, wlen, "VMU %s  %d BLK",
+	         dc_vmu_slot_unit(slot), info[slot - 1].blocks);
+}
+
 /*
  *	Draw the whole menu.
  *
@@ -155,10 +196,15 @@ static void newest_save_note(char *out, size_t len)
 void dc_main_menu_draw(short selected)
 {
 	SDL_Surface *video = SDL_GetVideoSurface();
-	const sdl_font_info *font;
-	uint16 style;
-	char note[64];
-	int i, line_h;
+	const sdl_font_info *item_font, *label_font;
+	uint16 item_style, label_style;
+	char level[64], where[40];
+	int i;
+
+	static const dc_ui_hint hints[2] = {
+		{ "A", "SELECT", true  },
+		{ "+", "MOVE",   false }
+	};
 
 	if (!video)
 		return;
@@ -166,65 +212,82 @@ void dc_main_menu_draw(short selected)
 	dc_plate_select(DC_PLATE_MAIN);
 	dc_plate_to_screen();
 
-	font = get_dialog_font(ITEM_FONT, style);
-	if (!font)
+	item_font  = get_dialog_font(ITEM_FONT, item_style);
+	label_font = get_dialog_font(LABEL_FONT, label_style);
+
+	if (!item_font || !label_font)
 		return;
 
-	line_h = font->get_line_height();
+	/* Rule above the panel, in the warmer rule colour. */
+	dc_ui_rule(video, DC_UI_EDGE, MENU_RULE_TOP, 560, true);
 
-	newest_save_note(note, sizeof note);
+	/* The panel, its caption, and the rows. */
+	dc_ui_panel(video, MENU_PANEL_X, MENU_PANEL_Y, MENU_PANEL_W, MENU_PANEL_H);
+	dc_ui_caption(video, MENU_PANEL_X + 1, MENU_PANEL_Y + 2, MENU_PANEL_W - 2,
+	              "MAIN", NULL, false, label_font, label_style);
 
 	for (i = 0; i < NUM_MENU_ITEMS; i++) {
-		int y = MENU_TOP + i * MENU_ROW;
-		bool on = menu_items[i].item == selected;
 		bool live = dc_main_menu_enabled(menu_items[i].item);
-		uint32 colour;
 
-		if (!live)
-			colour = get_dialog_color(LABEL_COLOR);
-		else if (on)
-			colour = get_dialog_color(ITEM_ACTIVE_COLOR);
-		else
-			colour = get_dialog_color(ITEM_COLOR);
+		dc_ui_row(video,
+		          MENU_PANEL_X + 1, MENU_ROWS_Y + i * DC_UI_ROW_H,
+		          MENU_PANEL_W - 2, DC_UI_ROW_H,
+		          menu_items[i].label, NULL,
+		          menu_items[i].item == selected, !live,
+		          item_font, item_style, label_font, label_style);
+	}
 
-		/*
-		 *	Three cues for selection at once -- a bar, the colour, and a caret.
-		 *	One is not enough at this frame rate on a composite television, which
-		 *	is what UI-HANDOFF section 2 settled after measuring it.
-		 */
-		if (on) {
-			SDL_Rect bar;
+	/*
+	 *	The state column: what Continue Game would open, right-aligned opposite
+	 *	the panel. Three lines -- a dim heading and two brighter values -- so it
+	 *	reads as a caption rather than as another menu the player could move to.
+	 */
+	newest_save_note(level, sizeof level, where, sizeof where);
 
-			bar.x = MENU_X - 32;
-			bar.y = y - 4;
-			bar.w = MENU_W;
-			bar.h = line_h + 8;
+	{
+		int y = MENU_STATE_Y;
+		int w;
 
-			SDL_FillRect(video, &bar, get_dialog_color(KEY_BINDING_COLOR));
+		w = dc_ui_tracked_width("LAST SAVE", label_font, label_style,
+		                        DC_UI_TRACK_LABEL);
+		dc_ui_tracked_text(video, "LAST SAVE", DC_UI_SAFE_R - w,
+		                   y + label_font->get_ascent(),
+		                   get_dialog_color(LABEL_COLOR),
+		                   label_font, label_style, DC_UI_TRACK_LABEL);
 
-			draw_text(video, ">", MENU_X - 20, y + font->get_ascent(),
-			          colour, font, style);
-		}
+		if (level[0]) {
+			y += MENU_STATE_LH;
+			w = dc_ui_tracked_width(level, label_font, label_style,
+			                        DC_UI_TRACK_LABEL);
+			dc_ui_tracked_text(video, level, DC_UI_SAFE_R - w,
+			                   y + label_font->get_ascent(),
+			                   get_dialog_color(ITEM_COLOR),
+			                   label_font, label_style, DC_UI_TRACK_LABEL);
 
-		draw_text(video, menu_items[i].label, MENU_X, y + font->get_ascent(),
-		          colour, font, style);
-
-		/*
-		 *	The last-save column, beside the item it describes. Right-aligned to
-		 *	the safe margin, and dropped entirely if it would reach back into the
-		 *	label -- a name colliding with "CONTINUE GAME" reads as corruption,
-		 *	where its absence reads as nothing to say.
-		 */
-		if (menu_items[i].item == iLoadGame && note[0]) {
-			int nw = text_width(note, font, style);
-			int nx = SAFE_R - nw;
-			int label_end = MENU_X + text_width(menu_items[i].label, font, style);
-
-			if (nx > label_end + 20)
-				draw_text(video, note, nx, y + font->get_ascent(),
-				          get_dialog_color(LABEL_COLOR), font, style);
+			y += MENU_STATE_LH;
+			w = dc_ui_tracked_width(where, label_font, label_style,
+			                        DC_UI_TRACK_LABEL);
+			dc_ui_tracked_text(video, where, DC_UI_SAFE_R - w,
+			                   y + label_font->get_ascent(),
+			                   get_dialog_color(ITEM_COLOR),
+			                   label_font, label_style, DC_UI_TRACK_LABEL);
+		} else {
+			y += MENU_STATE_LH;
+			w = dc_ui_tracked_width("NONE", label_font, label_style,
+			                        DC_UI_TRACK_LABEL);
+			dc_ui_tracked_text(video, "NONE", DC_UI_SAFE_R - w,
+			                   y + label_font->get_ascent(),
+			                   get_dialog_color(ITEM_COLOR),
+			                   label_font, label_style, DC_UI_TRACK_LABEL);
 		}
 	}
+
+	/* Rule and hint bar along the bottom. The build tag sits on the right of the
+	   hint bar, inside the safe area -- dc_build_stamp draws it at row 452, which
+	   a television eats. */
+	dc_ui_rule(video, DC_UI_EDGE, MENU_RULE_BOT, 560, false);
+	dc_ui_hints(video, MENU_HINT_Y, hints, 2, "b" DC_BUILD_NUM,
+	            label_font, label_style);
 
 	SDL_UpdateRect(video, 0, 0, 0, 0);
 }

@@ -64,6 +64,9 @@ int dc_vmu_delete_save(int slot);
    what Continue Game opens. */
 int dc_vmu_newest_slot(void);
 
+/* Which card a slot is on, as "A1". Empty string if the slot is empty. */
+const char *dc_vmu_slot_unit(int slot);
+
 /* The /ram path a given slot should be written to, so the save dialog and the
    card layer agree on a name without either inventing one. */
 const char *dc_vmu_slot_ram_name(int slot);

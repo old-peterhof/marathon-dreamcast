@@ -1,0 +1,376 @@
+/*
+ *	dc_ui.cpp -- the drawing vocabulary the prototype's screens are built from.
+ *
+ *	mockups/prototype is the design, and it is a working prototype rather than a
+ *	picture: app.css defines a panel, a caption bar, a row, a caret, a rule and a
+ *	hint bar, and every screen is those pieces arranged. This is those pieces.
+ *
+ *	Written because the first cut of the main menu was built from UI-HANDOFF.md's
+ *	prose -- the tokens, the row height, the three-way selection cue -- without
+ *	opening the prototype's markup, and so got the plate exactly right and the
+ *	foreground entirely wrong. The prose describes the design; the CSS *is* the
+ *	design.
+ *
+ *	Three things here are not obvious:
+ *
+ *	RULES ARE NOT ONE PIXEL. UI-HANDOFF section 1 measured this: the output is
+ *	480i, so a one-pixel horizontal line lives on one field only and buzzes at
+ *	30Hz. Every rule is a 2px core with 1px flanks at 35%, which lands on both
+ *	fields. The flanks are a real blend against whatever is underneath, because
+ *	the plate is a gradient and a precomputed colour would band against it.
+ *
+ *	LETTER-SPACING HAS TO BE DRAWN. The design tracks every row at .16em, which
+ *	at these sizes is around 2px a character and is a large part of why the
+ *	prototype reads as Marathon rather than as a dialog box. SDL's draw_text has
+ *	no notion of it, so tracked text is drawn a character at a time.
+ *
+ *	THE CARET IS A TRIANGLE, not a ">" -- border-left:9px solid with transparent
+ *	top and bottom, which is the CSS idiom for one. Drawn as spans.
+ */
+
+#include "cseries.h"
+
+#include "sdl_dialogs.h"
+#include "sdl_fonts.h"
+#include "sdl_widgets.h"
+#include "shape_descriptors.h"
+#include "screen_drawing.h"
+#include "shell.h"
+#include "world.h"
+
+#include <string.h>
+
+#ifdef DC
+
+#include "dc_ui.h"
+
+/*
+ *	Chrome colours from app.css that have no slot in the dialog theme. The theme
+ *	enum covers text; these are the surfaces the text sits on.
+ */
+static const SDL_Color col_panel   = { 0x10, 0x1a, 0x1b, 0 };	/* --panel    */
+static const SDL_Color col_rule    = { 0x2d, 0x46, 0x40, 0 };	/* --rule     */
+static const SDL_Color col_rulehot = { 0x4d, 0x6f, 0x63, 0 };	/* --rule-hot */
+static const SDL_Color col_hot     = { 0xff, 0xc0, 0x00, 0 };	/* --hot      */
+static const SDL_Color col_hotbar  = { 0x2a, 0x1e, 0x04, 0 };	/* --hot-bar  */
+
+static uint32 map(SDL_Surface *s, const SDL_Color &c)
+{
+	return SDL_MapRGB(s->format, c.r, c.g, c.b);
+}
+
+uint32 dc_ui_colour(int which, SDL_Surface *s)
+{
+	switch (which) {
+	case DC_UI_PANEL:    return map(s, col_panel);
+	case DC_UI_RULE:     return map(s, col_rule);
+	case DC_UI_RULE_HOT: return map(s, col_rulehot);
+	case DC_UI_HOT:      return map(s, col_hot);
+	case DC_UI_HOT_BAR:  return map(s, col_hotbar);
+	}
+
+	return map(s, col_rule);
+}
+
+void dc_ui_fill(SDL_Surface *s, int x, int y, int w, int h, uint32 colour)
+{
+	SDL_Rect r;
+
+	if (w <= 0 || h <= 0)
+		return;
+
+	r.x = (Sint16)x;
+	r.y = (Sint16)y;
+	r.w = (Uint16)w;
+	r.h = (Uint16)h;
+
+	SDL_FillRect(s, &r, colour);
+}
+
+/*
+ *	Blend a colour over what is already there, at `alpha` in 0..255.
+ *
+ *	Only used for the 1px rule flanks, so it is a straightforward per-pixel
+ *	read-modify-write on a 16-bit surface rather than anything clever. A rule is
+ *	560 pixels wide and there are two flanks, so this is about 1100 pixels.
+ */
+void dc_ui_blend(SDL_Surface *s, int x, int y, int w, int h,
+                 const SDL_Color &c, int alpha)
+{
+	int px, py;
+
+	if (SDL_MUSTLOCK(s) && SDL_LockSurface(s) < 0)
+		return;
+
+	for (py = y; py < y + h; py++) {
+		if (py < 0 || py >= s->h)
+			continue;
+
+		for (px = x; px < x + w; px++) {
+			Uint8 dr, dg, db;
+			Uint16 *p;
+
+			if (px < 0 || px >= s->w)
+				continue;
+
+			p = (Uint16 *)((Uint8 *)s->pixels + py * s->pitch) + px;
+
+			SDL_GetRGB(*p, s->format, &dr, &dg, &db);
+
+			dr = (Uint8)((c.r * alpha + dr * (255 - alpha)) / 255);
+			dg = (Uint8)((c.g * alpha + dg * (255 - alpha)) / 255);
+			db = (Uint8)((c.b * alpha + db * (255 - alpha)) / 255);
+
+			*p = (Uint16)SDL_MapRGB(s->format, dr, dg, db);
+		}
+	}
+
+	if (SDL_MUSTLOCK(s))
+		SDL_UnlockSurface(s);
+}
+
+/*
+ *	A rule: 2px core, 1px flanks at 35%.
+ *
+ *	`y` is the top of the core, matching how the prototype positions .hr.
+ */
+void dc_ui_rule(SDL_Surface *s, int x, int y, int w, bool hot)
+{
+	const SDL_Color &c = hot ? col_rulehot : col_rule;
+
+	dc_ui_blend(s, x, y - 1, w, 1, c, 89);		/* .35 of 255 */
+	dc_ui_fill(s, x, y, w, 2, map(s, c));
+	dc_ui_blend(s, x, y + 2, w, 1, c, 89);
+}
+
+/*
+ *	A panel: --panel fill, 1px left and right borders, 2px top and bottom.
+ *
+ *	The asymmetry is the prototype's and is deliberate -- it reads as a horizontal
+ *	band rather than a box, and the 2px horizontals are the interlace rule again.
+ */
+void dc_ui_panel(SDL_Surface *s, int x, int y, int w, int h)
+{
+	uint32 fill = map(s, col_panel);
+	uint32 rule = map(s, col_rule);
+
+	dc_ui_fill(s, x, y, w, h, fill);
+
+	dc_ui_fill(s, x, y, w, 2, rule);				/* top    */
+	dc_ui_fill(s, x, y + h - 2, w, 2, rule);		/* bottom */
+	dc_ui_fill(s, x, y, 1, h, rule);				/* left   */
+	dc_ui_fill(s, x + w - 1, y, 1, h, rule);		/* right  */
+}
+
+/*
+ *	The caret: a right-pointing triangle 9 wide and 12 tall, vertically centred
+ *	on `cy`. CSS builds it out of borders; here it is six spans.
+ */
+void dc_ui_caret(SDL_Surface *s, int x, int cy, uint32 colour, int size)
+{
+	int half = size / 2;
+	int row;
+
+	for (row = 0; row < size; row++) {
+		int dy = row - half;
+		int len = size - (dy < 0 ? -dy : dy) * 2;
+
+		if (len > 0)
+			dc_ui_fill(s, x, cy - half + row, (len * 3) / 4, 1, colour);
+	}
+}
+
+/*
+ *	Tracked text.
+ *
+ *	Drawn a character at a time so the design's letter-spacing survives. The
+ *	tracking is in whole pixels because everything here is, and .16em at the
+ *	sizes in use rounds to 2.
+ */
+int dc_ui_tracked_width(const char *text, const sdl_font_info *font,
+                        uint16 style, int tracking)
+{
+	int w = 0;
+	const char *p;
+
+	if (!text || !font)
+		return 0;
+
+	for (p = text; *p; p++) {
+		char ch[2];
+
+		ch[0] = *p;
+		ch[1] = 0;
+
+		w += text_width(ch, font, style) + tracking;
+	}
+
+	return w > 0 ? w - tracking : 0;
+}
+
+void dc_ui_tracked_text(SDL_Surface *s, const char *text, int x, int y,
+                        uint32 colour, const sdl_font_info *font,
+                        uint16 style, int tracking)
+{
+	const char *p;
+
+	if (!text || !font)
+		return;
+
+	if (tracking <= 0) {
+		draw_text(s, text, x, y, colour, font, style);
+		return;
+	}
+
+	for (p = text; *p; p++) {
+		char ch[2];
+
+		ch[0] = *p;
+		ch[1] = 0;
+
+		draw_text(s, ch, x, y, colour, font, style);
+		x += text_width(ch, font, style) + tracking;
+	}
+}
+
+/*
+ *	One row of a panel list.
+ *
+ *	Selection is signalled three ways at once, which is the prototype's own
+ *	decision and the reason it survives a composite television: the amber text,
+ *	the dim amber bar, and the caret. The 3px amber edge on the left is a fourth,
+ *	and is what makes the selected row readable even where the bar itself is too
+ *	dark to see.
+ */
+void dc_ui_row(SDL_Surface *s, int x, int y, int w, int h,
+               const char *label, const char *value,
+               bool selected, bool disabled,
+               const sdl_font_info *item_font, uint16 item_style,
+               const sdl_font_info *label_font, uint16 label_style)
+{
+	uint32 text_colour;
+	int baseline = y + (h - item_font->get_line_height()) / 2 + item_font->get_ascent();
+
+	if (selected) {
+		dc_ui_fill(s, x, y, w, h, map(s, col_hotbar));
+		dc_ui_fill(s, x, y, 3, h, map(s, col_hot));			/* inset edge */
+		dc_ui_caret(s, x + 13, y + h / 2, map(s, col_hot), 12);
+	}
+
+	if (disabled)
+		text_colour = SDL_MapRGB(s->format, 0x3d, 0x4c, 0x46);	/* .row.off */
+	else if (selected)
+		text_colour = map(s, col_hot);
+	else
+		text_colour = get_dialog_color(ITEM_COLOR);
+
+	dc_ui_tracked_text(s, label, x + 34, baseline, text_colour,
+	                   item_font, item_style, DC_UI_TRACK_ITEM);
+
+	/* .row .val -- right-aligned, label font, and amber when the row is. */
+	if (value && value[0]) {
+		int vw = dc_ui_tracked_width(value, label_font, label_style,
+		                             DC_UI_TRACK_LABEL);
+		int vy = y + (h - label_font->get_line_height()) / 2 +
+		         label_font->get_ascent();
+
+		dc_ui_tracked_text(s, value, x + w - 12 - vw, vy,
+		                   selected ? map(s, col_hot)
+		                            : get_dialog_color(LABEL_COLOR),
+		                   label_font, label_style, DC_UI_TRACK_LABEL);
+	}
+}
+
+/*
+ *	The caption bar across the top of a panel: 20px, tracked wide, with an
+ *	optional right-aligned extra (the binding screen's buttons-spent counter).
+ */
+void dc_ui_caption(SDL_Surface *s, int x, int y, int w,
+                   const char *text, const char *right, bool right_hot,
+                   const sdl_font_info *font, uint16 style)
+{
+	int baseline = y + (DC_UI_CAP_H - font->get_line_height()) / 2 +
+	               font->get_ascent();
+
+	dc_ui_tracked_text(s, text, x + 10, baseline,
+	                   get_dialog_color(LABEL_COLOR), font, style,
+	                   DC_UI_TRACK_CAP);
+
+	if (right && right[0]) {
+		int rw = dc_ui_tracked_width(right, font, style, DC_UI_TRACK_CAP);
+
+		dc_ui_tracked_text(s, right, x + w - 10 - rw, baseline,
+		                   right_hot ? map(s, col_hot)
+		                             : get_dialog_color(ITEM_COLOR),
+		                   font, style, DC_UI_TRACK_CAP);
+	}
+
+	dc_ui_fill(s, x, y + DC_UI_CAP_H, w, 2, map(s, col_rule));
+}
+
+/*
+ *	A glyph box: the bordered square the hint bar puts a button letter in.
+ */
+static void dc_ui_glyph(SDL_Surface *s, int x, int cy, const char *ch,
+                        const sdl_font_info *font, uint16 style, bool round)
+{
+	int w = 15, h = 15;
+	int y = cy - h / 2;
+	uint32 border = map(s, col_rulehot);
+	int tw = text_width(ch, font, style);
+
+	(void)round;
+
+	dc_ui_fill(s, x, y, w, 2, border);
+	dc_ui_fill(s, x, y + h - 2, w, 2, border);
+	dc_ui_fill(s, x, y, 2, h, border);
+	dc_ui_fill(s, x + w - 2, y, 2, h, border);
+
+	draw_text(s, ch, x + (w - tw) / 2,
+	          y + (h - font->get_line_height()) / 2 + font->get_ascent(),
+	          get_dialog_color(ITEM_COLOR), font, style);
+}
+
+/*
+ *	The hint bar along the bottom: glyph-and-label pairs from the left, and one
+ *	right-aligned string, which on the main menu is the build tag.
+ *
+ *	That placement matters. dc_build_stamp() writes the build tag straight into
+ *	VRAM at row 452, which UI-BRIEF measured as inside the overscan a television
+ *	eats -- so the number identifying the build has been unreadable on the only
+ *	device where it matters. Here it is inside the safe area.
+ */
+void dc_ui_hints(SDL_Surface *s, int y,
+                 const dc_ui_hint *hints, int count, const char *right,
+                 const sdl_font_info *font, uint16 style)
+{
+	int x = DC_UI_EDGE;
+	int cy = y + DC_UI_HINT_H / 2;
+	int baseline = cy - font->get_line_height() / 2 + font->get_ascent();
+	int i;
+
+	for (i = 0; i < count; i++) {
+		int lw;
+
+		dc_ui_glyph(s, x, cy, hints[i].glyph, font, style, hints[i].round);
+		x += 15 + 6;
+
+		lw = dc_ui_tracked_width(hints[i].label, font, style, DC_UI_TRACK_LABEL);
+
+		dc_ui_tracked_text(s, hints[i].label, x, baseline,
+		                   get_dialog_color(LABEL_COLOR), font, style,
+		                   DC_UI_TRACK_LABEL);
+
+		x += lw + 22;
+	}
+
+	if (right && right[0]) {
+		int rw = dc_ui_tracked_width(right, font, style, DC_UI_TRACK_LABEL);
+
+		dc_ui_tracked_text(s, right, DC_UI_SAFE_R - rw, baseline,
+		                   get_dialog_color(LABEL_COLOR), font, style,
+		                   DC_UI_TRACK_LABEL);
+	}
+}
+
+#endif	/* DC */
