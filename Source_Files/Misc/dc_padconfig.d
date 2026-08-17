@@ -42,6 +42,7 @@ Source_Files/Misc/dc_padconfig.o: Source_Files/Misc/dc_padconfig.cpp \
  Source_Files/Misc/ChaseCam.h Source_Files/Misc/Crosshairs.h \
  Source_Files/Misc/OGL_Setup.h Source_Files/Misc/ImageLoader.h \
  Source_Files/ModelView/Model3D.h Source_Files/Misc/dc_padconfig.h \
+ Source_Files/Misc/dc_screen.h Source_Files/Misc/dc_ui.h \
  Source_Files/Misc/dc_plate.h
 Source_Files/CSeries/cseries.h:
 Source_Files/CSeries/sdl_cseries.h:
@@ -101,4 +102,6 @@ Source_Files/Misc/OGL_Setup.h:
 Source_Files/Misc/ImageLoader.h:
 Source_Files/ModelView/Model3D.h:
 Source_Files/Misc/dc_padconfig.h:
+Source_Files/Misc/dc_screen.h:
+Source_Files/Misc/dc_ui.h:
 Source_Files/Misc/dc_plate.h:

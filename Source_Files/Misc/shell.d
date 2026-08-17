@@ -59,7 +59,8 @@ Source_Files/Misc/shell.o: Source_Files/Misc/shell.cpp \
  Source_Files/Misc/sdl_dialogs.h Source_Files/Misc/sdl_widgets.h \
  Source_Files/Misc/TextStrings.h Source_Files/Misc/../../dc/build_id.h \
  dc/dc_vmu.h Source_Files/Misc/dc_slots.h Source_Files/Misc/dc_mainmenu.h \
- Source_Files/Misc/dc_screen.h Source_Files/Misc/dc_ui.h
+ Source_Files/Misc/dc_screen.h Source_Files/Misc/dc_ui.h \
+ Source_Files/Misc/dc_padconfig.h
 Source_Files/CSeries/cseries.h:
 Source_Files/CSeries/sdl_cseries.h:
 /opt/toolchains/dc/kos/../kos-ports/include/SDL/SDL.h:
@@ -154,3 +155,4 @@ Source_Files/Misc/dc_slots.h:
 Source_Files/Misc/dc_mainmenu.h:
 Source_Files/Misc/dc_screen.h:
 Source_Files/Misc/dc_ui.h:
+Source_Files/Misc/dc_padconfig.h:

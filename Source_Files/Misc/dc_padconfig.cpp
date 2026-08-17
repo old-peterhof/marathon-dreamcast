@@ -1,22 +1,15 @@
 /*
  *	dc_padconfig.cpp -- CONFIGURE CONTROLLER.
  *
- *	Replaces CONFIGURE KEYBOARD, which opened a screen for a device the console
+ *	Replaces CONFIGURE KEYBOARD, which opened a screen for a device this console
  *	does not have. Every engine action is bindable to any pad button, over two
- *	pages, in two columns.
+ *	pages, each page two panels side by side.
  *
- *	WHY A GRID WIDGET AND NOT TWENTY ROWS. A dialog stacks its widgets
- *	vertically: each one reports a height and the next goes below it. Thirteen
- *	rows at a size readable across a room is 442px, and the safe area is 400. Two
- *	columns is the answer, and rather than teach dialog::layout about columns --
- *	which every other screen would then have to be checked against -- the whole
- *	grid is one widget that owns its own cursor.
- *
- *	That has one consequence worth stating plainly: a widget that swallows UP and
- *	DOWN can trap the highlight, which is exactly the bug that made the save list
- *	unreachable for weeks. So the grid releases focus at its edges -- UP on the
- *	top row and DOWN on the bottom row are passed through to the dialog, and the
- *	buttons below stay reachable.
+ *	The layout is the prototype's, measured off a render of it rather than
+ *	guessed: panels at x=40 and x=332, both 270 wide, top at 128, a 20px caption
+ *	bar, and 26px rows. The main page puts 7 of its 13 actions in the left panel
+ *	and the advanced page 4 of its 7; the right panel gets a caption bar with no
+ *	text so the two line up.
  *
  *	Buttons, not keys. The player rebinds which button does a thing; which key
  *	that action sends is still the engine's own keycodes[], so nothing else in
@@ -41,40 +34,47 @@
 #ifdef DC
 
 #include "dc_padconfig.h"
+#include "dc_screen.h"
 #include "dc_plate.h"
 
-extern "C" void dc_trace(int slot, const char *fmt, ...);
+extern "C" {
+	void dc_trace(int slot, const char *fmt, ...);
+	void dc_input_poll(void);
+}
 
 /*
  *	The engine's twenty actions, in its own order. Indices into
  *	input_preferences->dc_pad_bindings[] and keycodes[].
  */
 static const char *action_name[20] = {
-	"Move Forward", "Move Backward", "Turn Left", "Turn Right",
-	"Sidestep Left", "Sidestep Right",
-	"Glance Left", "Glance Right",
-	"Look Up", "Look Down", "Look Ahead",
-	"Previous Weapon", "Next Weapon", "Trigger", "2nd Trigger",
-	"Sidestep", "Run/Swim", "Look",
-	"Action", "Auto Map"
+	"MOVE FORWARD", "MOVE BACKWARD", "TURN LEFT", "TURN RIGHT",
+	"SIDESTEP LEFT", "SIDESTEP RIGHT",
+	"GLANCE LEFT", "GLANCE RIGHT",
+	"LOOK UP", "LOOK DOWN", "LOOK AHEAD",
+	"PREVIOUS WEAPON", "NEXT WEAPON", "TRIGGER", "2ND TRIGGER",
+	"SIDESTEP", "RUN/SWIM", "LOOK",
+	"ACTION", "AUTO MAP"
 };
 
 /*
- *	Two pages. The split is not cosmetic: with ten buttons for twenty actions, a
- *	screen listing all twenty as equals invites the player to spend a button on
- *	Glance Left before Trigger.
+ *	The two pages, in the order and grouping the prototype lays them out.
  *
- *	Look Up / Down / Ahead are on the main page because they are digital key
- *	actions in the engine, so a button gives exactly what the original keyboard
- *	gave -- and because in Move mode they are the only way to aim vertically.
- *	Turn Left / Right are on ADVANCED because the stick owns turning in both
- *	modes, so a button for it is a preference rather than a necessity.
+ *	The split is not cosmetic. With ten buttons for twenty actions, a screen
+ *	listing all twenty as equals invites the player to spend a button on Glance
+ *	Left before Trigger. Look Up, Look Down and Look Ahead are on the main page
+ *	because they are digital key actions in the engine, so a button gives exactly
+ *	what the original keyboard gave, and because in Move mode they are the only
+ *	way to aim vertically. Turn Left and Turn Right are on ADVANCED because the
+ *	stick owns turning in both modes.
  */
 static const int page_main[] = { 0, 1, 4, 5, 8, 9, 10, 11, 12, 13, 14, 18, 19 };
 static const int page_adv[]  = { 2, 3, 6, 7, 15, 16, 17 };
 
 #define N_MAIN	(int)(sizeof(page_main) / sizeof(page_main[0]))
 #define N_ADV	(int)(sizeof(page_adv) / sizeof(page_adv[0]))
+
+#define SPLIT_MAIN	7
+#define SPLIT_ADV	4
 
 /* An action on neither page could never be bound and nothing would say so. */
 typedef char pad_pages_cover_every_action[(N_MAIN + N_ADV == 20) ? 1 : -1];
@@ -86,355 +86,248 @@ typedef char pad_pages_cover_every_action[(N_MAIN + N_ADV == 20) ? 1 : -1];
  */
 #define ASSIGNABLE_BUTTONS	10
 
-/* Edited here, so CANCEL on either page really does cancel. */
+/* Edited here, so leaving without binding anything changes nothing. */
 static int16 pad_work[NUMBER_OF_KEYS];
 
-/* Set by the grid or by the buttons below it; read by run_page. */
-static int page_flip_wanted;
-static int page_defaults_wanted;
+/*
+ *	The capture overlay: a bordered amber box over a dimmed screen, saying what
+ *	is being bound. .capture in app.css -- 420 wide at (110,180), amber on all
+ *	four sides.
+ *
+ *	Drawn directly rather than being another dc_screen, because it has no rows
+ *	and no navigation. The only thing that can happen on it is a button press.
+ */
+static void draw_capture(const char *action)
+{
+	SDL_Surface *v = SDL_GetVideoSurface();
+	const sdl_font_info *itf, *lf;
+	uint16 its, ls;
+	SDL_Color ink = { 0x02, 0x05, 0x07, 0 };
+	int x = 110, y = 180, w = 420, h = 104;
+	char line[96];
+
+	if (!v)
+		return;
+
+	itf = get_dialog_font(ITEM_FONT, its);
+	lf  = get_dialog_font(MESSAGE_FONT, ls);
+
+	if (!itf || !lf)
+		return;
+
+	dc_ui_blend(v, 0, 0, v->w, v->h, ink, 204);		/* rgba(2,5,7,.80) */
+
+	dc_ui_fill(v, x, y, w, h, dc_ui_colour(DC_UI_PANEL, v));
+	dc_ui_fill(v, x, y, w, 2, dc_ui_colour(DC_UI_HOT, v));
+	dc_ui_fill(v, x, y + h - 2, w, 2, dc_ui_colour(DC_UI_HOT, v));
+	dc_ui_fill(v, x, y, 2, h, dc_ui_colour(DC_UI_HOT, v));
+	dc_ui_fill(v, x + w - 2, y, 2, h, dc_ui_colour(DC_UI_HOT, v));
+
+	dc_ui_tracked_text(v, "BIND", x + 12, y + 6 + lf->get_ascent(),
+	                   dc_ui_colour(DC_UI_HOT, v), lf, ls, DC_UI_TRACK_CAP);
+	dc_ui_fill(v, x, y + 22, w, 2, dc_ui_colour(DC_UI_RULE, v));
+
+	snprintf(line, sizeof line, "PRESS A BUTTON FOR %s", action);
+	dc_ui_wrapped_text(v, line, x + 20, y + 36, w - 40, 2,
+	                   dc_ui_colour(DC_UI_FACE, v), itf, its);
+
+	dc_ui_wrapped_text(v, "START CANCELS", x + 20, y + h - 26, w - 40, 1,
+	                   dc_ui_colour(DC_UI_LABEL, v), lf, ls);
+
+	SDL_UpdateRect(v, 0, 0, 0, 0);
+}
 
 /*
- *	The grid.
+ *	Wait for a button and give it to `action`.
+ *
+ *	The driver stops injecting keys while capturing, so the press that names a
+ *	binding cannot also drive the screen underneath. Start comes back as 0 and
+ *	means cancel; capture also times out, so a mode entered by accident cannot
+ *	strand the interface.
  */
-class w_pad_grid : public widget {
-public:
-	w_pad_grid(const int *actions, int count, dialog *owner)
-		: widget(ITEM_FONT), acts(actions), n(count), cursor(0),
-		  capturing(false), d(owner)
-	{
-		rows = (n + 1) / 2;
-	}
+static void capture_for(int action)
+{
+	draw_capture(action_name[action]);
 
-	int layout(void)
-	{
-		line_h = font->get_line_height() + 4;
+	dc_input_begin_capture();
 
-		rect.w = 520;
-		rect.x = -rect.w / 2;
-		rect.h = rows * line_h;
+	for (;;) {
+		SDL_Event e;
+		int id;
 
-		return rect.h;
-	}
+		dc_input_poll();
 
-	void draw(SDL_Surface *s) const
-	{
-		int col_w = rect.w / 2;
-		int i;
+		e.type = SDL_NOEVENT;
+		SDL_PollEvent(&e);
 
-		for (i = 0; i < n; i++) {
-			int col = i / rows;
-			int row = i % rows;
-			int x = rect.x + col * col_w;
-			int y = rect.y + row * line_h;
-			bool on = active && i == cursor;
-			uint32 colour = on ? get_dialog_color(ITEM_ACTIVE_COLOR)
-			                   : get_dialog_color(ITEM_COLOR);
+		id = dc_input_take_capture();
 
-			if (on) {
-				SDL_Rect bar = { x, y, col_w - 8, line_h };
-				SDL_FillRect(s, &bar, get_dialog_color(KEY_BINDING_COLOR));
-			}
-
-			draw_text(s, action_name[acts[i]], x + 6, y + font->get_ascent(),
-			          on ? colour : get_dialog_color(LABEL_COLOR), font, style);
-
-			/* The button, right-aligned in its column. */
-			{
-				const char *bn;
-				int bw;
-
-				if (on && capturing)
-					bn = "press...";
-				else
-					bn = dc_input_button_name(pad_work[acts[i]]);
-
-				bw = text_width(bn, font, style);
-
-				draw_text(s, bn, x + col_w - 14 - bw, y + font->get_ascent(),
-				          colour, font, style);
-			}
-		}
-	}
-
-	/*
-	 *	Cursor movement, capture, and releasing focus at the edges.
-	 *
-	 *	Returning early rather than swallowing the event is what releases focus:
-	 *	dialog::event then moves to the next widget exactly as it would for any
-	 *	other. That is the whole mechanism, and it is what keeps ACCEPT and the
-	 *	page buttons reachable from inside the grid.
-	 */
-	void event(SDL_Event &e)
-	{
-		if (e.type != SDL_KEYDOWN)
-			return;
-
-		if (capturing) {
-			int id = dc_input_take_capture();
-
-			if (id >= 0) {
-				if (id > 0)
-					assign(cursor, id);
-
-				capturing = false;
-				dc_input_end_capture();
-				dirty = true;
-			}
-
-			e.type = SDL_NOEVENT;
-			return;
+		if (id < 0) {
+			SDL_Delay(10);
+			continue;
 		}
 
-		switch (e.key.keysym.sym) {
-		case SDLK_UP:
-			if (cursor % rows == 0)
-				return;			/* top of a column: let the dialog have it */
-			cursor--;
-			break;
+		dc_input_end_capture();
 
-		case SDLK_DOWN:
-			if (cursor % rows == rows - 1 || cursor == n - 1)
-				return;			/* bottom of a column: same */
-			cursor++;
-			break;
-
-		case SDLK_LEFT:
-			if (cursor >= rows)
-				cursor -= rows;
-			break;
-
-		case SDLK_RIGHT:
-			if (cursor + rows < n)
-				cursor += rows;
-			break;
-
-		case SDLK_RETURN:
-		case SDLK_KP_ENTER:
-			capturing = true;
-			dc_input_begin_capture();
-			break;
+		if (id == 0)
+			return;					/* Start: cancelled */
 
 		/*
-		 *	X and Y, from the fixed menu table. The buttons below the grid do the
-		 *	same things and stay reachable by navigation -- these are the
-		 *	shortcut, not the only way, because a screen whose only exits are
-		 *	shortcuts is a screen someone gets stuck on.
+		 *	Take the button, releasing it from whoever had it. The scan is over
+		 *	pad_work rather than the visible rows, so it reaches actions listed
+		 *	on the other page. A button doing two things at once is never what
+		 *	was meant.
 		 */
-		case SDLK_DELETE:
-			page_flip_wanted = 1;
-			if (d)
-				d->quit(0);
-			break;
-
-		case SDLK_INSERT:
-			page_defaults_wanted = 1;
-			if (d)
-				d->quit(0);
-			break;
-
-		default:
-			return;
-		}
-
-		dirty = true;
-		e.type = SDL_NOEVENT;
-	}
-
-	void click(int, int)
-	{
-		if (!capturing) {
-			capturing = true;
-			dc_input_begin_capture();
-			dirty = true;
-		}
-	}
-
-	bool is_selectable(void) const { return true; }
-
-	/* How many distinct buttons are spent, across both pages. */
-	static int spent(void)
-	{
-		int used[16];
-		int i, count = 0;
-
-		memset(used, 0, sizeof used);
-
-		for (i = 0; i < NUMBER_OF_KEYS; i++) {
-			int id = pad_work[i];
-
-			if (id > 0 && id < 16 && !used[id]) {
-				used[id] = 1;
-				count++;
-			}
-		}
-
-		return count;
-	}
-
-private:
-	/*
-	 *	Take a button for this action, releasing it from whoever had it.
-	 *
-	 *	The scan is over pad_work rather than over the visible rows, so it
-	 *	reaches actions listed on the other page. A button doing two things at
-	 *	once is never what was meant.
-	 */
-	void assign(int index, int id)
-	{
-		int action = acts[index];
-		int i;
-
-		for (i = 0; i < NUMBER_OF_KEYS; i++)
+		for (int i = 0; i < NUMBER_OF_KEYS; i++)
 			if (i != action && pad_work[i] == id)
 				pad_work[i] = 0;
 
 		pad_work[action] = (int16)id;
+		return;
 	}
+}
 
-	const int *acts;
-	int n;
-	int rows;
-	int line_h;
-	int cursor;
-	bool capturing;
-	dialog *d;
-};
-
-/*
- *	The header, which says how many buttons are left.
- *
- *	The shortfall is put on screen rather than hidden: ten buttons for twenty
- *	actions means some actions cannot have one, and a screen that pretends
- *	otherwise leaves the player to discover it by running out.
- */
-class w_spent : public widget {
-public:
-	w_spent() : widget(LABEL_FONT) {}
-
-	int layout(void)
-	{
-		rect.w = 520;
-		rect.x = -rect.w / 2;
-		rect.h = font->get_line_height();
-
-		return rect.h;
-	}
-
-	void draw(SDL_Surface *s) const
-	{
-		char line[64];
-		int used = w_pad_grid::spent();
-		uint32 colour = (used >= ASSIGNABLE_BUTTONS)
-		                    ? get_dialog_color(ITEM_ACTIVE_COLOR)
-		                    : get_dialog_color(LABEL_COLOR);
-
-		snprintf(line, sizeof line, "%d OF %d BUTTONS SPENT",
-		         used, ASSIGNABLE_BUTTONS);
-
-		draw_text(s, line, rect.x + 6, rect.y + font->get_ascent(),
-		          colour, font, style);
-	}
-
-	bool is_selectable(void) const { return false; }
-};
-
-/*
- *	One page. Both are the same screen with a different action list.
- *
- *	Returns 1 if the player asked for the other page, 0 if they left.
- */
-static void want_flip(void *) { page_flip_wanted = 1; }
-static void want_defaults(void *) { page_defaults_wanted = 1; }
-
-static int run_page(const char *title, const int *acts, int count)
+/* How many distinct buttons are spent, across both pages. */
+static int buttons_spent(void)
 {
-	dialog d;
+	int used[16];
+	int i, count = 0;
 
-	page_flip_wanted = 0;
-	page_defaults_wanted = 0;
+	memset(used, 0, sizeof used);
 
-	d.add(new w_static_text(title, TITLE_FONT, TITLE_COLOR));
-	d.add(new w_spacer());
-	d.add(new w_spent());
-	d.add(new w_spacer());
-	d.add(new w_pad_grid(acts, count, &d));
-	d.add(new w_spacer());
-	/*
-	 *	"Start cancels", not "Start done". Start backs out of every screen in this
-	 *	interface and that consistency is the guarantee the whole design rests on
-	 *	-- so here it discards the edits, and ACCEPT is what keeps them. Saying
-	 *	"done" would have cost somebody their rebindings.
-	 */
-	d.add(new w_static_text("A binds    X other page    Y defaults    Start cancels",
-	                        LABEL_FONT, LABEL_COLOR));
-	d.add(new w_spacer());
-	d.add(new w_button("OTHER PAGE", want_flip, &d));
-	d.add(new w_button("DEFAULTS", want_defaults, &d));
-	d.add(new w_spacer());
-	d.add(new w_left_button("ACCEPT", dialog_ok, &d));
-	d.add(new w_right_button("CANCEL", dialog_cancel, &d));
+	for (i = 0; i < NUMBER_OF_KEYS; i++) {
+		int id = pad_work[i];
 
-	clear_screen();
-
-	int result = d.run();
-
-	if (page_defaults_wanted) {
-		dc_input_default_bindings(pad_work, NUMBER_OF_KEYS);
-		return 2;			/* redraw this page */
+		if (id > 0 && id < 16 && !used[id]) {
+			used[id] = 1;
+			count++;
+		}
 	}
 
-	if (page_flip_wanted)
-		return 1;
+	return count;
+}
 
-	return result == 0 ? 0 : -1;
+/*
+ *	One page. Returns the action to bind (1-based), or one of these.
+ */
+#define PAGE_BACK		0
+#define PAGE_FLIP		-1
+#define PAGE_DEFAULTS	-2
+
+static int run_page(bool advanced, int *cursor)
+{
+	static const dc_ui_hint hints[] = {
+		{ "A", "BIND",     true  },
+		{ "X", "PAGE",     true  },
+		{ "Y", "DEFAULTS", true  },
+		{ "B", "BACK",     true  },
+		{ "+", "MOVE",     false }
+	};
+	const int *acts = advanced ? page_adv : page_main;
+	int n = advanced ? N_ADV : N_MAIN;
+	struct dc_row rows[N_MAIN];
+	char values[N_MAIN][16];
+	char notes[N_MAIN][96];
+	char spent[24];
+	struct dc_screen sc;
+	int i, chosen, used;
+
+	memset(rows, 0, sizeof rows);
+	memset(&sc, 0, sizeof sc);
+
+	for (i = 0; i < n; i++) {
+		int a = acts[i];
+
+		snprintf(values[i], sizeof values[i], "%s",
+		         pad_work[a] ? dc_input_button_name(pad_work[a]) : "-");
+		snprintf(notes[i], sizeof notes[i],
+		         "Press A, then press the button you want for %s.",
+		         action_name[a]);
+
+		rows[i].label = action_name[a];
+		rows[i].kind  = DC_ROW_BIND;
+		rows[i].id    = a + 1;			/* ids are 1-based */
+		rows[i].note  = notes[i];
+		rows[i].col2  = values[i];		/* the button, right-aligned */
+	}
+
+	used = buttons_spent();
+	snprintf(spent, sizeof spent, "%d OF %d", used, ASSIGNABLE_BUTTONS);
+
+	sc.title         = "CONFIGURE CONTROLLER";
+	sc.kicker        = "20 ACTIONS";
+	sc.cap           = advanced ? "ADVANCED" : "ACTIONS";
+	sc.cap2          = "";
+	sc.cap_right     = spent;
+	sc.cap_right_hot = used >= ASSIGNABLE_BUTTONS;
+	sc.panel_y       = 128;
+	sc.panel_w       = 270;
+	sc.row_h         = 26;
+	sc.split         = advanced ? SPLIT_ADV : SPLIT_MAIN;
+	sc.rows          = rows;
+	sc.nrows         = n;
+	sc.hints         = hints;
+	sc.nhints        = 5;
+	sc.explain       = true;
+	sc.cursor        = *cursor;
+
+	chosen = dc_screen_run(&sc);
+
+	*cursor = sc.cursor;
+
+	if (chosen == DC_SCREEN_BACK)
+		return PAGE_BACK;
+
+	if (chosen & DC_SCREEN_X)
+		return PAGE_FLIP;
+
+	if (chosen & DC_SCREEN_Y)
+		return PAGE_DEFAULTS;
+
+	return chosen;			/* action + 1 */
 }
 
 /*
  *	CONFIGURE CONTROLLER.
  *
- *	Edits a working copy and only commits on ACCEPT, so backing out of either
- *	page leaves the bindings alone.
+ *	A binding is committed the moment it is made. There is no ACCEPT on this
+ *	screen -- the design's hint bar offers BIND, PAGE, DEFAULTS, BACK and MOVE --
+ *	so a change the player has made and can see on the row has to survive them
+ *	backing out, or it would silently evaporate.
  */
 void dc_pad_config(void)
 {
-	bool on_main = true;
+	bool advanced = false;
+	int cursor = 0;
 	int i;
 
 	for (i = 0; i < NUMBER_OF_KEYS; i++)
 		pad_work[i] = input_preferences->dc_pad_bindings[i];
 
 	for (;;) {
-		int r = on_main ? run_page("CONFIGURE CONTROLLER", page_main, N_MAIN)
-		                : run_page("ADVANCED CONTROLS", page_adv, N_ADV);
+		int r = run_page(advanced, &cursor);
 
-		if (r == 2)
-			continue;			/* DEFAULTS: same page, new values */
+		if (r == PAGE_BACK)
+			return;
 
-		if (r == 1) {
-			on_main = !on_main;
+		if (r == PAGE_FLIP) {
+			advanced = !advanced;
+			cursor = 0;
 			continue;
 		}
 
-		if (r < 0)
-			return;				/* CANCEL: pad_work is discarded */
-
-		break;					/* ACCEPT */
-	}
-
-	{
-		bool changed = false;
+		if (r == PAGE_DEFAULTS)
+			dc_input_default_bindings(pad_work, NUMBER_OF_KEYS);
+		else if (r > 0)
+			capture_for(r - 1);
+		else
+			continue;
 
 		for (i = 0; i < NUMBER_OF_KEYS; i++)
-			if (pad_work[i] != input_preferences->dc_pad_bindings[i]) {
-				input_preferences->dc_pad_bindings[i] = pad_work[i];
-				changed = true;
-			}
+			input_preferences->dc_pad_bindings[i] = pad_work[i];
 
-		/* Push regardless: the stick mode may have moved even if no button did. */
 		dc_apply_pad_bindings();
-
-		if (changed)
-			write_preferences();
+		write_preferences();
 	}
 }
 

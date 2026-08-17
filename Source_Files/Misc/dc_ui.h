@@ -60,6 +60,11 @@ void dc_ui_tracked_text(SDL_Surface *s, const char *text, int x, int y,
                         uint32 colour, const sdl_font_info *font,
                         uint16 style, int tracking);
 
+/* As above, but stops rather than crossing max_x. See dc_ui.cpp. */
+void dc_ui_tracked_text_clipped(SDL_Surface *s, const char *text, int x, int y,
+                                uint32 colour, const sdl_font_info *font,
+                                uint16 style, int tracking, int max_x);
+
 void dc_ui_row(SDL_Surface *s, int x, int y, int w, int h,
                const char *label, const char *value,
                bool selected, bool disabled,

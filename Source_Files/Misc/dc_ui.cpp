@@ -210,25 +210,65 @@ void dc_ui_caret(SDL_Surface *s, int x, int cy, uint32 colour, int size)
  *	tracking is in whole pixels because everything here is, and .16em at the
  *	sizes in use rounds to 2.
  */
+/*
+ *	The width tracked text will occupy.
+ *
+ *	Measured on the whole string, not by summing its characters. A glyph's
+ *	advance is wider than its ink, so per-character summing underestimates -- by
+ *	enough that a binding label which measured as fitting still ran into the
+ *	button name beside it.
+ */
 int dc_ui_tracked_width(const char *text, const sdl_font_info *font,
                         uint16 style, int tracking)
 {
-	int w = 0;
+	int n = 0;
 	const char *p;
 
 	if (!text || !font)
 		return 0;
 
+	for (p = text; *p; p++)
+		n++;
+
+	if (n < 1)
+		return 0;
+
+	return text_width(text, font, style) + tracking * (n - 1);
+}
+
+/*
+ *	Tracked text that physically stops at `max_x`.
+ *
+ *	Measuring a string by summing its characters' widths turned out to
+ *	underestimate what actually gets drawn, so a label that measured as fitting
+ *	still ran into the value beside it. Rather than chase the discrepancy, the
+ *	draw itself refuses to cross the line: the glyph that would overrun is not
+ *	drawn, and neither is anything after it.
+ */
+void dc_ui_tracked_text_clipped(SDL_Surface *s, const char *text, int x, int y,
+                                uint32 colour, const sdl_font_info *font,
+                                uint16 style, int tracking, int max_x)
+{
+	const char *p;
+
+	if (!text || !font)
+		return;
+
 	for (p = text; *p; p++) {
 		char ch[2];
+		int cw;
 
 		ch[0] = *p;
 		ch[1] = 0;
 
-		w += text_width(ch, font, style) + tracking;
-	}
+		cw = text_width(ch, font, style);
 
-	return w > 0 ? w - tracking : 0;
+		if (max_x > 0 && x + cw > max_x)
+			return;
+
+		draw_text(s, ch, x, y, colour, font, style);
+		x += cw + tracking;
+	}
 }
 
 void dc_ui_tracked_text(SDL_Surface *s, const char *text, int x, int y,
@@ -287,8 +327,40 @@ void dc_ui_row(SDL_Surface *s, int x, int y, int w, int h,
 	else
 		text_colour = map(s, col_item);
 
-	dc_ui_tracked_text(s, label, x + 34, baseline, text_colour,
-	                   item_font, item_style, DC_UI_TRACK_ITEM);
+	/*
+	 *	Fit the label to whatever the value has left.
+	 *
+	 *	A binding row is 270px wide and holds an action and a button name, and
+	 *	the worst pair -- "2ND TRIGGER" against "L TRIGGER" -- ran into each
+	 *	other at full tracking. Rather than tune each screen, the row gives up
+	 *	tracking first and then font size, in that order, because losing the
+	 *	letter-spacing is much less visible than two words colliding.
+	 */
+	{
+		int label_x = x + 34;
+		int limit = x + w - 12;
+		int track = DC_UI_TRACK_ITEM;
+		const sdl_font_info *lfont = item_font;
+		uint16 lstyle = item_style;
+
+		if (value && value[0])
+			/* 20px of clear air, not 10: at 10 the widest pair on the binding
+			   screen sat flush against each other and read as one word. */
+			limit -= dc_ui_tracked_width(value, label_font, label_style,
+			                             DC_UI_TRACK_LABEL) + 20;
+
+		if (label_x + dc_ui_tracked_width(label, lfont, lstyle, track) > limit)
+			track = 0;
+
+		if (label_x + dc_ui_tracked_width(label, lfont, lstyle, track) > limit) {
+			lfont = label_font;
+			lstyle = label_style;
+			baseline = y + (h - lfont->get_line_height()) / 2 + lfont->get_ascent();
+		}
+
+		dc_ui_tracked_text_clipped(s, label, label_x, baseline, text_colour,
+		                           lfont, lstyle, track, limit);
+	}
 
 	/* .row .val -- right-aligned, label font, and amber when the row is. */
 	if (value && value[0]) {

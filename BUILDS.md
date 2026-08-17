@@ -61,3 +61,4 @@ to the engine clamp, and the VMU Profiler. Git history has the detail.
 | b63 | no-dither | b6c5ddd | De-dithered plate; fixes vertical banding on hardware |
 | b64 | design-screens | a0b48e6 | All screens rebuilt from the prototype; pause-menu fix |
 | b65 | damage-flash | 3c3607c | Screen flashes when hit; fades never worked at 16-bit |
+| b66 | bind-screen | 71a216f | Binding screen from the prototype; theme font sizes corrected |

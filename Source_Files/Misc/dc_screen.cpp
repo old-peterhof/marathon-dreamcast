@@ -61,9 +61,29 @@ static int row_top(const struct dc_screen *sc)
 	return sc->panel_y + 2 + DC_UI_CAP_H + 2;
 }
 
-static int panel_h(const struct dc_screen *sc)
+/* How many rows each panel holds. Column 1 is empty when there is no split. */
+static int col_count(const struct dc_screen *sc, int col)
 {
-	return 2 + DC_UI_CAP_H + 2 + sc->nrows * sc->row_h + 2;
+	if (sc->split <= 0)
+		return col == 0 ? sc->nrows : 0;
+
+	return col == 0 ? sc->split : sc->nrows - sc->split;
+}
+
+static int panel_h(const struct dc_screen *sc, int col)
+{
+	return 2 + DC_UI_CAP_H + 2 + col_count(sc, col) * sc->row_h + 2;
+}
+
+/* Which panel a row is in, and how far down it. */
+static int row_col(const struct dc_screen *sc, int i)
+{
+	return (sc->split > 0 && i >= sc->split) ? 1 : 0;
+}
+
+static int row_index_in_col(const struct dc_screen *sc, int i)
+{
+	return (sc->split > 0 && i >= sc->split) ? i - sc->split : i;
 }
 
 /* Rows that cannot take the highlight are skipped rather than landed on. */
@@ -72,21 +92,66 @@ static bool selectable(const struct dc_screen *sc, int i)
 	return i >= 0 && i < sc->nrows && !sc->rows[i].disabled;
 }
 
+/*
+ *	Up and down stay inside a column when there are two, wrapping within it.
+ *	Crossing columns is what Left and Right are for, and a highlight that slid
+ *	sideways on its own would make a two-panel screen impossible to reason about.
+ */
 static int step(const struct dc_screen *sc, int from, int delta)
 {
-	int i = from;
+	int col = row_col(sc, from);
+	int base = (col == 0) ? 0 : sc->split;
+	int n = col_count(sc, col);
+	int i = row_index_in_col(sc, from);
 	int tries;
 
-	for (tries = 0; tries < sc->nrows; tries++) {
+	if (n < 1)
+		return from;
+
+	for (tries = 0; tries < n; tries++) {
 		i += delta;
 
 		if (i < 0)
-			i = sc->nrows - 1;
-		else if (i >= sc->nrows)
+			i = n - 1;
+		else if (i >= n)
 			i = 0;
 
-		if (selectable(sc, i))
-			return i;
+		if (selectable(sc, base + i))
+			return base + i;
+	}
+
+	return from;
+}
+
+/* Left and Right across the split, keeping the same depth where possible. */
+static int step_col(const struct dc_screen *sc, int from, int delta)
+{
+	int col = row_col(sc, from);
+	int want = col + delta;
+	int depth, n, base, i;
+
+	if (sc->split <= 0 || want < 0 || want > 1)
+		return from;
+
+	depth = row_index_in_col(sc, from);
+	n = col_count(sc, want);
+	base = (want == 0) ? 0 : sc->split;
+
+	if (n < 1)
+		return from;
+
+	if (depth >= n)
+		depth = n - 1;
+
+	for (i = 0; i < n; i++) {
+		int d = depth + i;
+
+		if (d < n && selectable(sc, base + d))
+			return base + d;
+
+		d = depth - i;
+		if (d >= 0 && selectable(sc, base + d))
+			return base + d;
 	}
 
 	return from;
@@ -136,6 +201,10 @@ static const char *row_value(const struct dc_row *r)
 	int n;
 
 	switch (r->kind) {
+	case DC_ROW_BIND:
+		/* The button name, already formatted by the binding screen. */
+		return r->col2;
+
 	case DC_ROW_TOGGLE:
 	case DC_ROW_SELECT:
 		n = 0;
@@ -173,8 +242,8 @@ static void draw_slider(SDL_Surface *s, int right, int cy, int value, int max,
 static void draw_screen(struct dc_screen *sc)
 {
 	SDL_Surface *v = SDL_GetVideoSurface();
-	const sdl_font_info *tf, *itf, *lf;
-	uint16 ts, its, ls;
+	const sdl_font_info *tf, *itf, *lf, *bf;
+	uint16 ts, its, ls, bs;
 	int i, px, pw, ph;
 
 	if (!v)
@@ -188,10 +257,26 @@ static void draw_screen(struct dc_screen *sc)
 	 */
 	tf  = get_dialog_font(ITEM_FONT, ts);
 	itf = get_dialog_font(ITEM_FONT, its);
-	lf  = get_dialog_font(LABEL_FONT, ls);
+	/*
+	 *	MESSAGE_FONT for the small text, not LABEL_FONT.
+	 *
+	 *	The theme sets label and item to the same 16px face, so every caption,
+	 *	kicker, value and hint was being drawn at the size of a menu row -- which
+	 *	is why the screens read as chunkier than the design, where those are 11px
+	 *	against 18. MESSAGE_FONT is the theme's small face, id 1402 at 10.
+	 *
+	 *	BUTTON_FONT is 14, which is exactly what the design sets a binding row to.
+	 */
+	lf  = get_dialog_font(MESSAGE_FONT, ls);
+	bf  = get_dialog_font(BUTTON_FONT, bs);
 
 	if (!tf || !itf || !lf)
 		return;
+
+	if (!bf) {
+		bf = itf;
+		bs = its;
+	}
 
 	if (sc->over_game) {
 		/* .scrim: rgba(2,6,8,.90) over the running game. */
@@ -219,37 +304,64 @@ static void draw_screen(struct dc_screen *sc)
 
 	dc_ui_rule(v, DC_UI_EDGE, sc->title_y + 32, 560, true);
 
-	/* Panel, caption, rows. */
+	/*
+	 *	One panel, or two side by side. The prototype's binding screen puts them
+	 *	at x=40 and x=332, both 270 wide, and gives the right one a caption bar
+	 *	with no text so the two line up.
+	 */
 	px = DC_UI_EDGE;
 	pw = sc->panel_w;
-	ph = panel_h(sc);
+	ph = panel_h(sc, 0);
 
 	dc_ui_panel(v, px, sc->panel_y, pw, ph);
 	dc_ui_caption(v, px + 1, sc->panel_y + 2, pw - 2, sc->cap,
 	              sc->cap_right, sc->cap_right_hot, lf, ls);
 
+	if (sc->split > 0) {
+		int px2 = DC_UI_SAFE_R - pw;
+
+		dc_ui_panel(v, px2, sc->panel_y, pw, panel_h(sc, 1));
+		dc_ui_caption(v, px2 + 1, sc->panel_y + 2, pw - 2,
+		              sc->cap2 ? sc->cap2 : "", NULL, false, lf, ls);
+	}
+
 	for (i = 0; i < sc->nrows; i++) {
 		struct dc_row *r = &sc->rows[i];
-		int y = row_top(sc) + i * sc->row_h;
+		int col = row_col(sc, i);
+		int px_r = (col == 0) ? px : DC_UI_SAFE_R - pw;
+		int y = row_top(sc) + row_index_in_col(sc, i) * sc->row_h;
 		bool on = (i == sc->cursor);
 		int cy = y + sc->row_h / 2;
 
 		if (r->kind == DC_ROW_SAVE) {
-			dc_ui_save_row(v, px + 1, y, pw - 2, sc->row_h,
+			dc_ui_save_row(v, px_r + 1, y, pw - 2, sc->row_h,
 			               r->label, r->col2, r->col3,
 			               on, r->disabled, itf, its, lf, ls);
 			continue;
 		}
 
-		dc_ui_row(v, px + 1, y, pw - 2, sc->row_h,
-		          r->label, row_value(r), on, r->disabled,
-		          itf, its, lf, ls);
+		/*
+		 *	A binding row carries two pieces of text in 270px, so the design sets
+		 *	it smaller than an ordinary row -- 14px against 18. The theme offers
+		 *	16 and 10 and nothing between, so a bind row takes the smaller of the
+		 *	two. At 16 the widest pair, "2ND TRIGGER" against "L TRIGGER", does
+		 *	not fit at any tracking, and shrinking the label to make it fit is
+		 *	how you end up displaying "2ND TRIGG".
+		 */
+		if (r->kind == DC_ROW_BIND)
+			dc_ui_row(v, px_r + 1, y, pw - 2, sc->row_h,
+			          r->label, row_value(r), on, r->disabled,
+			          bf, bs, lf, ls);
+		else
+			dc_ui_row(v, px_r + 1, y, pw - 2, sc->row_h,
+			          r->label, row_value(r), on, r->disabled,
+			          itf, its, lf, ls);
 
 		if (r->kind == DC_ROW_SLIDER)
-			draw_slider(v, px + pw - 13, cy, r->value, r->max, on);
+			draw_slider(v, px_r + pw - 13, cy, r->value, r->max, on);
 
 		if (r->kind == DC_ROW_SUBMENU)
-			dc_ui_caret(v, px + pw - 22, cy,
+			dc_ui_caret(v, px_r + pw - 22, cy,
 			            on ? dc_ui_colour(DC_UI_HOT, v)
 			               : dc_ui_colour(DC_UI_LABEL, v), 10);
 	}
@@ -358,12 +470,18 @@ int dc_screen_run(struct dc_screen *sc)
 			break;
 
 		case SDLK_LEFT:
-			adjust(&sc->rows[sc->cursor], -1);
+			if (sc->split > 0)
+				sc->cursor = step_col(sc, sc->cursor, -1);
+			else
+				adjust(&sc->rows[sc->cursor], -1);
 			dirty = true;
 			break;
 
 		case SDLK_RIGHT:
-			adjust(&sc->rows[sc->cursor], +1);
+			if (sc->split > 0)
+				sc->cursor = step_col(sc, sc->cursor, +1);
+			else
+				adjust(&sc->rows[sc->cursor], +1);
 			dirty = true;
 			break;
 
@@ -385,6 +503,16 @@ int dc_screen_run(struct dc_screen *sc)
 
 			if (r->id) {
 				result = r->id;
+				done = true;
+			}
+			break;
+		}
+
+		case SDLK_INSERT: {			/* Y */
+			struct dc_row *r = &sc->rows[sc->cursor];
+
+			if (r->id) {
+				result = DC_SCREEN_Y | r->id;
 				done = true;
 			}
 			break;

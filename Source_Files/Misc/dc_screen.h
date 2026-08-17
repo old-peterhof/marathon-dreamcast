@@ -20,7 +20,8 @@ enum {
 	DC_ROW_TOGGLE,		/* Left/Right flips it; opts[0] off, opts[1] on   */
 	DC_ROW_SELECT,		/* Left/Right cycles opts[]                       */
 	DC_ROW_SLIDER,		/* Left/Right adjusts; drawn as blocks            */
-	DC_ROW_SAVE			/* name, elapsed and card, in three columns       */
+	DC_ROW_SAVE,		/* name, elapsed and card, in three columns       */
+	DC_ROW_BIND			/* an action and the button it is on, from col2   */
 };
 
 #define DC_SCREEN_MAX_ROWS	24
@@ -57,6 +58,16 @@ struct dc_screen {
 	struct dc_row *rows;
 	int nrows;
 
+	/*
+	 *	Two panels side by side, as the binding screen uses. `split` is how many
+	 *	rows go in the left one; the rest go in the right. Zero means one panel.
+	 *	The prototype puts 7 of 13 on the left of the main page and 4 of 7 on
+	 *	the advanced page, and gives the right panel a caption bar with no text
+	 *	so the two line up.
+	 */
+	int split;
+	const char *cap2;
+
 	const struct dc_ui_hint *hints;
 	int nhints;
 
@@ -77,6 +88,7 @@ struct dc_screen {
  */
 #define DC_SCREEN_BACK		0		/* B, or Start */
 #define DC_SCREEN_X			0x4000	/* ORed with the row id when X was pressed */
+#define DC_SCREEN_Y			0x2000	/* ORed with the row id when Y was pressed */
 
 int dc_screen_run(struct dc_screen *sc);
 

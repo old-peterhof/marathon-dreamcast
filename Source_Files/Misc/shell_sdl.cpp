@@ -155,6 +155,7 @@ static void usage(const char *prg_name)
 #include "dc_slots.h"
 #include "dc_mainmenu.h"
 #include "dc_screen.h"
+#include "dc_padconfig.h"
 
 extern "C" {
 extern int fs_mem_init(void);
@@ -969,6 +970,8 @@ static int dc_autostart_mode(void)
 						mode = 3;
 					else if (strncmp(buf, "saves", 5) == 0)
 						mode = 4;
+					else if (strncmp(buf, "binds", 5) == 0)
+						mode = 5;
 				}
 				fclose(f);
 			}
@@ -1039,6 +1042,9 @@ static void main_event_loop(void)
 				} else if (mode == 4) {
 					dc_trace(2, "autostart: opening MANAGE SAVES");
 					dc_manage_saves();
+				} else if (mode == 5) {
+					dc_trace(2, "autostart: opening CONFIGURE CONTROLLER");
+					dc_pad_config();
 				} else {
 					dc_trace(2, "autostart: selecting iNewGame");
 					do_menu_item_command(mInterface, iNewGame, false);

@@ -214,7 +214,8 @@ void dc_main_menu_draw(short selected)
 	dc_plate_to_screen();
 
 	item_font  = get_dialog_font(ITEM_FONT, item_style);
-	label_font = get_dialog_font(LABEL_FONT, label_style);
+	/* The theme's small face; LABEL_FONT is 16, the same as a menu row. */
+	label_font = get_dialog_font(MESSAGE_FONT, label_style);
 
 	if (!item_font || !label_font)
 		return;

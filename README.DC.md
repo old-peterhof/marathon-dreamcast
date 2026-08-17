@@ -252,6 +252,7 @@ or `gdi`:
 | `AUTOSTART` containing `controls` | opens Preferences -> CONTROLS instead |
 | `AUTOSTART` containing `load` | selects "Continue Game" instead |
 | `AUTOSTART` containing `saves` | opens MANAGE SAVES instead |
+| `AUTOSTART` containing `binds` | opens CONFIGURE CONTROLLER instead |
 | `PADTEST` | synthesises a held stick deflection, to exercise the controller path without a pad |
 | `DEBUG` | enables `dc_trace()` over serial and to the framebuffer |
 | `PROFILE` | starts the VMU Profiler, so a framerate can be read off the LCD on hardware |

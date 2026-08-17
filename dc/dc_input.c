@@ -105,17 +105,19 @@ static const struct {
 	int mask;
 	const char *name;
 } dc_buttons[] = {
-	{ 0,                "---"       },	/* DC_PAD_NONE */
+	{ 0,                "-"         },	/* DC_PAD_NONE */
 	{ CONT_A,           "A"         },
 	{ CONT_B,           "B"         },
 	{ CONT_X,           "X"         },
 	{ CONT_Y,           "Y"         },
-	{ CONT_DPAD_UP,     "D-Pad Up"  },
-	{ CONT_DPAD_DOWN,   "D-Pad Down"},
-	{ CONT_DPAD_LEFT,   "D-Pad Left"},
-	{ CONT_DPAD_RIGHT,  "D-Pad Right"},
-	{ DCK_LTRIG,        "L Trigger" },
-	{ DCK_RTRIG,        "R Trigger" },
+	/* Short forms, as the design uses them. A binding row is 270px wide with the
+	   action on the left, and "D-Pad Right" ran into "NEXT WEAPON". */
+	{ CONT_DPAD_UP,     "D-UP"      },
+	{ CONT_DPAD_DOWN,   "D-DOWN"    },
+	{ CONT_DPAD_LEFT,   "D-LEFT"    },
+	{ CONT_DPAD_RIGHT,  "D-RIGHT"   },
+	{ DCK_LTRIG,        "L TRIGGER" },
+	{ DCK_RTRIG,        "R TRIGGER" },
 	{ CONT_START,       "Start"     },
 };
 

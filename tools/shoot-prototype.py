@@ -90,6 +90,12 @@ fetch('index.html').then(r => r.text()).then(html => {
   const first = div.querySelector('.row, .srow');
   if (first) first.classList.add('on');
 
+  // The prototype's JS shows one .binds page at a time. Without it running,
+  // every page renders stacked on top of the others, which silently corrupts
+  // any measurement taken off the result.
+  const pages = div.querySelectorAll('.binds');
+  pages.forEach((el, i) => { el.hidden = (i !== 0); });
+
   host.appendChild(div);
   document.title = 'ready';
 });
