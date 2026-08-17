@@ -1,11 +1,28 @@
-Aleph One is based on the Marathon 2 source code which was developed by
-Bungie Software <http://www.bungie.com/>.
+Marathon 2 was written by Bungie Software <http://www.bungie.com/> and released
+as source in 1999.
 
-The enhancements and extensions to Marathon 2 that constitute Aleph One have
-been made by Loren Petrich, Chris Pruett, Ian Pitcher, Rhys Hill, Ben Thompson,
-Mihai Parparita, Bo Lindbergh and others.
+Aleph One is the engine built from that source. Its enhancements and extensions
+to Marathon 2 were made by Loren Petrich, Chris Pruett, Ian Pitcher, Rhys Hill,
+Ben Thompson, Mihai Parparita, Bo Lindbergh and others.
+<https://github.com/Aleph-One-Marathon/alephone>
 
-The SDL port of Aleph One has been made by Christian Bauer
+The SDL port of Aleph One was made by Christian Bauer
 <Christian.Bauer@uni-mainz.de>.
 
+The original Dreamcast port, AlephOne-0.12.0-dc-1 (2002), was made by BERO
+against KallistiOS 1.1.7, and released through sdl-dc.sourceforge.net.
+
+This version -- the modern toolchain, VMU saved games, the controller interface
+and the PowerVR renderer -- is by Max Gibbons, with Claude (Anthropic).
+
 Aleph One uses the Expat XML library developed by James Clark.
+
+Vendored under dc/vendor, both MIT and both by Falco Girgis
+<https://github.com/gyrovorbis>:
+
+  sh4zam        SH4 store-queue and math routines
+  VMU Profiler  the framerate readout on the memory card's screen
+
+Built with KallistiOS <https://github.com/KallistiOS/KallistiOS>, kos-ports,
+GLdc <https://gitlab.com/simulant/GLdc> and mkdcdisc
+<https://gitlab.com/simulant/mkdcdisc>.
