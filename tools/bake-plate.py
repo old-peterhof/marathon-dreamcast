@@ -111,6 +111,75 @@ def shoot(html_text, out_png):
 		os.unlink(path)
 
 
+def dedither(im):
+	"""Flatten Chrome's gradient dithering, then snap to the RGB565 grid.
+
+	Chrome dithers gradients: a smooth ramp comes out as neighbouring pixels
+	alternating by one code value. At 24 bits that is invisible. The Dreamcast
+	displays RGB565, where red and blue keep 5 bits and green 6 -- so an
+	alternation of 19,20,19,20 quantises to 16,20,16,20, and a dither nobody
+	could see becomes a four-value stripe on every other pixel. Measured on the
+	first plate: 150 quantised value changes per row across the gradient. That is
+	the vertical banding on Max's Trinitron.
+
+	UI-HANDOFF section 1 called this out -- per-pixel noise is the one thing an
+	interlaced display turns into shimmer -- and the fix is not to dither in the
+	first place. Chrome gives no way to ask for that, so it is undone here.
+
+	Only flat neighbourhoods are touched. If the 3x3 range is 2 or less then the
+	only thing varying is the dither, and the mean is what the gradient actually
+	wanted. Anything with real contrast -- a letterform, the watermark's edge --
+	is left exactly as it is, so this softens nothing that was meant to be sharp.
+
+	Then quantise deliberately, so what ships is already representable in 16 bits
+	and the runtime conversion has no rounding left to do.
+	"""
+	from PIL import Image
+
+	w, h = im.size
+	src = im.load()
+
+	out = Image.new("RGB", (w, h))
+	dst = out.load()
+
+	for y in range(h):
+		y0 = y - 1 if y > 0 else 0
+		y1 = y + 2 if y < h - 1 else h
+
+		for x in range(w):
+			x0 = x - 1 if x > 0 else 0
+			x1 = x + 2 if x < w - 1 else w
+
+			acc = [0, 0, 0]
+			lo = [255, 255, 255]
+			hi = [0, 0, 0]
+			n = 0
+
+			for yy in range(y0, y1):
+				for xx in range(x0, x1):
+					c = src[xx, yy]
+					for i in range(3):
+						acc[i] += c[i]
+						if c[i] < lo[i]:
+							lo[i] = c[i]
+						if c[i] > hi[i]:
+							hi[i] = c[i]
+					n += 1
+
+			c = src[x, y]
+			flat = all(hi[i] - lo[i] <= 2 for i in range(3))
+			v = [(acc[i] + n // 2) // n if flat else c[i] for i in range(3)]
+
+			# Snap to the 565 grid, rounding rather than truncating.
+			r = min(255, (v[0] + 4) & ~7)
+			g = min(255, (v[1] + 2) & ~3)
+			b = min(255, (v[2] + 4) & ~7)
+
+			dst[x, y] = (r, g, b)
+
+	return out
+
+
 def to_bmp(png, bmp):
 	from PIL import Image
 
@@ -121,6 +190,7 @@ def to_bmp(png, bmp):
 		# interlace work was trying to avoid.
 		raise SystemExit("bake-plate: got %dx%d, expected %dx%d"
 		                 % (im.size[0], im.size[1], WIDTH, HEIGHT))
+	im = dedither(im)
 	im.save(bmp, "BMP")
 	return im
 
