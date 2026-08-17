@@ -229,6 +229,7 @@ void exit_screen(void)
 // display itself is the thing that is broken.
 extern "C" void dc_trace(int slot, const char *fmt, ...);
 extern "C" void dc_profiler_frame(void);
+extern "C" void dc_profiler_set_vitals(int hp, int air_percent);
 // The row copy lives in dc/dc_blit.c, compiled as C: sh4zam's headers need C++11
 // and asm string forms this file cannot use under -std=gnu++98.
 extern "C" void dc_blit_rows(void *dst, const void *src, int bytes, int rows,
@@ -725,6 +726,21 @@ static void update_screen(SDL_Rect &source, SDL_Rect &destination, bool hi_rez)
 
 		// One rendered frame: tell the VMU Profiler so it can average a rate.
 		dc_profiler_frame();
+
+		/*
+		 *	And the player's condition, while we are here. The profiler's
+		 *	callback runs on its own thread, so it is handed the numbers rather
+		 *	than left to reach into game state for them.
+		 *
+		 *	Oxygen is a tick count -- six minutes of it -- so it is only
+		 *	meaningful as a percentage. Health is shown raw, because Marathon's
+		 *	own scale is the meaningful one: 100 is a full normal suit and the
+		 *	150 ceiling is what canisters add.
+		 */
+		if (local_player)
+			dc_profiler_set_vitals(local_player->suit_energy,
+			                       (local_player->suit_oxygen * 100) /
+			                           PLAYER_MAXIMUM_SUIT_OXYGEN);
 #else
 		SDL_BlitSurface(world_pixels, NULL, main_surface, &destination);
 #endif

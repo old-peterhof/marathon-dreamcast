@@ -28,6 +28,8 @@
 #include "vendor/vmu_profiler.h"
 #include "build_id.h"
 
+extern void dc_trace(int slot, const char *fmt, ...);
+
 static int profiling = 0;
 
 /*
@@ -58,6 +60,53 @@ static void dc_update_fps(vmu_profiler_measurement_t *m)
 
 	dc_last_ms = now;
 	m->fstorage = dc_fps;
+}
+
+/*
+ *	Health and oxygen, pushed in from the render loop.
+ *
+ *	Read rather than fetched: this file is C and knows nothing about player_data,
+ *	and the profiler's callback runs on its own thread where reaching into the
+ *	game's state would be a race for no benefit. screen_sdl.cpp already calls in
+ *	here once per rendered frame, so it carries the two numbers along.
+ *
+ *	-1 means "not in a game", and the line then renders as nothing at all rather
+ *	than as zeroes -- a VMU showing HP0 on the main menu reads as a dead player.
+ */
+static volatile int dc_hp = -1;
+static volatile int dc_air = -1;
+
+void dc_profiler_set_vitals(int hp, int air_percent)
+{
+	static int traced = 0;
+
+	dc_hp = hp;
+	dc_air = air_percent;
+
+	/* Once per boot, so the numbers can be confirmed sane from a log rather than
+	   by squinting at a VMU in an emulator. */
+	if (!traced && hp >= 0) {
+		traced = 1;
+		dc_trace(26, "vitals: hp=%d air=%d%%", hp, air_percent);
+	}
+}
+
+/*
+ *	One line for both, not two. The LCD is 48x32 pixels and the profiler allows
+ *	five measurements; the title, the build number and the framerate already take
+ *	three, and two more rows of text on a screen that size is not readable across
+ *	a room, which is the whole point of putting it there.
+ */
+static void dc_line_vitals(vmu_profiler_measurement_t *m)
+{
+	int hp = dc_hp, air = dc_air;
+
+	if (hp < 0) {
+		m->sstorage[0] = 0;
+		return;
+	}
+
+	snprintf(m->sstorage, sizeof m->sstorage, "\nHP%d A%d", hp, air);
 }
 
 /*
@@ -99,6 +148,8 @@ void dc_profiler_start(void)
 		init_measurement("", use_string, dc_line_build, NULL));
 	vmu_profiler_add_measure(prof,
 		init_measurement("FPS", use_float, dc_update_fps, NULL));
+	vmu_profiler_add_measure(prof,
+		init_measurement("", use_string, dc_line_vitals, NULL));
 
 	dc_last_ms = timer_ms_gettime64();
 

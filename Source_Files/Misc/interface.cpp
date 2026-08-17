@@ -92,6 +92,7 @@ extern TP2PerfGlobals perf_globals;
 #include "dc_mainmenu.h"
 #include "dc_slots.h"
 extern "C" int dc_autostart_running(void);
+extern "C" void dc_profiler_set_vitals(int hp, int air_percent);
 #endif
 
 // LP addition: getting OpenGL rendering stuff
@@ -671,6 +672,14 @@ void display_main_menu(
 	 */
 	last_menu = dc_main_menu_enabled(last_menu) ? last_menu : dc_main_menu_first();
 	dc_main_menu_draw(last_menu);
+
+	/*
+	 *	Clear the VMU's health and air readout. render_screen() is what feeds it
+	 *	and that does not run on the menu, so without this the LCD would go on
+	 *	showing whatever the player's condition was when they left the level --
+	 *	which reads as a live number and is not one.
+	 */
+	dc_profiler_set_vitals(-1, -1);
 #else
 	display_screen(MAIN_MENU_BASE);
 	draw_menu_button(last_menu,true);
