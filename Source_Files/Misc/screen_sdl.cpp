@@ -229,6 +229,7 @@ void exit_screen(void)
 // display itself is the thing that is broken.
 extern "C" void dc_trace(int slot, const char *fmt, ...);
 extern "C" void dc_profiler_frame(void);
+extern "C" void dc_apply_fade_tint(SDL_Surface *dst, const SDL_Rect *area);
 extern "C" void dc_profiler_set_vitals(int hp, int air_percent);
 // The row copy lives in dc/dc_blit.c, compiled as C: sh4zam's headers need C++11
 // and asm string forms this file cannot use under -std=gnu++98.
@@ -723,6 +724,22 @@ static void update_screen(SDL_Rect &source, SDL_Rect &destination, bool hi_rez)
 		// survives across frames, which it could not if this blit landed.
 		if (!dc_copy_to_screen(world_pixels, NULL, main_surface, &destination))
 			SDL_BlitSurface(world_pixels, NULL, main_surface, &destination);
+
+		/*
+		 *	The damage flash, and every other tinting fade.
+		 *
+		 *	At 16 bits animate_screen_clut() applies a fade with
+		 *	SDL_SetGammaRamp, and SDL's Dreamcast driver has no SetGammaRamp
+		 *	hook -- so it returns -1 and the fade does nothing. Being shot has
+		 *	never flashed the screen on this port. fades.cpp records the tint it
+		 *	computed; it is blended over the world here instead.
+		 *
+		 *	Over the world rather than the whole screen: that is where the
+		 *	original palette fade was visible, and it leaves the HUD readable
+		 *	while a red flash is running, which is when a player most wants to
+		 *	read it.
+		 */
+		dc_apply_fade_tint(main_surface, &destination);
 
 		// One rendered frame: tell the VMU Profiler so it can average a rate.
 		dc_profiler_frame();
