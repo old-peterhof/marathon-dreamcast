@@ -1,18 +1,30 @@
 # Controller-native UI — decisions and handoff
 
 Answers `UI-BRIEF.md`. Uses the audit in `MENU-TREE.md` as the source for what
-each screen contains. Everything here is settled unless it appears under
-[Open questions](#open-questions).
+each screen contains. Everything here is settled — see [Settled](#settled) for
+the decisions that were argued over and closed.
 
 The design exists as a working prototype, not a picture:
 
     mockups/prototype/index.html      open it; the pad is on the keyboard
-    mockups/prototype/build.py        screen content — edit here, then re-run
+    mockups/prototype/strings.md      every word the player reads — edit copy here
+    mockups/prototype/build.py        layout; reads strings.md, writes index.html
     mockups/prototype/app.css         design tokens and every widget style
     mockups/prototype/app.js          navigation, the four pad operations
+    mockups/prototype/check.py        checks every screen against the rules below
+    mockups/prototype/check.js        the DOM audit check.py injects
+    mockups/prototype/shots.py        renders screens to PNG, alone on the page
     mockups/explorations/             superseded; kept for the reasoning trail
 
-Rebuild after editing content: `cd mockups/prototype && python3 build.py`.
+After editing copy or layout:
+
+    cd mockups/prototype && python3 build.py && python3 check.py
+
+`check.py` is the gate. It fails on a one-pixel horizontal, anything drawn
+outside the 560x400 safe area, an icon under 60px, two labels sharing pixels, and
+text overflowing its own box. A deliberate CSS exception takes a trailing
+`/* 480i-ok */`. `shots.py --sheet --overscan <screens>` stacks renders into one
+PNG for eyeballing what a TV actually shows.
 
 Keys: arrows or WASD move, `X`/Enter is A, `Z`/Esc is B, `C` is X, `V` is Y,
 `Tab` is Start. Clicking a row also works. `?screen=controller` deep-links.
@@ -34,7 +46,7 @@ Measured on the plate, as flicker energy on the rows a horizontal rule occupies:
 |---|---|---|
 | 1px rules | 8.70 | 5.63 |
 | 2px core + dim flanks | **6.05** | **3.79** |
-| plus 16-bit dithering | 7.82 | 4.88 |
+| plus per-pixel noise dithering | 7.82 | 4.88 |
 
 Three rules follow.
 
@@ -44,9 +56,29 @@ one implementation; panel tops, bottoms and caption dividers use 2px for the
 same reason. Vertical 1px lines are fine.
 
 **Do not dither.** Per-pixel noise makes every row differ from its neighbours,
-which is exactly what interlace turns into shimmer — it made every band worse.
-The 16-bit banding it would have fixed is an LCD problem; a CRT's own blur and
-the composite path smear it away.
+which is what interlace turns into shimmer: +33% twitter, measured. A pattern
+that varies along a row and repeats identically on every row is interlace-safe,
+and was baked for a while on that basis — but measured where banding actually
+shows, a flat patch of the gradient, it bought one extra colour out of seven and
+raised the error doing it. The whole-image colour count that made it look
+worthwhile was dominated by the wordmark, not the gradient. `plate.py` truncates.
+
+**What 16-bit actually costs, by region.** The background is not the problem; the
+soft amber ramps are. Amber has a near-zero blue channel and red is only 5 bits,
+so a wide amber gradient has almost nothing to spend:
+
+| region | colours, 24-bit → 16-bit |
+|---|---|
+| bloom halo above the letters | 643 → 90 |
+| bloom halo left of the M | 821 → 141 |
+| watermark soft edge | 920 → 149 |
+| background gradient | 39 → 7 |
+
+The background's bands are one green step apart, roughly 1.6% luminance, at or
+below the threshold of notice. The bloom is what visibly breaks up. If it needs
+fixing the answer is a shorter ramp, not a dither — but judge it on the CRT
+first, because composite low-passes chroma hard and this degradation is almost
+entirely chroma.
 
 **Never bake the scanline overlay into artwork.** It is a preview toggle in the
 prototype. Baked scanlines against real scanlines is textbook moiré.
@@ -66,10 +98,10 @@ Defined once at the top of `app.css`, named to match `sdl_dialogs.h`.
 | panel fill | `#101a1b` | — |
 | rule | `#2d4640` | — |
 | rule, active | `#4d6f63` | — |
-| item | `#6f8a7e` | `ITEM_COLOR` |
+| item | `#81a092` | `ITEM_COLOR` |
 | item, active | `#ffc000` | `ITEM_ACTIVE_COLOR` |
 | selection bar | `#2a1e04` | — |
-| label | `#4e6459` | `LABEL_COLOR` |
+| label | `#6b897a` | `LABEL_COLOR` |
 | title | `#e2efe8` | `TITLE_COLOR` |
 | terminal green | `#7bd98f` | — |
 
@@ -80,6 +112,14 @@ Geometry: 640×480, **40px clear on every edge**, so nothing readable leaves the
 no others: the brand mark, and "you are here." Selection is signalled three
 ways at once — amber text, a dim amber bar, and a caret — because one signal at
 15fps on a composite TV is not enough.
+
+**Every pair clears a contrast floor**, 4.5:1 for small text and 3.0:1 at 17px
+and above, measured and enforced by `check.py`. `--item` and `--label` were
+originally 4.73:1 and 2.78:1; the label carried the hint bar, the explainer line,
+the modal notes, the panel captions and every row value, all at 11px, and would
+have gone first on a composite CRT at couch distance. Both were lifted along
+their own hue, keeping a 1.42× luminance step between them and 1.85× from item up
+to amber, so the label-versus-value hierarchy survives.
 
 ---
 
@@ -122,8 +162,20 @@ Ten, all navigable in the prototype.
 | `term` | Full-screen terminal | Stands in for being in the game |
 | `pause` | Resume · Save Game · Preferences · Quit | Draws over the running game |
 
-**Difficulty is not in Preferences.** It is chosen when a game starts. A
-consequence worth deciding on: there is now no way to change it mid-campaign.
+**Difficulty is chosen on New Game and fixed for the run.** It is deliberately
+not in Preferences. `get_difficulty_level()`, which reads the preference, is
+called at exactly two places — `interface.cpp:419` on a save load and
+`interface.cpp:1394` on a new game — and `goto_level` does not re-read it, so a
+Preferences row could only ever have applied to the next new game or load. That
+was decided against rather than worked around, so nothing in the interface offers
+a change it cannot honour.
+
+**Nothing is hidden in Preferences when it is opened from the pause menu.** Every
+setting is visible; the ones that do not take effect immediately say so in their
+explainer line rather than being removed. Difficulty is the confirmed case.
+Sound Quality and More Sounds are very likely load-time too, because both change
+what gets loaded with a level — worth confirming before their explainers claim
+it.
 
 **Save Game generates a name** from the level, since a pad cannot type. Free slot
 means it writes and confirms; four full slots route to the saves list in
@@ -136,6 +188,22 @@ the pause menu; in every menu it cancels.
 **Left/Right adjusts in place.** No sub-dialogs for a value — a pad has nowhere
 good to put one. On the binding screen there is nothing to adjust, so the same
 axis moves between the two columns.
+
+**A held direction repeats on the interface's own clock**, not the host's. A pad
+has no operating system behind it deciding when a held direction repeats, so the
+menu has to. Only directions repeat — a held A must never fire twice, a held
+Start must never back out twice, and a held button inside binding capture must
+name one binding rather than a stream. Numbers for `dc_input.c`:
+
+| | lead-in | then every |
+|---|---|---|
+| D-pad | 400ms | 120ms |
+| Analog stick | 500ms | 150ms |
+
+The stick gets the longer lead-in because it is easy to over-push and hard to
+nudge exactly once; the D-pad gives a clean discrete press. Both sets are
+confirmed on hardware. The prototype runs the D-pad numbers, since a keyboard
+cannot tell the two apart.
 
 **Every settings row carries one line of plain English** below the panel,
 explaining whatever is focused. More Sounds says it costs about 7.5 seconds a
@@ -152,10 +220,13 @@ button steals it from whoever had it.
 Widgets are the existing set, and the prototype tags each element with the one
 it becomes — turn on **widget map** to see them. Five things do not exist yet.
 
-1. **A static plate bitmap at 640×480.** Gradient, seams, watermark and wordmark
-   bake into one image; the menu draws text over it. The main menu's painted
-   buttons go away with it, which is what lets the item list change without new
-   artwork.
+1. **The static plate bitmaps** — baked, in `mockups/prototype/assets/`.
+   `menu-plate.png` is the gradient and hull seams, shared by every screen;
+   `main-plate.png` is the same plus the wordmark and watermark, for the main
+   menu only. Each is a 600K surface in RGB565. Nothing dynamic is baked in: no
+   rules, no panels, no text, so a layout change never needs new art, and the
+   main menu's painted buttons go away entirely. `plate.py` regenerates both
+   alongside `-565.png` previews. What remains is loading them and blitting.
 2. **A most-recent-save lookup.** Continue Game needs to know which save to open.
    Nothing does that today.
 3. **A selection-change callback.** The explainer line is a `w_static_text` that
@@ -175,20 +246,24 @@ save and load lists cannot be driven by pad at all.
 
 ---
 
-## Open questions
+## Settled
 
-1. **`#ffc000` on composite.** It computes to roughly 116 IRE peak — legal-ish,
-   but hot enough to bloom slightly on a consumer set. `#f5be2e` is visually
-   near-identical at about 107 IRE. Worth a look on Max's TV before it is fixed
-   in the theme.
-2. **The terminal text is a pastiche, not Bungie's.** It reads as if it came from
-   the game and it did not. Either pull a real passage from the scenario data on
-   the disc, replace it with obviously greeked text, or label it. It should not
-   be screenshotted as-is.
-3. **Changing difficulty mid-campaign.** If that should be possible, the row
-   belongs on the pause menu, where it reads as changing the run in progress
-   rather than a global setting.
-4. **Preferences on the pause menu** currently opens the same screen the main
-   menu does. Some settings there are stranger mid-level than others.
-5. **Analog stick vs. D-pad in menus.** The prototype treats them alike. On
-   hardware the stick may want a repeat delay the D-pad does not.
+- **The terminals are never touched.** Original graphics, original text, no
+  paging work, no restyling. Not an open question and not a defect to revisit.
+- **Amber is `#ffc000`**, one warm colour doing two jobs. It peaks near 116 IRE
+  on NTSC composite, above typical broadcast practice and under the 120 ceiling,
+  which at worst means the wordmark blooms very slightly. Not worth trading the
+  source art's own value for.
+- **Four save slots**, auto-named from the level.
+- **Difficulty is set on New Game only** and fixed for the run. The engine
+  latches it at new game and save load and never re-reads it, and rather than
+  work around that the interface simply does not offer the change.
+- **Preferences hides nothing** when opened mid-game. Settings that do not take
+  effect immediately say so in their explainer instead of disappearing.
+- **Menu repeat: D-pad 400ms then 120ms, analog stick 500ms then 150ms.**
+  Confirmed on hardware.
+- **The wordmark's bloom stays as authored.** It loses more to the 16-bit
+  framebuffer than anything else on screen — 643 distinct colours down to 90 in
+  the halo above the letters — but it read well on a CRT on hardware, which is
+  the only instrument that counts for a chroma artefact over composite.
+

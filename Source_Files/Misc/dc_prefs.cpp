@@ -97,13 +97,13 @@ static void sound_screen(void)
 	rows[1].kind  = DC_ROW_TOGGLE;
 	rows[1].opts  = opt_quality;
 	rows[1].value = (flags & _16bit_sound_flag) ? 1 : 0;
-	rows[1].note  = "8-bit uses half the memory and sounds worse.";
+	rows[1].note  = "8-bit uses half the memory and sounds worse. Applies next launch.";
 
 	rows[2].label = "STEREO";
 	rows[2].kind  = DC_ROW_TOGGLE;
 	rows[2].opts  = opt_off_on;
 	rows[2].value = (flags & _stereo_flag) ? 1 : 0;
-	rows[2].note  = "Turn this off if the TV has one speaker.";
+	rows[2].note  = "Turn this off if the TV has one speaker. Applies next launch.";
 
 	rows[3].label = "ACTIVE PANNING";
 	rows[3].kind  = DC_ROW_TOGGLE;
@@ -232,9 +232,16 @@ static void controls_screen(void)
 		sc.title   = "CONTROLS";
 		sc.kicker  = "PREFERENCES";
 		sc.cap     = "CONTROLS";
-		sc.panel_y = 140;
+		/*
+		 *	Eight rows plus a caption is the tallest panel in the interface, and
+		 *	at row_h 30 from panel_y 140 it reached y=406 -- 34px past the
+		 *	explainer line at 372, which drew straight through CONFIGURE
+		 *	CONTROLLER. Confirmed on hardware. 26 from 128 ends at 362.
+		 *	dc_screen_run now warns if any screen gets this wrong again.
+		 */
+		sc.panel_y = 128;
 		sc.panel_w = 560;
-		sc.row_h   = 30;
+		sc.row_h   = 26;
 		sc.rows    = rows;
 		sc.nrows   = 8;
 		sc.hints   = hints_root;

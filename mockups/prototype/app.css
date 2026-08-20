@@ -8,10 +8,10 @@
   --panel:     #101a1b;
   --rule:      #2d4640;
   --rule-hot:  #4d6f63;
-  --item:      #6f8a7e;   /* ITEM_COLOR          */
+  --item:      #81a092;   /* ITEM_COLOR          */
   --hot:       #ffc000;   /* ITEM_ACTIVE_COLOR   */
   --hot-bar:   #2a1e04;
-  --label:     #4e6459;   /* LABEL_COLOR         */
+  --label:     #6b897a;   /* LABEL_COLOR         */
   --face:      #e2efe8;   /* TITLE_COLOR         */
   --dur:       #5d7a6d;
   --term:      #7bd98f;   /* terminal green      */
@@ -32,17 +32,17 @@ html,body{margin:0;background:#191c1e;color:#8d9c97;
   font:13px/1.55 -apple-system,BlinkMacSystemFont,"Helvetica Neue",sans-serif;}
 .wrap{padding:20px 24px 56px;}
 .bar{display:flex;gap:18px;align-items:center;flex-wrap:wrap;padding:9px 13px;
-  background:#12181a;border:1px solid #26302f;border-radius:5px;margin:0 0 18px;
+  background:#12181a;border:1px solid #26302f;border-radius:5px;margin:0 0 18px; /* 480i-ok: page chrome, never on the TV */
   position:sticky;top:0;z-index:30;}
 .bar b{color:#cfe0d8;font-weight:600;}
 .bar label{display:flex;gap:6px;align-items:center;cursor:pointer;user-select:none;}
 .bar .sp{margin-left:auto;}
-kbd{background:#1e2628;border:1px solid #33403e;border-bottom-width:2px;border-radius:3px;
+kbd{background:#1e2628;border:1px solid #33403e;border-bottom-width:2px;border-radius:3px; /* 480i-ok: page chrome, never on the TV */
   padding:1px 5px;font:11px/1 ui-monospace,monospace;color:#a8bcb4;}
 .legend{display:flex;gap:14px;flex-wrap:wrap;font-size:12px;color:#7d8c87;margin:14px 0 0;}
 .legend span{white-space:nowrap;}
 .side{width:250px;flex:0 0 250px;align-self:flex-start;font-size:12px;color:#7d8c87;
-  background:#12181a;border:1px solid #26302f;border-radius:5px;padding:12px 14px;}
+  background:#12181a;border:1px solid #26302f;border-radius:5px;padding:12px 14px; /* 480i-ok: page chrome, never on the TV */}
 .side h3{margin:0 0 7px;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:#cfe0d8;}
 .side dl{margin:0;display:grid;grid-template-columns:auto 1fr;gap:3px 10px;}
 .side dt{color:#5f6e69;} .side dd{margin:0;color:#a8bcb4;font-family:ui-monospace,monospace;}
@@ -85,7 +85,7 @@ kbd{background:#1e2628;border:1px solid #33403e;border-bottom-width:2px;border-r
 /* Every horizontal rule is a 2px core with dim flanks, so it lands on both
    interlace fields instead of buzzing on one. Never draw a 1px horizontal. */
 .hr{position:absolute;left:var(--edge);width:560px;height:2px;background:var(--c,var(--rule));}
-.hr::before,.hr::after{content:"";position:absolute;left:0;width:100%;height:1px;
+.hr::before,.hr::after{content:"";position:absolute;left:0;width:100%;height:1px; /* 480i-ok: these are the flanks */
   background:var(--c,var(--rule));opacity:.35;}
 .hr::before{top:-1px;} .hr::after{bottom:-1px;}
 
@@ -94,9 +94,9 @@ kbd{background:#1e2628;border:1px solid #33403e;border-bottom-width:2px;border-r
   color:var(--label);}
 .hint .sp{margin-left:auto;}
 .hint b{color:var(--item);font-weight:400;}
-.glyph{display:inline-flex;align-items:center;justify-content:center;width:15px;height:15px;
-  border:2px solid var(--rule-hot);color:var(--item);font:9px/1 ui-monospace,monospace;
-  margin-right:6px;vertical-align:-3px;}
+.glyph{display:inline-flex;align-items:center;justify-content:center;box-sizing:border-box;
+  min-width:15px;height:15px;padding:0 3px;border:2px solid var(--rule-hot);
+  color:var(--item);font:9px/1 ui-monospace,monospace;margin-right:6px;vertical-align:-3px;}
 .glyph.rnd{border-radius:50%;}
 
 .title{position:absolute;left:var(--edge);font:600 15px/1 "Helvetica Neue",Helvetica,sans-serif;
@@ -105,7 +105,7 @@ kbd{background:#1e2628;border:1px solid #33403e;border-bottom-width:2px;border-r
   color:var(--label);text-align:right;}
 
 /* ── panel + rows (w_list of w_button) ──────────────────────────────────── */
-.panel{position:absolute;background:var(--panel);border-left:1px solid var(--rule);
+.panel{position:absolute;box-sizing:border-box;background:var(--panel);border-left:1px solid var(--rule);
   border-right:1px solid var(--rule);border-top:2px solid var(--rule);
   border-bottom:2px solid var(--rule);}
 .panel > .cap{height:20px;display:flex;align-items:center;padding:0 10px;
@@ -122,7 +122,7 @@ kbd{background:#1e2628;border:1px solid #33403e;border-bottom-width:2px;border-r
 .row.on{color:var(--hot);background:var(--hot-bar);box-shadow:inset 3px 0 0 var(--hot);}
 .row.on .car{opacity:1;}
 .row.on .val{color:var(--hot);}
-.row.off{color:#3d4c46;} .row.off .val{color:#33403b;}
+.row.off{color:#546961;} .row.off .val{color:#4a5e57;}
 
 /* toggles and sliders inside a row (w_toggle / w_slider) */
 .tog{display:inline-flex;gap:3px;}
@@ -211,15 +211,15 @@ section[data-screen]{position:absolute;inset:0;}
 section[hidden]{display:none;}
 .scrim{position:absolute;inset:0;background:rgba(2,6,8,.90);}
 .sec{height:20px;display:flex;align-items:center;padding:0 10px;margin-top:2px;
-  border-top:2px solid var(--rule);border-bottom:1px solid rgba(45,70,64,.5);
+  border-top:2px solid var(--rule);border-bottom:2px solid rgba(45,70,64,.5);
   font:var(--f-label);letter-spacing:.22em;color:var(--label);background:rgba(0,0,0,.22);}
 .panel > .sec:first-of-type{margin-top:0;}
 .padmap{display:flex;gap:5px;}
 .padmap span{display:inline-flex;align-items:center;justify-content:center;min-width:20px;
-  height:20px;padding:0 5px;border:1px solid #33403e;border-radius:3px;
+  height:20px;padding:0 5px;border:1px solid #33403e;border-radius:3px; /* 480i-ok: page chrome, never on the TV */
   font:10px/1 ui-monospace,monospace;color:#5f6e69;background:#161d1f;transition:none;}
 .padmap span.lit{color:#05080a;background:var(--hot);border-color:var(--hot);}
-.glyph.rnd{width:auto;min-width:15px;padding:0 3px;border-radius:8px;}
+.glyph.rnd{border-radius:8px;}
 
 .cols{display:flex;gap:26px;align-items:flex-start;flex-wrap:wrap;}
 .panel.tight > .sec{height:18px;}
@@ -231,3 +231,36 @@ section[hidden]{display:none;}
 body[data-screen="pause"] .term .tfoot{display:none;}
 
 [data-nav]{cursor:pointer;}
+
+/* ── one line of plain English about whatever is focused ────────────────── */
+.explain{position:absolute;left:var(--edge);right:var(--edge);bottom:82px;min-height:26px;
+  font:var(--f-label);line-height:1.5;letter-spacing:.05em;color:var(--label);}
+
+/* ── save list ──────────────────────────────────────────────────────────── */
+.savebanner{position:absolute;left:var(--edge);right:var(--edge);bottom:82px;
+  font:var(--f-label);letter-spacing:.16em;color:var(--hot);}
+
+/* ── configure controller ───────────────────────────────────────────────── */
+.binds[hidden]{display:none;}
+.row.bind{font-size:14px;letter-spacing:.10em;padding-left:26px;}
+.row.bind .car{left:9px;border-left-width:7px;border-top-width:5px;border-bottom-width:5px;}
+.row.bind .val{padding-right:9px;font-size:10px;letter-spacing:.06em;}
+.vlabel.none{color:#546961;}
+.row.on .vlabel.none{color:var(--hot);opacity:.5;}
+
+.capture{position:absolute;inset:0;background:rgba(2,5,7,.80);display:none;}
+.capture.up{display:block;}
+.capture .cbox{position:absolute;left:110px;top:180px;width:420px;background:var(--panel);
+  border-left:2px solid var(--hot);border-right:2px solid var(--hot);
+  border-top:2px solid var(--hot);border-bottom:2px solid var(--hot);
+  box-shadow:0 0 34px rgba(255,192,0,.18);}
+.capture .ch{height:22px;display:flex;align-items:center;padding:0 12px;
+  border-bottom:2px solid var(--rule);font:var(--f-label);letter-spacing:.24em;color:var(--hot);}
+.capture .cb{padding:20px;font:600 17px/1.45 "Helvetica Neue",Helvetica,sans-serif;
+  letter-spacing:.06em;color:var(--face);}
+.capture .cb em{font-style:normal;color:var(--hot);text-transform:uppercase;}
+.capture .cf{padding:0 20px 16px;font:var(--f-label);line-height:1.6;
+  letter-spacing:.12em;color:var(--label);}
+/* Information, not selection. Amber is reserved for the brand mark and for
+   "you are here"; a counter that is amber by default makes a third claim on it. */
+.panel > .cap .spent{color:var(--item);letter-spacing:.16em;}

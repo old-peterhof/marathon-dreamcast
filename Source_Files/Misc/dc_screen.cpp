@@ -415,6 +415,21 @@ int dc_screen_run(struct dc_screen *sc)
 	if (sc->title_y < 1)
 		sc->title_y = SCR_TITLE_Y;
 
+	/*
+	 *	A panel that reaches past the explainer line draws over it, or is drawn
+	 *	over -- which is how CONFIGURE CONTROLLER ended up with a sentence
+	 *	through it on hardware. The geometry is static per screen, so this can
+	 *	only fire on a screen nobody has looked at; say so rather than let it
+	 *	ship silently.
+	 */
+	if (sc->explain || sc->banner) {
+		int bottom = sc->panel_y + panel_h(sc, 0);
+
+		if (bottom > SCR_EXPLAIN_Y)
+			dc_trace(18, "screen '%s': panel ends at %d, explainer at %d",
+			         sc->title ? sc->title : "?", bottom, SCR_EXPLAIN_Y);
+	}
+
 	/* Start somewhere the highlight is allowed to be. */
 	if (!selectable(sc, sc->cursor)) {
 		sc->cursor = 0;

@@ -5,7 +5,8 @@ rather than deleted, because the reasoning in them is usually the part worth
 having later — and because it is useful to see which predictions held.
 
 **Still open:** rumble pack (blocked on hardware), the PowerVR renderer (works,
-unmeasured on a console), and shrinking a save below 10 blocks (marginal).
+unmeasured on a console), native keyboard and mouse (present, never tested), and
+shrinking a save below 10 blocks (marginal).
 
 **Done:** the controller-native UI, the console trim, Falco's flags, and health
 and air on the VMU.
@@ -19,19 +20,62 @@ Notes for whoever picks it up:
 - KOS has a driver at `dc/maple/purupuru.h`. It is left **enabled** in this
   port precisely so this stays possible — see `dc/dc_maple.c`, where it would
   have been the blunter fix for the boot hang and was deliberately not used.
-- A rumble pack currently prevents the game booting at all (see BUGS.md), and
-  the cause is now known: KOS's `maple_wait_scan()` waits forever for all four
-  ports to report, and the pack makes one never report. Pulling it out while
-  hung releases the wait and the boot continues. The rumble driver itself is
-  exonerated — b21 ran with `INIT_PURUPURU` cleared and still hung.
-- That has to be solved first, and it is a prerequisite rather than a detour: a
-  device that will not enumerate cannot be driven either. Two routes, both real
-  work: patch KOS's maple to bound the wait, or clear `INIT_MAPLE_ALL` and take
-  over maple init ourselves so we control the timeout. Before either, try an
-  official pack — this was a third-party unit and may just answer enumeration
-  badly.
+- **The boot hang is fixed, confirmed on hardware in b68.** It was KOS's
+  `maple_wait_scan()` waiting forever for all four ports while the pack made one
+  never report. `dc/dc_maple.c` now emits KOS's init-flag list with that one
+  entry dropped and waits on the same condition with a deadline instead. See
+  BUGS.md for why the earlier "not available to us" conclusion was wrong.
+- **So this is unblocked.** Trying an official pack is
+  still worth doing, but for a different reason than before: b68 stops the hang,
+  it does not make a third-party pack answer enumeration, so rumble may still
+  not work on that unit even with a booting game.
 - The natural hook points are the same places the game already makes noise:
   weapon fire in `weapons.cpp` and damage in `player.cpp`.
+
+## Native keyboard and mouse
+
+**Nothing was stripped.** That is the point of this entry: it started as "we
+should not have removed this" and the answer is that nobody did, so the work is
+to test what is already compiled in rather than to restore it.
+
+What is in the b67 elf, checked with `nm`:
+
+- KOS's keyboard driver — `kbd_init`, `kbd_drv`, `kbd_attach`, `kbd_periodic`
+- KOS's mouse driver
+- SDL's Dreamcast event pump, `SDL_dcevents.c`
+
+That event pump polls `MAPLE_FUNC_MOUSE` and `MAPLE_FUNC_KEYBOARD` **and nothing
+else**, which is the reason `dc/dc_input.c` exists at all: SDL never reads
+`MAPLE_FUNC_CONTROLLER`, so the pad had to be built on top of a driver that
+already understood the two peripherals nobody has.
+
+So a real keyboard or mouse should already produce SDL events and drive the
+dialogs, which were written for exactly that. "Should" is carrying weight there —
+neither has ever been plugged in.
+
+**Why it is worth more than a curiosity.** A keyboard drives `w_text_entry`, the
+one widget a pad cannot work, and naming a save is the single thing the four-slot
+generated-name design exists to work around. Generated names stay the default,
+because almost nobody has a Dreamcast keyboard, but a keyboard on the bus at the
+save screen could offer a typed name.
+
+Order of work:
+
+1. **Plug both in and look.** No code first. This may already work.
+2. If the keyboard works, offer a typed save name when one is present, leaving the
+   generated name as the default and the pad path untouched.
+3. **Check for interference.** `dc_input.c` injects synthetic keys through
+   `SDL_PrivateKeyboard`, and `dc_input_set_ingame()` releases every key on a
+   context switch — which would stomp a real key held across a level change.
+   Harmless in theory, unverified in practice.
+4. **The mouse is the awkward one.** The analog stick already feeds
+   `delta_yaw`/`delta_pitch` through `mouse_sdl.cpp`'s analog path. A real mouse
+   arriving as SDL motion events may add to that or fight it.
+
+One caution before any of it: a third-party rumble pack hangs the boot because
+KOS's maple scan waits forever for all four ports (see BUGS.md). A keyboard or
+mouse that answers enumeration badly could do the same. Test one device at a
+time, and know that pulling it out releases the hang.
 
 ## Controller-native UI — DONE, b58-b61
 

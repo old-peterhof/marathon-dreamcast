@@ -327,6 +327,13 @@ static void set_sound_manager_status(bool active)
 				// Activate SDL audio
 				desired.freq = (_sm_parameters->pitch >> 16) * 22050;
 				desired.format = _sm_parameters->flags & _16bit_sound_flag ? AUDIO_S16SYS : AUDIO_S8;
+/*
+				 *	Read here and nowhere else, which is what makes Stereo a
+				 *	restart-scoped setting on Dreamcast. Changing it cannot take
+				 *	effect without reopening the device, and reopening the device
+				 *	is not safe on this platform -- see
+				 *	set_sound_manager_parameters.
+				 */
 				desired.channels = _sm_parameters->flags & _stereo_flag ? 2 : 1;
 				desired.samples = 1024;
 				desired.callback = sound_callback;
@@ -362,6 +369,36 @@ void set_sound_manager_parameters(struct sound_manager_parameters *parameters)
 		bool initial_state = _sm_active;
 
 		verify_sound_manager_parameters(parameters);
+
+#ifdef DC
+		/*
+		 *	The audio device is never reopened on Dreamcast, and cannot safely be.
+		 *
+		 *	SDL's audio thread is `while (audio->enabled) { ...; PlayAudio(); }`
+		 *	and SDL_AudioQuit clears `enabled` then joins it -- but `enabled` is
+		 *	only tested at the top of the loop and PlayAudio is called whether or
+		 *	not the device is paused, so the thread must make one more pass
+		 *	through the driver on its way out. KOS's DCAUD_PlayAudio spins
+		 *	unbounded there waiting on the AICA play position, and
+		 *	DCAUD_CloseAudio frees the mix buffer while a file-static pointer to
+		 *	the old device survives. Neither is reachable from here: pausing does
+		 *	not skip PlayAudio, and locking does not either. Fixing it means
+		 *	patching KOS's SDL, and that toolchain is pinned.
+		 *
+		 *	Changing Stereo used to hit exactly that path, because the flag's only
+		 *	effect is the channel count. Quality would too, for the sample format.
+		 *
+		 *	So the device is opened once and kept. Preferences are stored, volume
+		 *	is applied live, and the two that reach SDL_OpenAudio -- Stereo and
+		 *	Quality -- take effect the next time the game starts, which is the
+		 *	same contract More Sounds already has. Skipping unload_all_sounds()
+		 *	is part of that: the loaded sounds match the format the device is
+		 *	still running.
+		 */
+		*_sm_parameters = *parameters;
+		main_volume = _sm_parameters->volume * SOUND_VOLUME_DELTA;
+		return;
+#endif
 
 		// If it was initially on, turn off the sound manager
 		if (initial_state)

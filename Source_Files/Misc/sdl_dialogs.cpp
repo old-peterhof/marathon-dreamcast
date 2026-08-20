@@ -592,21 +592,30 @@ void load_theme(FileSpecifier &theme)
  *	across a room on a composite TV, where a single subtle cue is not enough --
  *	which is why the design signals selection three ways at once.
  *
- *	ITEM_ACTIVE_COLOR is left at #ffc000 pending Max's CRT. It computes to about
- *	116 IRE, hot enough to bloom slightly on a consumer set; #f5be2e is visually
- *	near-identical at about 107 and is the fallback if it does.
+ *	ITEM_ACTIVE_COLOR stays at #ffc000. It computes to about 116 IRE, hot enough
+ *	to bloom very slightly on a consumer set, but it is the source artwork's own
+ *	value and it read well on a CRT. Settled.
+ *
+ *	--item and --label were lifted in b67 after measuring them. --label was
+ *	2.78:1 against the panel at 11px, and it carries the hint bar, the explainer
+ *	line, every modal note, the panel captions and every row value -- most of the
+ *	secondary information in the interface, and the first thing to go on a
+ *	composite CRT across a room. Both had to move, because raising only the label
+ *	would have put it within 0.1 of item, and the two sit side by side wherever a
+ *	label meets its value. Now 4.63:1 and 6.22:1, a 1.42x luminance step apart,
+ *	with 1.85x from item up to amber so the selected row still wins.
  */
 static const SDL_Color default_dialog_color[NUM_DIALOG_COLORS] = {
 	{0x05, 0x08, 0x0a}, // BACKGROUND_COLOR       --bg
 	{0xe2, 0xef, 0xe8}, // TITLE_COLOR            --face
-	{0x6f, 0x8a, 0x7e}, // BUTTON_COLOR           --item
+	{0x81, 0xa0, 0x92}, // BUTTON_COLOR           --item
 	{0xff, 0xc0, 0x00}, // BUTTON_ACTIVE_COLOR    --hot
-	{0x4e, 0x64, 0x59}, // LABEL_COLOR            --label
-	{0x6f, 0x8a, 0x7e}, // LABEL_ACTIVE_COLOR     --item
-	{0x6f, 0x8a, 0x7e}, // ITEM_COLOR             --item
+	{0x6b, 0x89, 0x7a}, // LABEL_COLOR            --label
+	{0x81, 0xa0, 0x92}, // LABEL_ACTIVE_COLOR     --item
+	{0x81, 0xa0, 0x92}, // ITEM_COLOR             --item
 	{0xff, 0xc0, 0x00}, // ITEM_ACTIVE_COLOR      --hot
 	{0xe2, 0xef, 0xe8}, // MESSAGE_COLOR          --face
-	{0x6f, 0x8a, 0x7e}, // TEXT_ENTRY_COLOR       --item
+	{0x81, 0xa0, 0x92}, // TEXT_ENTRY_COLOR       --item
 	{0xff, 0xc0, 0x00}, // TEXT_ENTRY_ACTIVE_COLOR
 	{0xff, 0xc0, 0x00}, // TEXT_ENTRY_CURSOR_COLOR
 	{0x2a, 0x1e, 0x04}  // KEY_BINDING_COLOR      --hot-bar

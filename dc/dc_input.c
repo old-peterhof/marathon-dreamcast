@@ -207,6 +207,22 @@ void dc_input_set_bindings(const short *buttons, const short *syms, int count,
  */
 #define CAPTURE_TIMEOUT_POLLS	1800	/* about a minute at 30fps */
 
+/*
+ *	Held-direction repeat in menus, in milliseconds.
+ *
+ *	The stick gets the longer lead-in because it is easy to over-push and hard to
+ *	nudge exactly once, where the D-pad gives a clean discrete press. Both sets
+ *	confirmed on hardware.
+ */
+#define REPEAT_DPAD_DELAY	400
+#define REPEAT_DPAD_RATE	120
+#define REPEAT_STICK_DELAY	500
+#define REPEAT_STICK_RATE	150
+
+#define DCK_ANY_STICK	(DCK_STICK_UP | DCK_STICK_DOWN | DCK_STICK_LEFT | DCK_STICK_RIGHT)
+#define DCK_ANY_DIR	(CONT_DPAD_UP | CONT_DPAD_DOWN | CONT_DPAD_LEFT | \
+			 CONT_DPAD_RIGHT | DCK_ANY_STICK)
+
 static int capturing = 0;
 static int captured = -1;
 static int capture_polls = 0;
@@ -586,6 +602,55 @@ static void dc_input_poll_body(void)
 			send_key(SDLK_UNKNOWN, 1);
 
 		return;
+	}
+
+	/*
+	 *	Held-direction repeat, menus only.
+	 *
+	 *	Injection is edge-detected, so a held button fires once. On a desktop the
+	 *	host's keyboard repeat covers this; a pad has nothing to do it, so holding
+	 *	Down on the save list moved one row and stopped. This is the interface's
+	 *	own repeat clock.
+	 *
+	 *	Only the four directions repeat. A held A must not activate twice and a
+	 *	held Start must not back out twice. Nothing repeats in game: movement is
+	 *	read from SDL's key-state array for as long as the key is down, so a
+	 *	synthetic re-press would be noise at best.
+	 *
+	 *	Milliseconds rather than poll counts, so the feel does not depend on how
+	 *	fast a particular dialog loop happens to spin.
+	 *
+	 *	The release-then-press is required, not belt and braces:
+	 *	SDL_PrivateKeyboard drops any event that does not change a key's state, so
+	 *	a bare second press of a key already down would vanish.
+	 */
+	if (!in_game && !capturing) {
+		static int    repeat_mask = 0;
+		static Uint32 repeat_due  = 0;
+		int held = current & DCK_ANY_DIR;
+
+		if (!held) {
+			repeat_mask = 0;
+		} else if (held != repeat_mask) {
+			int stick = (held & DCK_ANY_STICK) != 0;
+
+			repeat_mask = held;
+			repeat_due  = SDL_GetTicks()
+			            + (stick ? REPEAT_STICK_DELAY : REPEAT_DPAD_DELAY);
+		} else if (SDL_GetTicks() >= repeat_due) {
+			int stick = (held & DCK_ANY_STICK) != 0;
+			unsigned r;
+
+			repeat_due = SDL_GetTicks()
+			           + (stick ? REPEAT_STICK_RATE : REPEAT_DPAD_RATE);
+
+			for (r = 0; r < NUM_MENU_BINDINGS; r++)
+				if (menu_bindings[r].mask & held) {
+					send_key(menu_bindings[r].sym, 0);
+					send_key(menu_bindings[r].sym, 1);
+					break;
+				}
+		}
 	}
 
 	if (!changed) {
