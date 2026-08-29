@@ -129,6 +129,95 @@ static OGL_Fader *CurrentOGLFader = NULL;
 
 static int FadeEffectDelay = 0;
 
+#ifdef DC
+/*
+ *	The tint the active fades add up to, for a display with no gamma ramp.
+ *
+ *	At 8 bits a fade is applied by rewriting the palette. At 16 it is applied with
+ *	SDL_SetGammaRamp -- and SDL's Dreamcast video driver has no SetGammaRamp hook
+ *	at all, so SDL_SetGammaRamp sets "Gamma ramp manipulation not supported",
+ *	returns -1, and the fade does nothing. Being shot has never flashed the screen
+ *	on this port.
+ *
+ *	So the tint is recorded here as it is computed, and screen_sdl.cpp blends it
+ *	over the rendered world instead. Only the tinting fades are captured: the
+ *	static and negation effects do something a single colour cannot express, and
+ *	they are left doing nothing rather than doing something wrong.
+ *
+ *	Two fades can be live at once -- a liquid effect and a damage flash -- and
+ *	they are applied one after the other, so they accumulate the same way here:
+ *	standard "over" compositing, in the order the procs run.
+ */
+static uint16 dc_tint_r, dc_tint_g, dc_tint_b;
+static _fixed dc_tint_alpha;
+
+static void dc_tint_reset(void)
+{
+	dc_tint_r = dc_tint_g = dc_tint_b = 0;
+	dc_tint_alpha = 0;
+}
+
+static void dc_tint_add(const struct rgb_color *colour, _fixed opacity)
+{
+	/* out = new*a2 + (1-a2)*old*a1, and alpha = 1 - (1-a1)(1-a2). */
+	_fixed a1 = dc_tint_alpha;
+	_fixed a2 = opacity;
+	_fixed out_a;
+
+	if (a2 <= 0)
+		return;
+	if (a2 > FIXED_ONE)
+		a2 = FIXED_ONE;
+
+	out_a = a2 + (_fixed)((((int32)(FIXED_ONE - a2) >> 8) * (a1 >> 8)) >>
+	                      (FIXED_FRACTIONAL_BITS - 16));
+
+	if (out_a <= 0) {
+		dc_tint_reset();
+		return;
+	}
+
+	{
+		/* Everything is scaled down to 0-255 before multiplying, so the widest
+		   intermediate is 255*255 and this stays in 32 bits on an SH4. */
+		int32 na = a2 >> (FIXED_FRACTIONAL_BITS - 8);			/* 0..255 */
+		int32 oa = (out_a >> (FIXED_FRACTIONAL_BITS - 8));		/* 0..255 */
+		int32 ka = oa - na;										/* what the old tint keeps */
+
+		if (oa < 1)
+			oa = 1;
+		if (ka < 0)
+			ka = 0;
+
+		dc_tint_r = (uint16)(((colour->red   >> 8) * na + (dc_tint_r >> 8) * ka) / oa) << 8;
+		dc_tint_g = (uint16)(((colour->green >> 8) * na + (dc_tint_g >> 8) * ka) / oa) << 8;
+		dc_tint_b = (uint16)(((colour->blue  >> 8) * na + (dc_tint_b >> 8) * ka) / oa) << 8;
+	}
+
+	dc_tint_alpha = out_a;
+}
+
+/*
+ *	What to blend over the world, as 0-255. Returns false when there is nothing
+ *	to do, which is almost every frame.
+ */
+extern "C" bool dc_fade_tint(int *r, int *g, int *b, int *alpha)
+{
+	if (dc_tint_alpha <= 0)
+		return false;
+
+	*r = dc_tint_r >> 8;
+	*g = dc_tint_g >> 8;
+	*b = dc_tint_b >> 8;
+	*alpha = (dc_tint_alpha * 255) >> FIXED_FRACTIONAL_BITS;
+
+	if (*alpha > 255)
+		*alpha = 255;
+
+	return *alpha > 0;
+}
+#endif
+
 /* ---------- fade definitions */
 
 static void tint_color_table(struct color_table *original_color_table, struct color_table *animated_color_table, struct rgb_color *color, _fixed transparency);
@@ -473,6 +562,11 @@ static void recalculate_and_display_color_table(
 {
 	bool full_screen= false;
 	
+#ifdef DC
+	/* Recomputed from scratch every time, so a fade that has ended clears it. */
+	dc_tint_reset();
+#endif
+	
 	// LP addition: set up the OGL queue entry for the liquid effects
 	SetOGLFader(FaderQueue_Liquid);
 	
@@ -526,6 +620,12 @@ static void tint_color_table(
 		TranslateToOGLFader(*color,transparency);
 		return;
 	}
+
+#ifdef DC
+	/* Record it for the software tint; see dc_fade_tint above. The palette work
+	   below still runs, and is still correct at 8 bits. */
+	dc_tint_add(color, transparency);
+#endif
 
 	short i;
 	struct rgb_color *unadjusted= original_color_table->colors;
@@ -584,7 +684,7 @@ static void randomize_color_table(
 	return;
 }
 
-/* unlike pathways, all colors wonÕt pass through 50% gray at the same time */
+/* unlike pathways, all colors wonï¿½t pass through 50% gray at the same time */
 static void negate_color_table(
 	struct color_table *original_color_table,
 	struct color_table *animated_color_table,
