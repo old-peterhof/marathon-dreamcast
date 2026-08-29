@@ -68,3 +68,14 @@ to the engine clamp, and the VMU Profiler. Git history has the detail.
 | b70 | review-fixes | 304b180 | Save screen X no longer overwrites; Exchange checks its flush; unplugging the pad releases held keys |
 | b71 | vram-passes | 4fa098e | Pause menu scrim drawn once and without per-pixel SDL calls; damage flash tinted during the blit instead of read back out of VRAM |
 | b72 | gl-restored | afee918 | PowerVR renderer restored from f25083d and running: plate suspension, mode-set guard, config stamp |
+
+**b72 must be built with `GL=1`.** It is the hardware renderer, and `./build.sh
+cdi` on its own produces a software binary stamped `gl-restored`, which is a
+disc that lies about what it is. Use:
+
+    ./build.sh GL=1 cdi          # hardware image
+    ./build.sh GL=1 cdi-profile  # same, with the framerate on the VMU LCD
+
+The configuration stamp makes the toggle safe -- changing `GL` deletes every
+object rather than relinking against ones compiled the other way -- but it
+cannot tell you which one you meant.
