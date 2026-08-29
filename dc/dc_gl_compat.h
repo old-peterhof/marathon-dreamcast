@@ -195,13 +195,106 @@ static inline void glPolygonStipple(const GLubyte *mask)
  *	suspecting if something is textured or blended when it should not be.
  */
 
+/* Current colour and the attribute stack, needed by glPushAttrib below. */
+static GLfloat dc_gl_color[4] = { 1.0f, 1.0f, 1.0f, 1.0f };
+static int dc_gl_color_array_on = 0;
+
+#define DC_GL_ATTRIB_DEPTH	4
+
+static int dc_gl_texture2d_on = 0;
+static int dc_gl_alphatest_on = 0;
+
+struct dc_gl_attrib_state {
+	GLint   texture;
+	GLfloat color[4];
+	int     texture2d, alphatest, blend, cull, depth;
+};
+
+static struct dc_gl_attrib_state dc_gl_attrib_stack[DC_GL_ATTRIB_DEPTH];
+static int dc_gl_attrib_sp = 0;
+
 static inline void glPushAttrib(GLbitfield mask)
 {
+	struct dc_gl_attrib_state *a;
+
 	(void)mask;
+
+	if (dc_gl_attrib_sp >= DC_GL_ATTRIB_DEPTH)
+		return;
+
+	a = &dc_gl_attrib_stack[dc_gl_attrib_sp++];
+
+	a->texture = 0;
+	glGetIntegerv(GL_TEXTURE_BINDING_2D, &a->texture);
+
+	a->texture2d = dc_gl_texture2d_on;
+	a->alphatest = dc_gl_alphatest_on;
+	a->blend = glIsEnabled(GL_BLEND) ? 1 : 0;
+	a->cull  = glIsEnabled(GL_CULL_FACE) ? 1 : 0;
+	a->depth = glIsEnabled(GL_DEPTH_TEST) ? 1 : 0;
+
+	a->color[0] = dc_gl_color[0]; a->color[1] = dc_gl_color[1];
+	a->color[2] = dc_gl_color[2]; a->color[3] = dc_gl_color[3];
+}
+
+/*
+ *	glPushAttrib / glPopAttrib -- a real save and restore, not a no-op.
+ *
+ *	These were stubs, and the note here used to say so with the warning that it
+ *	was "worth suspecting first if something renders textured or blended when it
+ *	should not". It was exactly that.
+ *
+ *	FontHandler.cpp, HUDRenderer_OGL.cpp and screen_sdl.cpp all do the same
+ *	thing: push GL_ALL_ATTRIB_BITS, turn texturing and blending on, culling and
+ *	alpha test off, bind their own texture, draw, pop. In real GL the pop puts
+ *	the texture binding and every toggle back. With a no-op pop none of it goes
+ *	back, so after any text or HUD is drawn the world renders with the font atlas
+ *	still bound, blending on, culling off and depth writes as text left them.
+ *	That is the magenta, glyph-speckled world.
+ *
+ *	Only what those three call sites actually touch is saved. GLdc's glIsEnabled
+ *	answers for BLEND, CULL_FACE and DEPTH_TEST but not for TEXTURE_2D or
+ *	ALPHA_TEST, so those two are tracked here through wrapped glEnable/glDisable.
+ */
+
+static inline void dc_glEnable(GLenum cap)
+{
+	if (cap == GL_TEXTURE_2D)  dc_gl_texture2d_on = 1;
+	if (cap == GL_ALPHA_TEST)  dc_gl_alphatest_on = 1;
+	glEnable(cap);
+}
+
+static inline void dc_glDisable(GLenum cap)
+{
+	if (cap == GL_TEXTURE_2D)  dc_gl_texture2d_on = 0;
+	if (cap == GL_ALPHA_TEST)  dc_gl_alphatest_on = 0;
+	glDisable(cap);
 }
 
 static inline void glPopAttrib(void)
 {
+	struct dc_gl_attrib_state *a;
+
+	if (dc_gl_attrib_sp <= 0)
+		return;
+
+	a = &dc_gl_attrib_stack[--dc_gl_attrib_sp];
+
+	glBindTexture(GL_TEXTURE_2D, (GLuint)a->texture);
+
+	if (a->texture2d) { dc_gl_texture2d_on = 1; glEnable(GL_TEXTURE_2D); }
+	else              { dc_gl_texture2d_on = 0; glDisable(GL_TEXTURE_2D); }
+
+	if (a->alphatest) { dc_gl_alphatest_on = 1; glEnable(GL_ALPHA_TEST); }
+	else              { dc_gl_alphatest_on = 0; glDisable(GL_ALPHA_TEST); }
+
+	if (a->blend) glEnable(GL_BLEND); else glDisable(GL_BLEND);
+	if (a->cull)  glEnable(GL_CULL_FACE); else glDisable(GL_CULL_FACE);
+	if (a->depth) glEnable(GL_DEPTH_TEST); else glDisable(GL_DEPTH_TEST);
+
+	dc_gl_color[0] = a->color[0]; dc_gl_color[1] = a->color[1];
+	dc_gl_color[2] = a->color[2]; dc_gl_color[3] = a->color[3];
+	glColor4f(a->color[0], a->color[1], a->color[2], a->color[3]);
 }
 
 /* ---- 4. clip planes: model path only, see the note above --------------- */
@@ -246,8 +339,6 @@ static inline void glClipPlane(GLenum plane, const GLdouble *equation)
 
 #define DC_GL_MAX_ARRAY_VERTS	256
 
-static GLfloat dc_gl_color[4] = { 1.0f, 1.0f, 1.0f, 1.0f };
-static int dc_gl_color_array_on = 0;
 
 static inline void dc_gl_set_color(GLfloat r, GLfloat g, GLfloat b, GLfloat a)
 {
@@ -332,6 +423,8 @@ static inline void dc_glDrawArrays(GLenum mode, GLint first, GLsizei count)
 #define glEnableClientState	dc_glEnableClientState
 #define glDisableClientState	dc_glDisableClientState
 #define glDrawArrays		dc_glDrawArrays
+#define glEnable			dc_glEnable
+#define glDisable			dc_glDisable
 
 #endif	/* DC */
 

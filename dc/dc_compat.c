@@ -75,6 +75,16 @@ void dc_trace(int slot, const char *fmt, ...)
 	printf("[dctrace %d] %s\n", slot, buf);
 	fflush(stdout);
 
+	/*
+	 *	Not in a GL build. The PowerVR owns the framebuffer and presents its own
+	 *	scene, so writing into vram_s here fights it -- Max saw the screen
+	 *	alternating between the rendered world and a black page carrying these
+	 *	traces. Serial above still carries everything.
+	 */
+#ifdef HAVE_OPENGL
+	return;
+#endif
+
 	// 40 pixels in from the corner: a television eats the edges. Inert in a
 	// release image, since dc_trace returns above without a DEBUG marker.
 	y = 40 + slot * 24;

@@ -138,6 +138,9 @@ inline short memory_error() {return 0;}
 /* ---------- globals */
 
 #include "shape_definitions.h"
+#ifdef DC
+extern "C" void dc_trace(int slot, const char *fmt, ...);
+#endif
 
 static pixel16 *global_shading_table16= (pixel16 *) NULL;
 static pixel32 *global_shading_table32= (pixel32 *) NULL;
@@ -1397,6 +1400,19 @@ static void build_shading_tables16(
 #ifdef SDL
 	SDL_PixelFormat *fmt = SDL_GetVideoSurface()->format;
 	bool is_opengl = SDL_GetVideoSurface()->flags & SDL_OPENGL;
+#endif
+#ifdef DC
+	/* Which format these tables end up in decides whether OGL_Textures.cpp's
+	   Convert_16to32, which assumes xRGB1555, reads them correctly. */
+	{
+		static int told = 0;
+		if (!told) {
+			told = 1;
+			dc_trace(33, "shade16: is_opengl=%d R=%04x G=%04x B=%04x bpp=%d",
+			         (int)is_opengl, (unsigned)fmt->Rmask, (unsigned)fmt->Gmask,
+			         (unsigned)fmt->Bmask, (int)fmt->BitsPerPixel);
+		}
+	}
 #endif
 	
 	start= 0, count= 0;

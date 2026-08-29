@@ -296,6 +296,16 @@ static void FindOGLColorTable(int NumSrcBytes, byte *OrigColorTable, uint32 *Col
 			IntmdPtr[0] = OrigPtr[0];
 			IntmdPtr[1] = OrigPtr[1];
 			Color = Convert_16to32(Intmd);
+#ifdef DC
+			{
+				static int told = 0;
+				if (!told && (k==1 || k==64 || k==128 || k==200)) {
+					dc_trace(34, "clut[%3d] raw=%04x -> rgba=%08x", k,
+					         (unsigned)Intmd, (unsigned)Color);
+					if (k==200) told = 1;
+				}
+			}
+#endif
 		}
 		break;
 		
@@ -1112,6 +1122,23 @@ void TextureManager::PlaceTexture(uint32 *Buffer)
 			dc_trace(39, "txtr: %d uploaded, heap %u KB, last %dx%d",
 			         nupload, dc_heap_used() / 1024,
 			         (int)LoadedWidth, (int)LoadedHeight);
+	}
+#endif
+#ifdef DC
+	{
+		/* What is actually in the buffer at upload time. If these look like
+		   sensible RGBA the fault is downstream in GL; if they are already
+		   magenta-ish the fault is upstream in the conversion. */
+		static int shown = 0;
+		if (shown < 3 && Buffer && LoadedWidth*LoadedHeight >= 4) {
+			int mid = (LoadedHeight/2)*LoadedWidth + LoadedWidth/2;
+			shown++;
+			dc_trace(35, "txl %dx%d fmt=%04x [0]=%08x [mid]=%08x [n-1]=%08x",
+			         (int)LoadedWidth, (int)LoadedHeight,
+			         (unsigned)TxtrTypeInfo.ColorFormat,
+			         (unsigned)Buffer[0], (unsigned)Buffer[mid],
+			         (unsigned)Buffer[LoadedWidth*LoadedHeight-1]);
+		}
 	}
 #endif
 	glTexImage2D(GL_TEXTURE_2D, 0, TxtrTypeInfo.ColorFormat, LoadedWidth, LoadedHeight,
