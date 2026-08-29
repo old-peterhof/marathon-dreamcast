@@ -273,6 +273,29 @@ void dc_input_poll(void)
 			dc_trace(13, "controller: none found on the maple bus");
 		}
 		analog_x = analog_y = trig_l = trig_r = 0;
+
+		/*
+		 *	Release whatever was held when the pad left the bus.
+		 *
+		 *	Injection is edge-detected, so a key down at the moment the cable is
+		 *	pulled has no falling edge to close it and stays down in SDL's
+		 *	key-state array, which vbl_sdl.cpp reads during play -- the player
+		 *	keeps walking forward for as long as the pad is gone.
+		 */
+		if (have_previous && previous) {
+			const struct dc_binding *t = in_game ? game_bindings : menu_bindings;
+			unsigned int n = in_game ? NUM_GAME_BINDINGS : NUM_MENU_BINDINGS;
+			unsigned int k;
+
+			for (k = 0; k < n; k++)
+				if (previous & t[k].mask)
+					send_key(t[k].sym, 0);
+		}
+
+		/* Re-baseline on reconnect, so whatever is held then is not a press. */
+		previous = 0;
+		have_previous = 0;
+
 		return;
 	}
 

@@ -160,6 +160,7 @@ extern "C" {
 #ifdef DC
 void dc_trace(int slot, const char *fmt, ...);
 void dc_input_init_video(void);		// suppress SDL's 60Hz prompt; see dc_input.c
+int  dc_maple_wait_scan_bounded(unsigned int timeout_ms);	// see dc_maple.c
 void dc_profiler_start(void);		// VMU Profiler, gated on a PROFILE marker
 void dc_input_dump_maple(void);		// lists the maple bus once, DEBUG builds only
 void dc_build_stamp(const char *tag);
@@ -267,6 +268,13 @@ static void initialize_application(void)
 	// inside SDL_SetVideoMode. Harmless under emulation, fatal to startup on a
 	// real console.
 	dc_input_init_video();
+	// KOS's own initial bus scan is disabled in dc_maple.c: it waits for all four
+	// maple ports forever, and a rumble pack makes one never report, which is the
+	// boot hang in BUGS.md. This is the same wait with a deadline on it. A normal
+	// boot returns in a few frames; a device that never answers costs 1.5s.
+	if (!dc_maple_wait_scan_bounded(1500))
+		dc_trace(19, "maple: bus scan incomplete after 1500ms, continuing");
+
 	dc_input_dump_maple();
 	dc_profiler_start();
 #endif

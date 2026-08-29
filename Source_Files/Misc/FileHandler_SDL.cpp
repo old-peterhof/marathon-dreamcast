@@ -557,7 +557,14 @@ bool FileSpecifier::Exchange(FileSpecifier &other)
 	}
 
 	fclose(in);
-	fclose(out);
+
+	// The last partial buffer is written by fclose, not by the loop above, so a
+	// flush that fails here is a truncated destination that every fwrite call
+	// reported as fine. /ram is the only writable filesystem here and a save is
+	// ~215KB, so exhausting it at the flush is the realistic case. Without this
+	// the temporary is removed below and the engine told the save succeeded.
+	if (fclose(out) != 0 && err == 0)
+		err = errno ? errno : EIO;
 
 	if (err == 0)
 		remove(GetPath());
