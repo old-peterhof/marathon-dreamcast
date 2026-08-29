@@ -322,6 +322,22 @@ static const struct dc_binding menu_bindings[] = {
 
 static int in_game = 0;
 
+int dc_input_ingame(void)
+{
+	return in_game;
+}
+
+/*
+ *	Menu auto-repeat state.
+ *
+ *	File scope rather than function statics so a context switch can clear it.
+ *	Left behind across a switch, a direction still held on the way back into a
+ *	menu matches the stale mask with a long-expired deadline and starts
+ *	repeating immediately, skipping the initial delay entirely.
+ */
+static int    repeat_mask = 0;
+static Uint32 repeat_due  = 0;
+
 /* Latest analog readings, refreshed by dc_input_poll and consumed by
    mouse_sdl.cpp on the same frame. */
 static int analog_x = 0, analog_y = 0;
@@ -376,6 +392,9 @@ void dc_input_set_ingame(int yes)
 		return;
 
 	in_game = (yes != 0);
+
+	/* The held-direction repeat belongs to the table being left. */
+	repeat_mask = 0;
 
 	/* Releasing everything on a context switch avoids a key left stuck down
 	   under the other mapping -- holding Y through a level change would
@@ -479,7 +498,48 @@ static void dc_input_poll_body(void)
 			reported_absent = 1;
 			dc_trace(13, "controller: none found on the maple bus");
 		}
+
 		analog_x = analog_y = trig_l = trig_r = 0;
+
+		/*
+		 *	Release whatever was held when the pad left the bus.
+		 *
+		 *	Injection is edge-detected, so a key down at the moment the cable
+		 *	is pulled has no falling edge to close it and stays down in SDL's
+		 *	key-state array. vbl_sdl.cpp reads that array during play, so the
+		 *	player keeps walking forward for as long as the pad is gone --
+		 *	nothing clears it until a game-state change happens to call
+		 *	dc_input_set_ingame.
+		 *
+		 *	Both tables are walked: the configured bindings replace the static
+		 *	table in game, so a key sent from one is not in the other.
+		 */
+		if (have_previous && previous) {
+			const struct dc_binding *t = in_game ? game_bindings : menu_bindings;
+			unsigned int n = in_game ? NUM_GAME_BINDINGS : NUM_MENU_BINDINGS;
+			unsigned int k;
+
+			for (k = 0; k < n; k++)
+				if (previous & t[k].mask)
+					send_key(t[k].sym, 0);
+
+			if (in_game && cfg_count > 0) {
+				for (k = 0; k < (unsigned)cfg_count; k++) {
+					int id = cfg_button[k];
+					int m = (id > 0 && id < NUM_DC_BUTTONS)
+					        ? dc_buttons[id].mask : 0;
+
+					if (m && (previous & m))
+						send_key((SDLKey)cfg_sym[k], 0);
+				}
+			}
+		}
+
+		/* Re-baseline on reconnect, so whatever is held then is not a press. */
+		previous = 0;
+		have_previous = 0;
+		repeat_mask = 0;
+
 		return;
 	}
 
@@ -625,8 +685,6 @@ static void dc_input_poll_body(void)
 	 *	a bare second press of a key already down would vanish.
 	 */
 	if (!in_game && !capturing) {
-		static int    repeat_mask = 0;
-		static Uint32 repeat_due  = 0;
 		int held = current & DCK_ANY_DIR;
 
 		if (!held) {

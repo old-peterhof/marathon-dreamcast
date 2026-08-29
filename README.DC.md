@@ -81,8 +81,8 @@ lives there — only stationary actions.
 | L trigger | alt fire |
 | D-pad Up | action / use — switches, terminals, pickups |
 | D-pad Down | toggle overhead map |
-| D-pad Left | cycle weapon forward |
-| D-pad Right | spare |
+| D-pad Left | run / swim |
+| D-pad Right | cycle weapon forward |
 | Start | bound to Escape, which gameplay ignores -- see Known gaps |
 
 In menus the D-pad and stick navigate and **A** confirms, because BERO's menu
@@ -93,6 +93,11 @@ sticks down across the change.
 A keyboard also works throughout. The default key layout is the arrow-key one
 (`_left_handed_keyboard_setup`), not Aleph One's usual keypad layout — a
 Dreamcast keyboard may have no keypad at all.
+
+That table is the binding, not the key name. `game_bindings` in `dc/dc_input.c`
+sends `SDLK_QUOTE` for D-pad Right and `SDLK_LCTRL` for D-pad Left, which are
+the left-handed table's next-weapon and run keys; the two paragraphs below say
+why neither key is the one its name suggests.
 
 **Turn Sensitivity** and **Look Sensitivity** are sliders in Preferences →
 CONTROLS. They cap at 100% deliberately: `physics.cpp` quantises `delta_yaw`

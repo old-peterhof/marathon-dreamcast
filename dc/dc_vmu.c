@@ -459,8 +459,17 @@ static const char *base_name(const char *path)
  *	How many blocks a given card has left.
  *
  *	KOS wants the maple device rather than the mount path, and the mount name
- *	encodes it: /vmu/a1 is port a, unit 1. Returns -1 if the device cannot be
- *	found or the count cannot be read, which callers treat as "do not write".
+ *	encodes it: /vmu/a1 is port a, unit 1.
+ *
+ *	Returns -1 if the device cannot be found or the count cannot be read, and
+ *	every caller here fails OPEN on that: pick_vmu takes such a card, and the
+ *	check before the write skips itself. An unknown free count is not evidence
+ *	the card is full, and refusing on it would decline a save that would have
+ *	fitted. The write is still checked, so a card that really has no room fails
+ *	loudly at fs_write rather than silently here.
+ *
+ *	This comment previously said callers treat -1 as "do not write", which was
+ *	the opposite of what they do.
  */
 static int vmu_free_blocks(const char *unit)
 {

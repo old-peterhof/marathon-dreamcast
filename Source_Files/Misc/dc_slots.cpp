@@ -209,7 +209,17 @@ int dc_choose_save_slot(void)
 		sc.banner = "ALL FOUR SLOTS FULL - CHOOSE ONE TO OVERWRITE";
 
 	slot = dc_screen_run(&sc);
-	slot &= ~DC_SCREEN_X;		/* X does nothing here */
+
+	/*
+	 *	X and Y really do nothing here.
+	 *
+	 *	Masking DC_SCREEN_X off instead made X a synonym for A: DC_SCREEN_X|2
+	 *	became 2, which is exactly what A returns, so the button that deletes
+	 *	on MANAGE SAVES committed an overwrite on this screen. Every row is
+	 *	selectable here -- empties included -- so it applied to all four.
+	 */
+	if (slot & (DC_SCREEN_X | DC_SCREEN_Y))
+		return 0;
 
 	if (slot < 1 || slot > DC_SAVE_SLOTS)
 		return 0;

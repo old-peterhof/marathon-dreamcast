@@ -46,6 +46,7 @@
 extern "C" {
 	void dc_input_poll(void);
 	void dc_input_set_ingame(int yes);
+	int  dc_input_ingame(void);
 	void dc_trace(int slot, const char *fmt, ...);
 }
 
@@ -398,7 +399,7 @@ static void draw_screen(struct dc_screen *sc)
 
 int dc_screen_run(struct dc_screen *sc)
 {
-	int was_ingame = 0;
+	int was_ingame;
 	int result = DC_SCREEN_BACK;
 	bool done = false;
 	bool dirty = true;
@@ -442,7 +443,7 @@ int dc_screen_run(struct dc_screen *sc)
 	 *	opens from gameplay, where the pad is mapped for movement, and without
 	 *	this its buttons would do nothing at all.
 	 */
-	was_ingame = 0;
+	was_ingame = dc_input_ingame();
 	dc_input_set_ingame(0);
 
 	while (!done) {
@@ -484,10 +485,14 @@ int dc_screen_run(struct dc_screen *sc)
 			dirty = true;
 			break;
 
+		/* Return checks `disabled` before acting; these must too. step()
+		   never lands the cursor on a disabled row, so this is belt and
+		   braces -- but it is the only place the invariant was not enforced
+		   where the value is actually changed. */
 		case SDLK_LEFT:
 			if (sc->split > 0)
 				sc->cursor = step_col(sc, sc->cursor, -1);
-			else
+			else if (!sc->rows[sc->cursor].disabled)
 				adjust(&sc->rows[sc->cursor], -1);
 			dirty = true;
 			break;
@@ -495,7 +500,7 @@ int dc_screen_run(struct dc_screen *sc)
 		case SDLK_RIGHT:
 			if (sc->split > 0)
 				sc->cursor = step_col(sc, sc->cursor, +1);
-			else
+			else if (!sc->rows[sc->cursor].disabled)
 				adjust(&sc->rows[sc->cursor], +1);
 			dirty = true;
 			break;

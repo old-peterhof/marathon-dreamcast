@@ -557,7 +557,15 @@ bool FileSpecifier::Exchange(FileSpecifier &other)
 	}
 
 	fclose(in);
-	fclose(out);
+
+	// The last partial buffer is written by fclose, not by the loop above, so a
+	// flush that fails here is a truncated destination that every fwrite call
+	// reported as fine. /ram is the only writable filesystem on this machine and
+	// a Marathon 2 save is ~215KB, so running out of room at the flush is the
+	// realistic case rather than a theoretical one. Without this the temporary
+	// would be removed below and the engine told the save had succeeded.
+	if (fclose(out) != 0 && err == 0)
+		err = errno ? errno : EIO;
 
 	if (err == 0)
 		remove(GetPath());

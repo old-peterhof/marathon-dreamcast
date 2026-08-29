@@ -122,6 +122,16 @@ void dc_ui_blend(SDL_Surface *s, int x, int y, int w, int h,
 {
 	int px, py;
 
+	/*
+	 *	This reads and writes Uint16 directly. dc_copy_to_screen guards the same
+	 *	assumption and falls back to SDL when it does not hold; this had no such
+	 *	guard, and at 8bpp `px` steps twice the pixel size and runs off the end
+	 *	of the row. The Dreamcast SDL driver rejects 8-bit outright, so this has
+	 *	never been reachable -- it is here so it cannot become reachable quietly.
+	 */
+	if (!s || s->format->BytesPerPixel != 2)
+		return;
+
 	if (SDL_MUSTLOCK(s) && SDL_LockSurface(s) < 0)
 		return;
 
