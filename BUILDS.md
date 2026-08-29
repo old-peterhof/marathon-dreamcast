@@ -67,3 +67,4 @@ to the engine clamp, and the VMU Profiler. Git history has the detail.
 | b69 | sound-freeze | af73efa | Audio device opened once and kept: Stereo and Quality apply next launch. Controls panel clear of the explainer |
 | b70 | review-fixes | 304b180 | Save screen X no longer overwrites; Exchange checks its flush; unplugging the pad releases held keys |
 | b71 | vram-passes | 4fa098e | Pause menu scrim drawn once and without per-pixel SDL calls; damage flash tinted during the blit instead of read back out of VRAM |
+| b72 | gl-restored | afee918 | PowerVR renderer restored from f25083d and running: plate suspension, mode-set guard, config stamp |

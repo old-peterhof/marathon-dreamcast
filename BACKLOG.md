@@ -111,11 +111,58 @@ the trimming below could finally happen.
 
 ## PowerVR / hardware-accelerated renderer
 
-**It renders.** Textured walls, floors, ceilings, sprites and the HUD, on the
-PowerVR at 640x480, verified by screenshot in Flycast.
+**It renders**, and as of b72 it is back in a branch. Textured walls, floors,
+ceilings, sprites and the HUD, on the PowerVR at 640x480.
 
 Not measured on hardware yet, and that is the only number that matters -- Flycast
-holds at 30fps because that is the engine tick, not the renderer.
+holds at 30fps because that is the engine tick, not the renderer. `b72
+gl-restored` and its `-profile` variant exist for exactly that measurement.
+
+### It had been deleted, and the notes did not notice
+
+b32 reverted the tree wholesale to b31 to recover a known-good hardware baseline
+and took b33-b36 with it. This page, README.DC.md and BUILDS.md all went on
+describing a renderer that was no longer in the branch; only `dc_gl_compat.h`
+survived, because nothing referenced it. Restored on `gl-renderer` from
+`f25083d`.
+
+That is the second time a wholesale revert has silently un-fixed things while
+the notes claimed otherwise -- see the b30 list-dialog entry in BUGS.md, which
+was wrong for twenty-eight builds for the same reason.
+
+### What stopped it running, once it was back
+
+Three, each found by tracing rather than reading, and all fixed in b72:
+
+1. **A 1,228,800-byte allocation off the end of a 16MB machine.** `SDL_OPENGLBLIT`
+   keeps a full-screen shadow surface and picks 16-bit only inside
+   `#ifdef GL_VERSION_1_2`, which GLdc's `gl.h` does not define -- so it is
+   32-bit. A trace of the mode set says it plainly: `640x480x16 -> surf
+   640x480x32`. It costs twice, because `SDL_DisplayFormat` matches the display
+   and each cached menu plate becomes 1.2MB rather than 614KB.
+2. **The plates reloading during the transition.** Freeing them at level entry
+   was not enough; something repaints through the plate immediately after and
+   pulled a fresh copy back. `dc_plate` now refuses to load while a level runs.
+3. **`Assertion "pvr_state.valid" failed`.** SDL's Dreamcast driver tears the
+   PowerVR down and re-inits it on every `SDL_SetVideoMode`, and `enter_screen`
+   asks for the mode it is already in. `change_screen_mode` now skips a mode set
+   that would change nothing.
+
+### The one lever not yet pulled
+
+Rebuild the SDL kos-port with `-DGL_VERSION_1_2`. GLdc supports
+`GL_UNSIGNED_SHORT_5_6_5` natively -- it is the PowerVR's own format,
+`texture.c:380` -- so SDL's 16-bit branch would work, and it would:
+
+- halve the shadow surface, 1.2MB to 614KB;
+- halve every `SDL_DisplayFormat` surface, including both plates;
+- upload in hardware format instead of converting 32-bit every frame;
+- leave the video surface at 16 bits, which is what every routine in `dc/` and
+  `Source_Files/Misc/dc_*` already assumes -- so the interface would work under
+  GL, which it currently cannot.
+
+Roughly 1.8MB and a working UI for one `-D`. Not done, because it patches the
+toolchain and this port depends on that install being reproducible. Max's call.
 
 ### The two things that actually blocked it
 
@@ -143,10 +190,24 @@ setupfail=0, vecfail=0, geometry demonstrably submitted, screen still black.
 
 ### Still to do
 
-1. **Measure on hardware.** The whole point.
-2. Memory is tight. Peak fits now -- flat landscapes, half-resolution 16-bit
+1. **Measure on hardware.** The whole point. `b72 gl-restored-profile` puts the
+   framerate on the VMU LCD.
+2. **A 507,904-byte allocation fails every frame** and the game carries on. Not
+   diagnosed. It appears from the first rendered frame; the earlier variant of
+   it was 262,144 bytes, which is exactly 256x256x4 -- the size of the texture
+   SDL creates for its OPENGLBLIT compositing. Suspect that path, and note that
+   the `-DGL_VERSION_1_2` lever above would halve it.
+3. **`gl: clip plane 0 requested -- a model is being drawn` fires.** The shim
+   stubs clip planes on the reasoning that stock Marathon 2 declares no models
+   and `RenderModelSetup()` is never entered. The trace says otherwise, so
+   either the reasoning is wrong or the trace is firing from the `glDisable`
+   path rather than `glClipPlane`. Worth ten minutes before trusting the stub.
+4. Memory is tight. Peak fits now -- flat landscapes, half-resolution 16-bit
    textures, no mipmaps, and reducing each texture buffer as it is built rather
-   than building both then shrinking -- but the heap sits around 12.5MB of 16MB.
+   than building both then shrinking -- with about 2MB free at level start,
+   measured by `dc_heap_trace`. Note that `free()` does not lower the sbrk
+   break, so memory returned to the allocator is reusable but invisible to that
+   number.
 3. The static/interference effect is gone: it needs glLogicOp and
    glPolygonStipple, neither of which the PowerVR can do.
 4. Landscapes are flat colours rather than textured skies, to avoid a 2MB buffer.
