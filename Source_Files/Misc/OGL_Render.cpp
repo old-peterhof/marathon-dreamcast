@@ -109,6 +109,14 @@ Dec 17, 2000 (Loren Petrich):
 # include <GL/glu.h>
 #endif
 
+#ifdef DC
+// GLdc provides 43 of the 61 entry points this file calls. The rest are here.
+#include "dc_gl_compat.h"
+int dc_gl_polys = 0;
+int dc_wall_calls = 0, dc_wall_setup_fail = 0, dc_wall_vec_fail = 0;
+extern "C" void dc_heap_trace(int slot, const char *where);
+#endif
+
 #ifdef mac
 #include <agl.h>
 #include "my32bqd.h"
@@ -542,14 +550,29 @@ bool OGL_StartRun()
 #endif
 	
 	// Initialize the texture accounting
+#ifdef DC
+	dc_heap_trace(40, "StartRun entry");
+#endif
 	OGL_StartTextures();
+#ifdef DC
+	dc_heap_trace(41, "after StartTextures");
+#endif
 	
 	// Initialize the on-screen font for OpenGL rendering
 	GetOnScreenFont().OGL_Reset(true);
+#ifdef DC
+	dc_heap_trace(42, "after screen font");
+#endif
 	
 	// Reset the font info for overhead-map and HUD fonts done in OpenGL fashion
 	OGL_ResetMapFonts(true);
+#ifdef DC
+	dc_heap_trace(43, "after map fonts");
+#endif
 	OGL_ResetHUDFonts(true);
+#ifdef DC
+	dc_heap_trace(44, "after HUD fonts");
+#endif
 	
 	// Since an OpenGL context has just been created, don't try to clear any OpenGL textures
 	OGL_ResetModelSkins(false);
@@ -557,6 +580,9 @@ bool OGL_StartRun()
 	// Setup for 3D-model rendering
 	ModelRenderObject.Clear();
 	SetupShaders();
+#ifdef DC
+	dc_heap_trace(45, "StartRun done");
+#endif
 	
 	// Success!
 	JustInited = true;
@@ -1073,7 +1099,12 @@ static bool RenderAsRealWall(polygon_definition& RenderPolygon, bool IsVertical)
 	TMgr.TextureType = OGL_Txtr_Wall;
 	
 	// Use that texture
+#ifdef DC
+	dc_wall_calls++;
+	if (!TMgr.Setup()) { dc_wall_setup_fail++; return false; }
+#else
 	if (!TMgr.Setup()) return false;
+#endif
 			
 	// The currently-used surface-coordinate object
 	SurfaceCoords* SCPtr;
@@ -1094,7 +1125,11 @@ static bool RenderAsRealWall(polygon_definition& RenderPolygon, bool IsVertical)
 		// has either horizontal or vertical parts being zero.
 		
 		// Vertical U
+#ifdef DC
+		if (Vec.k == 0) { dc_wall_vec_fail++; return false; }
+#else
 		if (Vec.k == 0) return false;
+#endif
 		OrigVec[0] = 0;
 		OrigVec[1] = 0;
 		OrigVec[2] = Vec.k;
@@ -1425,7 +1460,34 @@ static bool RenderAsRealWall(polygon_definition& RenderPolygon, bool IsVertical)
 	SetProjectionType(Projection_OpenGL_Eye);
 	
 	// Location of data:
+#ifdef DC
+	// GLdc's vertex-array reader only understands a size of 3 for GL_DOUBLE.
+	// From its attributes.c, calcReadPositionFunc():
+	//
+	//     case GL_DOUBLE:
+	//         return (ATTRIB_LIST.vertex.size == 3) ? _readPosition3d3f
+	//                                               : _readPosition2d3f;
+	//
+	// Any other size falls through to the two-component reader, which takes x
+	// and y and sets z = 0. Asking for 4 here collapsed every wall vertex onto
+	// the same plane, so the world rendered black while sprites drew perfectly
+	// -- they ask for 3. That one number was the whole difference.
+	//
+	// The fourth component is the homogeneous w of an eye-space point and is 1,
+	// so dropping it changes nothing. The trace says so if it ever does.
+	{
+		static int warned = 0;
+		GLdouble W = ExtendedVertexList[0].Vertex[3];
+
+		if (!warned && (W < 0.999 || W > 1.001)) {
+			warned = 1;
+			dc_trace(48, "gl: wall vertex w = %d/1000, not 1", (int)(W * 1000));
+		}
+	}
+	glVertexPointer(3,GL_DOUBLE,sizeof(ExtendedVertexData),ExtendedVertexList[0].Vertex);
+#else
 	glVertexPointer(4,GL_DOUBLE,sizeof(ExtendedVertexData),ExtendedVertexList[0].Vertex);
+#endif
 	glTexCoordPointer(2,GL_DOUBLE,sizeof(ExtendedVertexData),ExtendedVertexList[0].TexCoord);
 	
 	// Painting a texture...
@@ -1583,6 +1645,9 @@ static bool RenderAsRealWall(polygon_definition& RenderPolygon, bool IsVertical)
 	else
 		// Go!
 		// Don't care about triangulation here, because the polygon never got split
+		#ifdef DC
+			{ extern int dc_gl_polys; dc_gl_polys++; }
+		#endif
 		glDrawArrays(GL_POLYGON,0,NumVertices);
 
 #ifdef UNUSED
@@ -1616,6 +1681,9 @@ static bool RenderAsRealWall(polygon_definition& RenderPolygon, bool IsVertical)
 #endif
 
 		TMgr.RenderGlowing();
+		#ifdef DC
+			{ extern int dc_gl_polys; dc_gl_polys++; }
+		#endif
 		glDrawArrays(GL_POLYGON,0,NumVertices);
 	}
 	
@@ -1667,6 +1735,9 @@ static bool RenderAsLandscape(polygon_definition& RenderPolygon)
 		glVertexPointer(3,GL_SHORT,sizeof(AltExtendedVertexData),AltEVList[0].Vertex);
 		
 		// Go!
+		#ifdef DC
+			{ extern int dc_gl_polys; dc_gl_polys++; }
+		#endif
 		glDrawArrays(GL_POLYGON,0,NumVertices);
 		
 		// Restore
@@ -1762,6 +1833,9 @@ static bool RenderAsLandscape(polygon_definition& RenderPolygon)
 	TMgr.RenderNormal();
 	
 	// Go!
+	#ifdef DC
+		{ extern int dc_gl_polys; dc_gl_polys++; }
+	#endif
 	glDrawArrays(GL_POLYGON,0,NumVertices);
 	
 	return true;
@@ -1940,12 +2014,18 @@ bool OGL_RenderSprite(rectangle_definition& RenderRectangle)
 		SetupStaticMode(RenderRectangle);
 		if (UseFlatStatic)
 		{
+			#ifdef DC
+				{ extern int dc_gl_polys; dc_gl_polys++; }
+			#endif
 			glDrawArrays(GL_POLYGON,0,4);
 		} else {
 			// Do multitextured stippling to create the static effect
 			for (int k=0; k<4; k++)
 			{
 				StaticModeIndivSetup(k);
+				#ifdef DC
+					{ extern int dc_gl_polys; dc_gl_polys++; }
+				#endif
 				glDrawArrays(GL_POLYGON,0,4);
 			}
 		}
@@ -1963,6 +2043,9 @@ bool OGL_RenderSprite(rectangle_definition& RenderRectangle)
 			TMgr.RenderGlowing(true);
 			glActiveTextureARB(GL_TEXTURE0_ARB);
 			
+			#ifdef DC
+				{ extern int dc_gl_polys; dc_gl_polys++; }
+			#endif
 			glDrawArrays(GL_POLYGON,0,4);
 			
 			glActiveTextureARB(GL_TEXTURE1_ARB);
@@ -1975,6 +2058,9 @@ bool OGL_RenderSprite(rectangle_definition& RenderRectangle)
 #endif
 
 		// Do textured rendering
+		#ifdef DC
+			{ extern int dc_gl_polys; dc_gl_polys++; }
+		#endif
 		glDrawArrays(GL_POLYGON,0,4);
 		
 		if (TMgr.IsGlowMapped())
@@ -1986,6 +2072,9 @@ bool OGL_RenderSprite(rectangle_definition& RenderRectangle)
 			glDisable(GL_ALPHA_TEST);
 			
 			TMgr.RenderGlowing();
+			#ifdef DC
+				{ extern int dc_gl_polys; dc_gl_polys++; }
+			#endif
 			glDrawArrays(GL_POLYGON,0,4);
 		}
 	}
@@ -2495,6 +2584,15 @@ bool OGL_RenderText(short BaseX, short BaseY, const char *Text)
 {
 	if (!OGL_IsActive()) return false;
 	
+#ifdef DC
+	// GLdc has no display lists, and this was Aleph One's only use of them:
+	// compile the string once, then draw it twice -- a drop shadow and the text
+	// itself. The seven other draws were commented out for speed back in 2002,
+	// so the list was being built to be called exactly twice. Calling the font
+	// renderer directly costs one extra glyph walk and removes the need for the
+	// list machinery entirely.
+#define DC_DRAW_TEXT()	GetOnScreenFont().OGL_Render(Text)
+#else
 	// Create display list for the current text string;
 	// use the "standard" text-font display list (display lists can be nested)
 	GLuint TextDisplayList;
@@ -2502,6 +2600,8 @@ bool OGL_RenderText(short BaseX, short BaseY, const char *Text)
 	glNewList(TextDisplayList,GL_COMPILE);
 	GetOnScreenFont().OGL_Render(Text);
 	glEndList();
+#define DC_DRAW_TEXT()	glCallList(TextDisplayList)
+#endif
 	
 	// Place the text in the foreground of the display
 	SetProjectionType(Projection_Screen);
@@ -2547,17 +2647,20 @@ bool OGL_RenderText(short BaseX, short BaseY, const char *Text)
 	
 	glLoadIdentity();
 	glTranslatef(BaseX+1,BaseY+1,Depth);
-	glCallList(TextDisplayList);
+	DC_DRAW_TEXT();
 	
 	// Foreground
 	glColor3f(1,1,1);
 
 	glLoadIdentity();
 	glTranslatef(BaseX,BaseY,Depth);
-	glCallList(TextDisplayList);
+	DC_DRAW_TEXT();
 		
 	// Clean up
+#ifndef DC
 	glDeleteLists(TextDisplayList,1);
+#endif
+#undef DC_DRAW_TEXT
 	glPopMatrix();
 	
 	return true;

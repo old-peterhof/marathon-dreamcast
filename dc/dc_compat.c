@@ -137,3 +137,32 @@ void dc_build_stamp(const char *tag)
 {
 	bfont_draw_str(vram_s + 452 * 640 + 8, 640, 0, (char *)tag);
 }
+
+/*
+ *	dc_heap_used -- how much of main RAM the heap has taken.
+ *
+ *	The Dreamcast has 16MB starting at 0x8c000000. sbrk(0) is the current top, so
+ *	the difference from the start of the heap is what has been handed out plus
+ *	whatever the allocator is holding back. Good enough to answer "who ate the
+ *	memory", which is the question when the GL renderer dies with bad_alloc
+ *	partway through the first frame.
+ *
+ *	Lost in b32's wholesale revert to b31; restored from f25083d because
+ *	OGL_Textures.cpp calls it and the GL link fails without it.
+ */
+unsigned dc_heap_used(void)
+{
+	extern void *sbrk(int);
+	static unsigned base = 0;
+	unsigned now = (unsigned)(uintptr_t)sbrk(0);
+
+	if (!base)
+		base = now;
+
+	return now - base;
+}
+
+void dc_heap_trace(int slot, const char *where)
+{
+	dc_trace(slot, "heap: %-18s %u KB", where, dc_heap_used() / 1024);
+}

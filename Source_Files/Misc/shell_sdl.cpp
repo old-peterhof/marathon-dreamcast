@@ -417,6 +417,27 @@ static void initialize_application(void)
 	if (!option_nogl && graphics_preferences->screen_mode.bit_depth == 16)
 		graphics_preferences->screen_mode.acceleration = _opengl_acceleration;
 #endif
+#if defined(DC) && defined(HAVE_OPENGL)
+	// Preferences restored from a memory card can carry texture settings from
+	// before these limits existed, and the desktop defaults will not fit in a
+	// Dreamcast's heap. Force them every boot rather than trust what was saved.
+	//
+	// FlatLand matters most: a real landscape converts a 1024x512 sky through a
+	// 2MB intermediate buffer, and that is the allocation that fell off the end
+	// of a 16MB machine in b35. Lost in b32's revert, restored from f25083d.
+	{
+		OGL_ConfigureData& OGLData = Get_OGL_ConfigureData();
+
+		for (int k = 0; k < OGL_NUMBER_OF_TEXTURE_TYPES; k++) {
+			OGLData.TxtrConfigList[k].FarFilter = 1;
+			OGLData.TxtrConfigList[k].Resolution = 1;
+			OGLData.TxtrConfigList[k].ColorFormat = 1;
+		}
+
+		OGLData.Flags &= ~OGL_Flag_3D_Models;
+		OGLData.Flags |= OGL_Flag_FlatLand;
+	}
+#endif
 	if (force_fullscreen)
 		graphics_preferences->screen_mode.fullscreen = true;
 	if (force_windowed)	// takes precedence over fullscreen because windowed is safer

@@ -94,6 +94,33 @@ void dc_plate_select(int kind)
 	plate_kind = kind;
 }
 
+/*
+ *	Drop the cached plates.
+ *
+ *	They are menu artwork and nothing draws them while a level is running, but
+ *	they are the single largest thing this port keeps alive: SDL_DisplayFormat
+ *	converts to the *display* format, so each plate is 614KB at 16 bits and
+ *	1.2MB under SDL_OPENGLBLIT, whose shadow surface is 32-bit because GLdc's
+ *	gl.h does not define GL_VERSION_1_2 and SDL's 16-bit branch is therefore
+ *	compiled out. Two plates, so up to 2.4MB held for a screen nobody is
+ *	looking at.
+ *
+ *	plate_tried is cleared as well, so returning to the menu reloads them from
+ *	the disc rather than falling back to the flat fill.
+ */
+void dc_plate_release(void)
+{
+	int k;
+
+	for (k = 0; k < 2; k++) {
+		if (plate[k]) {
+			SDL_FreeSurface(plate[k]);
+			plate[k] = NULL;
+		}
+		plate_tried[k] = 0;
+	}
+}
+
 int dc_plate_ready(void)
 {
 	return load(plate_kind) != NULL;

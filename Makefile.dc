@@ -50,26 +50,44 @@ SDL_LIBS = -lSDL -lGL -lz
 INCS    = $(SDL_INCS) -Idc -Idc/vendor -I$(CS) -I$(EP) -I$(MI) -I$(NW) -I$(PF) -I$(MV)
 DEFINES = -DSDL -DHAVE_UNISTD_H -DPACKAGE='"AlephOne"' -DVERSION='"0.12.0"' -DDC
 
-# GL=1 selects BERO's untested hardware-accelerated path. IT DOES NOT COMPILE,
-# and is kept only as a documented starting point for anyone who wants to try.
+# GL=1 builds Aleph One's hardware renderer against GLdc, the OpenGL
+# implementation KallistiOS ships for the PowerVR. As of b36 this compiles,
+# links, gets a real context and draws the world -- see README.DC.md.
 #
-# KOS's GL (GLdc) is a subset, and every entry point Aleph One's GL renderer
-# needs from outside that subset is absent:
+# The note that used to live here said this was blocked on clip planes and would
+# need a renderer rewrite. That was wrong, and worth recording why, because it
+# stopped the work for a long time.
 #
-#   glClipPlane / GL_CLIP_PLANE0..4   portal and liquid-surface clipping
-#   glNewList glEndList glCallList    display lists, used for text
-#   glGenLists glDeleteLists GL_COMPILE
-#   glPushAttrib                      attribute stack
-#   glLoadMatrixd glGetDoublev        double-precision matrices
-#   glVertex2s                        short vertices
-#   GL_COLOR_LOGIC_OP
+# Aleph One calls 61 GL entry points; GLdc has 43. The missing 17 are all in
+# OGL_Render.cpp and fall into four groups: double-precision matrix calls
+# (forward to the float versions), short-typed immediate mode (likewise), two
+# raster effects the PowerVR cannot do (dropped), and display lists, which were
+# used in exactly one function to draw a string twice. dc/dc_gl_compat.h covers
+# the lot.
 #
-# The small ones substitute trivially (glVertex2f, glLoadMatrixf). The clip
-# planes do not: OGL_Render.cpp uses five of them for the core view frustum and
-# water surfaces, so emulating them means clipping geometry in software before
-# submission -- a renderer rewrite, not a port. See OVERNIGHT-LOG.md.
+# The clip planes were never the obstacle. All six glClipPlane calls sit inside
+# RenderModelSetup(), reached only when rectangle_definition::ModelPtr is set --
+# the external-3D-model path. Stock Marathon 2 declares no models, so the
+# function is never entered. They are stubbed with a trace that fires if a model
+# ever does appear.
+#
+# This whole section was lost in b32's wholesale revert to b31 and restored from
+# f25083d. The renderer itself lived in OGL_*.cpp and came back with it.
 ifdef GL
 DEFINES += -DHAVE_OPENGL
+# Force-included into every C++ translation unit rather than added by hand to
+# each: six different files call entry points GLdc lacks, and a seventh would
+# have been found only by the linker.
+GL_FORCE_INC = -include dc_gl_compat.h
+
+# The GL renderer pulls in the model loaders. Stock Marathon 2 declares no
+# models so none of this ever runs, but OGL_Render.cpp references it and the
+# whole subsystem is only 1800 lines, so it is built rather than stubbed --
+# a stub that lies is worse than code that is never called.
+GL_OBJS = dc/dc_glu.o $(MV)/Model3D.o $(MV)/StudioLoader.o $(MV)/WavefrontLoader.o \
+          $(MV)/ModelRenderer.o \
+          $(MI)/OGL_Textures.o $(MI)/OGL_Faders.o \
+          $(MI)/HUDRenderer_OGL.o $(MI)/OverheadMap_OGL.o
 endif
 
 # -MMD -MP emit a .d file per object listing the headers it used, pulled in at
@@ -79,9 +97,27 @@ endif
 # with movement bindings.
 DEPFLAGS = -MMD -MP
 
+# ---------------------------------------------------------------------------
+# Configuration stamp
+#
+# Object files live at fixed paths and carry no record of the flags that built
+# them, so toggling GL=1 left make reusing objects compiled with a different
+# -DHAVE_OPENGL and the link failed on symbols that should not have been
+# referenced. The same trap has cost this port time three times now: .cpp files
+# included by other .cpp files, header dependencies, and -- this session -- a
+# dc_profiler.o carried over from another machine that hid a real compile error
+# against a newer KOS.
+#
+# So the defines are hashed into a stamp filename. Change any of them and the
+# stamp no longer exists, which deletes every object and forces an honest
+# rebuild. Cheap, and it cannot be forgotten.
+# ---------------------------------------------------------------------------
+CONFIG_SIG   := $(shell echo '$(DEFINES)' | cksum | cut -d' ' -f1)
+CONFIG_STAMP := .config-$(CONFIG_SIG)
+
 COMPAT   = -fno-strict-aliasing -fpermissive -Wno-write-strings -Wno-narrowing
 CFLAGS   = $(KOS_CFLAGS) $(INCS) $(DEFINES) $(COMPAT) $(DEPFLAGS)
-CXXFLAGS = $(CFLAGS) -std=gnu++98 -fno-rtti -fno-exceptions
+CXXFLAGS = $(CFLAGS) -std=gnu++98 -fno-rtti -fno-exceptions $(GL_FORCE_INC)
 
 HOST_CC  = cc
 
@@ -136,7 +172,7 @@ DC_OBJS = dc/dc_compat.o dc/dc_input.o dc/dc_vmu.o dc/dc_profiler.o \
           dc/vendor/vmu_profiler.o
 
 OBJS0 = $(SRCS:.cpp=.o)
-OBJS  = $(OBJS0:.c=.o) $(DC_OBJS)
+OBJS  = $(OBJS0:.c=.o) $(DC_OBJS) $(GL_OBJS)
 
 # BERO's Makefile linked $(KOS_BASE)/kernel/arch/dreamcast/kernel/startup.o by
 # hand, as KOS 1.1.7 required. Modern KOS pulls startup in through libkallisti
@@ -157,6 +193,16 @@ LIBS    = $(SDL_LIBS) $(CXXLIBS) $(KOS_LIBS)
 # ---------------------------------------------------------------------------
 
 all: $(TARGET)
+
+# Placed after `all` on purpose: a rule defined before it becomes the default
+# goal, which has silently broken this build once already with dc/build_id.h.
+$(CONFIG_STAMP):
+	@echo "build configuration changed -- rebuilding everything"
+	@rm -f $(OBJS) $(OBJS:.o=.d) $(TARGET) .config-*
+	@touch $@
+
+# Every object depends on the configuration it was compiled with.
+$(OBJS): $(CONFIG_STAMP)
 
 dc/build_id.h: BUILD_NUMBER BUILD_NAME
 	@printf '/* generated by Makefile.dc -- do not edit */\n' > $@
@@ -276,6 +322,7 @@ test: $(TARGET) $(DISC)/.stamp
 	echo auto > $(DISC)/AlephOne/AUTOSTART
 	echo pad  > $(DISC)/AlephOne/PADTEST
 	echo on   > $(DISC)/AlephOne/DEBUG
+	rm -f alephone-$(BUILD_TAG)-test.cdi
 	$(MKDCDISC) -e $(TARGET) -d $(DISC)/AlephOne -o alephone-$(BUILD_TAG)-test.cdi \
 		-s $(DISCSERIAL) -n "$(DISCNAME) $(BUILD_TAG)" -a "$(DISCAUTH)" -N
 
@@ -287,6 +334,7 @@ play: $(TARGET) $(DISC)/.stamp
 	rm -f $(DISC)/AlephOne/AUTOSTART $(DISC)/AlephOne/PADTEST $(DISC)/AlephOne/DEBUG $(DISC)/AlephOne/PROFILE
 	echo auto > $(DISC)/AlephOne/AUTOSTART
 	echo on   > $(DISC)/AlephOne/DEBUG
+	rm -f alephone-$(BUILD_TAG)-play.cdi
 	$(MKDCDISC) -e $(TARGET) -d $(DISC)/AlephOne -o alephone-$(BUILD_TAG)-play.cdi \
 		-s $(DISCSERIAL) -n "$(DISCNAME) $(BUILD_TAG)" -a "$(DISCAUTH)" -N
 
@@ -294,6 +342,7 @@ play: $(TARGET) $(DISC)/.stamp
 # console or from GDEMU.
 cdi: $(TARGET) $(DISC)/.stamp
 	rm -f $(DISC)/AlephOne/AUTOSTART $(DISC)/AlephOne/PADTEST $(DISC)/AlephOne/DEBUG $(DISC)/AlephOne/PROFILE
+	rm -f alephone-$(BUILD_TAG).cdi
 	$(MKDCDISC) -e $(TARGET) -d $(DISC)/AlephOne -o alephone-$(BUILD_TAG).cdi \
 		-s $(DISCSERIAL) -n "$(DISCNAME) $(BUILD_TAG)" -a "$(DISCAUTH)"
 
@@ -303,6 +352,7 @@ cdi: $(TARGET) $(DISC)/.stamp
 cdi-debug: $(TARGET) $(DISC)/.stamp
 	rm -f $(DISC)/AlephOne/AUTOSTART $(DISC)/AlephOne/PADTEST $(DISC)/AlephOne/DEBUG $(DISC)/AlephOne/PROFILE
 	echo on > $(DISC)/AlephOne/DEBUG
+	rm -f alephone-$(BUILD_TAG)-debug.cdi
 	$(MKDCDISC) -e $(TARGET) -d $(DISC)/AlephOne -o alephone-$(BUILD_TAG)-debug.cdi \
 		-n "$(DISCNAME) $(BUILD_TAG) dbg" -a "$(DISCAUTH)"
 	rm -f $(DISC)/AlephOne/DEBUG
@@ -313,6 +363,7 @@ cdi-debug: $(TARGET) $(DISC)/.stamp
 cdi-profile: $(TARGET) $(DISC)/.stamp
 	rm -f $(DISC)/AlephOne/AUTOSTART $(DISC)/AlephOne/PADTEST $(DISC)/AlephOne/DEBUG $(DISC)/AlephOne/PROFILE
 	echo on > $(DISC)/AlephOne/PROFILE
+	rm -f alephone-$(BUILD_TAG)-profile.cdi
 	$(MKDCDISC) -e $(TARGET) -d $(DISC)/AlephOne -o alephone-$(BUILD_TAG)-profile.cdi \
 		-n "$(DISCNAME) $(BUILD_TAG) prof" -a "$(DISCAUTH)"
 	rm -f $(DISC)/AlephOne/PROFILE

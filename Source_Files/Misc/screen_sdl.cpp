@@ -44,6 +44,9 @@
 #include "screen_drawing.h"
 #ifdef DC
 #include "dc_plate.h"
+// dc/dc_compat.c -- heap accounting, for answering "who ate the memory".
+extern "C" void dc_heap_trace(int slot, const char *where);
+extern "C" unsigned dc_heap_used(void);
 #endif
 #include "mouse.h"
 
@@ -190,12 +193,36 @@ void enter_screen(void)
 	
 	// Set screen to selected size
 	in_game = true;
+#ifdef DC
+	/*
+	 *	Drop the menu plates before the mode change, not after.
+	 *
+	 *	They are the largest thing this port keeps alive and nothing draws them
+	 *	while a level runs. It matters most under GL: SDL_OPENGLBLIT's shadow
+	 *	surface is 32-bit (GLdc's gl.h does not define GL_VERSION_1_2, so SDL's
+	 *	16-bit branch is compiled out), and SDL_DisplayFormat converts the plates
+	 *	to match -- 1.2MB each instead of 614KB, two of them.
+	 *
+	 *	Before the mode change so the memory is already back when SDL allocates
+	 *	the new video surface, which is the allocation that ran off the end of
+	 *	the 16MB machine.
+	 */
+	dc_heap_trace(40, "enter_screen");
+	dc_plate_release();
+	dc_heap_trace(41, "plates freed");
+#endif
 	change_screen_mode(&screen_mode, true);
 	PrevFullscreen = screen_mode.fullscreen;
+#ifdef DC
+	dc_heap_trace(42, "mode set");
+#endif
 
 #ifdef HAVE_OPENGL
 	if (screen_mode.acceleration == _opengl_acceleration)
 		OGL_StartRun();
+#endif
+#ifdef DC
+	dc_heap_trace(43, "OGL_StartRun");
 #endif
 
 	// Reset modifier key status

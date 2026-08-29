@@ -21,6 +21,8 @@ enum dc_plate_kind {
 void dc_plate_select(int kind);
 int  dc_plate_ready(void);
 void dc_plate_to_screen(void);
+/* Free the cached plates; they reload on the next menu. */
+void dc_plate_release(void);
 bool dc_plate_region(SDL_Surface *dst, const SDL_Rect *dst_rect,
                      int src_x, int src_y);
 
