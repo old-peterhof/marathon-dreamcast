@@ -177,8 +177,14 @@ void OGL_SetDefaults(OGL_ConfigureData& Data)
 	// Flat landscapes. A real one is a single 1024x512 texture, and converting
 	// it costs a 2MB buffer -- which is exactly the allocation that fell off the
 	// end of a 16MB machine. GetFakeLandscape() paints the flat colours instead.
-	Data.Flags = OGL_Flag_FlatStatic | OGL_Flag_Fader | OGL_Flag_Map |
-		OGL_Flag_HUD | OGL_Flag_LiqSeeThru | OGL_Flag_FlatLand;
+	// Depth buffering. Without OGL_Flag_ZBuffer, Z_Buffering stays false and
+	// OGL_StartMain() calls glDisable(GL_DEPTH_TEST) -- the renderer draws in
+	// submission order with no depth test at all, which is why water rendered
+	// through walls and sprites on hardware. The PowerVR is a deferred tile
+	// renderer and resolves depth per tile, so this is close to free here; on
+	// the desktop cards this default was written for it was not.
+	Data.Flags = OGL_Flag_ZBuffer | OGL_Flag_FlatStatic | OGL_Flag_Fader |
+		OGL_Flag_Map | OGL_Flag_HUD | OGL_Flag_LiqSeeThru | OGL_Flag_FlatLand;
 #else
 	Data.Flags = OGL_Flag_FlatStatic | OGL_Flag_Fader | OGL_Flag_Map |
 		OGL_Flag_HUD | OGL_Flag_LiqSeeThru | OGL_Flag_3D_Models;
