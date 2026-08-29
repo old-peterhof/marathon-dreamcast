@@ -1440,6 +1440,38 @@ static bool RenderAsRealWall(polygon_definition& RenderPolygon, bool IsVertical)
 	// Added support for suppressing semitransparency when the void is on one side;
 	// this suppression is optional for those who like weird smearing effects
 	bool IsBlended = TMgr.IsBlended();
+#ifdef DC
+	/*
+	 *	Alpha test, never blending, for world polygons on this hardware.
+	 *
+	 *	The PowerVR is a tile-based deferred renderer and GLdc picks which of
+	 *	its three polygon lists a primitive lands in purely from the blend
+	 *	state (private.h, _glActivePolyList): blending on -> translucent list,
+	 *	alpha test on -> punch-through, neither -> opaque. The hardware then
+	 *	renders ALL opaque, then ALL punch-through, then ALL translucent,
+	 *	whatever order the game submitted them in.
+	 *
+	 *	So glEnable(GL_BLEND) does not merely change how a wall is composited,
+	 *	it moves it into a different pass -- and Aleph One's renderer, which
+	 *	carefully orders liquid surfaces "after the walls and the stuff behind
+	 *	it" (RenderRasterize.cpp:266), has no idea that happened. That is the
+	 *	water bleeding past the lattice gratings: two surfaces that the software
+	 *	renderer would have ordered correctly end up in different hardware
+	 *	passes.
+	 *
+	 *	Punch-through is the right list for Marathon's transparency, which is a
+	 *	stencil rather than a gradient, and GLdc forces GPU_DEPTHCMP_LEQUAL on
+	 *	it (draw.c:728-732) so it depth-tests properly. The cost is hard edges
+	 *	on textures that wanted a soft blend, which on a 640x480 television is
+	 *	not a cost worth having a sorting bug for.
+	 */
+	(void)IsBlended;
+	if (!RenderPolygon.VoidPresent || TMgr.VoidVisible())
+	{
+		glDisable(GL_BLEND);
+		glEnable(GL_ALPHA_TEST);
+	} else {
+#else
 	if (!RenderPolygon.VoidPresent || TMgr.VoidVisible())
 	{
 		if (IsBlended)
@@ -1451,6 +1483,7 @@ static bool RenderAsRealWall(polygon_definition& RenderPolygon, bool IsVertical)
 			glEnable(GL_ALPHA_TEST);
 		}
 	} else {
+#endif
 		// Completely opaque if can't see through void
 		glDisable(GL_BLEND);
 		glDisable(GL_ALPHA_TEST);
@@ -1846,9 +1879,27 @@ bool OGL_RenderWall(polygon_definition& RenderPolygon, bool IsVertical)
 {
 	if (!OGL_IsActive()) return false;
 	
+#ifdef DC
+	// Depth-test walls like everything else.
+	//
+	// Upstream makes them write-only for two stated reasons -- show-through by
+	// big objects behind, and walls behind landscapes -- and BOTH of those are
+	// switched off on Dreamcast: OGL_Setup.cpp clears OGL_Flag_3D_Models, so
+	// there are no big objects, and sets OGL_Flag_FlatLand, so landscapes are
+	// flat colours rather than geometry. GL_ALWAYS therefore buys nothing here
+	// and costs correct occlusion.
+	//
+	// What it cost, specifically: liquid surfaces are polygons and come through
+	// this function, so with GL_ALWAYS they overwrote whatever was drawn before
+	// them regardless of distance. Water rendered through the wall in front of
+	// it, but only from some angles -- which is submission order changing with
+	// the view, and is exactly what "sometimes" looks like.
+	glDepthFunc(GL_LEQUAL);
+#else
 	// Make write-only, so as to avoid show-through by big objects behind,
 	// and also by walls behind landscapes
 	glDepthFunc(GL_ALWAYS);
+#endif
 	switch(RenderPolygon.transfer_mode)
 	{
 	case _textured_transfer:
@@ -1994,6 +2045,17 @@ bool OGL_RenderSprite(rectangle_definition& RenderRectangle)
 		SetProjectionType(Projection_OpenGL_Eye);
 	else if (IsWeaponsInHand)
 		SetProjectionType(Projection_Screen);
+
+#ifdef DC
+	// The weapon in your hands is a screen-space overlay and must never be
+	// occluded by the world. It is drawn under Projection_Screen but into the
+	// same depth buffer the world just filled, so once walls started depth
+	// testing (see OGL_RenderWall) a liquid surface at a nearer depth began
+	// rejecting it -- water drawn over the gun. Nothing in the world should
+	// ever win against it, so take it out of the test entirely.
+	if (IsWeaponsInHand)
+		glDisable(GL_DEPTH_TEST);
+#endif
 	
 	bool Suppress_Z_Buffer = false;
 	bool ExternallyLit = false;
@@ -2078,7 +2140,13 @@ bool OGL_RenderSprite(rectangle_definition& RenderRectangle)
 			glDrawArrays(GL_POLYGON,0,4);
 		}
 	}
-		
+
+#ifdef DC
+	// Put depth testing back for the rest of the frame; see the disable above.
+	if (IsWeaponsInHand && Z_Buffering)
+		glEnable(GL_DEPTH_TEST);
+#endif
+
 	return true;
 }
 

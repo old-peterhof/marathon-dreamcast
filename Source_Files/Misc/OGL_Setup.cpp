@@ -183,8 +183,16 @@ void OGL_SetDefaults(OGL_ConfigureData& Data)
 	// through walls and sprites on hardware. The PowerVR is a deferred tile
 	// renderer and resolves depth per tile, so this is close to free here; on
 	// the desktop cards this default was written for it was not.
+	// OGL_Flag_LiqSeeThru dropped as an experiment. With it set,
+	// RenderRasterize.cpp:268 draws the liquid surface as a separate late pass,
+	// "after the walls and the stuff behind it and before the stuff before it"
+	// -- a painter's ordering. The GL renderer discards the software renderer's
+	// per-polygon clipping windows entirely (glScissor is only ever used for the
+	// view bounds, the HUD and the overhead map), so it depends on the depth
+	// buffer rather than on that ordering. Without the flag the liquid goes
+	// through the ordinary wall flow instead.
 	Data.Flags = OGL_Flag_ZBuffer | OGL_Flag_FlatStatic | OGL_Flag_Fader |
-		OGL_Flag_Map | OGL_Flag_HUD | OGL_Flag_LiqSeeThru | OGL_Flag_FlatLand;
+		OGL_Flag_Map | OGL_Flag_HUD | OGL_Flag_FlatLand;
 #else
 	Data.Flags = OGL_Flag_FlatStatic | OGL_Flag_Fader | OGL_Flag_Map |
 		OGL_Flag_HUD | OGL_Flag_LiqSeeThru | OGL_Flag_3D_Models;
