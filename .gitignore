@@ -1,4 +1,6 @@
 *.o
+*.d
+.config-*
 *.elf
 *.cdi
 *.gdi

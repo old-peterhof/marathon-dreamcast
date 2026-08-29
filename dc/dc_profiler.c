@@ -20,6 +20,7 @@
 
 #include <unistd.h>
 #include <stddef.h>
+#include <stdint.h>
 #include <kos/thread.h>
 #include <arch/timer.h>
 
@@ -40,12 +41,12 @@ static int profiling = 0;
  *	number being read off a VMU screen.
  */
 static volatile unsigned dc_frames = 0;
-static uint64 dc_last_ms = 0;
+static uint64_t dc_last_ms = 0;
 static float dc_fps = 0.0f;
 
 static void dc_update_fps(vmu_profiler_measurement_t *m)
 {
-	uint64 now = timer_ms_gettime64();
+	uint64_t now = timer_ms_gettime64();
 	unsigned frames = dc_frames;
 
 	dc_frames = 0;
