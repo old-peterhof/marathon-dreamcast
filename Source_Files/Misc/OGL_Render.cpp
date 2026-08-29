@@ -1643,12 +1643,21 @@ static bool RenderAsRealWall(polygon_definition& RenderPolygon, bool IsVertical)
 		glDisableClientState(GL_COLOR_ARRAY);
 	}
 	else
+	{
 		// Go!
 		// Don't care about triangulation here, because the polygon never got split
-		#ifdef DC
-			{ extern int dc_gl_polys; dc_gl_polys++; }
-		#endif
+		//
+		// The braces are load-bearing. Without them the #ifdef DC counter below
+		// became the entire else body, and glDrawArrays ran unconditionally --
+		// so a polygon that HAD been split was drawn once correctly by
+		// glDrawElements above and then a second time as a GL_POLYGON over the
+		// same vertices, with GL_COLOR_ARRAY already switched off, i.e. flat.
+		// A diagnostic counter silently changed the control flow.
+#ifdef DC
+		{ extern int dc_gl_polys; dc_gl_polys++; }
+#endif
 		glDrawArrays(GL_POLYGON,0,NumVertices);
+	}
 
 #ifdef UNUSED
 #ifdef GL_ARB_multitexture

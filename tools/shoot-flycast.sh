@@ -27,6 +27,12 @@ if ! pgrep -x Flycast >/dev/null; then
 	exit 1
 fi
 
+# Raise it first. screencapture -R grabs a screen region, not a window, so a
+# Flycast sitting behind the terminal yields a picture of the terminal -- which
+# looks like a black frame and reads as "the renderer drew nothing".
+osascript -e 'tell application "System Events" to set frontmost of process "Flycast" to true' >/dev/null 2>&1 || true
+sleep 1
+
 GEOM=$(osascript -e 'tell application "System Events" to tell process "Flycast" to get {position, size} of window 1')
 IFS=', ' read -r WX WY WW WH <<< "$GEOM"
 
