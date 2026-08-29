@@ -65,3 +65,4 @@ to the engine clamp, and the VMU Profiler. Git history has the detail.
 | b67 | legibility | af73efa | Contrast lift on item and label; held-direction repeat in menus |
 | b68 | maple-bound | af73efa | Bounded maple scan: rumble pack no longer hangs boot |
 | b69 | sound-freeze | af73efa | Audio device opened once and kept: Stereo and Quality apply next launch. Controls panel clear of the explainer |
+| b70 | review-fixes | 304b180 | Save screen X no longer overwrites; Exchange checks its flush; unplugging the pad releases held keys |

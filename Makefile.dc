@@ -165,7 +165,12 @@ dc/build_id.h: BUILD_NUMBER BUILD_NAME
 	@printf '#define DC_BUILD_HASH "%s"\n'  "$(BUILD_HASH)" >> $@
 	@printf '#define DC_BUILD_TAG  "b%s %s"\n' "$(BUILD_NUM)" "$(BUILD_SLUG)" >> $@
 
+# Every object whose source includes build_id.h, or a clean -j build races the
+# generator and an incremental one after new-build.sh draws a stale number on
+# the menu. The .d files cover this once they exist; a clean build has none.
 $(MI)/shell.o: dc/build_id.h
+$(MI)/dc_screen.o: dc/build_id.h
+$(MI)/dc_mainmenu.o: dc/build_id.h
 dc/dc_profiler.o: dc/build_id.h
 
 $(TARGET): $(OBJS)
