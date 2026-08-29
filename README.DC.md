@@ -447,10 +447,42 @@ the two-component reader, which sets z = 0. `OGL_Render.cpp` asks for
 vertex collapsed onto one plane and the world rendered black while sprites drew
 perfectly.
 
-Still open there: memory is tight (the heap sits near 12.5MB of 16MB), skies are
-flat colours because a real one needs a 2MB conversion buffer, the static effect
-is gone because it needs `glLogicOp`, and none of it has been measured on
-hardware. The work is on the branch history from b33 to b36.
+**The GL work was lost and has been restored.** b32 reverted the tree wholesale
+to b31 to get back to a known-good hardware baseline, and took b33-b36 with it --
+`README.DC.md` went on describing a renderer that was no longer in the branch.
+Only `dc/dc_gl_compat.h` survived, because nothing else referenced it. It is
+recovered from `f25083d` on the `gl-renderer` branch.
+
+**What blocks it now is `SDL_OPENGLBLIT`, and the number is exact.** SDL keeps a
+full-screen shadow surface for 2D drawn over a GL scene, and chooses 16-bit for
+it only inside `#ifdef GL_VERSION_1_2` (`SDL_video.c:825`). GLdc's `GL/gl.h` does
+not define that macro, so SDL's 16-bit branch is compiled out and the surface is
+**32-bit: 640x480x4 = 1,228,800 bytes**. A trace of the mode set says so
+directly:
+
+    mode 0: 640x480x16 -> surf 640x480x32
+
+That costs twice. The surface itself is 1.2MB instead of 614KB, and
+`SDL_DisplayFormat` matches the display -- so each cached menu plate is 1.2MB
+rather than 614KB, and there are two. Roughly 1.8MB of a 16MB machine, spent on
+a format nothing wants.
+
+**The fix is one macro, in the SDL port rather than in this tree.** GLdc supports
+`GL_UNSIGNED_SHORT_5_6_5` natively -- it is the PowerVR's own texture format,
+`texture.c:380` -- so SDL's 16-bit path would work, upload in the hardware's
+format instead of converting 32-bit every frame, and leave the video surface at
+16 bits, which is what every drawing routine in `dc/` and `Source_Files/Misc/dc_*`
+already assumes. Rebuilding the SDL kos-port with `-DGL_VERSION_1_2` is the
+experiment; it has not been done, because it patches the toolchain and this port
+depends on that install being reproducible.
+
+Meanwhile `dc_plate_release()` frees the menu plates on the way into a level and
+suspends further loads until it is left, which is worth up to 1.2MB in GL builds
+and is gated to them.
+
+Still open: skies are flat colours because a real one needs a 2MB conversion
+buffer, the static effect is gone because it needs `glLogicOp`, and none of it
+has been measured on hardware.
 
 ## Known gaps
 

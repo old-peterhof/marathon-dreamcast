@@ -23,6 +23,8 @@ int  dc_plate_ready(void);
 void dc_plate_to_screen(void);
 /* Free the cached plates; they reload on the next menu. */
 void dc_plate_release(void);
+/* Allow plate loading again after a level is left. */
+void dc_plate_resume(void);
 bool dc_plate_region(SDL_Surface *dst, const SDL_Rect *dst_rect,
                      int src_x, int src_y);
 

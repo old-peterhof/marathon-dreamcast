@@ -162,7 +162,19 @@ unsigned dc_heap_used(void)
 	return now - base;
 }
 
+/*
+ *	Report the heap top and what is left below the 16MB ceiling.
+ *
+ *	dc_heap_used() is relative to its own first call, which makes it useless for
+ *	"how close are we to the edge" -- the question every GL memory failure asks.
+ *	Main RAM ends at _arch_mem_top, 0x8d000000, and sbrk(0) is the current top,
+ *	so the difference is the honest headroom.
+ */
 void dc_heap_trace(int slot, const char *where)
 {
-	dc_trace(slot, "heap: %-18s %u KB", where, dc_heap_used() / 1024);
+	extern void *sbrk(int);
+	unsigned top  = (unsigned)(uintptr_t)sbrk(0);
+	unsigned left = (top < 0x8d000000u) ? (0x8d000000u - top) : 0u;
+
+	dc_trace(slot, "heap %-16s top=%08x free=%uKB", where, top, left / 1024);
 }

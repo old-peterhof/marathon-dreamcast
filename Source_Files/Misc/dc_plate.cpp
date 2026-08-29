@@ -42,6 +42,7 @@ extern "C" void dc_blit_rows(void *dst, const void *src, int bytes,
 static SDL_Surface *plate[2];		/* indexed by dc_plate_kind */
 static int plate_tried[2];
 static int plate_kind = DC_PLATE_PLAIN;
+static int plate_suspended = 0;
 
 /*
  *	Load once and keep. The file is 24-bit and the display is 16, so it is
@@ -60,6 +61,19 @@ static SDL_Surface *load(int kind)
 	SDL_Surface *raw, *conv;
 
 	if (kind < 0 || kind > 1)
+		return NULL;
+
+	/*
+	 *	Refuse to load while a level is running. Freeing the plates on the way in
+	 *	is not enough on its own: something repaints through the plate during the
+	 *	transition and pulled a fresh 1.2MB copy straight back in, which is
+	 *	exactly the memory the GL renderer had just been given.
+	 *
+	 *	Callers all cope with a NULL plate already -- it is the same path a
+	 *	missing file takes, and they fall back to the flat fill nobody sees
+	 *	because the world is drawn over it.
+	 */
+	if (plate_suspended)
 		return NULL;
 
 	if (plate[kind] || plate_tried[kind])
@@ -111,6 +125,8 @@ void dc_plate_select(int kind)
 void dc_plate_release(void)
 {
 	int k;
+
+	plate_suspended = 1;
 
 	for (k = 0; k < 2; k++) {
 		if (plate[k]) {
@@ -223,3 +239,12 @@ bool dc_plate_region(SDL_Surface *dst, const SDL_Rect *dst_rect,
 }
 
 #endif	/* DC */
+
+/*
+ *	Allow the plates back. Called when a level is left, so the menus get their
+ *	artwork again; the next dc_plate_to_screen reloads from the disc.
+ */
+void dc_plate_resume(void)
+{
+	plate_suspended = 0;
+}

@@ -193,9 +193,13 @@ void enter_screen(void)
 	
 	// Set screen to selected size
 	in_game = true;
-#ifdef DC
+#if defined(DC) && defined(HAVE_OPENGL)
 	/*
 	 *	Drop the menu plates before the mode change, not after.
+	 *
+	 *	GL builds only. The software build has the room, and suspending the
+	 *	plates there would cost Preferences-from-the-pause-menu its background
+	 *	for nothing.
 	 *
 	 *	They are the largest thing this port keeps alive and nothing draws them
 	 *	while a level runs. It matters most under GL: SDL_OPENGLBLIT's shadow
@@ -238,6 +242,11 @@ void exit_screen(void)
 {
 	// Return to 640x480 without OpenGL
 	in_game = false;
+#if defined(DC) && defined(HAVE_OPENGL)
+	// The menus want their artwork back; enter_screen suspended it to get the
+	// memory for the renderer.
+	dc_plate_resume();
+#endif
 	change_screen_mode(640, 480, bit_depth, true);
 
 #ifdef HAVE_OPENGL
@@ -335,6 +344,39 @@ static void change_screen_mode(int width, int height, int depth, bool nogl)
 		flags |= SDL_HWSURFACE | SDL_HWPALETTE;
 #else
 	flags |= SDL_HWSURFACE | SDL_HWPALETTE;
+#endif
+#if defined(DC) && defined(HAVE_OPENGL)
+	/*
+	 *	Skip a mode set that would change nothing.
+	 *
+	 *	SDL's Dreamcast driver tears the PowerVR down and brings it back on every
+	 *	SDL_SetVideoMode: DC_SetVideoMode calls DC_VideoQuit when sdl_dc_pvr_inited,
+	 *	then vid_set_mode, then glKosInit again. Entering a level asks for the mode
+	 *	it is already in -- 640x480x16 with GL -- and that round trip left
+	 *	pvr_state.valid false, so the first pvr_wait_ready of the first frame
+	 *	asserted in pvr_scene.c:377.
+	 *
+	 *	It also throws away and reallocates the 1.2MB OPENGLBLIT shadow surface
+	 *	for no reason, which is most of the headroom on this machine.
+	 *
+	 *	Compared on what was *asked for*, not on main_surface: we request 16-bit
+	 *	and SDL hands back 32, so comparing the surface never matches.
+	 */
+	{
+		static int last_w = -1, last_h = -1, last_d = -1;
+		static uint32 last_flags = 0;
+		static bool have_last = false;
+
+		if (have_last && main_surface &&
+		    last_w == width && last_h == height && last_d == depth &&
+		    last_flags == flags) {
+			dc_trace(0, "mode unchanged %dx%dx%d -- not resetting", width, height, depth);
+			return;
+		}
+
+		last_w = width; last_h = height; last_d = depth;
+		last_flags = flags; have_last = true;
+	}
 #endif
 	main_surface = SDL_SetVideoMode(width, height, depth, flags);
 	if (main_surface == NULL) {
