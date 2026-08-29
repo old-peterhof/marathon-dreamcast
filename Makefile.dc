@@ -327,6 +327,7 @@ test: $(TARGET) $(DISC)/.stamp
 	echo auto > $(DISC)/AlephOne/AUTOSTART
 	echo pad  > $(DISC)/AlephOne/PADTEST
 	echo on   > $(DISC)/AlephOne/DEBUG
+	rm -f alephone-$(BUILD_TAG)-test.cdi
 	$(MKDCDISC) -e $(TARGET) -d $(DISC)/AlephOne -o alephone-$(BUILD_TAG)-test.cdi \
 		-s $(DISCSERIAL) -n "$(DISCNAME) $(BUILD_TAG)" -a "$(DISCAUTH)" -N
 
@@ -338,6 +339,7 @@ play: $(TARGET) $(DISC)/.stamp
 	rm -f $(DISC)/AlephOne/AUTOSTART $(DISC)/AlephOne/PADTEST $(DISC)/AlephOne/DEBUG $(DISC)/AlephOne/PROFILE $(DISC)/AlephOne/AUTOKEY
 	echo auto > $(DISC)/AlephOne/AUTOSTART
 	echo on   > $(DISC)/AlephOne/DEBUG
+	rm -f alephone-$(BUILD_TAG)-play.cdi
 	$(MKDCDISC) -e $(TARGET) -d $(DISC)/AlephOne -o alephone-$(BUILD_TAG)-play.cdi \
 		-s $(DISCSERIAL) -n "$(DISCNAME) $(BUILD_TAG)" -a "$(DISCAUTH)" -N
 
@@ -350,6 +352,7 @@ loadtest: $(TARGET) $(DISC)/.stamp
 	echo load > $(DISC)/AlephOne/AUTOSTART
 	echo on   > $(DISC)/AlephOne/DEBUG
 	echo on   > $(DISC)/AlephOne/AUTOKEY
+	rm -f alephone-$(BUILD_TAG)-loadtest.cdi
 	$(MKDCDISC) -e $(TARGET) -d $(DISC)/AlephOne -o alephone-$(BUILD_TAG)-loadtest.cdi \
 		-s $(DISCSERIAL) -n "$(DISCNAME) $(BUILD_TAG)" -a "$(DISCAUTH)" -N
 
@@ -360,6 +363,7 @@ loadtest: $(TARGET) $(DISC)/.stamp
 manual: $(TARGET) $(DISC)/.stamp
 	rm -f $(DISC)/AlephOne/AUTOSTART $(DISC)/AlephOne/PADTEST $(DISC)/AlephOne/DEBUG $(DISC)/AlephOne/PROFILE $(DISC)/AlephOne/AUTOKEY
 	echo on > $(DISC)/AlephOne/DEBUG
+	rm -f alephone-$(BUILD_TAG)-manual.cdi
 	$(MKDCDISC) -e $(TARGET) -d $(DISC)/AlephOne -o alephone-$(BUILD_TAG)-manual.cdi \
 		-s $(DISCSERIAL) -n "$(DISCNAME) $(BUILD_TAG)" -a "$(DISCAUTH)" -N
 
@@ -367,6 +371,7 @@ manual: $(TARGET) $(DISC)/.stamp
 # console or from GDEMU.
 cdi: $(TARGET) $(DISC)/.stamp
 	rm -f $(DISC)/AlephOne/AUTOSTART $(DISC)/AlephOne/PADTEST $(DISC)/AlephOne/DEBUG $(DISC)/AlephOne/PROFILE $(DISC)/AlephOne/AUTOKEY
+	rm -f alephone-$(BUILD_TAG).cdi
 	$(MKDCDISC) -e $(TARGET) -d $(DISC)/AlephOne -o alephone-$(BUILD_TAG).cdi \
 		-s $(DISCSERIAL) -n "$(DISCNAME) $(BUILD_TAG)" -a "$(DISCAUTH)"
 
@@ -376,6 +381,7 @@ cdi: $(TARGET) $(DISC)/.stamp
 cdi-debug: $(TARGET) $(DISC)/.stamp
 	rm -f $(DISC)/AlephOne/AUTOSTART $(DISC)/AlephOne/PADTEST $(DISC)/AlephOne/DEBUG $(DISC)/AlephOne/PROFILE $(DISC)/AlephOne/AUTOKEY
 	echo on > $(DISC)/AlephOne/DEBUG
+	rm -f alephone-$(BUILD_TAG)-debug.cdi
 	$(MKDCDISC) -e $(TARGET) -d $(DISC)/AlephOne -o alephone-$(BUILD_TAG)-debug.cdi \
 		-n "$(DISCNAME) $(BUILD_TAG) dbg" -a "$(DISCAUTH)"
 	rm -f $(DISC)/AlephOne/DEBUG
@@ -386,6 +392,7 @@ cdi-debug: $(TARGET) $(DISC)/.stamp
 cdi-profile: $(TARGET) $(DISC)/.stamp
 	rm -f $(DISC)/AlephOne/AUTOSTART $(DISC)/AlephOne/PADTEST $(DISC)/AlephOne/DEBUG $(DISC)/AlephOne/PROFILE $(DISC)/AlephOne/AUTOKEY
 	echo on > $(DISC)/AlephOne/PROFILE $(DISC)/AlephOne/AUTOKEY
+	rm -f alephone-$(BUILD_TAG)-profile.cdi
 	$(MKDCDISC) -e $(TARGET) -d $(DISC)/AlephOne -o alephone-$(BUILD_TAG)-profile.cdi \
 		-n "$(DISCNAME) $(BUILD_TAG) prof" -a "$(DISCAUTH)"
 	rm -f $(DISC)/AlephOne/PROFILE $(DISC)/AlephOne/AUTOKEY
