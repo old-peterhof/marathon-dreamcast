@@ -219,18 +219,16 @@ iso9660 driver uses dynamic handles and has no such constant.
 
 ## Known gaps
 
-- **Nothing here has run on real hardware.** Everything was developed and tested
-  under Flycast. `./build.sh cdi` produces the padded image for a console.
-- **Framerate on hardware is unmeasured.** The software renderer holds a steady
-  29–30 fps under Flycast, but that is the engine's own tick cap and Flycast's
-  SH-4 dynarec does not throttle to 200MHz. This says nothing trustworthy about
-  a real Dreamcast.
-- **The PowerVR path is a renderer rewrite, not a port.** `GL=1` exists in
-  `Makefile.dc` but does not build. Every entry point `OGL_Render.cpp` and
-  `FontHandler.cpp` need beyond GLdc's subset is missing, and while most
-  substitute trivially, the five clip planes used for portal and liquid-surface
-  clipping have no equivalent — emulating them means clipping polygons in
-  software before submission. The Makefile comment lists the full set.
+- **The PowerVR renderer works, and it is fast.** `GL=1` builds, draws the world
+  and runs at a smooth framerate on a real console — which is the measurement
+  `BACKLOG.md` had called the only one that matters. The old note here said the
+  path was "a renderer rewrite, not a port", blocked on clip planes. That was
+  wrong twice over: all six `glClipPlane` calls sit in `RenderModelSetup()`,
+  which stock Marathon 2 never enters, and the one real clip-plane caller is the
+  motion sensor's blip clipping in `HUDRenderer_OGL.cpp`. See "The PowerVR is not
+  a GL card" below for what actually needed doing.
+- **The interface does not work under GL yet.** GL is gameplay-only; the menus
+  need a 2D surface the PowerVR path does not provide. `BUGS.md` has the detail.
 - **The controller mapping has not been exercised with a real pad.** Detection is
   confirmed and the whole chain from binding table to the player turning is
   verified via the `PADTEST` self-test, but Flycast would not route host input to
@@ -242,6 +240,65 @@ iso9660 driver uses dynamic handles and has no such constant.
 - `-fpermissive` and `-fno-strict-aliasing` are load-bearing. The renderer
   type-puns freely and the 2002 code leans on conversions the modern front end
   rejects.
+
+## The PowerVR is not a GL card
+
+The single most useful thing to understand before touching the hardware
+renderer, because it invalidates an assumption Aleph One is built on.
+
+The PowerVR2 is a tile-based deferred renderer. It does not draw polygons in the
+order you hand them over. It sorts them into three lists — opaque,
+punch-through, translucent — renders **all** of the first, then **all** of the
+second, then **all** of the third, and GLdc decides which list a polygon lands
+in from nothing but the blend state (`private.h`, `_glActivePolyList`):
+
+    blending enabled     -> TR_LIST   translucent
+    alpha test enabled   -> PT_LIST   punch-through
+    neither              -> OP_LIST   opaque
+
+So `glEnable(GL_BLEND)` is not a compositing hint here. It moves the polygon into
+a different rendering pass.
+
+That matters because Aleph One's renderer sequences its output deliberately.
+`RenderRasterize.cpp:266` renders the liquid surface "after the walls and the
+stuff behind it and before the stuff before it" — a painter's ordering, correct
+for a software rasteriser and for a desktop GL card that honours submission
+order. On this hardware the list assignment happens underneath all of it and the
+ordering is simply discarded.
+
+The symptom was water bleeding through walls: worst close up, worse at oblique
+angles, correct at distance — which is what it looks like when surfaces that
+should have been sequenced together land in different passes and more of them
+share a tile. It survived two rounds of depth-flag changes because it was never
+a depth bug.
+
+**World polygons therefore always take alpha test on Dreamcast**
+(`OGL_Render.cpp`, the `#ifdef DC` in `RenderAsRealWall`), so everything lands in
+punch-through, where GLdc forces `GPU_DEPTHCMP_LEQUAL` (`draw.c:728-732`) and
+depth works properly. Marathon's transparency is a stencil rather than a
+gradient, so punch-through is the right list for it anyway. The cost is hard
+edges where a texture wanted a soft blend, which on a 640x480 television is not
+worth a sorting bug. Verified by driving it: alpha-textured gratings keep their
+cut-outs.
+
+**The general rule: on this hardware, any render-ordering assumption in Aleph
+One is void.** If something composites wrongly, look at which list it is going
+into before looking at anything else.
+
+### Two things that go with it
+
+**The depth buffer has to be asked for.** `OGL_Setup.cpp` builds the Dreamcast
+default flags, and without `OGL_Flag_ZBuffer` in that set `Z_Buffering` stays
+false and `OGL_StartMain()` calls `glDisable(GL_DEPTH_TEST)` — no depth testing
+at all, everything painted in submission order. Upstream defaults it off because
+it was written for cards where depth cost real bandwidth; the PowerVR resolves
+depth per tile in hardware, so here it is close to free.
+
+**The weapon in your hands must not be depth-tested.** It is a screen-space
+overlay drawn under `Projection_Screen` but into the same depth buffer the world
+just filled. Once walls started depth-testing, a liquid surface at a nearer
+depth began rejecting it and water drew over the gun. It is taken out of the
+test entirely in `OGL_RenderSprite`.
 
 ## Working on this code
 
