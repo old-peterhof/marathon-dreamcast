@@ -60,6 +60,83 @@ Worth deciding early whether this is a reskin of the existing widget set or a
 parallel controller-first set of screens that reuses the theme art. The second
 is more work but avoids fighting a widget system built around a pointer.
 
+## GL build: bring it up to parity with b71 — the work list
+
+Max's list, captured 2026-08-29 for a session starting that evening. Ordered by
+what is understood versus what needs investigating first.
+
+### 1. Per-texture-type resolution — motion tracker blur, sprite sharpness
+
+**This is the well-understood one and should go first.** `OGL_Setup.cpp:146`
+loops over every texture type and sets `Resolution = 1` (half) for all of them.
+But `TxtrConfigList` is indexed per type — `OGL_Txtr_Wall`,
+`OGL_Txtr_Landscape`, `OGL_Txtr_Inhabitant`, `OGL_Txtr_WeaponsInHand` — so the
+resolution can differ per type, which is exactly what is wanted: sprites and the
+weapon at full resolution, walls left at half.
+
+Watch the memory: half resolution is one of the four things b36 did to make the
+GL build fit in 16MB, so raising it costs real space. `dc_heap_trace` reports the
+headroom; there was about 2MB free at level start. Raise sprites first, measure,
+then decide about the rest.
+
+Note there is no `OGL_Txtr_Interface` in that enum. The motion tracker is drawn
+by `HUDRenderer_OGL.cpp` from the interface collection (collection 0, which
+`FindColorTables` special-cases to use the CLUT directly), so find out which type
+it actually resolves to before assuming this fixes the blur.
+
+### 2. Sky textures are flat colours
+
+`OGL_Flag_FlatLand` is set in the Dreamcast defaults. b36 set it because a real
+landscape is a single 1024x512 texture and converting it costs a 2MB
+intermediate — the allocation that fell off the end of the machine. So this is a
+memory problem, not a rendering one, and the fix is to convert the sky without
+the 2MB buffer (stream it, or convert in place) rather than to clear the flag and
+hope. `GetFakeLandscape()` is what currently paints the flat colours.
+
+### 3. Terminal screens do not render
+
+Terminals go through the software path: `screen_sdl.cpp` only calls
+`update_screen` under GL when `world_view->terminal_mode_active` or the overhead
+map is up. That path needs a 2D surface, which the GL configuration does not
+have — so this is the same underlying problem as the interface, below, and
+probably wants solving once for both.
+
+### 4. Controller-friendly menus and the pause menu
+
+The b57-b67 interface layer. **Blocked on the GL/UI surface tension recorded in
+BUGS.md**, not on the porting work: the PowerVR path wants no 2D surface and the
+interface needs one. Options are written up there. Do not start this before that
+decision is settled, or it will be the magenta hunt again.
+
+Everything else from those builds that does *not* need a surface is already on
+`gl-forward` — see the step commits.
+
+### 5. Load times
+
+Builds before b71 cut them substantially. Find the commits
+(`git log dc-rebuild --oneline` around the relevant builds) and check what they
+touched; if the changes are in wad reading or collection loading they are
+renderer-independent and can come across cleanly. README.DC.md's "Load times"
+section has the per-stage measurements to compare against — chapter screen
+22.5s, `load_collections` 7.7s, monster sounds 13.7s.
+
+### 6. Shadows and lighting do not match the software renderer
+
+Least understood of the list; investigate before planning. Aleph One's GL
+renderer shades per-vertex through `FindShadingColor` into
+`ExtendedVertexList[].Color`, which is a different model from the software
+renderer's shading tables, so some difference is expected — the question is how
+much of what Max is seeing is that versus something wrong. Note the shim
+synthesises a vertex colour array when the game does not supply one
+(`dc_gl_compat.h`), because GLdc fills a disabled colour attribute with white;
+that is worth checking first.
+
+### Method
+
+The bisect-from-working discipline in the plan file applies to all of it: one
+change per step, look at every build with `tools/shoot-flycast.sh`, and use
+`./build.sh GL=1 play` when a human needs to drive.
+
 ## PowerVR / hardware-accelerated renderer
 
 **It renders.** Textured walls, floors, ceilings, sprites and the HUD, on the
