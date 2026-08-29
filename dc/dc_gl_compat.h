@@ -22,20 +22,37 @@
  *	     that one effect and nothing else.
  *
  *	  4. Clip planes -- the interesting one, because this is what the port has
- *	     recorded as the blocker for a year of build notes, and it is not.
+ *	     recorded as the blocker for a year of build notes, and it is not. It is
+ *	     also where this file was wrong about its own subject: see below.
  *
  *	CLIP PLANES
  *
- *	All six glClipPlane calls in OGL_Render.cpp sit inside RenderModelSetup(),
- *	which is reached only when rectangle_definition::ModelPtr is not null
- *	(OGL_Render.cpp:1829). That is the external-3D-model path: Aleph One can
- *	replace a sprite with a real mesh when an MML <model> declaration says to.
- *	Stock Marathon 2 declares none, and this disc ships none, so the function is
- *	never entered and the clip planes are never set.
+ *	Six of the seven glClipPlane calls are in OGL_Render.cpp, inside
+ *	RenderModelSetup(), reached only when rectangle_definition::ModelPtr is not
+ *	null -- the external-3D-model path. Stock Marathon 2 declares no models and
+ *	this disc ships none, so that function is never entered.
  *
- *	So they are stubbed, and the stub traces the first time it is called. If a
- *	model ever does appear the log will say so rather than the picture quietly
- *	going wrong.
+ *	THE SEVENTH IS NOT, AND THIS FILE USED TO SAY THERE WERE ONLY SIX.
+ *
+ *	HUDRenderer_OGL.cpp:365, in HUD_OGL_Class::SetClipPlane, clips motion sensor
+ *	blips to the circular sensor area -- a half-plane tangent to the sensor
+ *	circle, set per blip. That runs on the HUD path, every frame a blip is near
+ *	the edge, and it is what actually fires the trace below.
+ *
+ *	The old trace text said "a model is being drawn", which is wrong and cost a
+ *	session: it sends you into RenderPlaceObjs and OGL_GetModelData looking for a
+ *	non-null ModelPtr that was never there. Verified by closing the model call
+ *	site entirely under #ifdef DC -- the trace still fired.
+ *
+ *	WHAT STUBBING THIS COSTS, CONCRETELY: motion sensor blips are not clipped to
+ *	the sensor, so a blip near the rim draws outside it, over the rest of the
+ *	HUD. GLdc has glScissor, which could bound the blips to the sensor's
+ *	rectangle -- not the circle, but far better than nothing. Not attempted here
+ *	because it cannot be checked without looking at the screen.
+ *
+ *	DisableClipPlane() calls glDisable(GL_CLIP_PLANE0), which GLdc rejects with
+ *	GL_INVALID_VALUE. That is the error printed once at startup; harmless, since
+ *	it only sets the GL error flag.
  *
  *	Were they needed, they still would not require the "renderer rewrite" the old
  *	note claimed. Planes 0 to 3 each pass through the eye and one screen-axis-
@@ -197,7 +214,7 @@ static inline void glClipPlane(GLenum plane, const GLdouble *equation)
 
 	if (!warned) {
 		warned = 1;
-		dc_trace(31, "gl: clip plane %d requested -- a model is being drawn",
+		dc_trace(31, "gl: clip plane %d stubbed (motion sensor blip clipping)",
 		         (int)(plane - GL_CLIP_PLANE0));
 	}
 }

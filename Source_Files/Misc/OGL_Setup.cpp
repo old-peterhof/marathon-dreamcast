@@ -332,7 +332,9 @@ static vector<int16> MdlHash[NUMBER_OF_COLLECTIONS];
 
 // Hash-table size and function
 const int MdlHashSize = 1 << 8;
-const int MdlHashMask = TOHashSize - 1;
+const int MdlHashMask = MdlHashSize - 1;	// was TOHashSize - 1: a different
+					// table's size. Harmless only because both are 1<<8 and
+					// MdlHashFunc casts to uint8 anyway.
 inline uint8 MdlHashFunc(short Sequence)
 {
 	// E-Z
@@ -356,6 +358,17 @@ static void MdlDeleteAll()
 OGL_ModelData *OGL_GetModelData(short Collection, short Sequence)
 {
 	if (!OGL_IsActive()) return NULL;
+
+	/*
+	 *	Honour the 3D-models flag here, not only where models are loaded.
+	 *
+	 *	Turning models off in Preferences should mean none are drawn; the flag was
+	 *	consulted when building the model list and never when reading it. On
+	 *	Dreamcast shell_sdl.cpp clears it at startup, because the model path costs
+	 *	memory this machine does not have.
+	 */
+	if (!TEST_FLAG(Get_OGL_ConfigureData().Flags, OGL_Flag_3D_Models))
+		return NULL;
 	
 	// Initialize the hash table if necessary
 	if (MdlHash[Collection].empty())

@@ -197,12 +197,32 @@ setupfail=0, vecfail=0, geometry demonstrably submitted, screen still black.
    it was 262,144 bytes, which is exactly 256x256x4 -- the size of the texture
    SDL creates for its OPENGLBLIT compositing. Suspect that path, and note that
    the `-DGL_VERSION_1_2` lever above would halve it.
-3. **`gl: clip plane 0 requested -- a model is being drawn` fires.** The shim
-   stubs clip planes on the reasoning that stock Marathon 2 declares no models
-   and `RenderModelSetup()` is never entered. The trace says otherwise, so
-   either the reasoning is wrong or the trace is firing from the `glDisable`
-   path rather than `glClipPlane`. Worth ten minutes before trusting the stub.
-4. Memory is tight. Peak fits now -- flat landscapes, half-resolution 16-bit
+3. **Motion sensor blips are not clipped in GL builds.** `dc_gl_compat.h` stubs
+   `glClipPlane`, on the stated grounds that all six calls sit inside
+   `RenderModelSetup()` and stock Marathon 2 declares no models.
+
+   **There are seven calls, not six.** `HUDRenderer_OGL.cpp:365`, in
+   `HUD_OGL_Class::SetClipPlane`, sets a half-plane tangent to the motion
+   sensor's circle to clip each blip. It runs on the HUD path, every frame a
+   blip is near the rim, and it is what fires the stub's trace -- which used to
+   read "a model is being drawn" and sent a whole session hunting a non-null
+   `ModelPtr` that was never there. Proven by closing the model call site under
+   `#ifdef DC`: the trace still fired. Both the comment and the trace text are
+   corrected now, and the model call site is back as it was.
+
+   The cost is real: a blip near the sensor rim draws outside the sensor, over
+   the HUD. GLdc has `glScissor`, which could bound blips to the sensor's
+   bounding rectangle -- not the circle, but much better than nothing. Not
+   attempted, because it cannot be verified without looking at the screen.
+
+   `DisableClipPlane()` calls `glDisable(GL_CLIP_PLANE0)`, which GLdc rejects
+   with `GL_INVALID_VALUE`. That is the error printed once at startup. Harmless.
+
+4. **`OGL_Setup.cpp:335` masked the model hash with the texture hash's size.**
+   `const int MdlHashMask = TOHashSize - 1;` where it meant `MdlHashSize`. Both
+   are `1 << 8` and `MdlHashFunc` casts to `uint8`, so it never went out of
+   bounds -- latent, not active. Fixed.
+5. Memory is tight. Peak fits now -- flat landscapes, half-resolution 16-bit
    textures, no mipmaps, and reducing each texture buffer as it is built rather
    than building both then shrinking -- with about 2MB free at level start,
    measured by `dc_heap_trace`. Note that `free()` does not lower the sbrk
