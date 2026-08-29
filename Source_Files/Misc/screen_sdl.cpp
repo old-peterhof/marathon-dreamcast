@@ -230,6 +230,8 @@ void exit_screen(void)
 extern "C" void dc_trace(int slot, const char *fmt, ...);
 extern "C" void dc_profiler_frame(void);
 extern "C" void dc_apply_fade_tint(SDL_Surface *dst, const SDL_Rect *area);
+extern "C" int dc_fade_blit_tinted(SDL_Surface *src, SDL_Surface *dst,
+                                   const SDL_Rect *dstrect);
 extern "C" void dc_profiler_set_vitals(int hp, int air_percent);
 // The row copy lives in dc/dc_blit.c, compiled as C: sh4zam's headers need C++11
 // and asm string forms this file cannot use under -std=gnu++98.
@@ -722,9 +724,6 @@ static void update_screen(SDL_Rect &source, SDL_Rect &destination, bool hi_rez)
 		// Does the blit run at all, does it succeed, and does the destination
 		// memory actually change? bfont text written to the same VRAM address
 		// survives across frames, which it could not if this blit landed.
-		if (!dc_copy_to_screen(world_pixels, NULL, main_surface, &destination))
-			SDL_BlitSurface(world_pixels, NULL, main_surface, &destination);
-
 		/*
 		 *	The damage flash, and every other tinting fade.
 		 *
@@ -732,14 +731,24 @@ static void update_screen(SDL_Rect &source, SDL_Rect &destination, bool hi_rez)
 		 *	SDL_SetGammaRamp, and SDL's Dreamcast driver has no SetGammaRamp
 		 *	hook -- so it returns -1 and the fade does nothing. Being shot has
 		 *	never flashed the screen on this port. fades.cpp records the tint it
-		 *	computed; it is blended over the world here instead.
+		 *	computed; it is applied to the world here instead.
 		 *
-		 *	Over the world rather than the whole screen: that is where the
-		 *	original palette fade was visible, and it leaves the HUD readable
-		 *	while a red flash is running, which is when a player most wants to
-		 *	read it.
+		 *	Applied *during* the copy, not as a second pass over the screen
+		 *	afterwards. main_surface->pixels is vram_l on this driver -- the
+		 *	surface is video RAM itself -- so the old in-place version read
+		 *	every pixel of the view back out of VRAM uncached, which is what
+		 *	made a pickup or a hit stutter. Reading world_pixels instead costs
+		 *	a cached read and one VRAM write per pixel, and replaces two passes
+		 *	over the view with one.
+		 *
+		 *	Only the world rect either way: that is where the original palette
+		 *	fade was visible, and it leaves the HUD readable while a red flash
+		 *	is running, which is when a player most wants to read it.
 		 */
-		dc_apply_fade_tint(main_surface, &destination);
+		if (!dc_fade_blit_tinted(world_pixels, main_surface, &destination)) {
+			if (!dc_copy_to_screen(world_pixels, NULL, main_surface, &destination))
+				SDL_BlitSurface(world_pixels, NULL, main_surface, &destination);
+		}
 
 		// One rendered frame: tell the VMU Profiler so it can average a rate.
 		dc_profiler_frame();

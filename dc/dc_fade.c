@@ -20,10 +20,20 @@
  *	effect do things one colour cannot express, and they are left doing nothing
  *	rather than doing something wrong.
  *
- *	COST. This touches every pixel of the view, so it only runs while a fade is
- *	live -- a few frames after a hit, not continuously. It is a fixed-point lerp
- *	per pixel in RGB565, done in place in video RAM. There is no second buffer to
- *	blend through and no allocation.
+ *	COST, AND WHY THIS IS NOT DONE IN PLACE ANY MORE.
+ *
+ *	This used to run as a second pass over the video surface after the world had
+ *	been blitted: a read-modify-write of every pixel of the view, in video RAM.
+ *	On this SDL driver `main_surface->pixels` is `vram_l` -- the surface points
+ *	straight at VRAM, there is no shadow buffer -- and a VRAM read on this
+ *	machine is an uncached access over the bus. 640x320 of them, on top of the
+ *	blit that had just written the same pixels, is what made being shot or
+ *	picking something up read as a stall rather than a flash.
+ *
+ *	So the tint is applied *during* the copy instead. The read is from
+ *	world_pixels, which is ordinary cached main memory, and each pixel is written
+ *	to VRAM exactly once. Two full-view passes become one, and the expensive
+ *	half of the old one disappears entirely.
  */
 
 #include <stdint.h>
@@ -39,6 +49,88 @@ void dc_trace(int slot, const char *fmt, ...);
  *	The channels are unpacked, mixed and repacked per pixel. Doing it in RGB565
  *	rather than promoting to 8-bit-per-channel keeps it to shifts and one
  *	multiply-add each, which matters on a 200MHz SH4 with 400KB of view to cover.
+ */
+/*
+ *	Copy `src` to `dst` at `dstrect` with the live fade tint applied on the way.
+ *
+ *	Returns 0 when no fade is running, or when either surface is not 16-bit, so
+ *	the caller can fall back to its ordinary fast blit. Returns 1 when it has
+ *	drawn -- in which case the caller must not blit again.
+ */
+int dc_fade_blit_tinted(SDL_Surface *src, SDL_Surface *dst,
+                        const SDL_Rect *dstrect)
+{
+	int r, g, b, a;
+	int x, y, w, h, dx, dy;
+	int tr, tg, tb;
+
+	if (!src || !dst || !src->pixels || !dst->pixels)
+		return 0;
+	if (src->format->BytesPerPixel != 2 || dst->format->BytesPerPixel != 2)
+		return 0;
+
+	if (!dc_fade_tint(&r, &g, &b, &a))
+		return 0;
+
+	{
+		static int told = 0;
+
+		if (!told) {
+			told = 1;
+			dc_trace(28, "fade: first tint r=%d g=%d b=%d a=%d", r, g, b, a);
+		}
+	}
+
+	/* 0..255 mapped to 0..256, so a full-strength tint is exact under >>8. */
+	a += a >> 7;
+
+	tr = r >> dst->format->Rloss;
+	tg = g >> dst->format->Gloss;
+	tb = b >> dst->format->Bloss;
+
+	dx = dstrect ? dstrect->x : 0;
+	dy = dstrect ? dstrect->y : 0;
+	w  = src->w;
+	h  = src->h;
+
+	if (dx < 0) { w += dx; dx = 0; }
+	if (dy < 0) { h += dy; dy = 0; }
+	if (dx + w > dst->w) w = dst->w - dx;
+	if (dy + h > dst->h) h = dst->h - dy;
+
+	if (w <= 0 || h <= 0)
+		return 1;	/* nothing to draw, but the caller must not blit either */
+
+	for (y = 0; y < h; y++) {
+		const uint16_t *sp = (const uint16_t *)
+		        ((const uint8_t *)src->pixels + y * src->pitch);
+		uint16_t *dp = (uint16_t *)
+		        ((uint8_t *)dst->pixels + (dy + y) * dst->pitch) + dx;
+
+		for (x = 0; x < w; x++) {
+			uint16_t v = *sp++;
+			int sr = (v & dst->format->Rmask) >> dst->format->Rshift;
+			int sg = (v & dst->format->Gmask) >> dst->format->Gshift;
+			int sb = (v & dst->format->Bmask) >> dst->format->Bshift;
+
+			sr += ((tr - sr) * a) >> 8;
+			sg += ((tg - sg) * a) >> 8;
+			sb += ((tb - sb) * a) >> 8;
+
+			*dp++ = (uint16_t)((sr << dst->format->Rshift) |
+			                   (sg << dst->format->Gshift) |
+			                   (sb << dst->format->Bshift));
+		}
+	}
+
+	return 1;
+}
+
+/*
+ *	The old in-place version. Kept because it is the only way to tint something
+ *	that has no source surface to copy from, and it is correct -- it is simply
+ *	the expensive way round when a copy is about to happen anyway. Nothing calls
+ *	it at present.
  */
 void dc_apply_fade_tint(SDL_Surface *dst, const SDL_Rect *area)
 {

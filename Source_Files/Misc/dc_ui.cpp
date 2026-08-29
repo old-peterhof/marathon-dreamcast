@@ -113,14 +113,25 @@ void dc_ui_fill(SDL_Surface *s, int x, int y, int w, int h, uint32 colour)
 /*
  *	Blend a colour over what is already there, at `alpha` in 0..255.
  *
- *	Only used for the 1px rule flanks, so it is a straightforward per-pixel
- *	read-modify-write on a 16-bit surface rather than anything clever. A rule is
- *	560 pixels wide and there are two flanks, so this is about 1100 pixels.
+ *	Written for the 1px rule flanks -- about 1100 pixels -- and then reused for
+ *	the pause menu's full-screen scrim, which is 307,200. At that size the two
+ *	SDL calls per pixel it used to make were most of the cost: SDL_GetRGB and
+ *	SDL_MapRGB are out-of-line, and this runs on a 200MHz SH4 writing into video
+ *	RAM. The channels are unpacked and repacked with the format's own shifts
+ *	instead, the same arithmetic dc_fade.c uses.
+ *
+ *	The remaining cost is the read. `main_surface->pixels` is `vram_l` on this
+ *	SDL driver -- the surface *is* video RAM, there is no shadow buffer and
+ *	DC_UpdateRects does nothing -- so every pixel read here is an uncached bus
+ *	access. That is why dc_screen.cpp now applies the scrim once per screen
+ *	rather than once per cursor move.
  */
 void dc_ui_blend(SDL_Surface *s, int x, int y, int w, int h,
                  const SDL_Color &c, int alpha)
 {
 	int px, py;
+	int tr, tg, tb, a;
+	const SDL_PixelFormat *f;
 
 	/*
 	 *	This reads and writes Uint16 directly. dc_copy_to_screen guards the same
@@ -132,29 +143,43 @@ void dc_ui_blend(SDL_Surface *s, int x, int y, int w, int h,
 	if (!s || s->format->BytesPerPixel != 2)
 		return;
 
+	f = s->format;
+
+	/* The tint in the destination's own channel widths, and alpha mapped from
+	   0..255 to 0..256 so a full-strength blend is exact under >>8. */
+	tr = c.r >> f->Rloss;
+	tg = c.g >> f->Gloss;
+	tb = c.b >> f->Bloss;
+	a  = alpha + (alpha >> 7);
+
+	/* Clip once rather than testing every pixel inside the loop. */
+	if (x < 0) { w += x; x = 0; }
+	if (y < 0) { h += y; y = 0; }
+	if (x + w > s->w) w = s->w - x;
+	if (y + h > s->h) h = s->h - y;
+
+	if (w <= 0 || h <= 0)
+		return;
+
 	if (SDL_MUSTLOCK(s) && SDL_LockSurface(s) < 0)
 		return;
 
 	for (py = y; py < y + h; py++) {
-		if (py < 0 || py >= s->h)
-			continue;
+		Uint16 *p = (Uint16 *)((Uint8 *)s->pixels + py * s->pitch) + x;
 
-		for (px = x; px < x + w; px++) {
-			Uint8 dr, dg, db;
-			Uint16 *p;
+		for (px = 0; px < w; px++) {
+			Uint16 v = *p;
+			int sr = (v & f->Rmask) >> f->Rshift;
+			int sg = (v & f->Gmask) >> f->Gshift;
+			int sb = (v & f->Bmask) >> f->Bshift;
 
-			if (px < 0 || px >= s->w)
-				continue;
+			sr += ((tr - sr) * a) >> 8;
+			sg += ((tg - sg) * a) >> 8;
+			sb += ((tb - sb) * a) >> 8;
 
-			p = (Uint16 *)((Uint8 *)s->pixels + py * s->pitch) + px;
-
-			SDL_GetRGB(*p, s->format, &dr, &dg, &db);
-
-			dr = (Uint8)((c.r * alpha + dr * (255 - alpha)) / 255);
-			dg = (Uint8)((c.g * alpha + dg * (255 - alpha)) / 255);
-			db = (Uint8)((c.b * alpha + db * (255 - alpha)) / 255);
-
-			*p = (Uint16)SDL_MapRGB(s->format, dr, dg, db);
+			*p++ = (Uint16)((sr << f->Rshift) |
+			                (sg << f->Gshift) |
+			                (sb << f->Bshift));
 		}
 	}
 

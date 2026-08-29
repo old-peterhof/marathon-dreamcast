@@ -360,6 +360,24 @@ skips `test_mouse()` entirely otherwise.
 **The cursor smeared.** SDL's software cursor blits without restoring the
 background, leaving trails across the menu. It is hidden on this platform.
 
+**The video surface is video RAM, and `SDL_UpdateRect` does nothing.** This port
+never calls `SDL_DC_SetVideoDriver`, so it gets the default `SDL_DC_DMA_VIDEO`,
+which is not one of the textured drivers; it does not ask for `SDL_DOUBLEBUF`
+either. `DC_SetVideoMode` therefore takes its plain path and sets
+`current->pixels = vram_l`, and `DC_UpdateRects` has an empty body except in
+textured mode. Two consequences worth knowing before optimising anything that
+draws:
+
+- Calls to `SDL_UpdateRect` and `SDL_UpdateRects` are free, and removing them
+  gains nothing. A diagnosis that blamed one for being slow was wrong.
+- **Every read back from the surface is an uncached VRAM access.** Writes are
+  cheap and can go through the store queues; reads are not. Anything shaped like
+  read-modify-write over a large area -- a blend, a tint, a fade -- costs far
+  more than the same loop in main memory, and should be done against
+  `world_pixels` on the way to the screen rather than against the screen
+  afterwards. Both the pause-menu scrim and the damage flash were originally
+  written the expensive way round.
+
 ### The 2002 DC glue is gone
 
 `dc/syscalls.c` and `dc/fs_mem.c` could not be reused: the first duplicates

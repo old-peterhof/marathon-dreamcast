@@ -240,7 +240,21 @@ static void draw_slider(SDL_Surface *s, int right, int cy, int value, int max,
 		dc_ui_fill(s, x + i * 7, cy - 6, 5, 12, i <= value ? on : off);
 }
 
-static void draw_screen(struct dc_screen *sc)
+/*
+ *	Draw the screen, or just the part of it that can change.
+ *
+ *	`full` draws everything, including the background. Without it only the
+ *	panels are repainted -- which is all that changes when the highlight moves,
+ *	and they are opaque, so nothing underneath needs restoring first.
+ *
+ *	This exists because of what the background costs when it is the scrim. On
+ *	this SDL driver the video surface points straight at VRAM, so blending the
+ *	scrim is 307,200 uncached reads; doing that on every cursor move is the
+ *	black sweep down the screen you can watch happen. The screen is static
+ *	while a dc_screen_run loop is up -- nothing else draws, because the dialog
+ *	*is* the pause -- so the scrim only has to be laid down once.
+ */
+static void draw_screen(struct dc_screen *sc, bool full)
 {
 	SDL_Surface *v = SDL_GetVideoSurface();
 	const sdl_font_info *tf, *itf, *lf, *bf;
@@ -279,15 +293,18 @@ static void draw_screen(struct dc_screen *sc)
 		bs = its;
 	}
 
-	if (sc->over_game) {
-		/* .scrim: rgba(2,6,8,.90) over the running game. */
-		SDL_Color ink = { 0x02, 0x06, 0x08, 0 };
-		dc_ui_blend(v, 0, 0, v->w, v->h, ink, 230);
-	} else {
-		dc_plate_select(DC_PLATE_PLAIN);
-		dc_plate_to_screen();
+	if (full) {
+		if (sc->over_game) {
+			/* .scrim: rgba(2,6,8,.90) over the running game. */
+			SDL_Color ink = { 0x02, 0x06, 0x08, 0 };
+			dc_ui_blend(v, 0, 0, v->w, v->h, ink, 230);
+		} else {
+			dc_plate_select(DC_PLATE_PLAIN);
+			dc_plate_to_screen();
+		}
 	}
 
+	if (full) {
 	/* Title, kicker, rule. The rule tracks the title, 32px below it, which is
 	   the relationship the prototype keeps on every screen. */
 	dc_ui_tracked_text(v, sc->title, DC_UI_EDGE,
@@ -304,6 +321,7 @@ static void draw_screen(struct dc_screen *sc)
 	}
 
 	dc_ui_rule(v, DC_UI_EDGE, sc->title_y + 32, 560, true);
+	}
 
 	/*
 	 *	One panel, or two side by side. The prototype's binding screen puts them
@@ -367,6 +385,11 @@ static void draw_screen(struct dc_screen *sc)
 			               : dc_ui_colour(DC_UI_LABEL, v), 10);
 	}
 
+	if (!full) {
+		SDL_UpdateRect(v, 0, 0, 0, 0);
+		return;
+	}
+
 	/* The state column, opposite the panel: dim heading, brighter value. */
 	for (i = 0; i < sc->nstate; i++) {
 		int w = dc_ui_tracked_width(sc->state[i], lf, ls, DC_UI_TRACK_LABEL);
@@ -403,6 +426,18 @@ int dc_screen_run(struct dc_screen *sc)
 	int result = DC_SCREEN_BACK;
 	bool done = false;
 	bool dirty = true;
+	bool drawn = false;
+
+	/*
+	 *	Whether a repaint can be the panels alone.
+	 *
+	 *	The explainer is the one thing outside the panel that changes with the
+	 *	highlight, and it sits on the background rather than on the panel, so a
+	 *	screen with one has to redraw the background to erase the old sentence.
+	 *	Everything else -- title, kicker, rules, state column, hint bar, and a
+	 *	banner -- is fixed for as long as the screen is up.
+	 */
+	bool partial_ok;
 
 	if (!sc || sc->nrows < 1)
 		return DC_SCREEN_BACK;
@@ -446,11 +481,14 @@ int dc_screen_run(struct dc_screen *sc)
 	was_ingame = dc_input_ingame();
 	dc_input_set_ingame(0);
 
+	partial_ok = !sc->explain;
+
 	while (!done) {
 		SDL_Event e;
 
 		if (dirty) {
-			draw_screen(sc);
+			draw_screen(sc, !drawn || !partial_ok);
+			drawn = true;
 			dirty = false;
 		}
 
