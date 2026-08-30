@@ -465,6 +465,30 @@ neither is solved:
    established**. It may still be true -- seek-heavy access against a large
    buffer is a real effect -- but it was not what these runs measured.
 
+**Max's recollection, 2026-08-30, recorded because it probably names the fix.**
+He remembers load times being solved when it turned out "the DC was queuing up
+all the level items to be loaded in and processing them in unnecessarily small
+bites", and flagged that he might be misremembering.
+
+That is almost certainly `c30cf24`, the b42 sector-aligned read buffer, whose own
+commit message says: *newlib's default stdio buffer is about 1KB, so every refill
+asked for less than one sector and took the slow path -- fetch a sector, copy
+part of it, throw the rest away, repeat. Against a 20MB map file that is tens of
+thousands of tiny reads.* "Unnecessarily small bites" is exactly that.
+
+So his memory matches the lever already identified below, and it is the same 18
+seconds: buffering cut `load_collections` from 26.2s to 8.0s. It is not a
+forgotten separate fix.
+
+One half of his description may still be unaccounted for. "Queuing up all the
+level items" sounds like the marking pass -- `mark_environment_collections`,
+`mark_all_monster_collections`, `mark_player_collections` all run before
+`load_collections` in `marathon2.cpp:245-248` -- rather than like stdio
+buffering. Nothing has been measured there, and the stage timing lumps it into
+the 26.2s. If a second fix exists it would be in that marking pass, and it has
+not been looked for. Worth a stage trace around those three calls before
+assuming there is only one thing here.
+
 **Run properly with a controlled protocol, 2026-08-30.** The VMU is deleted
 before every run and the serial console re-asserted; the harness is
 `scratchpad/loadtrial.sh <disc> <label> <runs>`.
