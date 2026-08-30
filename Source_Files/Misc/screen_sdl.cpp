@@ -58,6 +58,9 @@ static SDL_Surface *main_surface;	// Main (display) surface
 // The HUD has a separate buffer.
 // It is initialized to NULL so as to allow its initing to be lazy.
 SDL_Surface *world_pixels = NULL;
+#ifdef DC
+static SDL_Rect dc_view_rect = {0, 0, 640, 320};
+#endif
 SDL_Surface *HUD_Buffer = NULL;
 
 static bool PrevFullscreen = false;
@@ -451,19 +454,22 @@ SDL_Surface *dc_ui_target(void)
  *	Finish a UI frame. In software the video surface has to be pushed; under GL
  *	the off-screen surface is uploaded and drawn over the scene.
  */
-void dc_ui_flush(SDL_Surface *s)
+/*
+ *	Upload an SDL surface and draw it over the scene at a given rectangle.
+ *
+ *	Shared by the pause menu, which covers the whole screen, and the terminals,
+ *	which cover the world view only and leave the HUD to HUDRenderer_OGL. Does
+ *	not swap: the pause menu holds its own loop and has to swap for itself,
+ *	while a terminal is drawn inside a normal frame that swaps later.
+ */
+void dc_ui_draw_surface(SDL_Surface *s, int x, int y, int w, int h)
 {
+#ifdef HAVE_OPENGL
 	static GLuint UITexture = 0;
 
-	if (s == NULL)
+	if (s == NULL || s->pixels == NULL)
 		return;
 
-	if (s == main_surface) {
-		SDL_UpdateRect(s, 0, 0, 0, 0);
-		return;
-	}
-
-#ifdef HAVE_OPENGL
 	if (UITexture == 0) {
 		glGenTextures(1, &UITexture);
 		glBindTexture(GL_TEXTURE_2D, UITexture);
@@ -489,9 +495,15 @@ void dc_ui_flush(SDL_Surface *s)
 
 	{
 		GLenum Err = glGetError();
-		if (Err != GL_NO_ERROR)
-			dc_trace(64, "ui: upload %dx%d failed, GL error 0x%x",
-			         s->w, s->h, (unsigned)Err);
+		if (Err != GL_NO_ERROR) {
+			static int Reported = 0;
+			if (Reported < 3) {
+				Reported++;
+				dc_trace(64, "ui: upload %dx%d failed, GL error 0x%x",
+				         s->w, s->h, (unsigned)Err);
+			}
+			return;
+		}
 	}
 
 	glPushAttrib(GL_ALL_ATTRIB_BITS);
@@ -505,17 +517,17 @@ void dc_ui_flush(SDL_Surface *s)
 	glMatrixMode(GL_PROJECTION);
 	glPushMatrix();
 	glLoadIdentity();
-	glOrtho(0.0, GLdouble(s->w), GLdouble(s->h), 0.0, 0.0, 1.0);
+	glOrtho(0.0, GLdouble(main_surface->w), GLdouble(main_surface->h), 0.0, 0.0, 1.0);
 	glMatrixMode(GL_MODELVIEW);
 	glPushMatrix();
 	glLoadIdentity();
 
 	glColor4f(1.0, 1.0, 1.0, 1.0);
 	glBegin(GL_QUADS);
-		glTexCoord2f(0.0, 0.0); glVertex2i(0,    0);
-		glTexCoord2f(1.0, 0.0); glVertex2i(s->w, 0);
-		glTexCoord2f(1.0, 1.0); glVertex2i(s->w, s->h);
-		glTexCoord2f(0.0, 1.0); glVertex2i(0,    s->h);
+		glTexCoord2f(0.0, 0.0); glVertex2i(x,     y);
+		glTexCoord2f(1.0, 0.0); glVertex2i(x + w, y);
+		glTexCoord2f(1.0, 1.0); glVertex2i(x + w, y + h);
+		glTexCoord2f(0.0, 1.0); glVertex2i(x,     y + h);
 	glEnd();
 
 	glMatrixMode(GL_PROJECTION);
@@ -523,7 +535,28 @@ void dc_ui_flush(SDL_Surface *s)
 	glMatrixMode(GL_MODELVIEW);
 	glPopMatrix();
 	glPopAttrib();
+#else
+	(void)s; (void)x; (void)y; (void)w; (void)h;
+#endif
+}
 
+/*
+ *	Finish a UI frame. In software the video surface has to be pushed; under GL
+ *	the off-screen surface is drawn over the scene and swapped, because a screen
+ *	that holds its own event loop never reaches the normal frame swap.
+ */
+void dc_ui_flush(SDL_Surface *s)
+{
+	if (s == NULL)
+		return;
+
+	if (s == main_surface) {
+		SDL_UpdateRect(s, 0, 0, 0, 0);
+		return;
+	}
+
+#ifdef HAVE_OPENGL
+	dc_ui_draw_surface(s, 0, 0, s->w, s->h);
 	SDL_GL_SwapBuffers();
 #endif
 }
@@ -654,6 +687,11 @@ void render_screen(short ticks_elapsed)
 	int OffsetWidth = (OverallWidth - BufferWidth) / 2;
 	int OffsetHeight = (OverallHeight - BufferHeight) / 2;
 	SDL_Rect ViewRect = {OffsetWidth + ScreenOffsetWidth, OffsetHeight + ScreenOffsetHeight, BufferWidth, BufferHeight};
+#ifdef DC
+	/* Kept for render_computer_interface, which runs outside this function and
+	   needs to know where the world view sits on screen. */
+	dc_view_rect = ViewRect;
+#endif
 
 	if (OffsetWidth != PrevOffsetWidth) {
 		ChangedSize = true;
@@ -1044,6 +1082,21 @@ void render_computer_interface(struct view_data *view)
 	_set_port_to_gworld();
 	_render_computer_interface(&data);
 	_restore_port();
+
+#if defined(DC) && defined(HAVE_OPENGL)
+	/*
+	 *	Terminals draw into world_pixels, the software world buffer. Under GL
+	 *	that buffer is still allocated and still written, but nothing ever puts
+	 *	it on screen -- the PowerVR draws the world instead, and the blit that
+	 *	would have presented it is skipped. That is why terminals were blank.
+	 *
+	 *	So present it, over the world view only: the HUD below is drawn by
+	 *	HUDRenderer_OGL and must not be covered.
+	 */
+	if (main_surface != NULL && (main_surface->flags & SDL_OPENGL))
+		dc_ui_draw_surface(world_pixels, dc_view_rect.x, dc_view_rect.y,
+		                   dc_view_rect.w, dc_view_rect.h);
+#endif
 }
 
 
