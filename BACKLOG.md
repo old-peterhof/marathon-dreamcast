@@ -403,6 +403,41 @@ neither is solved:
    established**. It may still be true -- seek-heavy access against a large
    buffer is a real effect -- but it was not what these runs measured.
 
+**Run properly with a controlled protocol, 2026-08-30.** The VMU is deleted
+before every run and the serial console re-asserted; the harness is
+`scratchpad/loadtrial.sh <disc> <label> <runs>`.
+
+*The control is deterministic to the millisecond.* Three runs, no buffer:
+42.6s / 42.6s / 42.7s, `collections 26196 ms` and `monster sounds 264 ms` every
+single time. So the earlier 263 / 21129 / 13711 ms spread on the sound stage was
+entirely the memory card, exactly as `0a12774` warned. With a fresh card the
+sound stage is 264 ms and is not worth touching.
+
+*The 64KB buffer fails every time, not intermittently.* Three runs, c30cf24
+verbatim: 0 of 3 reached first render within 200 seconds, all with no
+`load: collections` trace. The single earlier success was on a populated card
+and was never a controlled measurement.
+
+*And the stall is located.* A trace around each collection load shows it never
+gets past the first one:
+
+    coll 0: loading (offset 1024, length 141660)
+
+and nothing after. **Offset 1024 is half a sector.** KOS's ISO9660 fast path
+needs requests that are sector-aligned and at least a sector long, and the
+Shapes collections do not start on a 2048-byte boundary -- so a large buffered
+read from that offset is both off the fast path and, at 64KB, enough to hang the
+driver. It also explains the 8KB result, which completed but gave no speedup:
+misalignment keeps it off the fast path whatever the buffer size.
+
+**This is a KOS driver interaction, not an Aleph One bug, and the toolchain at
+/opt/toolchains/dc is not to be rebuilt.** So the buffer as written cannot land
+here. If the 18 seconds is wanted, the direction is to make the reads themselves
+sector-aligned -- read from `offset & ~2047` into a scratch buffer and discard
+the leading bytes -- rather than to ask stdio to buffer a misaligned stream.
+That is a real change to the shapes reading path and belongs to a session with
+Max awake, not an unattended one.
+
 **Protocol for whoever picks this up:** delete the emulated VMU file between
 runs before measuring anything sound-related, change one variable at a time
 (buffer size and which files get buffered are two), and repeat each
