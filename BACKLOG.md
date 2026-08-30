@@ -65,6 +65,66 @@ is more work but avoids fighting a widget system built around a pointer.
 Max's list, captured 2026-08-29 for a session starting that evening. Ordered by
 what is understood versus what needs investigating first.
 
+### 0. The texture pipeline — do this FIRST, it pays for item 1
+
+A proposal Max brought in, spot-checked against the installed GLdc 1.1.1 and
+against our own code. The claims hold; where I verified something it is marked.
+
+**Why it comes first:** item 1 wants full-resolution sprites and is constrained
+by roughly 2MB of headroom at level start. These two fixes create that headroom
+rather than competing with it, so the order is Fix A, then item 1, then Fix B.
+
+**What the pipeline does now** (`Source_Files/Misc/OGL_Textures.cpp`, all
+confirmed by reading it):
+
+- `GetOGLTexture:925` — `new uint32[NumPixels]`, expand 8-bit indices through a
+  256-entry uint32 CLUT
+- `Shrink:1085` — a *second* `new GLuint[NumPixels]`, box-filtered through our own
+  `dc/dc_glu.c`
+- `PlaceTexture` — `glTexImage2D(..., GL_RGBA, GL_UNSIGNED_BYTE, ...)`, and GLdc
+  packs to ARGB4444 internally
+
+Three whole-image passes, two heap allocations, peak 4 bytes/pixel.
+
+**Fix A — one pass, 2 bytes/pixel.** Nothing forces the intermediate to be
+32-bit; it exists only because expand, shrink and pack are three separate passes.
+Build a second CLUT in `FindColorTables` as 256 x uint16 ARGB4444 beside the
+existing uint32 one; make `GetOGLTexture` write uint16 and fold `Shrink`'s box
+filter into the same loop (read the 2x2 indices, average in 8-bit or you compound
+the quantisation error, pack once); upload with
+`GL_UNSIGNED_SHORT_4_4_4_4_REV_TWID_KOS` so GLdc memcpys instead of converting.
+Verified: that token exists, `glkos.h:18`. One allocation, one pass, no visual
+change.
+
+**A confirmed bug to kill in the same rewrite.** `OGL_Textures.cpp:917` sets
+`ColorTable[0] = 0` for transparency, and our `gluScaleImage` (`dc/dc_glu.c:75-78`)
+averages R, G and B unweighted across the box — so fully-transparent black texels
+drag their neighbours toward black and every sprite edge gets dark fringing.
+Weight the average by alpha. Pre-existing since b36, not a regression, but the
+rewrite is the moment.
+
+**Fix B — paletted textures, 1 byte/pixel, walls only.** PVR2 does paletted in
+hardware and GLdc exposes it: `GL_COLOR_INDEX8_EXT` (`glext.h:132`),
+`glColorTableEXT` (`glext.h:149`), `GL_COLOR_INDEX8_TWID_KOS` for the fast
+twiddled path — all verified present. Marathon's shape data is already exactly
+this shape: one byte per pixel plus a 256-entry table, so rows upload close to
+verbatim. 1 byte/pixel in RAM *and* in VRAM, which on 8MB of VRAM matters more
+than the transient does. Filtering is not lost — the PVR looks up before it
+filters.
+
+The catch is palette banks: `MAX_GLDC_PALETTE_SLOTS` is 4 (verified,
+`private.h:26`), and we would need one per (Collection, CTable) — a level uses
+well over four. Hence walls and landscape on the paletted path and everything
+else on Fix A's 4444 path: walls come from very few collections and are both the
+bulk of VRAM and the bulk of screen area, so nearly all the win is there and it
+fits the budget. Sprites and HUD are many collections but individually tiny.
+
+If the paletted walls are mipmapped, note GLdc's paletted mip generator averages
+via `_glCalculateAverageTexel` over a 1-byte stride (`framebuffer.c:230-251`) --
+averaging palette *indices* is meaningless, so either skip mips there or build the
+chain yourself against a 15-bit inverse CLUT (32KB per live palette, at most four).
+I have not verified how badly that actually looks; check before designing around it.
+
 ### 1. Per-texture-type resolution — motion tracker blur, sprite sharpness
 
 **This is the well-understood one and should go first.** `OGL_Setup.cpp:146`
