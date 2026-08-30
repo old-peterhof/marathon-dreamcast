@@ -365,26 +365,49 @@ screen, and Max's call rather than something to change unilaterally. Note also
 that card-stored preferences override `default_sound_manager_parameters`
 completely, so editing the default changes nothing on a console with a card.
 
-*`c30cf24`'s read buffer HANGS on gl-forward -- tried and reverted.* The 17-line
-hunk gives each stream a 64KB sector-aligned buffer via
-`setvbuf(f->hidden.stdio.fp, NULL, _IOFBF, 64*1024)` in `FileSpecifier::Open`.
-Applied on its own, the game reaches "autostart: selecting iNewGame" and stalls
-there indefinitely -- over 500 seconds with the log not growing, Flycast still
-alive, so a hang rather than a crash or mere slowness.
+*The load is `load_collections`, and the read buffer is the lever -- but it is
+not landable yet.* Measured on this branch with SDL_GetTicks instrumentation
+(committed, `3a8b9d8`), which is worth more than the dc-rebuild accounting since
+that was taken on a different branch:
 
-Not understood, and worth care before retrying:
+| stage | ms |
+|---|---|
+| load_collections | 26197 |
+| load_all_monster_sounds | 263 |
+| load_all_game_sounds | 0 |
+| total load | 42.6 s |
 
-- The likeliest cause is that `f->hidden.stdio.fp` is not valid for whatever
-  RWops this SDL's `SDL_RWFromFile` returns, so `setvbuf` is handed a garbage
-  pointer. That is a guess. Check what the DC SDL actually returns before
-  reapplying.
-- The same hunk is known good on dc-rebuild, which shipped it as b42 and which
-  Max has played. So this is a difference between the branches, not a bad idea.
-- **Flycast may be the wrong instrument for this change anyway.** It reads the
-  disc image from an SSD with no seek cost, so a fix aimed at an optical drive's
-  sector fast path could measure as nothing here even when it is a large win on
-  hardware. A hang is still a hang and still disqualifying, but do not use a
-  Flycast timing to decide whether this optimisation is worth having.
+Collections are 26 of the 42 seconds. The sound stage is negligible here, so
+the More Sounds preference is not the lever it was on dc-rebuild.
+
+Applying `c30cf24`'s 64KB buffer to every file cut collections from **26.2s to
+8.0s** in one run -- the 18 seconds the commit promises, confirmed. But it is
+not safely landable, for two reasons, and both are recorded honestly because
+neither is solved:
+
+1. **It stalls intermittently, inside `load_collections`.** Four buffered runs:
+   one completed (53.8s), three never reached first render within 240-300
+   seconds, with no `load: collections` trace, which places the stall inside
+   that call. Two hypotheses were tested and are wrong: `f->hidden.stdio.fp` is
+   valid (this SDL's `SDL_RWFromFile` really does `fopen` then `SDL_RWFromFP`),
+   and `GetPath()` is a member string's `c_str()`, safe for `strstr`. A smaller
+   8KB buffer removed the benefit without removing the problem. Cause not found.
+
+2. **The sound-stage measurements are confounded, and this repo already warned
+   about it.** `0a12774` records that preferences on the memory card override
+   `default_sound_manager_parameters` completely, and that measuring this stage
+   without controlling the card produced first a fake 7.5s win and then a fake
+   null result. The monster-sound stage measured 263 ms, 21129 ms and 13711 ms
+   across three runs here. That spread is the VMU, not the buffer, and it means
+   the "buffering Sounds is a disaster" conclusion drawn mid-session is **not
+   established**. It may still be true -- seek-heavy access against a large
+   buffer is a real effect -- but it was not what these runs measured.
+
+**Protocol for whoever picks this up:** delete the emulated VMU file between
+runs before measuring anything sound-related, change one variable at a time
+(buffer size and which files get buffered are two), and repeat each
+configuration at least three times, because a single run proves nothing when
+the failure is intermittent one time in four.
 
 *Remaining:* about 41s of the 42.8s is still before `StartRun entry`. The old
 accounting attributes that to monster sounds (~13.7s), shape collections (~7.7s),
