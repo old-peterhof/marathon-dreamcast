@@ -384,6 +384,69 @@ static void change_screen_mode(int width, int height, int depth, bool nogl)
 #endif
 }
 
+#ifdef DC
+#include <dc/video.h>
+
+/*
+ *	Where the Dreamcast interface draws, in either video mode.
+ *
+ *	The pause menu and the terminals happen in the middle of a level, with the
+ *	PowerVR up. SDL's Dreamcast driver sets current->pixels = NULL for a GL
+ *	surface, so the UI code -- which draws into SDL_GetVideoSurface() like any
+ *	SDL program -- has nothing to write to and would fault.
+ *
+ *	Switching back to a software mode for the duration is not the answer.
+ *	DC_SetVideoMode calls DC_VideoQuit first, which calls pvr_shutdown(), so
+ *	re-entering GL afterwards both trips the pvr_state assertion on the next
+ *	frame and throws away every uploaded texture -- every pause would re-pay the
+ *	shape-collection load, which is 26 seconds. Measured; see BUGS.md.
+ *
+ *	What works instead is to hand the UI a surface that points straight at the
+ *	framebuffer. The mode is set with a single framebuffer -- "640x480IL NTSC
+ *	with 1 framebuffers" in the boot log -- so there is no page flipping to race,
+ *	and a screen that holds its own event loop stops the world while it is up, so
+ *	nothing is submitting to the PVR to paint over the top. Costs no video RAM,
+ *	which the texture-overlay alternative would have at about 640KB.
+ *
+ *	Reads from this surface are uncached VRAM accesses and are ruinous in bulk --
+ *	that is the black sweep in BUGS.md. The screens already know this and lay
+ *	their scrim down once; do not add a read-modify-write over the whole surface.
+ */
+SDL_Surface *dc_ui_target(void)
+{
+	static SDL_Surface *FramebufferSurface = NULL;
+
+	if (main_surface == NULL)
+		return NULL;
+
+	if (!(main_surface->flags & SDL_OPENGL))
+		return main_surface;
+
+	if (FramebufferSurface == NULL) {
+		/* RGB565, which is what vid_set_mode was given. */
+		FramebufferSurface = SDL_CreateRGBSurfaceFrom(
+			(void *)vram_s, 640, 480, 16, 640 * 2,
+			0xf800, 0x07e0, 0x001f, 0);
+		dc_trace(61, "ui: framebuffer surface %p px=%p",
+		         (void *)FramebufferSurface,
+		         FramebufferSurface ? FramebufferSurface->pixels : NULL);
+	}
+
+	return FramebufferSurface;
+}
+
+/*
+ *	Finish a UI frame. In software the video surface has to be pushed; against
+ *	the framebuffer the writes are already where they need to be.
+ */
+void dc_ui_flush(SDL_Surface *s)
+{
+	if (s != NULL && s == main_surface)
+		SDL_UpdateRect(s, 0, 0, 0, 0);
+}
+#endif
+
+
 void change_screen_mode(struct screen_mode_data *mode, bool redraw)
 {
 	// Get the screen mode here

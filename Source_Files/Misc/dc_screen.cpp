@@ -254,9 +254,15 @@ static void draw_slider(SDL_Surface *s, int right, int cy, int value, int max,
  *	while a dc_screen_run loop is up -- nothing else draws, because the dialog
  *	*is* the pause -- so the scrim only has to be laid down once.
  */
+extern "C" void dc_trace(int slot, const char *fmt, ...);
+extern SDL_Surface *dc_ui_target(void);
+extern void dc_ui_flush(SDL_Surface *s);
+
 static void draw_screen(struct dc_screen *sc, bool full)
 {
-	SDL_Surface *v = SDL_GetVideoSurface();
+	/* Not SDL_GetVideoSurface: under GL that surface has no pixels.
+	   See dc_ui_target in screen_sdl.cpp. */
+	SDL_Surface *v = dc_ui_target();
 	const sdl_font_info *tf, *itf, *lf, *bf;
 	uint16 ts, its, ls, bs;
 	int i, px, pw, ph;
@@ -386,7 +392,7 @@ static void draw_screen(struct dc_screen *sc, bool full)
 	}
 
 	if (!full) {
-		SDL_UpdateRect(v, 0, 0, 0, 0);
+		dc_ui_flush(v);
 		return;
 	}
 
@@ -417,7 +423,7 @@ static void draw_screen(struct dc_screen *sc, bool full)
 	dc_ui_rule(v, DC_UI_EDGE, SCR_RULE_BOT, 560, false);
 	dc_ui_hints(v, SCR_HINT_Y, sc->hints, sc->nhints, "b" DC_BUILD_NUM, lf, ls);
 
-	SDL_UpdateRect(v, 0, 0, 0, 0);
+	dc_ui_flush(v);
 }
 
 int dc_screen_run(struct dc_screen *sc)
