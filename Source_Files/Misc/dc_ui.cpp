@@ -438,15 +438,30 @@ void dc_ui_caption(SDL_Surface *s, int x, int y, int w,
 /*
  *	A glyph box: the bordered square the hint bar puts a button letter in.
  */
-static void dc_ui_glyph(SDL_Surface *s, int x, int cy, const char *ch,
-                        const sdl_font_info *font, uint16 style, bool round)
+static int dc_ui_glyph(SDL_Surface *s, int x, int cy, const char *ch,
+                       const sdl_font_info *font, uint16 style, bool round)
 {
-	int w = 15, h = 15;
+	/*
+	 *	The box sizes itself to what is in it.
+	 *
+	 *	It used to be a fixed 15 wide, which is right for "A" or "+" but not for
+	 *	"START": text_width comes out well over 15, the centring offset
+	 *	(w - tw) / 2 goes negative, and the label is drawn straight through the
+	 *	glyph. The pause menu read "SELECT STARTRESUME". Nothing to do with the
+	 *	renderer -- the main menu only ever uses single characters, so it never
+	 *	showed. dc-rebuild has the same bug and cannot be fixed from here.
+	 */
+	int h = 15;
+	int w;
 	int y = cy - h / 2;
 	uint32 border = map(s, col_rulehot);
 	int tw = text_width(ch, font, style);
 
 	(void)round;
+
+	w = tw + 8;
+	if (w < 15)
+		w = 15;
 
 	dc_ui_fill(s, x, y, w, 2, border);
 	dc_ui_fill(s, x, y + h - 2, w, 2, border);
@@ -456,6 +471,8 @@ static void dc_ui_glyph(SDL_Surface *s, int x, int cy, const char *ch,
 	draw_text(s, ch, x + (w - tw) / 2,
 	          y + (h - font->get_line_height()) / 2 + font->get_ascent(),
 	          map(s, col_item), font, style);
+
+	return w;
 }
 
 /*
@@ -479,8 +496,7 @@ void dc_ui_hints(SDL_Surface *s, int y,
 	for (i = 0; i < count; i++) {
 		int lw;
 
-		dc_ui_glyph(s, x, cy, hints[i].glyph, font, style, hints[i].round);
-		x += 15 + 6;
+		x += dc_ui_glyph(s, x, cy, hints[i].glyph, font, style, hints[i].round) + 6;
 
 		lw = dc_ui_tracked_width(hints[i].label, font, style, DC_UI_TRACK_LABEL);
 
