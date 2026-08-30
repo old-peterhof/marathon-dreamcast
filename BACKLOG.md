@@ -169,6 +169,24 @@ is most of the slack, and that is 100 textures from one vantage point in one
 level -- a level with more monster variety would load more. It fits and it runs
 (28-30fps, no allocation failure), but the margin is thin.
 
+**b73 shipped this and it crashed. Reverted in b74.** Full-resolution sprites
+fit at level start but not for long: textures keep loading as play continues,
+and free VRAM fell to 270 KB by 125 uploads, at which point the game died to a
+black screen -- on hardware after about 1.5 seconds of play, and reproducibly
+under Flycast. At half resolution the same soak reached 175 uploads with VRAM
+plateauing at 2606 KB free and did not crash.
+
+The cause is established by intervention, not by mechanism: removing the VRAM
+pressure removes the crash. Worth knowing that GLdc never reported
+GL_OUT_OF_MEMORY (0x505) in any run, including the ones that died -- so the
+failure is not simply an upload being refused, and whatever happens inside the
+allocator is still unidentified. Do not assume a graceful-degradation guard
+around glTexImage2D would have saved it.
+
+**So full-resolution sprites are blocked on Fix B, not merely helped by it.**
+Raise them again only after paletted walls have freed the room, and soak before
+shipping a disc -- 125 uploads was enough to kill it, and a soak is cheap.
+
 **This is what Fix B is now for.** Not to make room in RAM -- to buy back VRAM
 so the full-resolution sprites are affordable. Walls are the bulk of the pool
 and paletted walls halve them, which is roughly the 1.6MB the sprites cost.

@@ -426,16 +426,20 @@ static void initialize_application(void)
 			OGLData.TxtrConfigList[k].FarFilter = 1;
 			OGLData.TxtrConfigList[k].ColorFormat = 1;
 
-			// Keep this rule identical to OGL_SetDefaults: the environment
-			// is halved, and what the player looks at directly -- sprites
-			// and the weapon in hand -- is full resolution. This loop runs
-			// every boot and overrides both the defaults and anything the
-			// memory card carried, so if the two disagree this one wins and
-			// the change in OGL_SetDefaults would silently do nothing.
-			if (k == OGL_Txtr_Inhabitant || k == OGL_Txtr_WeaponsInHand)
-				OGLData.TxtrConfigList[k].Resolution = 0;
-			else
-				OGLData.TxtrConfigList[k].Resolution = 1;
+			// Everything is halved until the VRAM to pay for more exists.
+			//
+			// b73 raised sprites and the weapon to full resolution. It
+			// renders correctly and it fits at level start, but it costs
+			// 1630 KB out of a texture pool of about 4.8MB, and textures
+			// keep loading as play continues. Measured: free VRAM fell to
+			// 270 KB by 125 uploads and the game then died to a black
+			// screen, on hardware and under Flycast alike. GLdc does not
+			// fail an upload loudly -- it returns with texture->data NULL
+			// and the PVR is handed a null pointer.
+			//
+			// Fix B (paletted walls) is what buys the room back. Raise this
+			// again after it lands, and re-soak before shipping a disc.
+			OGLData.TxtrConfigList[k].Resolution = 1;
 		}
 
 		OGLData.Flags &= ~OGL_Flag_3D_Models;

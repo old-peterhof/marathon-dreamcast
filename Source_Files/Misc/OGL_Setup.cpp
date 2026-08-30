@@ -173,10 +173,10 @@ void OGL_SetDefaults(OGL_ConfigureData& Data)
 		// handful of frames.
 		//
 		// So: environment halved, everything the player looks at full.
-		if (k == OGL_Txtr_Inhabitant || k == OGL_Txtr_WeaponsInHand)
-			TxtrData.Resolution = 0;	// 1x
-		else
-			TxtrData.Resolution = 1;	// 1/2
+		// Halved until Fix B frees the VRAM to pay for more; see the note
+		// in shell_sdl.cpp, which forces this every boot and would override
+		// any change made here anyway.
+		TxtrData.Resolution = 1;		// 1/2
 #else
 		TxtrData.Resolution = 0;		// 1x
 		TxtrData.ColorFormat = 0;		// 32-bit color

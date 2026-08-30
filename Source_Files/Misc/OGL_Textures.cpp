@@ -1213,7 +1213,22 @@ void TextureManager::PlaceTexture(uint32 *Buffer)
 	#ifdef DC
 	{
 		static int nupload = 0;
-		if ((++nupload % 25) == 0)
+		++nupload;
+		{
+			// Every upload, not every 25th: glGetError reports the first
+			// error since it was last called, so sampling drops all but
+			// one in 25 and the one it keeps is whichever came first.
+			GLenum UpErr = glGetError();
+			if (UpErr != GL_NO_ERROR)
+			{
+				GLint FreeNow = 0;
+				glGetIntegerv(GL_FREE_TEXTURE_MEMORY_KOS, &FreeNow);
+				dc_trace(48, "txtr: GL ERROR 0x%x on upload %d (%dx%d), vram %d KB free",
+				         (unsigned)UpErr, nupload,
+				         (int)LoadedWidth, (int)LoadedHeight, (int)(FreeNow/1024));
+			}
+		}
+		if ((nupload % 25) == 0)
 		{
 			// Uploaded textures live in the PVR's 8MB of VRAM, not in the
 			// heap -- the RAM buffer is freed as soon as glTexImage2D has
@@ -1223,6 +1238,12 @@ void TextureManager::PlaceTexture(uint32 *Buffer)
 			GLint FreeVRAM = 0, UsedVRAM = 0;
 			glGetIntegerv(GL_FREE_TEXTURE_MEMORY_KOS, &FreeVRAM);
 			glGetIntegerv(GL_USED_TEXTURE_MEMORY_KOS, &UsedVRAM);
+			// GLdc does not abort when the texture pool is exhausted: it
+			// throws GL_OUT_OF_MEMORY and returns leaving texture->data
+			// NULL, and the PVR is then handed a null texture pointer.
+			// Say so loudly, because the symptom downstream is a crash a
+			// long way from the cause.
+
 			dc_trace(39, "txtr: %d uploaded, heap %u KB, vram %d KB used / %d KB free, last %dx%d",
 			         nupload, dc_heap_used() / 1024,
 			         (int)(UsedVRAM/1024), (int)(FreeVRAM/1024),
