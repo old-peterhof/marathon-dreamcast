@@ -537,13 +537,30 @@ void dc_ui_draw_surface(SDL_Surface *s, int x, int y, int w, int h)
 
 	{
 		GLenum Err = glGetError();
-		if (Err != GL_NO_ERROR) {
-			static int Reported = 0;
-			if (Reported < 3) {
-				Reported++;
-				dc_trace(64, "ui: upload %dx%d failed, GL error 0x%x",
-				         s->w, s->h, (unsigned)Err);
+		GLint Free = 0, Contig = 0;
+		glGetIntegerv(GL_FREE_TEXTURE_MEMORY_KOS, &Free);
+		glGetIntegerv(GL_FREE_CONTIGUOUS_TEXTURE_MEMORY_KOS, &Contig);
+		{
+			static int Said = 0;
+			if (Said < 4) {
+				Said++;
+				dc_trace(65, "ui: upload %dx%d err=0x%x, free %d KB, contiguous %d KB, need %d KB",
+				         s->w, s->h, (unsigned)Err, (int)(Free/1024),
+				         (int)(Contig/1024), (int)(s->w*s->h*2/1024));
 			}
+		}
+		if (Err != GL_NO_ERROR) {
+			/*
+			 *	Do not bail without swapping. A screen that holds its own event
+			 *	loop redraws only when something changes, so returning here
+			 *	leaves the last world frame on the display for as long as the
+			 *	screen is up -- the game looks frozen while it is in fact
+			 *	running and taking input, which is indistinguishable from a
+			 *	crash and was reported as one.
+			 */
+			glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+			glClear(GL_COLOR_BUFFER_BIT);
+			SDL_GL_SwapBuffers();
 			return;
 		}
 	}

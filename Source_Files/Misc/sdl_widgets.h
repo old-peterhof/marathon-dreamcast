@@ -301,6 +301,43 @@ private:
 };
 
 
+#ifdef DC
+/*
+ *  Pad button widget
+ *
+ *  w_key above is unusable here for two reasons: it enters binding mode on a
+ *  mouse click, and there is no mouse; and it captures an SDL_KEYDOWN, but
+ *  dc_input.c has already turned the pad button into a key by the time any
+ *  widget sees it, so it would record "z" rather than "X button".
+ *
+ *  So this drives the driver's capture mode instead and stores a button id.
+ *  Start reports id 0 and is read as cancel, which is the way out if the
+ *  screen is entered by accident.
+ */
+
+class w_pad_key : public widget {
+public:
+	w_pad_key(const char *name, int button_id);
+
+	int layout(void);
+	void draw(SDL_Surface *s) const;
+	void click(int x, int y);
+	void event(SDL_Event &e);
+
+	virtual void set_button(int id);
+	int get_button(void) const {return button;}
+
+private:
+	const char *name;
+
+	int key_x;			// X offset of the button name
+
+	int button;			// button id, 0 = unbound
+	bool binding;		// Flag: waiting for the driver to name a button
+};
+#endif
+
+
 /*
  *  Slider
  */

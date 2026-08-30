@@ -16,6 +16,12 @@
 #include "sdl_fonts.h"
 #include "sdl_widgets.h"
 #include "screen.h"
+#ifdef DC
+#include "dc_slots.h"
+#include "dc_explain.h"
+#include "dc_prefs.h"
+#include "dc_padconfig.h"
+#endif
 #include "images.h"
 #include "find_files.h"
 #include "screen_drawing.h"
@@ -56,12 +62,20 @@ static void sound_dialog(void *arg);
 // unattended -- synthesised keystrokes into Flycast proved unreliable.
 // controls_dialog never dereferences its parent argument, so NULL is fine.
 static void controls_dialog(void *arg);
-extern "C" void dc_open_controls_dialog(void) { controls_dialog(0); }
+/*
+ *	The AUTOSTART=controls harness. It opens the new Preferences tree, not the
+ *	stock dialog -- the stock one is no longer reachable in play, so testing it
+ *	would be testing something nobody can see.
+ */
+extern "C" void dc_open_controls_dialog(void) { dc_preferences(); }
 #endif
 
 static void controls_dialog(void *arg);
 static void environment_dialog(void *arg);
 static void keyboard_dialog(void *arg);
+#ifdef DC
+static void pad_dialog(void *arg);
+#endif
 
 
 /*
@@ -108,6 +122,10 @@ static bool ethernet_active(void)
  *  Main preferences dialog
  */
 
+static const char *gamma_labels[9] = {
+	"Darkest", "Darker", "Dark", "Normal", "Light", "Really Light", "Even Lighter", "Lightest", NULL
+};
+
 void handle_preferences(void)
 {
 	// Save the existing preferences, in case we have to reload them
@@ -124,6 +142,50 @@ void handle_preferences(void)
 	dialog d;
 	d.add(new w_static_text("PREFERENCES", TITLE_FONT, TITLE_COLOR));
 	d.add(new w_spacer());
+#ifdef DC
+	/*
+	 *	Three rows where there were five, per UI-HANDOFF section 4, which is the
+	 *	MENU-TREE.md audit applied.
+	 *
+	 *	PLAYER is gone: difficulty moved to New Game where it belongs to the run,
+	 *	the name needs a keyboard, and both colours are network appearance for a
+	 *	game with no network. ENVIRONMENT is gone entirely -- all five rows browse
+	 *	for replacement data files, and there is nothing to browse on a fixed
+	 *	disc. GRAPHICS collapses to its one live row: colour depth, resolution,
+	 *	screen size and fullscreen all describe hardware we already know, and one
+	 *	of them is the flag that once stuck off and rendered the whole game at
+	 *	320x160.
+	 *
+	 *	Brightness is promoted to the root rather than kept behind a button of
+	 *	its own, because a screen with one control on it is not a screen.
+	 */
+	w_explain *explain = new w_explain;
+	dc_explain_begin(explain);
+
+	w_select *gamma_w = new w_select("Brightness",
+		graphics_preferences->screen_mode.gamma_level, gamma_labels);
+	d.add(gamma_w);
+	dc_explain_add(gamma_w, "How bright the picture is. Worth setting on a CRT, "
+	                        "where the darkest levels can be hard to read.");
+
+	d.add(new w_spacer());
+
+	w_button *sound_b = new w_button("SOUND", sound_dialog, &d);
+	d.add(sound_b);
+	dc_explain_add(sound_b, "Volume, quality, and which sounds the game loads.");
+
+	w_button *controls_b = new w_button("CONTROLS", controls_dialog, &d);
+	d.add(controls_b);
+	dc_explain_add(controls_b, "The analog stick, sensitivity, and which button "
+	                           "does what.");
+
+	d.add(new w_spacer());
+	d.add(explain);
+	d.add(new w_spacer());
+	d.add(new w_button("RETURN", dialog_cancel, &d));
+
+	dc_explain_arm(&d);
+#else
 	d.add(new w_button("PLAYER", player_dialog, &d));
 	d.add(new w_button("GRAPHICS", graphics_dialog, &d));
 	d.add(new w_button("SOUND", sound_dialog, &d));
@@ -131,12 +193,29 @@ void handle_preferences(void)
 	d.add(new w_button("ENVIRONMENT", environment_dialog, &d));
 	d.add(new w_spacer());
 	d.add(new w_button("RETURN", dialog_cancel, &d));
+#endif
 
 	// Clear menu screen
 	clear_screen();
 
 	// Run dialog
 	d.run();
+
+#ifdef DC
+	dc_explain_end();
+
+	// Brightness lives on the root screen now, so it is applied here rather than
+	// in the graphics dialog that no longer runs.
+	{
+		int gamma = gamma_w->get_selection();
+
+		if (gamma != graphics_preferences->screen_mode.gamma_level) {
+			graphics_preferences->screen_mode.gamma_level = gamma;
+			change_screen_mode(&graphics_preferences->screen_mode, false);
+			write_preferences();
+		}
+	}
+#endif
 
 	// Redraw main menu
 	display_main_menu();
@@ -228,9 +307,6 @@ static const char *size_labels[13] = {
 	"1280x640", "1280x1024 (no HUD)", "1600x800", "1600x1200 (no HUD)", NULL
 };
 
-static const char *gamma_labels[9] = {
-	"Darkest", "Darker", "Dark", "Normal", "Light", "Really Light", "Even Lighter", "Lightest", NULL
-};
 
 static void graphics_dialog(void *arg)
 {
@@ -427,6 +503,9 @@ static void sound_dialog(void *arg)
 	dialog d;
 	d.add(new w_static_text("SOUND SETUP", TITLE_FONT, TITLE_COLOR));
 	d.add(new w_spacer());
+#ifdef DC
+	w_explain *explain = new w_explain;
+#endif
 	static const char *quality_labels[3] = {"8 Bit", "16 Bit", NULL};
 	w_toggle *quality_w = new w_toggle("Quality", sound_preferences->flags & _16bit_sound_flag, quality_labels);
 	d.add(quality_w);
@@ -438,10 +517,39 @@ static void sound_dialog(void *arg)
 	d.add(ambient_w);
 	w_toggle *more_w = new w_toggle("More Sounds", sound_preferences->flags & _more_sounds_flag);
 	d.add(more_w);
+#ifdef DC
+	/*
+	 *	Channels is dropped: it sets how many sounds can play at once, which is
+	 *	a property of the hardware and not a taste. Everything else stays.
+	 */
+	w_select *channels_w = NULL;
+#else
 	w_select *channels_w = new w_select("Channels", sound_preferences->channel_count, channel_labels);
 	d.add(channels_w);
+#endif
 	w_volume_slider *volume_w = new w_volume_slider("Volume", sound_preferences->volume);
 	d.add(volume_w);
+#ifdef DC
+	/*
+	 *	More Sounds is the only preference in the game with a large measured
+	 *	cost, and it sat among six that cost nothing. Saying so is the clearest
+	 *	case for these lines existing at all.
+	 */
+	dc_explain_begin(explain);
+	dc_explain_add(quality_w, "8-bit halves the memory sounds take and makes "
+	                          "them hissier.");
+	dc_explain_add(stereo_w, "Places sounds left and right.");
+	dc_explain_add(dynamic_w, "Keeps sounds in place as you turn, rather than "
+	                          "fixed to the screen.");
+	dc_explain_add(ambient_w, "Background noise: machinery, water, wind.");
+	dc_explain_add(more_w, "Loads the full set of monster sounds. Costs about "
+	                       "7.5 seconds of every level load.");
+	dc_explain_add(volume_w, "Overall loudness.");
+
+	d.add(new w_spacer());
+	d.add(explain);
+	dc_explain_arm(&d);
+#endif
 	d.add(new w_spacer());
 	d.add(new w_left_button("ACCEPT", dialog_ok, &d));
 	d.add(new w_right_button("CANCEL", dialog_cancel, &d));
@@ -465,10 +573,12 @@ static void sound_dialog(void *arg)
 			changed = true;
 		}
 
-		int channel_count = channels_w->get_selection();
-		if (channel_count != sound_preferences->channel_count) {
-			sound_preferences->channel_count = channel_count;
-			changed = true;
+		if (channels_w) {
+			int channel_count = channels_w->get_selection();
+			if (channel_count != sound_preferences->channel_count) {
+				sound_preferences->channel_count = channel_count;
+				changed = true;
+			}
 		}
 
 		int volume = volume_w->get_selection();
@@ -482,6 +592,10 @@ static void sound_dialog(void *arg)
 			write_preferences();
 		}
 	}
+
+#ifdef DC
+	dc_explain_end();
+#endif
 }
 
 
@@ -490,6 +604,9 @@ static void sound_dialog(void *arg)
  */
 
 static w_toggle *mouse_w;
+#ifdef DC
+static w_select *stick_mode_w;
+#endif
 
 static void controls_dialog(void *arg)
 {
@@ -500,14 +617,18 @@ static void controls_dialog(void *arg)
 	d.add(new w_static_text("CONTROLS", TITLE_FONT, TITLE_COLOR));
 	d.add(new w_spacer());
 #ifdef DC
-	// There is no mouse on a Dreamcast. This toggle now gates the analog stick,
-	// because input_device != _keyboard_or_game_pad is what makes vbl_sdl.cpp
-	// call test_mouse() at all -- so label it for what it actually does.
-	mouse_w = new w_toggle("Analog Stick", input_preferences->input_device);
+	// There is no mouse on a Dreamcast, and input_device is what makes
+	// vbl_sdl.cpp call test_mouse() -- the path carrying the stick's yaw and
+	// pitch. So the setting is presented as what the stick does, and the two
+	// choices are the two halves of that switch.
+	static const char *stick_labels[] = {"Look", "Move", NULL};
+	stick_mode_w = new w_select("Analog Stick",
+		input_preferences->dc_stick_mode == DC_STICK_MOVE ? 1 : 0, stick_labels);
+	d.add(stick_mode_w);
 #else
 	mouse_w = new w_toggle("Mouse Control", input_preferences->input_device);
-#endif
 	d.add(mouse_w);
+#endif
 #ifdef DC
 	w_toggle *invert_mouse_w = new w_toggle("Invert Look", input_preferences->modifiers & _inputmod_invert_mouse);
 #else
@@ -535,7 +656,39 @@ static void controls_dialog(void *arg)
 	d.add(sens_v_w);
 #endif
 	d.add(new w_spacer());
+#ifdef DC
+	w_button *pad_b = new w_button("CONFIGURE CONTROLLER", pad_dialog, &d);
+	d.add(pad_b);
+
+	/*
+	 *	Half of these describe engine behaviour that is not guessable from the
+	 *	label. Always Swim and Run/Swim interact; the two sensitivities are
+	 *	separate for a reason; and the stick mode changes which button fires.
+	 */
+	w_explain *explain = new w_explain;
+
+	dc_explain_begin(explain);
+	dc_explain_add(stick_mode_w, "Look: the stick turns and looks. Move: it "
+	                             "walks and turns, and Look Up and Look Down "
+	                             "aim.");
+	dc_explain_add(invert_mouse_w, "Pushing the stick up looks down instead.");
+	dc_explain_add(always_run_w, "Run without holding the run button. The button "
+	                             "then makes you walk.");
+	dc_explain_add(always_swim_w, "The same, in liquid. Run/Swim is one button, "
+	                              "so this and Always Run affect each other.");
+	dc_explain_add(weapon_w, "Switch to a better weapon when you pick one up.");
+	dc_explain_add(sens_h_w, "How fast the stick turns you.");
+	dc_explain_add(sens_v_w, "How fast it looks up and down. Separate because "
+	                         "Marathon's vertical range is small, so a good turn "
+	                         "speed feels twitchy on pitch.");
+	dc_explain_add(pad_b, "Bind every action to whichever button you want.");
+
+	d.add(new w_spacer());
+	d.add(explain);
+	dc_explain_arm(&d);
+#else
 	d.add(new w_button("CONFIGURE KEYBOARD", keyboard_dialog, &d));
+#endif
 	d.add(new w_spacer());
 	d.add(new w_left_button("ACCEPT", dialog_ok, &d));
 	d.add(new w_right_button("CANCEL", dialog_cancel, &d));
@@ -547,7 +700,21 @@ static void controls_dialog(void *arg)
 	if (d.run() == 0) {	// Accepted
 		bool changed = false;
 
+#ifdef DC
+		// One choice, two fields. dc_stick_mode is what the pad driver reads;
+		// input_device is what decides whether the analog look path runs at
+		// all. They must never disagree, so they are set together here and
+		// nowhere else.
+		int mode = stick_mode_w->get_selection() ? DC_STICK_MOVE : DC_STICK_LOOK;
+		int device = (mode == DC_STICK_MOVE) ? _keyboard_or_game_pad : _mouse_yaw_pitch;
+
+		if (mode != input_preferences->dc_stick_mode) {
+			input_preferences->dc_stick_mode = mode;
+			changed = true;
+		}
+#else
 		int device = mouse_w->get_selection();
+#endif
 		if (device != input_preferences->input_device) {
 			input_preferences->input_device = device;
 			changed = true;
@@ -575,11 +742,18 @@ static void controls_dialog(void *arg)
 			input_preferences->sens_vertical = sv;
 			changed = true;
 		}
+
+		// The stick mode above only reaches the pad driver through here.
+		dc_apply_pad_bindings();
 #endif
 
 		if (changed)
 			write_preferences();
 	}
+
+#ifdef DC
+	dc_explain_end();
+#endif
 }
 
 
@@ -692,7 +866,7 @@ static void load_default_keys(void *arg)
 {
 	// Load default keys, depending on state of "Mouse control" widget
 	dialog *d = (dialog *)arg;
-	SDLKey *keys = (mouse_w->get_selection() ? default_mouse_keys : default_keys);
+	SDLKey *keys = ((mouse_w && mouse_w->get_selection()) ? default_mouse_keys : default_keys);
 	for (int i=0; i<NUM_KEYS; i++)
 		key_w[i]->set_key(keys[i]);
 	d->draw();
@@ -740,6 +914,8 @@ static void keyboard_dialog(void *arg)
 			write_preferences();
 	}
 }
+
+
 
 
 /*
@@ -1025,4 +1201,20 @@ static void environment_dialog(void *arg)
 		parent->quit(0);	// Quit the parent dialog so it won't draw in the old theme
 }
 
+#endif
+
+#ifdef DC
+/*
+ *	CONFIGURE CONTROLLER lives in dc_padconfig.cpp -- it runs a loop over two
+ *	pages rather than a single dialog, so it cannot be a plain action_proc.
+ */
+static void pad_dialog(void *arg)
+{
+	dialog *parent = (dialog *)arg;
+
+	dc_pad_config();
+
+	if (parent)
+		parent->draw();
+}
 #endif
