@@ -187,6 +187,53 @@ around glTexImage2D would have saved it.
 Raise them again only after paletted walls have freed the room, and soak before
 shipping a disc -- 125 uploads was enough to kill it, and a soak is cheap.
 
+**THE VRAM GAP IS THE INTERFACE -- measured 2026-08-30, overnight.**
+
+Answered, and it corrects the figure recorded just below it. The earlier note
+said texture VRAM showed five times as much used as there were texels. That
+comparison was wrong: it measured cumulative *used* against texel bytes without
+subtracting what was already gone before Aleph One uploaded anything.
+
+Two measurements settle it.
+
+*There is a large baseline.* At the very first world-texture upload, **1122 KB
+of the 4958 KB texture pool is already used.** Nothing TextureManager does
+accounts for it.
+
+*It is the interface.* Counting every `glTexImage2D` in the build, ten uploads
+happen before the first world texture and total **1120 KB**, which matches the
+baseline exactly:
+
+    256x256, 128x128, 256x128, 256x256, 512x256, 512x256,
+    256x128, 256x128, 256x128, 256x128
+
+The two 512x256 textures are 256 KB each. So the status bar and interface art
+occupy **23% of all texture memory on the machine** before a level is drawn.
+
+*And per-texture overhead is ordinary after all.* Between the first upload and
+the fiftieth, the pool goes from 1122 KB to 1598 KB -- 476 KB for 278 KB of
+counted texels, about 1.7x. That is 256-byte allocation granularity (the
+allocator counts in 256-byte subblocks, `alloc_count_free`; the 2048-byte
+alignment applies only to allocations of 2048 bytes or more) plus uploads the
+per-type counter does not see. Not the pathology the earlier note implied.
+
+**This is a decision for Max, not something to change unattended.** He asked
+specifically for the interface at full resolution, and this is the cost of that.
+The numbers, so the trade is visible:
+
+| | KB |
+|---|---|
+| texture pool | 4958 |
+| interface, before the world loads | 1120 |
+| what full-resolution sprites need | 1630 |
+
+Halving the interface would free roughly 840 KB -- substantial, but still not
+enough on its own to pay for full-resolution sprites, and it costs exactly the
+thing Max said he wanted sharp. Worth looking at before trading it away: whether
+those two 512x256 tiles are mostly padding, since the HUD is a wide, short strip
+and power-of-two tiling wastes whatever it does not fill. That would be free
+space with no visual cost, and it is the first thing to check.
+
 **FIX B IS NOT WORTH BUILDING AS SPECIFIED -- measured 2026-08-30, overnight.**
 
 The plan said paletted walls would halve the bulk of VRAM and so pay for the

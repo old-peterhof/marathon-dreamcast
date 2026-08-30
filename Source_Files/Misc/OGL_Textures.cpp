@@ -1240,6 +1240,18 @@ void TextureManager::PlaceTexture(uint32 *Buffer)
 				TypeBytes[TextureType] += (unsigned)LoadedWidth*(unsigned)LoadedHeight*2;
 				TypeCount[TextureType]++;
 			}
+			if (nupload == 1)
+			{
+				// What is already gone before Aleph One uploads its first
+				// texture? The pool is ALLOC_SIZE and GLdc reports used as
+				// ALLOC_SIZE minus free, so a large figure here means the
+				// gap is not our textures at all.
+				GLint F0 = 0, U0 = 0;
+				glGetIntegerv(GL_FREE_TEXTURE_MEMORY_KOS, &F0);
+				glGetIntegerv(GL_USED_TEXTURE_MEMORY_KOS, &U0);
+				dc_trace(52, "vram baseline at first upload: %d KB used / %d KB free (pool %d KB)",
+				         (int)(U0/1024), (int)(F0/1024), (int)((U0+F0)/1024));
+			}
 			if ((nupload % 50) == 0)
 				dc_trace(51, "vram by type KB: wall %u (%d)  lscp %u (%d)  inhab %u (%d)  weap %u (%d)",
 				         TypeBytes[0]/1024, TypeCount[0], TypeBytes[1]/1024, TypeCount[1],
