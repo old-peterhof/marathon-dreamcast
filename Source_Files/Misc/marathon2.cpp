@@ -77,6 +77,10 @@ static void game_timed_out(void);
 
 static void load_all_game_sounds(short environment_code);
 
+#ifdef DC
+extern "C" void dc_trace(int slot, const char *fmt, ...);
+#endif
+
 /* ---------- code */
 
 void initialize_marathon(
@@ -245,10 +249,26 @@ bool entering_map(bool restoring_saved)
 	mark_environment_collections(static_world->environment_code, true);
 	mark_all_monster_collections(true);
 	mark_player_collections(true);
+#ifdef DC
+	// Stage timing for the level load. gl-forward branched before the
+	// dc_ticks() instrumentation on dc-rebuild existed, so use SDL_GetTicks.
+	unsigned dc_t0 = SDL_GetTicks();
+#endif
 	load_collections();
+#ifdef DC
+	dc_trace(54, "load: collections %u ms", SDL_GetTicks() - dc_t0);
+	dc_t0 = SDL_GetTicks();
+#endif
 
 	load_all_monster_sounds();
+#ifdef DC
+	dc_trace(55, "load: monster sounds %u ms", SDL_GetTicks() - dc_t0);
+	dc_t0 = SDL_GetTicks();
+#endif
 	load_all_game_sounds(static_world->environment_code);
+#ifdef DC
+	dc_trace(56, "load: game sounds %u ms", SDL_GetTicks() - dc_t0);
+#endif
 
 	/* tell the keyboard controller to start recording keyboard flags */
 	if (game_is_networked) success= NetSync(); /* make sure everybody is ready */
