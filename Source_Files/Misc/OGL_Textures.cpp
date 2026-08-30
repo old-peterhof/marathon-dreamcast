@@ -447,36 +447,20 @@ bool TextureManager::Setup()
 		LoadedWidth = MAX(TxtrWidth >> TxtrTypeInfo.Resolution, 1);
 		LoadedHeight = MAX(TxtrHeight >> TxtrTypeInfo.Resolution, 1);
 		
-		bool NeedsShrink = (LoadedWidth != TxtrWidth || LoadedHeight != TxtrHeight);
-		
 		// If not, then load the expected textures.
 		//
-		// Each buffer is built at full size and then reduced, so building both
-		// before reducing either meant two full-size buffers alive at once. On a
-		// 16MB machine that is the difference between fitting and not: a 1024x512
-		// landscape is 2MB per buffer. Reduce each one as soon as it exists, so
-		// the peak is one full-size buffer plus one reduced, never two full.
+		// GetOGLTexture builds each buffer at LoadedWidth x LoadedHeight
+		// directly -- expansion and reduction are one pass now, so there is no
+		// full-size intermediate to shrink afterwards and no second buffer to
+		// hold it. See the note above FlushAccumRow. This used to be the peak
+		// allocation of the whole level load: a 1024x512 landscape needed 2MB
+		// for the full-size image plus another 512KB for the reduced one, and
+		// on a 16MB machine that was the difference between fitting and not.
 		if (!NormalBuffer)
-		{
 			NormalBuffer = GetOGLTexture(NormalColorTable);
-			if (NeedsShrink)
-			{
-				uint32 *NewNormalBuffer = Shrink(NormalBuffer);
-				delete []NormalBuffer;
-				NormalBuffer = NewNormalBuffer;
-			}
-		}
 		
 		if (IsGlowing && !GlowBuffer)
-		{
 			GlowBuffer = GetOGLTexture(GlowColorTable);
-			if (NeedsShrink)
-			{
-				uint32 *NewGlowBuffer = Shrink(GlowBuffer);
-				delete []GlowBuffer;
-				GlowBuffer = NewGlowBuffer;
-			}
-		}
 		
 		// Kludge for making top and bottom look flat
 		/*
@@ -918,12 +902,126 @@ void TextureManager::FindColorTables()
 }
 
 
+/*
+ *	Building a texture straight into its loaded size.
+ *
+ *	This used to be two whole-image passes over two heap buffers: expand every
+ *	index through the CLUT into a full-size 32-bit image, then box-filter that
+ *	down into a second, smaller one. At half resolution -- which is what the
+ *	Dreamcast runs -- the two buffers alive at once came to five bytes for every
+ *	pixel of the full-size image, and a 1024x512 landscape is 2.6MB of that. On a
+ *	16MB machine it is the difference between fitting and not.
+ *
+ *	Nothing required the full-size image to exist. The box filter reduces by an
+ *	exact power of two, so each destination pixel covers a fixed block of source
+ *	pixels, and the source is already in memory as the shape's own 8-bit rows.
+ *	So the expansion and the filter fold into one pass that writes the reduced
+ *	image directly, and the peak drops to one byte per full-size pixel.
+ *
+ *	The filter has to run in 8-bit colour, before any packing, or the averaging
+ *	compounds whatever quantisation the pack introduces.
+ *
+ *	Source rows arrive in increasing order, so only one destination row is ever
+ *	being accumulated: a few kilobytes, not an image. Colour is weighted by alpha
+ *	for the reason set out at the top of dc/dc_glu.c -- index 0 is transparent
+ *	*black*, and letting it vote on colour puts a dark fringe around every sprite.
+ *	Alpha itself is divided by the full block size, not by the number of source
+ *	pixels that happened to be written, because the pixels that were never
+ *	written are transparent and have to count as such.
+ */
+
+static void FlushAccumRow(uint32 *Buffer, int LoadedW, int Row,
+	const uint32 *Acc, unsigned BlockPixels)
+{
+	uint8 *Dest = (uint8 *)(Buffer + (size_t)Row*LoadedW);
+	
+	for (int x=0; x<LoadedW; x++, Dest+=4)
+	{
+		uint32 A = Acc[4*x+3];
+		
+		if (A)
+		{
+			Dest[0] = uint8(Acc[4*x+0]/A);
+			Dest[1] = uint8(Acc[4*x+1]/A);
+			Dest[2] = uint8(Acc[4*x+2]/A);
+		}
+		else
+		{
+			// Nothing opaque in the block; there is no colour to keep.
+			Dest[0] = Dest[1] = Dest[2] = 0;
+		}
+		
+		Dest[3] = uint8(A/BlockPixels);
+	}
+}
+
+
+// One source row, either copied straight across or folded into the accumulator.
+static void StoreSourceRow(uint32 *Buffer, uint32 *Acc, int& AccRow,
+	int LoadedW, int LoadedH, int XShift, int YShift,
+	unsigned BlockPixels, bool Reduce,
+	int oy, int ox, int Count, const byte *Src, const uint32 *ColorTable)
+{
+	if (!Reduce)
+	{
+		uint32 *Dest = Buffer + (size_t)oy*LoadedW + ox;
+		for (int w=0; w<Count; w++)
+			*(Dest++) = ColorTable[*(Src++)];
+		return;
+	}
+	
+	int dy = oy >> YShift;
+	if (dy >= LoadedH) dy = LoadedH - 1;
+	
+	if (dy != AccRow)
+	{
+		if (AccRow >= 0)
+			FlushAccumRow(Buffer,LoadedW,AccRow,Acc,BlockPixels);
+		memset(Acc,0,sizeof(uint32)*4*LoadedW);
+		AccRow = dy;
+	}
+	
+	for (int w=0; w<Count; w++)
+	{
+		uint32 Color = ColorTable[*(Src++)];
+		const uint8 *p = (const uint8 *)&Color;
+		unsigned Alpha = p[3];
+		
+		int dx = (ox + w) >> XShift;
+		if (dx >= LoadedW) dx = LoadedW - 1;
+		
+		uint32 *a = Acc + 4*dx;
+		a[0] += p[0]*Alpha;
+		a[1] += p[1]*Alpha;
+		a[2] += p[2]*Alpha;
+		a[3] += Alpha;
+	}
+}
+
+
 uint32 *TextureManager::GetOGLTexture(uint32 *ColorTable)
 {
+	// The image is built at its loaded size, not at full size and then reduced;
+	// see the note above FlushAccumRow.
+	const int LoadedW = MAX(int(LoadedWidth),1);
+	const int LoadedH = MAX(int(LoadedHeight),1);
+	
+	int XShift = 0;
+	while ((int(TxtrWidth)  >> XShift) > LoadedW) XShift++;
+	int YShift = 0;
+	while ((int(TxtrHeight) >> YShift) > LoadedH) YShift++;
+	
+	const bool Reduce = (XShift != 0 || YShift != 0);
+	const unsigned BlockPixels = (1u << XShift) << YShift;
+	
 	// Allocate and set to black and transparent
-	int NumPixels = int(TxtrWidth)*int(TxtrHeight);
+	int NumPixels = LoadedW*LoadedH;
 	uint32 *Buffer = new uint32[NumPixels];
 	objlist_clear(Buffer,NumPixels);
+	
+	// Accumulator for the one destination row currently being built.
+	uint32 *Acc = Reduce ? new uint32[4*LoadedW] : NULL;
+	int AccRow = -1;
 	
 	// The dimension, the offset in the original texture, and the offset in the OpenGL texture
 	short Width, OrigWidthOffset, OGLWidthOffset;
@@ -950,11 +1048,9 @@ uint32 *TextureManager::GetOGLTexture(uint32 *ColorTable)
 	if (Texture->bytes_per_row == NONE)
 	{
 		short horig = OrigHeightOffset;
-		uint32 *OGLRowStart = Buffer + TxtrWidth*OGLHeightOffset;
 		for (short h=0; h<Height; h++)
 		{
 			byte *OrigStrip = Texture->row_addresses[horig];
-			uint32 *OGLStrip = OGLRowStart;
 
 			// Cribbed from textures.c:
 			// This is the Marathon 2 sprite-interpretation scheme;
@@ -990,12 +1086,11 @@ uint32 *TextureManager::GetOGLTexture(uint32 *ColorTable)
 			
 			short Width = OrigWidthFinish - OrigWidthOffset;
 			OrigStrip += OrigWidthOffset;
-			OGLStrip += OGLWidthOffset;
 			
-			for (short w=0; w<Width; w++)
-				*(OGLStrip++) = ColorTable[*(OrigStrip++)];
+			StoreSourceRow(Buffer,Acc,AccRow,LoadedW,LoadedH,XShift,YShift,
+				BlockPixels,Reduce,OGLHeightOffset+h,OGLWidthOffset,Width,
+				OrigStrip,ColorTable);
 			horig++;
-			OGLRowStart += TxtrWidth;
 		}
 	}
 	else
@@ -1015,16 +1110,21 @@ uint32 *TextureManager::GetOGLTexture(uint32 *ColorTable)
 			OGLWidthOffset = 0;
 		}
 		short horig = OrigHeightOffset;
-		uint32 *OGLRowStart = Buffer + TxtrWidth*OGLHeightOffset + OGLWidthOffset;
 		for (short h=0; h<Height; h++)
 		{
 			byte *OrigStrip = Texture->row_addresses[horig] + OrigWidthOffset;
-			uint32 *OGLStrip = OGLRowStart;
-			for (short w=0; w<Width; w++)
-				*(OGLStrip++) = ColorTable[*(OrigStrip++)];
+			StoreSourceRow(Buffer,Acc,AccRow,LoadedW,LoadedH,XShift,YShift,
+				BlockPixels,Reduce,OGLHeightOffset+h,OGLWidthOffset,Width,
+				OrigStrip,ColorTable);
 			horig++;
-			OGLRowStart += TxtrWidth;
 		}
+	}
+	
+	if (Reduce)
+	{
+		if (AccRow >= 0)
+			FlushAccumRow(Buffer,LoadedW,AccRow,Acc,BlockPixels);
+		delete []Acc;
 	}
 	
 	return Buffer;
