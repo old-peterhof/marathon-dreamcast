@@ -253,6 +253,51 @@ Everything else from those builds that does *not* need a surface is already on
 
 ### 5. Load times
 
+**Progress 2026-08-30, overnight.** gl-forward branched at b36 and never had the
+b42-b47 load-time work, which is why a level load here takes far longer than on
+dc-rebuild.
+
+*Landed:* `6f9a28d`, the chapter screen made skippable from a controller
+(`4671c8a`). Measured selecting New Game to first render under Flycast: **52.4s
+before, 42.8s after.** The 9.6s saved matches the ten-second unskippable wait the
+original commit describes. Its `interface.cpp` hunks were dropped -- they are
+stage-timing scaffolding calling `dc_ticks()`, from an earlier commit gl-forward
+also lacks.
+
+*Nothing to take from `0a12774`.* Its `mysound.cpp` diff is ISO-8859 character
+mangling, not a functional change, and the rest is `dc_ticks` instrumentation and
+documentation. Its actual finding was that the **More Sounds** preference halves
+the 13.7s sound stage -- a player preference, already exposed in the Preferences
+screen, and Max's call rather than something to change unilaterally. Note also
+that card-stored preferences override `default_sound_manager_parameters`
+completely, so editing the default changes nothing on a console with a card.
+
+*`c30cf24`'s read buffer HANGS on gl-forward -- tried and reverted.* The 17-line
+hunk gives each stream a 64KB sector-aligned buffer via
+`setvbuf(f->hidden.stdio.fp, NULL, _IOFBF, 64*1024)` in `FileSpecifier::Open`.
+Applied on its own, the game reaches "autostart: selecting iNewGame" and stalls
+there indefinitely -- over 500 seconds with the log not growing, Flycast still
+alive, so a hang rather than a crash or mere slowness.
+
+Not understood, and worth care before retrying:
+
+- The likeliest cause is that `f->hidden.stdio.fp` is not valid for whatever
+  RWops this SDL's `SDL_RWFromFile` returns, so `setvbuf` is handed a garbage
+  pointer. That is a guess. Check what the DC SDL actually returns before
+  reapplying.
+- The same hunk is known good on dc-rebuild, which shipped it as b42 and which
+  Max has played. So this is a difference between the branches, not a bad idea.
+- **Flycast may be the wrong instrument for this change anyway.** It reads the
+  disc image from an SSD with no seek cost, so a fix aimed at an optical drive's
+  sector fast path could measure as nothing here even when it is a large win on
+  hardware. A hang is still a hang and still disqualifying, but do not use a
+  Flycast timing to decide whether this optimisation is worth having.
+
+*Remaining:* about 41s of the 42.8s is still before `StartRun entry`. The old
+accounting attributes that to monster sounds (~13.7s), shape collections (~7.7s),
+what is left of the chapter screen, and `goto_level` (~1.6s).
+
+
 Builds before b71 cut them substantially. Find the commits
 (`git log dc-rebuild --oneline` around the relevant builds) and check what they
 touched; if the changes are in wad reading or collection loading they are
