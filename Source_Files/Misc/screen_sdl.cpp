@@ -182,6 +182,36 @@ void ReloadViewContext(void)
  *  Enter game screen
  */
 
+#ifdef DC
+/*
+ *	Bring up the in-game video mode before the level's shapes are read.
+ *
+ *	The shading tables a collection is loaded with are built to match the
+ *	display's pixel format, and OGL_Textures reads 16-bit tables as xRGB1555 --
+ *	FindOGLColorTable says so: "Convert from ARGB 5551". The Dreamcast's
+ *	software surface is RGB565. So as soon as the menus became software, the
+ *	order became: software mode, load_collections builds 565 tables, then
+ *	enter_screen switches to GL and every texture is read out of the wrong bit
+ *	fields. Greys came out yellow, greens shifted, and the walls picked up
+ *	magenta speckle.
+ *
+ *	It is an ordering bug, not a conversion bug, so the fix is ordering: switch
+ *	to the in-game mode before anything reads a collection, and the tables are
+ *	built against the format that will actually be used. entering_map calls
+ *	this, which is the one point every route into a level passes through -- new
+ *	game, restored game and changing level alike.
+ *
+ *	enter_screen still asks for the same mode later; change_screen_mode's
+ *	already-set guard makes that second call a no-op rather than a second
+ *	teardown of the PowerVR.
+ */
+void dc_enter_game_video_mode(void)
+{
+	change_screen_mode(&graphics_preferences->screen_mode, true);
+}
+#endif
+
+
 void enter_screen(void)
 {
 	if (world_view->overhead_map_active)

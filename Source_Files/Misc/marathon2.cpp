@@ -79,6 +79,7 @@ static void load_all_game_sounds(short environment_code);
 
 #ifdef DC
 extern "C" void dc_trace(int slot, const char *fmt, ...);
+void dc_enter_game_video_mode(void);
 #endif
 
 /* ---------- code */
@@ -249,6 +250,10 @@ bool entering_map(bool restoring_saved)
 	mark_environment_collections(static_world->environment_code, true);
 	mark_all_monster_collections(true);
 	mark_player_collections(true);
+#ifdef DC
+	/* Before any collection is read: see dc_enter_game_video_mode. */
+	dc_enter_game_video_mode();
+#endif
 #ifdef DC
 	// Stage timing for the level load. gl-forward branched before the
 	// dc_ticks() instrumentation on dc-rebuild existed, so use SDL_GetTicks.
