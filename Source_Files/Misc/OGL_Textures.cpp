@@ -1228,6 +1228,23 @@ void TextureManager::PlaceTexture(uint32 *Buffer)
 				         (int)LoadedWidth, (int)LoadedHeight, (int)(FreeNow/1024));
 			}
 		}
+		{
+			// Bytes uploaded per texture type. Everything is 2 bytes/texel
+			// (ARGB4444) today, so this is what each type actually occupies in
+			// the PVR's texture pool -- which is the budget that matters, since
+			// the RAM buffer is freed straight after the upload.
+			static unsigned TypeBytes[OGL_NUMBER_OF_TEXTURE_TYPES] = {0};
+			static int TypeCount[OGL_NUMBER_OF_TEXTURE_TYPES] = {0};
+			if (TextureType >= 0 && TextureType < OGL_NUMBER_OF_TEXTURE_TYPES)
+			{
+				TypeBytes[TextureType] += (unsigned)LoadedWidth*(unsigned)LoadedHeight*2;
+				TypeCount[TextureType]++;
+			}
+			if ((nupload % 50) == 0)
+				dc_trace(51, "vram by type KB: wall %u (%d)  lscp %u (%d)  inhab %u (%d)  weap %u (%d)",
+				         TypeBytes[0]/1024, TypeCount[0], TypeBytes[1]/1024, TypeCount[1],
+				         TypeBytes[2]/1024, TypeCount[2], TypeBytes[3]/1024, TypeCount[3]);
+		}
 		if ((nupload % 25) == 0)
 		{
 			// Uploaded textures live in the PVR's 8MB of VRAM, not in the

@@ -187,7 +187,53 @@ around glTexImage2D would have saved it.
 Raise them again only after paletted walls have freed the room, and soak before
 shipping a disc -- 125 uploads was enough to kill it, and a soak is cheap.
 
-**This is what Fix B is now for.** Not to make room in RAM -- to buy back VRAM
+**FIX B IS NOT WORTH BUILDING AS SPECIFIED -- measured 2026-08-30, overnight.**
+
+The plan said paletted walls would halve the bulk of VRAM and so pay for the
+1630 KB that full-resolution sprites cost. Measured, that is false, and it fails
+twice over.
+
+*The design itself is viable.* Counting distinct (type, collection, CTable)
+triples on this level: **walls use exactly one palette** (collection 17,
+ctable 0) and landscape one (collection 28). GLdc has four shared palette banks
+(`GL_SHARED_TEXTURE_BANK_KOS`), so walls and landscape would occupy two of four
+with room to spare. Note each *non-shared* paletted texture burns a bank of its
+own -- `_glGenPaletteSlot` at `texture.c:2273` -- so shared banks are mandatory,
+not an optimisation. Inhabitants use 5 palettes and weapons 2, which is why they
+cannot all go paletted.
+
+*But walls are not the bulk of VRAM.* Bytes of actual texel data at 50 uploads:
+
+| type | KB | textures |
+|---|---|---|
+| wall | 96 | 12 |
+| landscape | 8 | 1 |
+| inhabitant | 160 | 15 |
+| weapon | 34 | 22 |
+
+Walls are 96 KB. Inhabitants already outweigh them. Halving the wall bytes saves
+something like 50 KB, against the 1630 KB the sprites need. Even taking the
+absolute bound -- walls being 100% of the 2015 KB the pool reported at 100
+uploads -- the most Fix B could ever save is about 1000 KB, still short.
+
+*And the real problem is somewhere else entirely.* Those four types sum to
+**298 KB of texel data**, while GLdc reported **1505 KB used** at the same
+moment. Five times as much VRAM is being consumed as there are texels to store.
+
+Part of that is the allocator: GLdc allocates the texture pool in **2KB blocks**
+(`alloc.c:51`, and anything >= 2048 bytes is forced to 2048-alignment), so an
+8x8 texture at 2 bytes/texel occupies a full 2KB block, sixteen times its size.
+With many small sprite and weapon frames that is real waste. But it does not
+account for the gap: 50 textures can lose at most 50 x 2KB = 100 KB to rounding,
+not 1.2MB. **The rest is unexplained and should be the next thing investigated**,
+because if most of 1.2MB is overhead rather than data, that is where the budget
+for full-resolution sprites actually is -- and it would be worth far more than
+paletted walls.
+
+Do not start the paletted-texture work on the strength of the original argument.
+If it is wanted later it should be for its own sake, and it is Max's call.
+
+**What Fix B was originally for.** Not to make room in RAM -- to buy back VRAM
 so the full-resolution sprites are affordable. Walls are the bulk of the pool
 and paletted walls halve them, which is roughly the 1.6MB the sprites cost.
 That is the next piece of item 0, and it should be measured with the same
