@@ -25,6 +25,59 @@ that fixed them.
 
 ## Fixed
 
+### The "z-fighting" shimmer is not z-fighting (investigated 2026-08-30, unfixed)
+
+Max reported "a lot of what almost looks like z-fighting in textures" while
+playing b76. It is not z-fighting, and the depth changes made for the water fix
+are not responsible.
+
+**Measured.** The `play` disc autostarts into a level and has no PADTEST, so the
+camera stands still while the world renders. Six consecutive screenshots, with
+the serial log confirming 30.3fps across 53 samples and yaw and position
+constant:
+
+| frame pair | pixels differing by more than 12 |
+|---|---|
+| 1 vs 2 | 0 of 259520 |
+| 2 vs 3 | 0 of 259520 |
+| 3 vs 4 | 0 of 259520 |
+| 4 vs 5 | 0 of 259520 |
+| 5 vs 6 | 0 of 259520 |
+
+Nothing is fighting. With a static camera the renderer is bit-for-bit stable, so
+there is no depth ambiguity and no per-frame instability. `glDepthFunc` and the
+punch-through list assignment are exonerated; do not go back to them for this.
+
+What is left is **texture minification aliasing during motion**. Wall textures
+carry a lot of high-frequency detail -- the ceiling texture on the first level
+especially -- and without a mipmap chain, minification point-samples a texture
+denser than the pixels covering it. That crawls as the camera moves and reads
+exactly as shimmer.
+
+**The textbook fix is mipmaps, and they are broken here in two separate ways.**
+
+1. Our own `gluBuild2DMipmaps` in `dc/dc_glu.c` halves the image and uploads
+   each level itself. GLdc reallocates the texture the first time it sees a
+   level above zero and lays the chain out to its own scheme, which does not
+   match a chain built by halving both dimensions independently -- a 128x32
+   image reaches height 1 long before width 1. Enabling mipmaps this way
+   rendered **every wall white**.
+2. Letting GLdc build the chain instead, by uploading level 0 and calling
+   `glGenerateMipmap`, gets past the white but renders floors and walls as
+   garish cyan and green noise. GLdc's generator does not handle the 16-bit
+   format these textures are stored in.
+
+Also worth recording, because this file used to say otherwise: **GLdc 1.1.1 does
+ship a `gluBuild2DMipmaps`**, declared in its own `glu.h`. The comment in
+`dc_glu.c` claiming it is absent is wrong for this version. It cannot be used
+regardless -- it hardcodes `internalFormat 3` with `GL_RGB` and
+`GL_UNSIGNED_BYTE` and ignores what the caller passed, so Aleph One's RGBA would
+be read four bytes at a time as three.
+
+So mipmaps need GLdc's generator fixed, which is a kos-ports change and Max's
+call. Everything was reverted; the tree renders as it did before.
+
+
 ### A damage flash never went away (GL only, fixed 2026-08-30)
 
 Being hit by a drone left the screen inverted for the rest of the level. Being
