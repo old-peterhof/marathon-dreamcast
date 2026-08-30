@@ -62,6 +62,68 @@ is more work but avoids fighting a widget system built around a pointer.
 
 ## GL build: bring it up to parity with b71 — the work list
 
+### Handover, overnight run of 2026-08-29/30
+
+Start here. Everything below was measured on this branch; nothing was verified
+on hardware.
+
+**Landed, all on `gl-forward`, all pushed.**
+
+| commit | what | measured |
+|---|---|---|
+| `4671c8a` | chapter screen skippable from a controller | load 52.4s -> 42.8s |
+| `e31fa34` | **damage-flash fader bug fixed** | fader was still set 1800 frames after the fade ended |
+| `3a8b9d8` | load-stage instrumentation | collections are 26 of the 42 seconds |
+| `d03a5c3` | controlled-run harness, `tools/loadtrial.sh` | control exact at 42.6s over three runs |
+
+**Waiting on Max. Do not decide these unattended.**
+
+1. *Interface resolution.* He asked for it full res. See the correction below --
+   the interface turns out to be cheap, so this may not be a real trade at all.
+2. *Sprites at full resolution.* b73 shipped this and died on hardware after
+   about 1.5 seconds; free VRAM fell to 270 KB by 125 uploads. It costs 1630 KB
+   and there is no headroom yet.
+3. *Reopening paletted textures (old Fix B).* Measured and rejected: walls are
+   96-104 KB of texel data against inhabitants' 132-160 KB, so halving them
+   cannot pay for the sprites. The design is viable -- walls use exactly one
+   palette, landscape one, and GLdc has four shared banks -- but the payoff is
+   not there.
+
+**Correction: the VRAM baseline is FONTS, not the interface.** `26369d2` said
+the interface and status bar occupy 1120 KB, 23% of the 4958 KB texture pool.
+That was wrong. Tagging each upload with its source file settles it:
+
+| source | textures | KB |
+|---|---|---|
+| `FontHandler.cpp` | 10, including two 512x256 | **1120** |
+| `HUDRenderer_OGL.cpp` | 6 | 200 |
+
+The HUD panel is 200 KB and its tiling is exact -- 256x128, 256x128, 128x128,
+256x32, 256x32, 128x32 sums to precisely 640x160, with **zero padding**. So the
+padding hypothesis is dead and the interface is not the problem.
+
+**The fonts are, and this is now the most promising lead on the list.** 1120 KB
+of font atlases uploaded before a level draws, on a machine with 8MB of video
+RAM, two of them 512x256 apiece. They cost heap as well: the load trace shows
+384 KB for the screen font and 1152 KB more for the map fonts. Nobody has asked
+for the fonts to be large, and unlike the interface art Max has stated no
+preference about them -- so this is the cheapest place to look before trading
+away anything he does care about.
+
+**The one live technical lead on load time.** The 18 seconds in
+`load_collections` is real: a 64KB buffer cut it from 26.2s to 8.0s. It cannot
+land as written, because collection 0 starts at **offset 1024, half a sector**,
+KOS's ISO9660 fast path needs sector-aligned requests, and a large buffered read
+from there hangs the driver -- 0 of 3 controlled runs completed. The route is to
+align the reads themselves, reading from `offset & ~2047` and discarding the
+leading bytes, rather than asking stdio to buffer a misaligned stream. That is a
+real change to the shapes reading path and wants Max awake. The toolchain at
+`/opt/toolchains/dc` is not to be rebuilt, so patching KOS is not an option.
+
+**Before the next hardware test:** `alephone-b74-gl-halfres.cdi` is the last
+disc Max has on a console and it **predates the fader fix**. Build a fresh `cdi`
+first -- with him there to test it, not unattended.
+
 Max's list, captured 2026-08-29 for a session starting that evening. Ordered by
 what is understood versus what needs investigating first.
 
