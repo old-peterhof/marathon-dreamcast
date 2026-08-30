@@ -385,36 +385,49 @@ static void change_screen_mode(int width, int height, int depth, bool nogl)
 }
 
 #ifdef DC
-#include <dc/video.h>
+#include <GL/glkos.h>
 
 /*
  *	Where the Dreamcast interface draws, in either video mode.
  *
- *	The pause menu and the terminals happen in the middle of a level, with the
- *	PowerVR up. SDL's Dreamcast driver sets current->pixels = NULL for a GL
- *	surface, so the UI code -- which draws into SDL_GetVideoSurface() like any
- *	SDL program -- has nothing to write to and would fault.
+ *	The pause menu and the terminals run mid-level with the PowerVR up, and
+ *	SDL's Dreamcast driver sets current->pixels = NULL for a GL surface, so the
+ *	UI code -- which draws into the video surface like any SDL program -- has
+ *	nothing to write to.
  *
- *	Switching back to a software mode for the duration is not the answer.
+ *	Two routes were ruled out before this one.
+ *
+ *	Switching back to a software mode for the duration does not work:
  *	DC_SetVideoMode calls DC_VideoQuit first, which calls pvr_shutdown(), so
- *	re-entering GL afterwards both trips the pvr_state assertion on the next
- *	frame and throws away every uploaded texture -- every pause would re-pay the
- *	shape-collection load, which is 26 seconds. Measured; see BUGS.md.
+ *	re-entering GL trips the pvr_state assertion on the next frame AND throws
+ *	away every uploaded texture, making every pause re-pay the 26 second
+ *	shape-collection load.
  *
- *	What works instead is to hand the UI a surface that points straight at the
- *	framebuffer. The mode is set with a single framebuffer -- "640x480IL NTSC
- *	with 1 framebuffers" in the boot log -- so there is no page flipping to race,
- *	and a screen that holds its own event loop stops the world while it is up, so
- *	nothing is submitting to the PVR to paint over the top. Costs no video RAM,
- *	which the texture-overlay alternative would have at about 640KB.
+ *	Drawing straight at the scanout buffer does not work either, and the reason
+ *	is worth keeping. KOS exposes pvr_get_front_buffer(), but pvr_misc.c returns
+ *	`addr * 2 + PVR_RAM_BASE` -- the scanout buffer lives in the 32-bit VRAM
+ *	view while vram_s is the 64-bit view, and that doubling is a fixup between
+ *	two aliases of the same memory, not a linear remap. Writes through vram_s
+ *	land in real VRAM and are simply not the pixels being scanned out; measured,
+ *	the UI drew 710 of 3168 sampled pixels and none of them appeared. KOS says
+ *	as much outright: the front buffer cannot be used directly as a texture.
+ *	pvr_scene_finish would repaint over it every flip in any case.
  *
- *	Reads from this surface are uncached VRAM accesses and are ruinous in bulk --
- *	that is the black sweep in BUGS.md. The screens already know this and lay
- *	their scrim down once; do not add a read-modify-write over the whole surface.
+ *	So the UI draws into an ordinary off-screen surface and is presented as a
+ *	texture. GLdc 1.1.1 supports non-power-of-two textures through the PVR's
+ *	x32 strided mode, so this is one 640x480 texture and one quad rather than a
+ *	hand-rolled tiling. The constraints are all satisfied here: width must be a
+ *	multiple of 32 and at most 992 -- 640 is 20x32 -- height only has to be
+ *	positive, wrap must be GL_CLAMP on both axes, and it must be level 0,
+ *	non-twiddled, unpaletted and uncompressed. GLdc scales the texture
+ *	coordinates itself against the padded PVR dimensions, so 0..1 spans the real
+ *	640x480; do not hand-compute them. It allocates the logical size too, so
+ *	this costs 600KB of video RAM rather than the 1MB the padded dimensions
+ *	would suggest.
  */
 SDL_Surface *dc_ui_target(void)
 {
-	static SDL_Surface *FramebufferSurface = NULL;
+	static SDL_Surface *UISurface = NULL;
 
 	if (main_surface == NULL)
 		return NULL;
@@ -422,27 +435,97 @@ SDL_Surface *dc_ui_target(void)
 	if (!(main_surface->flags & SDL_OPENGL))
 		return main_surface;
 
-	if (FramebufferSurface == NULL) {
-		/* RGB565, which is what vid_set_mode was given. */
-		FramebufferSurface = SDL_CreateRGBSurfaceFrom(
-			(void *)vram_s, 640, 480, 16, 640 * 2,
-			0xf800, 0x07e0, 0x001f, 0);
-		dc_trace(61, "ui: framebuffer surface %p px=%p",
-		         (void *)FramebufferSurface,
-		         FramebufferSurface ? FramebufferSurface->pixels : NULL);
+	if (UISurface == NULL) {
+		/* RGB565, which is what the PVR stores natively, so the upload is a
+		   copy rather than a conversion. */
+		UISurface = SDL_CreateRGBSurface(SDL_SWSURFACE, 640, 480, 16,
+		                                 0xf800, 0x07e0, 0x001f, 0);
+		dc_trace(61, "ui: overlay surface %p px=%p",
+		         (void *)UISurface, UISurface ? UISurface->pixels : NULL);
 	}
 
-	return FramebufferSurface;
+	return UISurface;
 }
 
 /*
- *	Finish a UI frame. In software the video surface has to be pushed; against
- *	the framebuffer the writes are already where they need to be.
+ *	Finish a UI frame. In software the video surface has to be pushed; under GL
+ *	the off-screen surface is uploaded and drawn over the scene.
  */
 void dc_ui_flush(SDL_Surface *s)
 {
-	if (s != NULL && s == main_surface)
+	static GLuint UITexture = 0;
+
+	if (s == NULL)
+		return;
+
+	if (s == main_surface) {
 		SDL_UpdateRect(s, 0, 0, 0, 0);
+		return;
+	}
+
+#ifdef HAVE_OPENGL
+	if (UITexture == 0) {
+		glGenTextures(1, &UITexture);
+		glBindTexture(GL_TEXTURE_2D, UITexture);
+		glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+		/* Strided NPOT textures are only legal with clamped wrap. */
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP);
+	} else {
+		glBindTexture(GL_TEXTURE_2D, UITexture);
+	}
+
+	/* Drain first. glGetError reports the first error since it was last
+	   called, and the renderer leaves GL_INVALID_VALUE behind on nearly every
+	   frame from glEnable/glDisable, so an undrained probe here reports that
+	   and blames the upload for it. It did exactly that once already. */
+	while (glGetError() != GL_NO_ERROR)
+		;
+
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB565_KOS, s->w, s->h, 0,
+	             GL_RGB, GL_UNSIGNED_SHORT_5_6_5, s->pixels);
+
+	{
+		GLenum Err = glGetError();
+		if (Err != GL_NO_ERROR)
+			dc_trace(64, "ui: upload %dx%d failed, GL error 0x%x",
+			         s->w, s->h, (unsigned)Err);
+	}
+
+	glPushAttrib(GL_ALL_ATTRIB_BITS);
+	glDisable(GL_CULL_FACE);
+	glDisable(GL_DEPTH_TEST);
+	glDisable(GL_ALPHA_TEST);
+	glDisable(GL_BLEND);
+	glDisable(GL_FOG);
+	glEnable(GL_TEXTURE_2D);
+
+	glMatrixMode(GL_PROJECTION);
+	glPushMatrix();
+	glLoadIdentity();
+	glOrtho(0.0, GLdouble(s->w), GLdouble(s->h), 0.0, 0.0, 1.0);
+	glMatrixMode(GL_MODELVIEW);
+	glPushMatrix();
+	glLoadIdentity();
+
+	glColor4f(1.0, 1.0, 1.0, 1.0);
+	glBegin(GL_QUADS);
+		glTexCoord2f(0.0, 0.0); glVertex2i(0,    0);
+		glTexCoord2f(1.0, 0.0); glVertex2i(s->w, 0);
+		glTexCoord2f(1.0, 1.0); glVertex2i(s->w, s->h);
+		glTexCoord2f(0.0, 1.0); glVertex2i(0,    s->h);
+	glEnd();
+
+	glMatrixMode(GL_PROJECTION);
+	glPopMatrix();
+	glMatrixMode(GL_MODELVIEW);
+	glPopMatrix();
+	glPopAttrib();
+
+	SDL_GL_SwapBuffers();
+#endif
 }
 #endif
 
