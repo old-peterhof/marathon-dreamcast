@@ -309,6 +309,33 @@ static void recalculate_and_display_color_table(short type, _fixed transparency,
 // the fader type is set to NONE.
 static void SetOGLFader(int Index);
 
+/*
+ *	A fade that has ended has to stop being drawn.
+ *
+ *	Both places a fade finishes -- the period expiring in update_fades, and
+ *	stop_fade -- do the same thing: mark the fade inactive and then call
+ *	recalculate_and_display_color_table one last time at the final transparency.
+ *	That last call runs the fade's proc, and the proc sets the OpenGL fader
+ *	queue entry's Type. Nothing clears it afterwards. update_fades will not run
+ *	the block again because the fade is no longer active, and set_fade_effect
+ *	only clears the queue when the effect type changes -- so OGL_DoFades goes on
+ *	drawing the finished fader every frame for the rest of the level.
+ *
+ *	Measured before this existed: a _fade_negative that had long since ended was
+ *	still in the queue 1800 frames later. On hardware that is the screen staying
+ *	inverted after a drone hit, and staying white after a Pfhor melee hit.
+ *
+ *	The software renderer never had the problem because it works from a colour
+ *	table recomputed from scratch each time -- which is what the dc_tint_reset()
+ *	at the top of recalculate_and_display_color_table is for. This is the
+ *	OpenGL equivalent of that reset.
+ */
+static void ClearOGLFaderQueue(void)
+{
+	for (int f=0; f<NUMBER_OF_FADER_QUEUE_ENTRIES; f++)
+		SetOGLFader(f);
+}
+
 // Translate the color and opacity values
 static void TranslateToOGLFader(rgb_color &Color, _fixed Opacity);
 
@@ -351,11 +378,13 @@ bool update_fades(
 		
 		_fixed transparency;
 		short phase;
+		bool just_finished= false;
 		
 		if ((phase= machine_tick_count()-fade->last_update_tick)>=definition->period)
 		{
 			transparency= definition->final_transparency;
 			SET_FADE_ACTIVE_STATUS(fade, false);
+			just_finished= true;
 		}
 		else
 		{
@@ -364,6 +393,8 @@ bool update_fades(
 		}
 		
 		recalculate_and_display_color_table(fade->type, transparency, fade->original_color_table, fade->animated_color_table);
+		
+		if (just_finished) ClearOGLFaderQueue();
 	}
 	
 	return FADE_IS_ACTIVE(fade) ? true : false;
@@ -474,6 +505,7 @@ void stop_fade(
 			fade->original_color_table, fade->animated_color_table);
 		
 		SET_FADE_ACTIVE_STATUS(fade, false);
+		ClearOGLFaderQueue();
 	}
 	
 	return;

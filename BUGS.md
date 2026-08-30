@@ -22,9 +22,49 @@ that fixed them.
 | b17 | **"Continue Saved Game" crashes to a black screen** on hardware — possibly addressed in b23, unconfirmed | **Does not reproduce under Flycast**, with or without a VMU attached: the game returns to the menu cleanly. So the crash itself is still unexplained. What b23 does fix is real regardless: `saved_games_dir` was `/ram/Saved Games`, and the KOS ramdisk has no subdirectories — `mkdir` returns EINVAL and files cannot be created inside one, both verified with a standalone probe. So that directory could never exist, meaning **saving was impossible** and loading pointed somewhere that would never be there. Saves and recordings now live directly in `/ram`, the preferences file is hidden from save listings so it cannot be offered as a save, and an empty file list now bails out instead of building a list widget over an empty vector. The `-debug` image traces what the dialog reads, so a hardware boot will show whether anything remains. |
 | b17 | **CONFIRMED, cause identified, SHELVED: a rumble pack prevents boot** — hangs on a black screen after the Sega licence screen. | **Cause: KOS's unbounded maple bus scan.** `maple_wait_scan()` calls `thd_poll(maple_scan_done, &maple_state, 0)` — timeout 0, meaning forever — and `maple_scan_done` requires `scan_ready_mask == 0xf`, all four ports reporting. The pack makes one port never report, so KOS never finishes init and nothing downstream runs.<br><br>Two pieces of evidence settle it. Max found that **pulling the pack out while hung lets the boot continue**, which is precisely a blocking wait releasing when the offending device leaves the bus. And b21 had `INIT_PURUPURU` cleared, so the rumble driver never initialised, yet it still hung — exonerating the driver.<br><br>**Not our code.** We ask for `MAPLE_FUNC_CONTROLLER` specifically and `fs_vmu` only mounts `MAPLE_FUNC_MEMCARD`. Does not reproduce under Flycast, which boots fine at 29fps with a pack emulated.<br><br>**Shelved.** Bounding the wait is not available: `maple_wait_scan` is bound to `INIT_MAPLE_ALL` alongside `maple_init` itself, so clearing it takes the controller too. What remains — patching KOS's maple, or taking over maple init ourselves — belongs with the force-feedback work in BACKLOG.md. Cheapest next step is not code at all: try an **official** pack, since this is a third-party unit and may simply not answer enumeration correctly. |
 | b17 | Analog stick still much too fast over the outer half of travel — roughly 2.5 full view rotations per second | **Cause found, fixed in b18.** `test_mouse` was not zeroing the delta after reading it. `execute_timer_tasks()` calls `mouse_idle()` once per pass but runs the game tick N times to catch up, and each tick calls `test_mouse`, so the same deflection was applied N times. Turn rate therefore scaled with how far behind the renderer was: N is about 1 at Flycast's 30fps and much larger at hardware's 20, which is the whole 20x gap. |
-| b73 | **GL only: being hit by an enemy inverts the screen colours permanently.** The damage flash never clears. Reported on hardware 2026-08-29. | Not yet fixed, and the persistence is not yet explained -- what follows is what is verified, not a diagnosis.<br><br>**`OGL_DoFades` leaks GL state.** It sets `glDisable(GL_ALPHA_TEST)`, `glEnable(GL_BLEND)` and `glDisable(GL_TEXTURE_2D)` on entry (`OGL_Faders.cpp:89-91`) and returns without restoring any of them. On a desktop card that is untidy; here it is worse, because GLdc assigns a polygon to a PowerVR list from blend state alone -- the fact the water fix turns on -- so anything drawn after a fader can land in the wrong list.<br><br>**The inverting mode is `_negate_fader_type`** (`OGL_Faders.cpp:139-148`), which blends with `GL_ONE_MINUS_DST_COLOR`. That factor does exist in GLdc. Each case does reset `glBlendFunc` before it falls out, so a stuck blend function is *not* the obvious culprit and should not be assumed.<br><br>**`glLogicOp` and `GL_COLOR_LOGIC_OP` do not exist in GLdc at all** -- they resolve to our own no-op shims in `dc/dc_gl_compat.h`. So `_randomize_fader_type` (`:130-134`) cannot do what it is written to do on this hardware, whatever else is wrong.<br><br>First thing to check next: whether the fader queue entry is being cleared at all, i.e. whether the fader is re-applied every frame forever rather than any GL state being stuck. The software renderer does not show this, so something is GL-specific either way. |
 
 ## Fixed
+
+### A damage flash never went away (GL only, fixed 2026-08-30)
+
+Being hit by a drone left the screen inverted for the rest of the level. Being
+hit by a Pfhor in melee left it white. Both were the same bug, and it was not
+about any particular blend mode.
+
+A fade ends in one of two places -- the period expiring inside `update_fades`,
+or `stop_fade`. Both do the same thing: mark the fade inactive, then call
+`recalculate_and_display_color_table` one last time at the fade's final
+transparency. That last call runs the fade's `proc`, and every `proc` sets the
+OpenGL fader queue entry's `Type`. **Nothing cleared it afterwards.**
+`update_fades` will not enter its block again because the fade is no longer
+active, and `set_fade_effect` only clears the queue when the effect type
+changes. So `OGL_DoFades` kept drawing the finished fader every frame.
+
+Measured, with a temporary trace and a deliberately fired `_fade_negative`
+(the player is never damaged under PADTEST, so it cannot be reproduced
+passively):
+
+| | fader queue entry 1 |
+|---|---|
+| before | `type 2` still set after 120, 600 and 1800 frames |
+| after | never once still set |
+
+The fix is `ClearOGLFaderQueue()`, called from both places a fade ends. The
+software renderer never had this problem because it works from a colour table
+recomputed from scratch every time -- which is what the `dc_tint_reset()` at the
+top of `recalculate_and_display_color_table` is for. This is the OpenGL
+equivalent of that reset.
+
+One thing left unexplained, and worth knowing: the stuck fader's alpha was **0**,
+and at alpha 0 every one of these blend modes should compose to exactly the
+destination, i.e. be invisible. On a desktop card this bug would likely never
+have been visible at all. It is visible here, so GLdc or the PVR is not
+producing the textbook result for a zero-alpha `GL_ONE_MINUS_DST_COLOR` or
+`GL_DST_COLOR` blend. Not chased, because drawing a finished full-screen fader
+every frame is wrong regardless.
+
+Not hardware-verified.
+
 
 ### Every scaled-down sprite had a dark fringe (b36 - b72, fixed on gl-forward)
 
