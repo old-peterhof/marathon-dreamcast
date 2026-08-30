@@ -28,13 +28,33 @@ class FileSpecifier;
  */
 
 // Dialog structure
+class dialog;
+
+/*
+ *	Called whenever the highlight moves, with the newly focused widget.
+ *
+ *	UI-HANDOFF.md section 4 puts one line of plain English under every settings
+ *	panel describing whatever is focused -- More Sounds says it costs about 7.5
+ *	seconds a level load, Look Sensitivity says why it is separate from Turn.
+ *	Nothing in the dialog machinery announced a selection change before this.
+ *
+ *	activate_widget() is the only place the highlight moves, so this is the whole
+ *	hook rather than one of several.
+ */
+typedef void (*dialog_focus_proc)(dialog *d, widget *w, int index, void *arg);
+
 class dialog {
 public:
-	dialog() : active_widget(NULL), active_widget_num(-1) {}
+	dialog() : active_widget(NULL), active_widget_num(-1),
+	           focus_proc(NULL), focus_arg(NULL) {}
 	~dialog();
 
 	// Add widget to dialog
 	void add(widget *w);
+
+	// Called when the highlight moves; see dialog_focus_proc above
+	void set_focus_proc(dialog_focus_proc p, void *arg)
+		{ focus_proc = p; focus_arg = arg; }
 
 	// Run dialog modally
 	int run(bool intro_exit_sounds = true);
@@ -67,6 +87,9 @@ private:
 
 	int result;					// Dialog result code
 	bool done;					// Flag: dialog done
+
+	dialog_focus_proc focus_proc;	// Notified when the highlight moves
+	void *focus_arg;
 
 	// Frame images (frame_t, frame_l, frame_r and frame_b must be freed)
 	SDL_Surface *frame_tl, *frame_t, *frame_tr, *frame_l, *frame_r, *frame_bl, *frame_b, *frame_br;

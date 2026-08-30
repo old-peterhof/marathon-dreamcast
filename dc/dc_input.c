@@ -84,6 +84,183 @@ struct dc_binding {
  *	looking and both triggers are handled on the analog path instead and so do
  *	not appear here.
  */
+/*
+ *	Player-configured bindings.
+ *
+ *	Preferences store a small button id per engine action, not a raw button
+ *	mask. Two reasons. The DCK_ codes above are 1<<28 and 1<<29, which do not
+ *	fit the int16 the preferences file uses; and an id is a stable name, so the
+ *	meaning of a saved card does not change if these masks ever move.
+ *
+ *	Only the button moves. Which key an action sends is still the engine's own
+ *	input_preferences->keycodes[], so rebinding the pad never disturbs the key
+ *	mapping the rest of the game agrees on.
+ *
+ *	The menu table below is deliberately NOT configurable. Dialog navigation
+ *	must not depend on player bindings, or a bad configuration leaves no way
+ *	back to fix itself.
+ */
+
+static const struct {
+	int mask;
+	const char *name;
+} dc_buttons[] = {
+	{ 0,                "-"         },	/* DC_PAD_NONE */
+	{ CONT_A,           "A"         },
+	{ CONT_B,           "B"         },
+	{ CONT_X,           "X"         },
+	{ CONT_Y,           "Y"         },
+	/* Short forms, as the design uses them. A binding row is 270px wide with the
+	   action on the left, and "D-Pad Right" ran into "NEXT WEAPON". */
+	{ CONT_DPAD_UP,     "D-UP"      },
+	{ CONT_DPAD_DOWN,   "D-DOWN"    },
+	{ CONT_DPAD_LEFT,   "D-LEFT"    },
+	{ CONT_DPAD_RIGHT,  "D-RIGHT"   },
+	{ DCK_LTRIG,        "L TRIGGER" },
+	{ DCK_RTRIG,        "R TRIGGER" },
+	{ CONT_START,       "Start"     },
+};
+
+#define NUM_DC_BUTTONS	(int)(sizeof(dc_buttons) / sizeof(dc_buttons[0]))
+
+/* Engine action indices, matching the order preferences_sdl.cpp lists them in.
+   Only the four the analog stick can drive in Move mode are needed here. */
+#define ACT_MOVE_FORWARD	0
+#define ACT_MOVE_BACKWARD	1
+#define ACT_TURN_LEFT		2
+#define ACT_TURN_RIGHT		3
+
+#define DC_MAX_ACTIONS	32
+
+static short cfg_button[DC_MAX_ACTIONS];	/* button id per engine action */
+static short cfg_sym[DC_MAX_ACTIONS];		/* SDL key that action sends */
+static int   cfg_count = 0;
+static int   cfg_stick_move = 0;
+
+int dc_input_num_buttons(void)
+{
+	return NUM_DC_BUTTONS;
+}
+
+const char *dc_input_button_name(int id)
+{
+	if (id < 0 || id >= NUM_DC_BUTTONS)
+		return "?";
+
+	return dc_buttons[id].name;
+}
+
+/*
+ *	The defaults, and what DEFAULTS in the dialog restores to. Indexed by engine
+ *	action; anything not named here is left unbound, which is honest -- there
+ *	are twenty actions and eleven buttons, so some of them have to be.
+ */
+void dc_input_default_bindings(short *out, int count)
+{
+	static const struct { int action; int id; } defaults[] = {
+		{ 0,  4 },	/* Move Forward   -> Y */
+		{ 1,  1 },	/* Move Backward  -> A */
+		{ 4,  3 },	/* Sidestep Left  -> X */
+		{ 5,  2 },	/* Sidestep Right -> B */
+		{ 12, 8 },	/* Next Weapon    -> D-Pad Right */
+		{ 13, 10 },	/* Trigger        -> R Trigger */
+		{ 14, 9 },	/* 2nd Trigger    -> L Trigger */
+		{ 16, 7 },	/* Run/Swim       -> D-Pad Left */
+		{ 18, 5 },	/* Action         -> D-Pad Up */
+		{ 19, 6 },	/* Auto Map       -> D-Pad Down */
+	};
+	unsigned i;
+
+	for (i = 0; i < (unsigned)count; i++)
+		out[i] = 0;
+
+	for (i = 0; i < sizeof(defaults) / sizeof(defaults[0]); i++)
+		if (defaults[i].action < count)
+			out[defaults[i].action] = (short)defaults[i].id;
+}
+
+void dc_input_set_bindings(const short *buttons, const short *syms, int count,
+                           int stick_move)
+{
+	int i;
+
+	if (count > DC_MAX_ACTIONS)
+		count = DC_MAX_ACTIONS;
+
+	for (i = 0; i < count; i++) {
+		cfg_button[i] = buttons[i];
+		cfg_sym[i] = syms[i];
+	}
+
+	cfg_count = count;
+	cfg_stick_move = stick_move;
+}
+
+/*
+ *	Capture mode, for the binding dialog.
+ *
+ *	While capturing, the poll records the first newly-pressed button and injects
+ *	no keys at all -- otherwise the same press that names the binding would also
+ *	activate whatever the dialog has focus on. The dialog is responsible for
+ *	ending capture; it also times out, so a mode entered by accident cannot
+ *	strand the interface with a pad that does nothing.
+ */
+#define CAPTURE_TIMEOUT_POLLS	1800	/* about a minute at 30fps */
+
+/*
+ *	Held-direction repeat in menus, in milliseconds.
+ *
+ *	The stick gets the longer lead-in because it is easy to over-push and hard to
+ *	nudge exactly once, where the D-pad gives a clean discrete press. Both sets
+ *	confirmed on hardware.
+ */
+#define REPEAT_DPAD_DELAY	400
+#define REPEAT_DPAD_RATE	120
+#define REPEAT_STICK_DELAY	500
+#define REPEAT_STICK_RATE	150
+
+#define DCK_ANY_STICK	(DCK_STICK_UP | DCK_STICK_DOWN | DCK_STICK_LEFT | DCK_STICK_RIGHT)
+#define DCK_ANY_DIR	(CONT_DPAD_UP | CONT_DPAD_DOWN | CONT_DPAD_LEFT | \
+			 CONT_DPAD_RIGHT | DCK_ANY_STICK)
+
+static int capturing = 0;
+static int captured = -1;
+static int capture_polls = 0;
+
+void dc_input_begin_capture(void)
+{
+	capturing = 1;
+	captured = -1;
+	capture_polls = 0;
+}
+
+void dc_input_end_capture(void)
+{
+	capturing = 0;
+	captured = -1;
+}
+
+/*
+ *	Returns the button id pressed, 0 if the player cancelled with Start, or -1 if
+ *	nothing has happened yet. Capture ends itself on any of those.
+ */
+int dc_input_take_capture(void)
+{
+	int id = captured;
+
+	if (id >= 0) {
+		capturing = 0;
+		captured = -1;
+	}
+
+	return id;
+}
+
+int dc_input_capturing(void)
+{
+	return capturing;
+}
+
 static const struct dc_binding game_bindings[] = {
 	{ CONT_Y,           SDLK_UP },        /* move forward     */
 	{ CONT_A,           SDLK_DOWN },      /* move backward    */
@@ -91,7 +268,8 @@ static const struct dc_binding game_bindings[] = {
 	{ CONT_B,           SDLK_x },         /* strafe right     */
 	{ CONT_DPAD_UP,     SDLK_TAB },       /* action / use     */
 	{ CONT_DPAD_DOWN,   SDLK_m },         /* toggle map       */
-	{ CONT_DPAD_LEFT,   SDLK_QUOTE },     /* cycle weapon fwd */
+	{ CONT_DPAD_RIGHT,  SDLK_QUOTE },     /* next weapon      */
+	{ CONT_DPAD_LEFT,   SDLK_LCTRL },     /* swim, see below  */
 	{ CONT_START,       SDLK_ESCAPE },    /* pause            */
 };
 
@@ -110,6 +288,27 @@ static const struct dc_binding menu_bindings[] = {
 	{ DCK_STICK_RIGHT,  SDLK_RIGHT },
 	{ CONT_A,           SDLK_RETURN },
 	{ CONT_START,       SDLK_ESCAPE },
+	/*
+	 *	X and Y are the secondary and tertiary actions, and what they do depends
+	 *	on the screen: X deletes on the saves list and flips the page on the
+	 *	binding screen; Y restores defaults there. They carry keys nothing else
+	 *	in the dialog machinery looks at.
+	 *
+	 *	Both are in the FIXED table rather than being bindable, for the same
+	 *	reason Start is. The one destructive action in the interface must not be
+	 *	something a player can rebind away or move under their thumb -- and the
+	 *	binding screen's own escape hatches cannot depend on the bindings being
+	 *	edited on it.
+	 */
+	{ CONT_X,           SDLK_DELETE },
+	{ CONT_Y,           SDLK_INSERT },
+	/*
+	 *	B is BACK, everywhere. The design leans on it -- every screen's hint bar
+	 *	says so -- and it is fixed for the same reason Start is: a way out must
+	 *	never be something a player can rebind away or a screen can suppress.
+	 *	Start still backs out too, so there are two.
+	 */
+	{ CONT_B,           SDLK_BACKSPACE },
 	/* w_list_base::event swallows UP and DOWN on purpose -- "Prevent selection
 	   of previous/next widget" -- so once a list has focus the D-pad can never
 	   leave it, which stranded the save dialog with no way to reach "new save
@@ -122,6 +321,22 @@ static const struct dc_binding menu_bindings[] = {
 #define NUM_MENU_BINDINGS (sizeof(menu_bindings) / sizeof(menu_bindings[0]))
 
 static int in_game = 0;
+
+int dc_input_ingame(void)
+{
+	return in_game;
+}
+
+/*
+ *	Menu auto-repeat state.
+ *
+ *	File scope rather than function statics so a context switch can clear it.
+ *	Left behind across a switch, a direction still held on the way back into a
+ *	menu matches the stale mask with a long-expired deadline and starts
+ *	repeating immediately, skipping the initial delay entirely.
+ */
+static int    repeat_mask = 0;
+static Uint32 repeat_due  = 0;
 
 /* Latest analog readings, refreshed by dc_input_poll and consumed by
    mouse_sdl.cpp on the same frame. */
@@ -178,6 +393,9 @@ void dc_input_set_ingame(int yes)
 
 	in_game = (yes != 0);
 
+	/* The held-direction repeat belongs to the table being left. */
+	repeat_mask = 0;
+
 	/* Releasing everything on a context switch avoids a key left stuck down
 	   under the other mapping -- holding Y through a level change would
 	   otherwise leave SDLK_UP pressed forever in the menu. */
@@ -218,6 +436,9 @@ static void send_key(SDLKey sym, int pressed)
  *	an emulated pad in any configuration tried, so this synthesises a stick
  *	deflection to exercise the analog path unattended.
  */
+
+static void dc_input_poll_body(void);
+
 static int padtest_wanted(void)
 {
 	static int checked = 0, wanted = 0;
@@ -233,27 +454,32 @@ static int padtest_wanted(void)
 }
 
 /*
- *	AUTOKEY: press Return once, a couple of seconds after a menu appears.
+ *	Re-entry guard.
  *
- *	The file dialogs cannot be exercised without a person holding the pad, which
- *	makes the one path that was broken -- listing a saved game and choosing it --
- *	the one path no unattended run could reach. This injects the keypress so an
- *	emulator run can open the dialog, pick the highlighted entry and report
- *	whether the game actually loaded. Staged only by the loadtest image.
+ *	This function keeps static state to detect button edges, so calling it from
+ *	inside itself loses or invents presses. That is not hypothetical: b48 added a
+ *	call in wait_for_click_or_keypress so the chapter screen could be skipped,
+ *	b49 added one inside the main event loop's idle wait so a menu would feel
+ *	responsive, and each worked on hardware alone. Together they crashed on level
+ *	load, because a chapter screen is drawn from inside process_event, which the
+ *	main loop calls with its own poll already in progress.
+ *
+ *	Re-entering is now simply ignored. The outer poll is already reading the pad;
+ *	a second read a few microseconds later has nothing to add.
  */
-static int autokey_wanted(void)
+void dc_input_poll(void)
 {
-	static int checked = 0, wanted = 0;
+	static int busy = 0;
 
-	if (!checked) {
-		checked = 1;
-		wanted = (access("/cd/AlephOne/AUTOKEY", 4) == 0);
-	}
+	if (busy)
+		return;
 
-	return wanted;
+	busy = 1;
+	dc_input_poll_body();
+	busy = 0;
 }
 
-void dc_input_poll(void)
+static void dc_input_poll_body(void)
 {
 	static int previous = 0;
 	static int have_previous = 0;
@@ -272,15 +498,21 @@ void dc_input_poll(void)
 			reported_absent = 1;
 			dc_trace(13, "controller: none found on the maple bus");
 		}
+
 		analog_x = analog_y = trig_l = trig_r = 0;
 
 		/*
 		 *	Release whatever was held when the pad left the bus.
 		 *
-		 *	Injection is edge-detected, so a key down at the moment the cable is
-		 *	pulled has no falling edge to close it and stays down in SDL's
-		 *	key-state array, which vbl_sdl.cpp reads during play -- the player
-		 *	keeps walking forward for as long as the pad is gone.
+		 *	Injection is edge-detected, so a key down at the moment the cable
+		 *	is pulled has no falling edge to close it and stays down in SDL's
+		 *	key-state array. vbl_sdl.cpp reads that array during play, so the
+		 *	player keeps walking forward for as long as the pad is gone --
+		 *	nothing clears it until a game-state change happens to call
+		 *	dc_input_set_ingame.
+		 *
+		 *	Both tables are walked: the configured bindings replace the static
+		 *	table in game, so a key sent from one is not in the other.
 		 */
 		if (have_previous && previous) {
 			const struct dc_binding *t = in_game ? game_bindings : menu_bindings;
@@ -290,11 +522,23 @@ void dc_input_poll(void)
 			for (k = 0; k < n; k++)
 				if (previous & t[k].mask)
 					send_key(t[k].sym, 0);
+
+			if (in_game && cfg_count > 0) {
+				for (k = 0; k < (unsigned)cfg_count; k++) {
+					int id = cfg_button[k];
+					int m = (id > 0 && id < NUM_DC_BUTTONS)
+					        ? dc_buttons[id].mask : 0;
+
+					if (m && (previous & m))
+						send_key((SDLKey)cfg_sym[k], 0);
+				}
+			}
 		}
 
 		/* Re-baseline on reconnect, so whatever is held then is not a press. */
 		previous = 0;
 		have_previous = 0;
+		repeat_mask = 0;
 
 		return;
 	}
@@ -325,34 +569,34 @@ void dc_input_poll(void)
 			analog_x = 127;
 	}
 
-	if (autokey_wanted() && in_game) {
-		/* Press Start once, well into a level, so an unattended run can check
-		   that the pause menu opens at all. */
-		static int frames = 0, fired = 0;
-
-		if (!fired && ++frames > 300) {
-			SDL_keysym k;
-
-			fired = 1;
-			dc_trace(28, "autokey: injecting START in game");
-
-			k.scancode = 0;
-			k.sym = SDLK_ESCAPE;
-			k.mod = KMOD_NONE;
-			k.unicode = 0;
-
-			SDL_PrivateKeyboard(SDL_PRESSED, &k);
-			SDL_PrivateKeyboard(SDL_RELEASED, &k);
-		}
-	}
-
 	/* Deadzone, then treat the stick as a d-pad for menu navigation only. */
 	if (analog_x > -STICK_DEADZONE && analog_x < STICK_DEADZONE) analog_x = 0;
 	if (analog_y > -STICK_DEADZONE && analog_y < STICK_DEADZONE) analog_y = 0;
 
-	if (!in_game) {
-		if (trig_l > TRIGGER_ON) current |= DCK_LTRIG;
-		if (trig_r > TRIGGER_ON) current |= DCK_RTRIG;
+	/*
+	 *	Synthetic codes for the triggers and the stick.
+	 *
+	 *	Menus always want them. Gameplay wants them only in Move mode, where the
+	 *	stick drives forward, back and turning; in Look mode the stick belongs to
+	 *	the analog path in mouse_sdl.cpp and turning it into keypresses here
+	 *	would fight it.
+	 */
+	/*
+	 *	The triggers are always available as buttons. In Look mode test_mouse()
+	 *	in mouse_sdl.cpp also reads them for primary and alt fire, so the default
+	 *	bindings fire twice -- both set the same action flag, so that is
+	 *	harmless. In Move mode input_device is off, test_mouse() never runs, and
+	 *	these bindings are the only thing that fires the weapon.
+	 */
+	if (trig_l > TRIGGER_ON) current |= DCK_LTRIG;
+	if (trig_r > TRIGGER_ON) current |= DCK_RTRIG;
+
+	/*
+	 *	The stick is a D-pad for menus always, and in gameplay only in Move mode.
+	 *	In Look mode it belongs to the analog path in mouse_sdl.cpp, and turning
+	 *	it into keypresses here would fight it.
+	 */
+	if (!in_game || cfg_stick_move) {
 		if (analog_x < 0) current |= DCK_STICK_LEFT;
 		if (analog_x > 0) current |= DCK_STICK_RIGHT;
 		if (analog_y < 0) current |= DCK_STICK_UP;
@@ -371,6 +615,102 @@ void dc_input_poll(void)
 	}
 
 	changed = current ^ previous;
+
+	/*
+	 *	Capture swallows the frame entirely: it names the button that was
+	 *	pressed and injects nothing, so the press cannot also drive the dialog
+	 *	it is being typed into. Start reports id 0, which the dialog reads as
+	 *	cancel, and the timeout is the backstop if nothing at all is pressed.
+	 */
+	if (capturing) {
+		int pressed = changed & current;
+
+		previous = current;
+
+		if (pressed) {
+			int b;
+
+			for (b = 1; b < NUM_DC_BUTTONS; b++)
+				if (pressed & dc_buttons[b].mask) {
+					captured = (dc_buttons[b].mask == CONT_START) ? 0 : b;
+					break;
+				}
+		} else if (++capture_polls > CAPTURE_TIMEOUT_POLLS) {
+			captured = 0;
+		}
+
+		/*
+		 *	The dialog loop is a poll, not a wait, but a widget's event() only
+		 *	runs when there is an event to hand it. Capture injects no keys, so
+		 *	without this the binding would be recorded and never collected.
+		 *	SDLK_UNKNOWN is the wake-up: the widget consumes it, and the dialog's
+		 *	own key handling has no case for it.
+		 *
+		 *	SDLK_UNKNOWN is not an arbitrary choice, and changing it would break
+		 *	this in a way that looks like a hang. SDL_PrivateKeyboard drops any
+		 *	event that does not change a key's state:
+		 *
+		 *	    if ( keysym->sym != SDLK_UNKNOWN ) {
+		 *	        if ( SDL_KeyState[keysym->sym] == state ) return 0;
+		 *
+		 *	Only a press is sent here and never a release, so with any other key
+		 *	the second binding in a session would be silently dropped and the
+		 *	screen would sit there until the capture timed out. SDLK_UNKNOWN is
+		 *	the one sym that guard excludes.
+		 */
+		if (captured >= 0)
+			send_key(SDLK_UNKNOWN, 1);
+
+		return;
+	}
+
+	/*
+	 *	Held-direction repeat, menus only.
+	 *
+	 *	Injection is edge-detected, so a held button fires once. On a desktop the
+	 *	host's keyboard repeat covers this; a pad has nothing to do it, so holding
+	 *	Down on the save list moved one row and stopped. This is the interface's
+	 *	own repeat clock.
+	 *
+	 *	Only the four directions repeat. A held A must not activate twice and a
+	 *	held Start must not back out twice. Nothing repeats in game: movement is
+	 *	read from SDL's key-state array for as long as the key is down, so a
+	 *	synthetic re-press would be noise at best.
+	 *
+	 *	Milliseconds rather than poll counts, so the feel does not depend on how
+	 *	fast a particular dialog loop happens to spin.
+	 *
+	 *	The release-then-press is required, not belt and braces:
+	 *	SDL_PrivateKeyboard drops any event that does not change a key's state, so
+	 *	a bare second press of a key already down would vanish.
+	 */
+	if (!in_game && !capturing) {
+		int held = current & DCK_ANY_DIR;
+
+		if (!held) {
+			repeat_mask = 0;
+		} else if (held != repeat_mask) {
+			int stick = (held & DCK_ANY_STICK) != 0;
+
+			repeat_mask = held;
+			repeat_due  = SDL_GetTicks()
+			            + (stick ? REPEAT_STICK_DELAY : REPEAT_DPAD_DELAY);
+		} else if (SDL_GetTicks() >= repeat_due) {
+			int stick = (held & DCK_ANY_STICK) != 0;
+			unsigned r;
+
+			repeat_due = SDL_GetTicks()
+			           + (stick ? REPEAT_STICK_RATE : REPEAT_DPAD_RATE);
+
+			for (r = 0; r < NUM_MENU_BINDINGS; r++)
+				if (menu_bindings[r].mask & held) {
+					send_key(menu_bindings[r].sym, 0);
+					send_key(menu_bindings[r].sym, 1);
+					break;
+				}
+		}
+	}
+
 	if (!changed) {
 		previous = current;
 		return;
@@ -383,6 +723,46 @@ void dc_input_poll(void)
 			dc_trace(17, "btn %08x->%08x ingame=%d", (unsigned)previous,
 			         (unsigned)current, in_game);
 		}
+	}
+
+	/*
+	 *	Configured bindings replace the static table for gameplay only.
+	 *
+	 *	In Move mode the stick's four directions are ORed into the movement
+	 *	actions' masks, so the stick and any button bound to the same action are
+	 *	simply two ways to press it.
+	 */
+	if (in_game && cfg_count > 0) {
+		/*
+		 *	Start is not one of the engine's twenty actions, so it cannot be a
+		 *	row in the binding screen, and the configured table would drop it.
+		 *	It stays wired here for the same reason the menu table is fixed:
+		 *	whatever the player has done to the other buttons, this one always
+		 *	gets them out. Capture reads Start as cancel, so it can never be
+		 *	bound to something else either.
+		 */
+		if (changed & CONT_START)
+			send_key(SDLK_ESCAPE, (current & CONT_START) != 0);
+
+		for (i = 0; i < (unsigned)cfg_count; i++) {
+			int id = cfg_button[i];
+			int mask = (id > 0 && id < NUM_DC_BUTTONS) ? dc_buttons[id].mask : 0;
+
+			if (cfg_stick_move) {
+				if (i == ACT_MOVE_FORWARD)  mask |= DCK_STICK_UP;
+				if (i == ACT_MOVE_BACKWARD) mask |= DCK_STICK_DOWN;
+				if (i == ACT_TURN_LEFT)     mask |= DCK_STICK_LEFT;
+				if (i == ACT_TURN_RIGHT)    mask |= DCK_STICK_RIGHT;
+			}
+
+			if (!mask || !(changed & mask))
+				continue;
+
+			send_key((SDLKey)cfg_sym[i], (current & mask) != 0);
+		}
+
+		previous = current;
+		return;
 	}
 
 	for (i = 0; i < count; i++) {
@@ -404,33 +784,4 @@ void dc_input_poll(void)
 	}
 
 	previous = current;
-}
-
-/*
- *	Called from dialog::run() on every pass, so the autokey fires while a dialog
- *	is actually up rather than on the menu behind it. Counting passes of the main
- *	event loop was no good: it spins far faster than the dialog does, so the
- *	keypress landed before the dialog had even opened.
- */
-void dc_input_note_dialog(void)
-{
-	static int frames = 0, fired = 0;
-
-	if (!autokey_wanted() || fired)
-		return;
-
-	if (++frames > 60) {
-		SDL_keysym k;
-
-		fired = 1;
-		dc_trace(27, "autokey: injecting RETURN into dialog");
-
-		k.scancode = 0;
-		k.sym = SDLK_RETURN;
-		k.mod = KMOD_NONE;
-		k.unicode = 0;
-
-		SDL_PrivateKeyboard(SDL_PRESSED, &k);
-		SDL_PrivateKeyboard(SDL_RELEASED, &k);
-	}
 }
