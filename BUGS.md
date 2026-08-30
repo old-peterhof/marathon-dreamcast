@@ -54,18 +54,39 @@ especially -- and without a mipmap chain, minification point-samples a texture
 denser than the pixels covering it. That crawls as the camera moves and reads
 exactly as shimmer.
 
-**The textbook fix is mipmaps, and they are broken here in two separate ways.**
+**What GLdc actually requires, measured 2026-08-30.** The earlier note said the
+generator "mishandles the 16-bit format". That was a guess and it is wrong.
 
-1. Our own `gluBuild2DMipmaps` in `dc/dc_glu.c` halves the image and uploads
-   each level itself. GLdc reallocates the texture the first time it sees a
-   level above zero and lays the chain out to its own scheme, which does not
-   match a chain built by halving both dimensions independently -- a 128x32
-   image reaches height 1 long before width 1. Enabling mipmaps this way
-   rendered **every wall white**.
+- Sizes 8, 16, 32, 64, 128, 256, 512 and 1024 are the only ones GLdc considers
+  valid; anything else is treated as a strided NPOT texture
+  (`_glValidTextureSize`, texture.c). And a strided texture is refused at any
+  level above zero.
+- `glGenerateMipmap` refuses non-square textures outright, and refuses
+  non-twiddled ones.
+- The PVR has no 32-bit texture format at all. `_cleanInternalFormat` folds
+  everything down to ARGB4444, ARGB1555 or RGB565, so uploading as GL_RGBA8
+  changes only the upload, never the storage. Testing "does it work at 32-bit"
+  is meaningless.
+
+**Every wall texture on this level is 64x64.** Traced: 13 wall uploads, 13
+square, 0 non-square. So the square-only restriction is not a blocker for walls
+-- the non-square textures in the upload log are sprites and HUD art. Mipmapped
+walls should be possible.
+
+**The textbook fix is mipmaps, and both attempts so far failed differently.**
+
+1. Our own `gluBuild2DMipmaps` halves the image and uploads each level itself,
+   down to 1x1. The serial log names the failure exactly:
+   *GL_KOS_texture_non_power_of_two does not support mipmaps*, texture.c:1600.
+   Levels of 4x4, 2x2 and 1x1 are below GLdc's minimum valid size of 8, so each
+   is treated as strided and refused because the level is above zero. The chain
+   ends up incomplete and every wall renders **white**.
 2. Letting GLdc build the chain instead, by uploading level 0 and calling
    `glGenerateMipmap`, gets past the white but renders floors and walls as
-   garish cyan and green noise. GLdc's generator does not handle the 16-bit
-   format these textures are stored in.
+   garish cyan and green noise. **This one is not yet explained.** The serial
+   log contains no `[GL ERROR]` lines at all for that run, so nothing was
+   refused -- the chain was generated. That test enabled mipmaps for walls *and*
+   landscape together, so the next step is to isolate: walls only, and look.
 
 Also worth recording, because this file used to say otherwise: **GLdc 1.1.1 does
 ship a `gluBuild2DMipmaps`**, declared in its own `glu.h`. The comment in
