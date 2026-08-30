@@ -424,8 +424,18 @@ static void initialize_application(void)
 
 		for (int k = 0; k < OGL_NUMBER_OF_TEXTURE_TYPES; k++) {
 			OGLData.TxtrConfigList[k].FarFilter = 1;
-			OGLData.TxtrConfigList[k].Resolution = 1;
 			OGLData.TxtrConfigList[k].ColorFormat = 1;
+
+			// Keep this rule identical to OGL_SetDefaults: the environment
+			// is halved, and what the player looks at directly -- sprites
+			// and the weapon in hand -- is full resolution. This loop runs
+			// every boot and overrides both the defaults and anything the
+			// memory card carried, so if the two disagree this one wins and
+			// the change in OGL_SetDefaults would silently do nothing.
+			if (k == OGL_Txtr_Inhabitant || k == OGL_Txtr_WeaponsInHand)
+				OGLData.TxtrConfigList[k].Resolution = 0;
+			else
+				OGLData.TxtrConfigList[k].Resolution = 1;
 		}
 
 		OGLData.Flags &= ~OGL_Flag_3D_Models;

@@ -125,6 +125,68 @@ averaging palette *indices* is meaningless, so either skip mips there or build t
 chain yourself against a 15-bit inverse CLUT (32KB per live palette, at most four).
 I have not verified how badly that actually looks; check before designing around it.
 
+**DONE (2026-08-29).** Fix A landed in two steps, and the measuring turned up
+something that changes what Fix B is for.
+
+*The alpha-bleed bug is fixed and was real.* Compiling the actual
+`gluScaleImage` natively for both versions against a synthetic sprite edge
+(sprite R220 G40 B40, filter box half inside the silhouette):
+
+| | edge texel |
+|---|---|
+| before | `R110 G20 B20 A127` |
+| after | `R220 G40 B40 A127` |
+
+Exactly half brightness before. Alpha identical, so silhouettes are unchanged.
+
+*The pipeline is one pass.* `GetOGLTexture` now writes the reduced image
+directly from the shape's own 8-bit rows; `Shrink` is no longer called. Peak
+transient per texture goes from 5 bytes per full-size pixel to 1.
+
+*But the transient was never the constraint, and neither is the heap.* This is
+the part worth carrying forward. `dc_heap_used` reads `sbrk(0)`, which only
+grows, so it is already a high-water mark -- and it sits at exactly 12676 KB
+through texture loading, identical before and after, and identical again with
+sprites at full resolution. Uploaded textures do not live in the heap at all:
+`glTexImage2D` copies them into the PVR's VRAM and the RAM buffer is freed
+immediately.
+
+**So texture resolution is a VRAM budget, not a heap budget.** The "roughly 2MB
+of headroom at level start" this item was planned around is main-RAM headroom
+and is not what constrains it. GLdc will tell you the real number --
+`GL_FREE_TEXTURE_MEMORY_KOS` and `GL_USED_TEXTURE_MEMORY_KOS`, now traced beside
+the heap figure on every 25th upload.
+
+Measured on the same level and camera path, at 100 textures uploaded:
+
+| | VRAM used | VRAM free |
+|---|---|---|
+| everything at half resolution | 2015 KB | 2943 KB |
+| sprites and weapon at full | 3645 KB | 1313 KB |
+
+The texture pool is about 4.8MB. Full-resolution sprites cost **1630 KB**, which
+is most of the slack, and that is 100 textures from one vantage point in one
+level -- a level with more monster variety would load more. It fits and it runs
+(28-30fps, no allocation failure), but the margin is thin.
+
+**This is what Fix B is now for.** Not to make room in RAM -- to buy back VRAM
+so the full-resolution sprites are affordable. Walls are the bulk of the pool
+and paletted walls halve them, which is roughly the 1.6MB the sprites cost.
+That is the next piece of item 0, and it should be measured with the same
+counter.
+
+*Also found while doing this, both pre-existing:*
+
+- The software build did not link on `gl-forward`. `screen_sdl.cpp` guarded the
+  GL polygon counters on `#ifdef DC`, but they are defined in `OGL_Render.cpp`,
+  which compiles to nothing without `HAVE_OPENGL`. Fixed to
+  `#if defined(DC) && defined(HAVE_OPENGL)`.
+- `GetFakeLandscape` and `LoadSubstituteTexture` return full-size buffers and are
+  never reduced, but `PlaceTexture` uploads `LoadedWidth x LoadedHeight` from
+  them -- so those two paths upload at the wrong stride. Harmless today because
+  the landscape is a flat colour, but it is worth knowing before item 2 turns
+  the sky back into a texture.
+
 ### 1. Per-texture-type resolution — motion tracker blur, sprite sharpness
 
 **This is the well-understood one and should go first.** `OGL_Setup.cpp:146`

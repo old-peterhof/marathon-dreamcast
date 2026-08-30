@@ -77,6 +77,11 @@ June 14, 2001 (Loren Petrich):
 #include "render.h"
 #include "map.h"
 #include "collection_definition.h"
+#ifdef DC
+// For the GL_*_TEXTURE_MEMORY_KOS queries used in PlaceTexture.
+#include <GL/glkos.h>
+#endif
+
 #include "OGL_Setup.h"
 #include "OGL_Render.h"
 #include "OGL_Textures.h"
@@ -1209,9 +1214,20 @@ void TextureManager::PlaceTexture(uint32 *Buffer)
 	{
 		static int nupload = 0;
 		if ((++nupload % 25) == 0)
-			dc_trace(39, "txtr: %d uploaded, heap %u KB, last %dx%d",
+		{
+			// Uploaded textures live in the PVR's 8MB of VRAM, not in the
+			// heap -- the RAM buffer is freed as soon as glTexImage2D has
+			// copied it. So texture resolution is a VRAM budget, and the
+			// heap figure beside it will not move when resolution changes.
+			// GLdc keeps the accounting; ask it.
+			GLint FreeVRAM = 0, UsedVRAM = 0;
+			glGetIntegerv(GL_FREE_TEXTURE_MEMORY_KOS, &FreeVRAM);
+			glGetIntegerv(GL_USED_TEXTURE_MEMORY_KOS, &UsedVRAM);
+			dc_trace(39, "txtr: %d uploaded, heap %u KB, vram %d KB used / %d KB free, last %dx%d",
 			         nupload, dc_heap_used() / 1024,
+			         (int)(UsedVRAM/1024), (int)(FreeVRAM/1024),
 			         (int)LoadedWidth, (int)LoadedHeight);
+		}
 	}
 #endif
 	glTexImage2D(GL_TEXTURE_2D, 0, TxtrTypeInfo.ColorFormat, LoadedWidth, LoadedHeight,

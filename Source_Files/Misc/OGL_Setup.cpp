@@ -161,8 +161,22 @@ void OGL_SetDefaults(OGL_ConfigureData& Data)
 		// Mipmaps are off for the same reason: they add a third again, and this
 		// is the wrong hardware to spend that on before anything renders at all.
 		TxtrData.FarFilter = 1;			// GL_LINEAR, no mipmap chain
-		TxtrData.Resolution = 1;		// 1/2
 		TxtrData.ColorFormat = 1;		// 16-bit color
+		
+		// Resolution is per texture type, and the types are not equal.
+		//
+		// Walls and landscapes are the bulk of both RAM and screen area, and
+		// they are seen at a distance and at an angle, where half resolution
+		// costs least. Sprites are the opposite: an enemy or an item is small
+		// on screen, is looked at directly, and halving it is plainly visible.
+		// The weapon in hand is the most-looked-at art in the game and is a
+		// handful of frames.
+		//
+		// So: environment halved, everything the player looks at full.
+		if (k == OGL_Txtr_Inhabitant || k == OGL_Txtr_WeaponsInHand)
+			TxtrData.Resolution = 0;	// 1x
+		else
+			TxtrData.Resolution = 1;	// 1/2
 #else
 		TxtrData.Resolution = 0;		// 1x
 		TxtrData.ColorFormat = 0;		// 32-bit color
