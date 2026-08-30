@@ -363,6 +363,22 @@ loadtest: $(TARGET) $(DISC)/.stamp
 # log is readable, and nothing else. No AUTOSTART, so the main menu is reachable
 # and things like CONTINUE SAVED GAME can actually be driven by hand; no AUTOKEY,
 # so every keypress is the player's. This is the one to use when Max is testing.
+# A disc for actually playing under Flycast: no markers at all, so it boots to
+# the main menu with normal controls and nothing drawn over the screen, and
+# unpadded so it is 60MB rather than 706MB. Same contents as `cdi` without the
+# padding a real console needs, so do NOT burn this one.
+#
+# Named `playable` because `flycast` was already taken by the target that
+# builds `test` and launches the emulator on it.
+playable: $(TARGET) $(DISC)/.stamp
+	rm -f $(DISC)/AlephOne/AUTOSTART $(DISC)/AlephOne/PADTEST $(DISC)/AlephOne/DEBUG $(DISC)/AlephOne/PROFILE $(DISC)/AlephOne/AUTOKEY
+	rm -f $(DISC)/AlephOne/AUTOSTART\ [0-9]* $(DISC)/AlephOne/PADTEST\ [0-9]* \
+	      $(DISC)/AlephOne/DEBUG\ [0-9]* $(DISC)/AlephOne/PROFILE\ [0-9]* \
+	      $(DISC)/AlephOne/AUTOKEY\ [0-9]* $(DISC)/AlephOne/.DS_Store
+	rm -f alephone-$(BUILD_TAG)-playable.cdi
+	$(MKDCDISC) -e $(TARGET) -d $(DISC)/AlephOne -o alephone-$(BUILD_TAG)-playable.cdi \
+		-s $(DISCSERIAL) -n "$(DISCNAME) $(BUILD_TAG)" -a "$(DISCAUTH)" -N
+
 manual: $(TARGET) $(DISC)/.stamp
 	rm -f $(DISC)/AlephOne/AUTOSTART $(DISC)/AlephOne/PADTEST $(DISC)/AlephOne/DEBUG $(DISC)/AlephOne/PROFILE $(DISC)/AlephOne/AUTOKEY
 	echo on > $(DISC)/AlephOne/DEBUG

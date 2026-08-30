@@ -563,7 +563,7 @@ void dc_ui_draw_surface(SDL_Surface *s, int x, int y, int w, int h)
  *	the off-screen surface is drawn over the scene and swapped, because a screen
  *	that holds its own event loop never reaches the normal frame swap.
  */
-void dc_ui_flush(SDL_Surface *s, bool dim_behind)
+void dc_ui_flush(SDL_Surface *s)
 {
 	if (s == NULL)
 		return;
@@ -574,50 +574,6 @@ void dc_ui_flush(SDL_Surface *s, bool dim_behind)
 	}
 
 #ifdef HAVE_OPENGL
-	/*
-	 *	The scrim is a quad, not pixels in the surface.
-	 *
-	 *	In software the screens blend rgba(2,6,8,.90) straight over the
-	 *	framebuffer, which already holds the running game. The off-screen
-	 *	surface holds no game, so blending it there just makes the whole thing
-	 *	black. Drawing the same colour as a translucent quad over the last
-	 *	rendered frame gives the dimmed world the design asks for, and costs one
-	 *	quad rather than 307,200 blends.
-	 */
-	if (dim_behind) {
-		glPushAttrib(GL_ALL_ATTRIB_BITS);
-		glDisable(GL_CULL_FACE);
-		glDisable(GL_DEPTH_TEST);
-		glDisable(GL_ALPHA_TEST);
-		glDisable(GL_TEXTURE_2D);
-		glDisable(GL_FOG);
-		glEnable(GL_BLEND);
-		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-
-		glMatrixMode(GL_PROJECTION);
-		glPushMatrix();
-		glLoadIdentity();
-		glOrtho(0.0, GLdouble(main_surface->w), GLdouble(main_surface->h),
-		        0.0, 0.0, 1.0);
-		glMatrixMode(GL_MODELVIEW);
-		glPushMatrix();
-		glLoadIdentity();
-
-		glColor4f(2.0f/255.0f, 6.0f/255.0f, 8.0f/255.0f, 230.0f/255.0f);
-		glBegin(GL_QUADS);
-			glVertex2i(0,                0);
-			glVertex2i(main_surface->w,  0);
-			glVertex2i(main_surface->w,  main_surface->h);
-			glVertex2i(0,                main_surface->h);
-		glEnd();
-
-		glMatrixMode(GL_PROJECTION);
-		glPopMatrix();
-		glMatrixMode(GL_MODELVIEW);
-		glPopMatrix();
-		glPopAttrib();
-	}
-
 	dc_ui_draw_surface(s, 0, 0, s->w, s->h);
 	SDL_GL_SwapBuffers();
 #endif

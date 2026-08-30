@@ -256,7 +256,7 @@ static void draw_slider(SDL_Surface *s, int right, int cy, int value, int max,
  */
 extern "C" void dc_trace(int slot, const char *fmt, ...);
 extern SDL_Surface *dc_ui_target(void);
-extern void dc_ui_flush(SDL_Surface *s, bool dim_behind);
+extern void dc_ui_flush(SDL_Surface *s);
 
 static void draw_screen(struct dc_screen *sc, bool full)
 {
@@ -312,7 +312,16 @@ static void draw_screen(struct dc_screen *sc, bool full)
 			 *	through everywhere the UI does not draw. See dc_ui_flush.
 			 */
 			if (v->format->Amask) {
-				SDL_FillRect(v, NULL, 0);
+				/*
+				 *	Under GL the surface holds no game to blend against, and
+				 *	Max's call is that the pause screen may cover the world
+				 *	outright rather than dim it. So lay the scrim colour down
+				 *	flat and opaque. SDL_MapRGB sets alpha fully on, so the
+				 *	overlay covers, and nothing needs to re-render the scene
+				 *	behind it -- which the pause loop does not do anyway.
+				 */
+				SDL_FillRect(v, NULL,
+				             SDL_MapRGB(v->format, 0x02, 0x06, 0x08));
 			} else {
 				SDL_Color ink = { 0x02, 0x06, 0x08, 0 };
 				dc_ui_blend(v, 0, 0, v->w, v->h, ink, 230);
@@ -405,7 +414,7 @@ static void draw_screen(struct dc_screen *sc, bool full)
 	}
 
 	if (!full) {
-		dc_ui_flush(v, sc->over_game);
+		dc_ui_flush(v);
 		return;
 	}
 
@@ -436,7 +445,7 @@ static void draw_screen(struct dc_screen *sc, bool full)
 	dc_ui_rule(v, DC_UI_EDGE, SCR_RULE_BOT, 560, false);
 	dc_ui_hints(v, SCR_HINT_Y, sc->hints, sc->nhints, "b" DC_BUILD_NUM, lf, ls);
 
-	dc_ui_flush(v, sc->over_game);
+	dc_ui_flush(v);
 }
 
 int dc_screen_run(struct dc_screen *sc)
