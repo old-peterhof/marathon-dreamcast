@@ -256,7 +256,7 @@ static void draw_slider(SDL_Surface *s, int right, int cy, int value, int max,
  */
 extern "C" void dc_trace(int slot, const char *fmt, ...);
 extern SDL_Surface *dc_ui_target(void);
-extern void dc_ui_flush(SDL_Surface *s);
+extern void dc_ui_flush(SDL_Surface *s, bool dim_behind);
 
 static void draw_screen(struct dc_screen *sc, bool full)
 {
@@ -301,9 +301,22 @@ static void draw_screen(struct dc_screen *sc, bool full)
 
 	if (full) {
 		if (sc->over_game) {
-			/* .scrim: rgba(2,6,8,.90) over the running game. */
-			SDL_Color ink = { 0x02, 0x06, 0x08, 0 };
-			dc_ui_blend(v, 0, 0, v->w, v->h, ink, 230);
+			/*
+			 *	.scrim: rgba(2,6,8,.90) over the running game.
+			 *
+			 *	Only blend it in when we are drawing at the screen, which
+			 *	already holds the game. Under GL this surface is off-screen and
+			 *	holds nothing, so blending here would just black it out; the
+			 *	scrim is drawn as a quad over the last rendered frame instead,
+			 *	and the surface is cleared transparent so the world shows
+			 *	through everywhere the UI does not draw. See dc_ui_flush.
+			 */
+			if (v->format->Amask) {
+				SDL_FillRect(v, NULL, 0);
+			} else {
+				SDL_Color ink = { 0x02, 0x06, 0x08, 0 };
+				dc_ui_blend(v, 0, 0, v->w, v->h, ink, 230);
+			}
 		} else {
 			dc_plate_select(DC_PLATE_PLAIN);
 			dc_plate_to_screen();
@@ -392,7 +405,7 @@ static void draw_screen(struct dc_screen *sc, bool full)
 	}
 
 	if (!full) {
-		dc_ui_flush(v);
+		dc_ui_flush(v, sc->over_game);
 		return;
 	}
 
@@ -423,7 +436,7 @@ static void draw_screen(struct dc_screen *sc, bool full)
 	dc_ui_rule(v, DC_UI_EDGE, SCR_RULE_BOT, 560, false);
 	dc_ui_hints(v, SCR_HINT_Y, sc->hints, sc->nhints, "b" DC_BUILD_NUM, lf, ls);
 
-	dc_ui_flush(v);
+	dc_ui_flush(v, sc->over_game);
 }
 
 int dc_screen_run(struct dc_screen *sc)

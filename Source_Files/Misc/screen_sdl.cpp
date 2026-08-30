@@ -439,10 +439,18 @@ SDL_Surface *dc_ui_target(void)
 		return main_surface;
 
 	if (UISurface == NULL) {
-		/* RGB565, which is what the PVR stores natively, so the upload is a
-		   copy rather than a conversion. */
+		/*
+		 *	ARGB1555, not RGB565.
+		 *
+		 *	One bit of alpha is all this needs: a cleared surface is
+		 *	transparent, and SDL_MapRGB returns alpha fully set, so everything
+		 *	the UI draws is opaque and everything it does not touch shows the
+		 *	game through. That is what lets the pause menu sit over the dimmed
+		 *	world instead of over black. ARGB1555 is a native PVR format, so
+		 *	the upload is still a copy rather than a conversion.
+		 */
 		UISurface = SDL_CreateRGBSurface(SDL_SWSURFACE, 640, 480, 16,
-		                                 0xf800, 0x07e0, 0x001f, 0);
+		                                 0x7c00, 0x03e0, 0x001f, 0x8000);
 		dc_trace(61, "ui: overlay surface %p px=%p",
 		         (void *)UISurface, UISurface ? UISurface->pixels : NULL);
 	}
@@ -490,8 +498,12 @@ void dc_ui_draw_surface(SDL_Surface *s, int x, int y, int w, int h)
 	while (glGetError() != GL_NO_ERROR)
 		;
 
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB565_KOS, s->w, s->h, 0,
-	             GL_RGB, GL_UNSIGNED_SHORT_5_6_5, s->pixels);
+	if (s->format->Amask)
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_ARGB1555_KOS, s->w, s->h, 0,
+		             GL_BGRA, GL_UNSIGNED_SHORT_1_5_5_5_REV, s->pixels);
+	else
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB565_KOS, s->w, s->h, 0,
+		             GL_RGB, GL_UNSIGNED_SHORT_5_6_5, s->pixels);
 
 	{
 		GLenum Err = glGetError();
@@ -510,9 +522,15 @@ void dc_ui_draw_surface(SDL_Surface *s, int x, int y, int w, int h)
 	glDisable(GL_CULL_FACE);
 	glDisable(GL_DEPTH_TEST);
 	glDisable(GL_ALPHA_TEST);
-	glDisable(GL_BLEND);
 	glDisable(GL_FOG);
 	glEnable(GL_TEXTURE_2D);
+
+	if (s->format->Amask) {
+		glEnable(GL_BLEND);
+		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+	} else {
+		glDisable(GL_BLEND);
+	}
 
 	glMatrixMode(GL_PROJECTION);
 	glPushMatrix();
@@ -545,7 +563,7 @@ void dc_ui_draw_surface(SDL_Surface *s, int x, int y, int w, int h)
  *	the off-screen surface is drawn over the scene and swapped, because a screen
  *	that holds its own event loop never reaches the normal frame swap.
  */
-void dc_ui_flush(SDL_Surface *s)
+void dc_ui_flush(SDL_Surface *s, bool dim_behind)
 {
 	if (s == NULL)
 		return;
@@ -556,6 +574,50 @@ void dc_ui_flush(SDL_Surface *s)
 	}
 
 #ifdef HAVE_OPENGL
+	/*
+	 *	The scrim is a quad, not pixels in the surface.
+	 *
+	 *	In software the screens blend rgba(2,6,8,.90) straight over the
+	 *	framebuffer, which already holds the running game. The off-screen
+	 *	surface holds no game, so blending it there just makes the whole thing
+	 *	black. Drawing the same colour as a translucent quad over the last
+	 *	rendered frame gives the dimmed world the design asks for, and costs one
+	 *	quad rather than 307,200 blends.
+	 */
+	if (dim_behind) {
+		glPushAttrib(GL_ALL_ATTRIB_BITS);
+		glDisable(GL_CULL_FACE);
+		glDisable(GL_DEPTH_TEST);
+		glDisable(GL_ALPHA_TEST);
+		glDisable(GL_TEXTURE_2D);
+		glDisable(GL_FOG);
+		glEnable(GL_BLEND);
+		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+		glMatrixMode(GL_PROJECTION);
+		glPushMatrix();
+		glLoadIdentity();
+		glOrtho(0.0, GLdouble(main_surface->w), GLdouble(main_surface->h),
+		        0.0, 0.0, 1.0);
+		glMatrixMode(GL_MODELVIEW);
+		glPushMatrix();
+		glLoadIdentity();
+
+		glColor4f(2.0f/255.0f, 6.0f/255.0f, 8.0f/255.0f, 230.0f/255.0f);
+		glBegin(GL_QUADS);
+			glVertex2i(0,                0);
+			glVertex2i(main_surface->w,  0);
+			glVertex2i(main_surface->w,  main_surface->h);
+			glVertex2i(0,                main_surface->h);
+		glEnd();
+
+		glMatrixMode(GL_PROJECTION);
+		glPopMatrix();
+		glMatrixMode(GL_MODELVIEW);
+		glPopMatrix();
+		glPopAttrib();
+	}
+
 	dc_ui_draw_surface(s, 0, 0, s->w, s->h);
 	SDL_GL_SwapBuffers();
 #endif
