@@ -295,7 +295,13 @@ static void change_screen_mode(int width, int height, int depth, bool nogl)
 #ifdef HAVE_OPENGL
 	// The original idea was to only enable OpenGL for the in-game display, but
 	// SDL crashes if OpenGL is turned on later
-	if (/*!nogl &&*/ screen_mode.acceleration == _opengl_acceleration) {
+	//
+	// EXPERIMENT: honour nogl, which is what Max wants -- menus, the splash and
+	// terminals drawn in software, only the in-game display on the PowerVR.
+	// The in-game path (change_screen_mode(screen_mode_data*, redraw)) passes
+	// nogl false; every startup and menu path passes true. Whether the switch
+	// survives is the whole question.
+	if (!nogl && screen_mode.acceleration == _opengl_acceleration) {
 #ifdef DC
 		// SDL_OPENGLBLIT is the deprecated 1.2 mode that keeps a 2D surface
 		// alongside the GL context and blits between them every frame. The
