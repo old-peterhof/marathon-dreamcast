@@ -148,23 +148,24 @@ static void usage(const char *prg_name)
 	exit(0);
 }
 
+// Outside the extern "C" block below: dc_vmu.h declares its own linkage, and
+// dc_slots.cpp is C++, so wrapping these here gave the call site C linkage and
+// the definition C++ linkage -- which links only by accident and did not.
+#include "dc_vmu.h"
+#include "dc_slots.h"
+#include "dc_mainmenu.h"
+#include "dc_screen.h"
+#include "dc_padconfig.h"
+
 extern "C" {
 extern int fs_mem_init(void);
-extern void dc_vmu_load_saves(const char *ram_dir, const char *map_path);
-}
-#ifdef DC
-#include <dirent.h>
-extern bool load_and_start_game(FileSpecifier& File);
-#endif
-extern "C" {
 #ifdef DC
 void dc_trace(int slot, const char *fmt, ...);
 void dc_input_init_video(void);		// suppress SDL's 60Hz prompt; see dc_input.c
 int  dc_maple_wait_scan_bounded(unsigned int timeout_ms);	// see dc_maple.c
 void dc_profiler_start(void);		// VMU Profiler, gated on a PROFILE marker
 void dc_input_dump_maple(void);		// lists the maple bus once, DEBUG builds only
-void dc_build_stamp(const char *tag);
-void dc_heap_trace(int slot, const char *where);	// draws the build tag on the menu
+void dc_build_stamp(const char *tag);	// draws the build tag on the menu
 #endif
 }
 
@@ -473,11 +474,8 @@ static void initialize_application(void)
 	initialize_sound_manager(sound_preferences);
 	initialize_marathon_music_handler();
 	initialize_keyboard_controller();
-	dc_heap_trace(33, "before screen");
 	initialize_screen(&graphics_preferences->screen_mode);
-	dc_heap_trace(34, "before marathon");
 	initialize_marathon();
-	dc_heap_trace(35, "after marathon");
 	initialize_screen_drawing();
 	FileSpecifier theme = environment_preferences->theme_dir;
 	initialize_dialogs(theme);
@@ -990,10 +988,24 @@ extern "C" void dc_open_controls_dialog(void);
  *	binary for both images, and the hardware target simply does not stage the
  *	marker. `make test` adds it, `make cdi` does not.
  */
-// 0 = no marker, 1 = start a new game, 2 = open the CONTROLS dialog.
+// 0 = no marker, 1 = start a new game, 2 = CONTROLS, 3 = load, 4 = MANAGE SAVES.
 // The marker's contents pick which; "controls" opens preferences instead of
 // starting a game, so the sensitivity sliders can be screenshotted with no
 // input at all.
+/*
+ *	Whether the AUTOSTART harness is driving.
+ *
+ *	It calls do_menu_item_command directly, with nobody there to answer anything.
+ *	The difficulty screen would sit waiting for a press that never comes, so New
+ *	Game skips it and takes whatever difficulty preferences already hold.
+ */
+static int dc_autostart_active = 0;
+
+extern "C" int dc_autostart_running(void)
+{
+	return dc_autostart_active;
+}
+
 static int dc_autostart_mode(void)
 {
 	static int checked = 0, mode = 0;
@@ -1009,10 +1021,12 @@ static int dc_autostart_mode(void)
 				if (fgets(buf, sizeof buf, f)) {
 					if (strncmp(buf, "controls", 8) == 0)
 						mode = 2;
-					else if (strncmp(buf, "loadfirst", 9) == 0)
-						mode = 4;
 					else if (strncmp(buf, "load", 4) == 0)
 						mode = 3;
+					else if (strncmp(buf, "saves", 5) == 0)
+						mode = 4;
+					else if (strncmp(buf, "binds", 5) == 0)
+						mode = 5;
 				}
 				fclose(f);
 			}
@@ -1049,19 +1063,11 @@ static void main_event_loop(void)
 		// Which build is this? Drawn every pass while the menu is up, so a
 		// button redraw cannot wipe it. Matches the image filename and the row
 		// in BUILDS.md.
-		if (get_game_state() == _display_main_menu) {
-			// Was drawn on every pass, which is a bfont blit per iteration of
-			// the loop that also reads the pad. Free on a console, evidently not
-			// through Flycast, where Max found the menu laggy. Four times a
-			// second is still often enough to survive a button redraw.
-			static uint32 last_stamp = 0;
-			uint32 now = SDL_GetTicks();
-
-			if (now - last_stamp > 250) {
-				last_stamp = now;
-				dc_build_stamp(DC_BUILD_TAG);
-			}
-		}
+		// Retired. It went into VRAM at row 452, four times a second, because the
+		// painted menu kept erasing it -- and row 452 is inside the overscan a
+		// television eats, so the number identifying the build was unreadable on
+		// the one device where it matters. The menu's own hint bar carries it
+		// now, inside the safe area. See dc_main_menu_draw.
 
 		{
 			static int shown = 0;
@@ -1081,6 +1087,7 @@ static void main_event_loop(void)
 			else if (SDL_GetTicks() - dc_menu_since > 3000) {
 				int mode = dc_autostart_mode();
 				dc_autostarted = true;
+				dc_autostart_active = 1;
 				if (mode == 2) {
 					dc_trace(2, "autostart: opening CONTROLS dialog");
 					dc_open_controls_dialog();
@@ -1088,46 +1095,16 @@ static void main_event_loop(void)
 					dc_trace(2, "autostart: selecting iLoadGame");
 					do_menu_item_command(mInterface, iLoadGame, false);
 				} else if (mode == 4) {
-					// Load the first saved game in /ram without going through
-					// the file dialog. The dialog wants a keypress, which an
-					// unattended run cannot supply, and skipping it separates a
-					// broken load from a broken dialog.
-					DIR *d = opendir("/ram");
-					struct dirent *de;
-					char pick[128];
-
-					pick[0] = 0;
-					if (d) {
-						while ((de = readdir(d)) != NULL) {
-							if (de->d_name[0] == '.')
-								continue;
-							// The preferences file lives in the same flat
-							// ramdisk and is not a save wad; handing it to the
-							// wad reader trips an assertion and takes the
-							// system down.
-							if (strstr(de->d_name, "Preferences") ||
-							    strstr(de->d_name, "Prefs") ||
-							    strstr(de->d_name, "prefs"))
-								continue;
-							snprintf(pick, sizeof pick, "%s", de->d_name);
-							break;
-						}
-						closedir(d);
-					}
-
-					if (pick[0]) {
-						FileSpecifier f = local_data_dir + pick;
-						dc_trace(2, "autostart: loading %s", pick);
-						dc_trace(25, "autostart: exists=%d", (int)f.Exists());
-						bool ok = load_and_start_game(f);
-						dc_trace(26, "autostart: load_and_start_game=%d", (int)ok);
-					} else {
-						dc_trace(2, "autostart: nothing in /ram to load");
-					}
+					dc_trace(2, "autostart: opening MANAGE SAVES");
+					dc_manage_saves();
+				} else if (mode == 5) {
+					dc_trace(2, "autostart: opening CONFIGURE CONTROLLER");
+					dc_pad_config();
 				} else {
 					dc_trace(2, "autostart: selecting iNewGame");
 					do_menu_item_command(mInterface, iNewGame, false);
 				}
+				dc_autostart_active = 0;
 				dc_trace(3, "autostart: returned, state=%d", (int)get_game_state());
 				continue;
 			}
@@ -1185,6 +1162,14 @@ static void main_event_loop(void)
 					int num_tries = 0;
 					while (event.type == SDL_NOEVENT && num_tries < 3) {
 					 	SDL_Delay(10);
+#ifdef DC
+						// Read the pad inside the wait as well as before it: a
+						// menu sleeps up to 30ms here and dc_input_poll() only
+						// ran at the top of the loop, so a press waited it out.
+						// Safe alongside the chapter-screen poll now that
+						// dc_input_poll ignores re-entry.
+						dc_input_poll();
+#endif
 						SDL_PollEvent(&event);
 						num_tries++;
 					}
@@ -1362,69 +1347,101 @@ static void handle_game_key(const SDL_Event &event)
  *	Alt+S to save, Alt+C to leave the level. A Dreamcast pad has no Alt and no
  *	letters, so from a console there was no way to pause, no way to save away
  *	from a terminal, and no way out of a level at all short of resetting the
- *	machine. Start was bound to Escape, which gameplay ignores.
+ *	machine.
  *
- *	The dialog is itself the pause: dialogs run their own event loop, so the
- *	world stops while one is open. Start closes it again, because Escape is what
- *	a dialog treats as cancel.
+ *	The screen is itself the pause: dc_screen_run holds its own loop, so the
+ *	world stops while it is up. It draws over the running game rather than over a
+ *	plate, dimmed, which is what the design asks for and what makes it read as an
+ *	overlay rather than as having left the level.
+ *
+ *	Difficulty is deliberately not here. It belongs to the run and is chosen when
+ *	the run starts -- Max's call on UI-HANDOFF open question 3.
  */
-enum { dcPauseResume, dcPauseSave, dcPausePrefs, dcPauseQuit };
-
-static int dc_pause_choice = dcPauseResume;
-
-struct dc_pause_item {
-	dialog *d;
-	int what;
-};
-
-static void dc_pause_proc(void *arg)
-{
-	struct dc_pause_item *it = (struct dc_pause_item *)arg;
-
-	dc_pause_choice = it->what;
-	it->d->quit(0);
-}
+enum { pmResume = 1, pmSave, pmPrefs, pmQuit };
 
 static void dc_pause_menu(void)
 {
-	static const char *labels[4] = {
-		"RESUME", "SAVE GAME", "PREFERENCES", "QUIT TO MAIN MENU"
+	static const dc_ui_hint hints[] = {
+		{ "A",     "SELECT", true  },
+		{ "START", "RESUME", false },
+		{ "+",     "MOVE",   false }
 	};
-	struct dc_pause_item items[4];
-	dialog d;
-	unsigned i;
+	struct dc_row rows[4];
+	struct dc_screen sc;
+	char elapsed[24], level[72];
+	const char *state[4];
 
-	dc_pause_choice = dcPauseResume;
-	dc_trace(29, "pause menu: opened");
+	memset(rows, 0, sizeof rows);
+	memset(&sc, 0, sizeof sc);
 
-	d.add(new w_static_text("PAUSED", TITLE_FONT, TITLE_COLOR));
-	d.add(new w_spacer());
+	rows[0].label = "RESUME";        rows[0].kind = DC_ROW_ACTION; rows[0].id = pmResume;
+	rows[1].label = "SAVE GAME";     rows[1].kind = DC_ROW_ACTION; rows[1].id = pmSave;
+	rows[2].label = "PREFERENCES";   rows[2].kind = DC_ROW_ACTION; rows[2].id = pmPrefs;
+	rows[3].label = "QUIT TO MAIN MENU";
+	rows[3].kind = DC_ROW_ACTION;    rows[3].id = pmQuit;
 
-	for (i = 0; i < 4; i++) {
-		items[i].d = &d;
-		items[i].what = (int)i;
-		d.add(new w_button(labels[i], dc_pause_proc, &items[i]));
+	{
+		unsigned int secs = (unsigned int)dynamic_world->tick_count / 30;
+
+		snprintf(elapsed, sizeof elapsed, "%02u:%02u:%02u",
+		         secs / 3600, (secs % 3600) / 60, secs % 60);
+		snprintf(level, sizeof level, "%s", static_world->level_name);
 	}
 
-	d.run();
+	state[0] = "ELAPSED";
+	state[1] = elapsed;
+	sc.state[0] = state[0];
+	sc.state[1] = state[1];
+	sc.nstate = 2;
 
-	switch (dc_pause_choice) {
-		case dcPauseSave:
-			do_menu_item_command(mGame, iSave, false);
-			break;
+	sc.title     = "PAUSED";
+	sc.kicker    = level;
+	sc.cap       = "GAME";
+	sc.title_y   = 96;
+	sc.panel_y   = 160;
+	sc.panel_w   = 340;
+	sc.row_h     = DC_UI_ROW_H;
+	sc.rows      = rows;
+	sc.nrows     = 4;
+	sc.hints     = hints;
+	sc.nhints    = 3;
+	sc.over_game = true;
 
-		case dcPausePrefs:
+	dc_trace(29, "pause menu: opened");
+
+	for (;;) {
+		int chosen = dc_screen_run(&sc);
+
+		chosen &= ~DC_SCREEN_X;
+
+		switch (chosen) {
+		case pmSave:
+			/*
+			 *	save_game() directly, not do_menu_item_command(mGame, iSave).
+			 *	That arm is #if 0'd upstream for single player, so routing
+			 *	through it would give a button that silently does nothing.
+			 *	save_game() is what the save terminal calls, and on this port it
+			 *	opens the four-slot picker.
+			 */
+			save_game();
+			validate_world_window();
+			continue;			/* back to the pause menu, still paused */
+
+		case pmPrefs:
 			do_preferences();
-			break;
+			continue;			/* likewise -- Preferences is not an exit */
 
-		case dcPauseQuit:
-			// iCloseGame puts up its own "cancel the game in progress?" check,
-			// so a mis-press does not throw the level away.
+		case pmQuit:
+			/* iCloseGame puts up its own "cancel the game in progress?" check,
+			   so a mis-press does not throw the level away. */
 			do_menu_item_command(mGame, iCloseGame, false);
 			break;
 
-		default:
+		default:				/* RESUME, B, or Start */
 			break;
+		}
+
+		break;
 	}
 
 	if (get_game_state() == _game_in_progress)
@@ -1437,7 +1454,7 @@ static void process_game_key(const SDL_Event &event)
 	switch (get_game_state()) {
 		case _game_in_progress:
 #ifdef DC
-			// Start, via the binding in dc_input.c.
+			// Start, via the fixed binding in dc_input.c.
 			if (event.key.keysym.sym == SDLK_ESCAPE) {
 				dc_pause_menu();
 				break;
@@ -1500,57 +1517,79 @@ static void process_game_key(const SDL_Event &event)
 	REPLAY SAVED FILM	SAVE_LAST_FILM
 		REPLAY LAST FILM
 */
+			extern int last_menu;
+#ifdef DC
+			/*
+			 *	Five items, and the walk skips anything unavailable -- the stock
+			 *	loop below never consulted enabled_item(), so it would land on a
+			 *	dead row and let Return be pressed on it. With Continue Game
+			 *	greyed out on a fresh card that row is second in the list, so
+			 *	skipping is the difference between the menu working and not.
+			 */
+			{
+				short want = last_menu;
+
+				switch (event.key.keysym.sym) {
+					case SDLK_UP:
+						want = dc_main_menu_step(last_menu, -1);
+						break;
+					case SDLK_DOWN:
+						want = dc_main_menu_step(last_menu, +1);
+						break;
+					case SDLK_RETURN:
+						if (dc_main_menu_enabled(last_menu))
+							item = last_menu;
+						break;
+					default:
+						break;
+				}
+
+				if (want != last_menu) {
+					last_menu = want;
+					draw_menu_button(last_menu, true);
+				}
+			}
+#else
 			const static char menus[] = {
 	iNewGame,iLoadGame,iGatherGame,iJoinGame,iReplaySavedFilm,iReplayLastFilm,
 	iSaveLastFilm,iPreferences,iQuit,iCredits,
 			};
 #define	N_MENU	(sizeof(menus)/sizeof(menus[0]))
-			extern int last_menu;
 			int c_menu;
 
-			for(c_menu=0;c_menu<(int)N_MENU && menus[c_menu]!=last_menu;c_menu++);
-			if (c_menu >= (int)N_MENU) c_menu = 0;
+			for(c_menu=0;c_menu<N_MENU && menus[c_menu]!=last_menu;c_menu++);
 
 			switch(event.key.keysym.sym) {
 				case SDLK_UP:
-				case SDLK_DOWN: {
-					int step = (event.key.keysym.sym == SDLK_UP) ? -1 : 1;
-					int tries;
-
-					// Step over anything the engine has disabled. Network play
-					// is not built at all and a film cannot outlive a power
-					// cycle, so stopping on those entries only makes the player
-					// press the D-pad again to get past them.
-					for (tries = 0; tries < (int)N_MENU; tries++) {
-						c_menu += step;
-						if (c_menu < 0)
-							c_menu = (int)N_MENU - 1;
-						else if (c_menu >= (int)N_MENU)
-							c_menu = 0;
-						if (enabled_item(menus[c_menu]))
-							break;
-					}
+					c_menu--;
+					if (c_menu<0) c_menu = N_MENU-1;
 					break;
-				}
+				case SDLK_DOWN:
+					c_menu++;
+					if (c_menu>=N_MENU) c_menu=0;
+					break;
 				case SDLK_RETURN:
 					item = last_menu;
 					break;
-				default:
-					break;
 			}
 			if (menus[c_menu]!=last_menu) {
-				// Un-draw the old highlight before lighting the new one. Without
-				// this every button visited stays lit, and after a few presses
-				// the menu shows a trail of false highlights with no way to tell
-				// which one Return will actually pick.
-				draw_menu_button(last_menu, false);
 				last_menu = menus[c_menu];
 				draw_menu_button(last_menu,true);
-				dc_trace(30, "menu: highlight item %d", (int)last_menu);
 			}
+#endif
 #endif
 
 			switch (event.key.keysym.sym) {
+#ifdef DC
+				// Only the five that exist. A keyboard can be plugged into a
+				// Dreamcast, and offering it a shortcut to Gather Network Game
+				// would reach an item the pad cannot see and that does nothing.
+				case SDLK_n: item = iNewGame; break;
+				case SDLK_o: if (dc_have_any_save()) item = iLoadGame; break;
+				case SDLK_m: item = iManageSaves; break;
+				case SDLK_p: item = iPreferences; break;
+				case SDLK_c: item = iCredits; break;
+#else
 				case SDLK_n: item = iNewGame; break;
 				case SDLK_o: item = iLoadGame; break;
 				case SDLK_g: item = iGatherGame; break;
@@ -1559,6 +1598,7 @@ static void process_game_key(const SDL_Event &event)
 				case SDLK_r: item = iReplaySavedFilm; break;
 				case SDLK_c: item = iCredits; break;
 				case SDLK_q: item = iQuit; break;
+#endif
 				case SDLK_F9: dump_screen(); break;
 				default: break;
 			}
