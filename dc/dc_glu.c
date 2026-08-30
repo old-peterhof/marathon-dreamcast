@@ -14,6 +14,15 @@
  *	they are being reduced, which is the only direction this is ever used in.
  *	Averaging is also the right thing for the alpha channel, which decides what
  *	is see-through.
+ *
+ *	The colour average is weighted by alpha, and that is not a refinement -- it
+ *	is required. OGL_Textures.cpp sets ColorTable[0] = 0, so every texel outside
+ *	a sprite is transparent *black*. An unweighted average lets those texels vote
+ *	on the colour of the edge texels they border, dragging them toward black, and
+ *	the result is a dark fringe around every sprite that survives into the game.
+ *	Weighting by alpha gives them a vote of zero, which is what "transparent"
+ *	should mean. The alpha channel itself is still averaged unweighted -- that is
+ *	the coverage, and it is what makes the edge soften rather than stairstep.
  */
 
 #include <stdint.h>
@@ -72,9 +81,10 @@ int gluScaleImage(GLenum format,
 				for (sx = x0; sx < x1; sx++) {
 					const uint8_t *p = row + (size_t)sx * 4;
 
-					r += p[0];
-					g += p[1];
-					b += p[2];
+					/* Weight colour by alpha: see the note above. */
+					r += (unsigned)p[0] * p[3];
+					g += (unsigned)p[1] * p[3];
+					b += (unsigned)p[2] * p[3];
 					a += p[3];
 					n++;
 				}
@@ -84,9 +94,15 @@ int gluScaleImage(GLenum format,
 				n = 1;
 
 			out = dst + (((size_t)y * widthout) + x) * 4;
-			out[0] = (uint8_t)(r / n);
-			out[1] = (uint8_t)(g / n);
-			out[2] = (uint8_t)(b / n);
+			if (a) {
+				out[0] = (uint8_t)(r / a);
+				out[1] = (uint8_t)(g / a);
+				out[2] = (uint8_t)(b / a);
+			} else {
+				/* Every texel in the box was transparent; there is
+				   no colour to keep. */
+				out[0] = out[1] = out[2] = 0;
+			}
 			out[3] = (uint8_t)(a / n);
 		}
 	}

@@ -25,6 +25,37 @@ that fixed them.
 
 ## Fixed
 
+### Every scaled-down sprite had a dark fringe (b36 - b72, fixed on gl-forward)
+
+Present from the first GL build and never noticed, because it looks like
+"the textures are a bit muddy" rather than like a bug.
+
+`OGL_Textures.cpp` sets `ColorTable[0] = 0` so that colour index 0 is the
+transparent one. That makes every texel outside a sprite's silhouette
+transparent **black** -- alpha 0, but also RGB 0. Our box filter in
+`dc/dc_glu.c` then averaged R, G and B unweighted across each source box, so
+wherever a box straddled the sprite's edge those transparent-black texels voted
+on the colour, and the edge texel came out darkened in proportion to how much of
+the box was outside the sprite. Alpha was averaged too, so the silhouette was
+right; only the colour was wrong. The result is a dark outline around every
+sprite, worst at half resolution, which is exactly where the Dreamcast build
+runs.
+
+The fix is to weight the colour average by alpha, so a fully transparent texel
+contributes nothing to colour. Alpha itself stays unweighted -- that is
+coverage, and it is what makes an edge soften instead of stairstep.
+
+Measured on a synthetic edge (sprite colour R220 G40 B40, a box half inside the
+silhouette), compiling the real `gluScaleImage` natively for both versions:
+
+| | edge texel |
+|---|---|
+| before | `R110 G20 B20 A127` |
+| after | `R220 G40 B40 A127` |
+
+Half brightness before, true colour after, identical alpha in both.
+
+
 ### Start did nothing (fixed in b31)
 
 Every in-game command in this engine is an Alt+key chord -- Alt+P to pause,
