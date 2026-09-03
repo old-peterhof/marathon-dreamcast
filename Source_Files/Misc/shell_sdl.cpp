@@ -464,7 +464,29 @@ static void initialize_application(void)
 		// Space" black for both halves, so every surface showing landscape
 		// rendered as flat black. Confirmed by painting the fake landscape
 		// magenta -- every black artifact in the level turned magenta.
-		OGLData.Flags &= ~OGL_Flag_FlatLand;
+		//
+		// REVERTED, 2026-09-03. Clearing this to get real sky textures costs
+		// more heap than the machine has left. GetOGLTexture builds the
+		// landscape at its loaded size -- 512x256 RGBA is 512 KB -- and though
+		// that buffer is freed after the upload, the heap's high-water mark
+		// does not come back down, so sbrk cannot extend later. The pause menu
+		// then fails to allocate its 640x480x2 surface:
+		//
+		//   Out of memory. Requested sbrk_base 8d027000, was 8cf91000,
+		//   diff 614400          <- 640*480*2 exactly
+		//
+		// and retries forever, which freezes the game and then kills the sound.
+		// The flat fill is much less objectionable now that the landscape no
+		// longer writes depth (see RenderAsLandscape): the sky shows only
+		// through real openings instead of punching through walls, and on
+		// "Outer Space" a black sky is close to right anyway.
+		//
+		// To get real landscapes back, the peak allocation has to come down or
+		// move: quarter-resolution landscapes would make the intermediate
+		// 128 KB, and allocating the pause menu's surface once at startup --
+		// before the level load raises the high-water mark -- would take it out
+		// of the race entirely.
+		OGLData.Flags |= OGL_Flag_FlatLand;
 	}
 #endif
 #ifdef DC

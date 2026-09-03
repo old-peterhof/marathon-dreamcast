@@ -1,26 +1,50 @@
-GLdc 1.1.1: two bugs in mipmap generation, both in GL/framebuffer.c.
+GLdc 1.1.1: three bugs. Two in mipmap generation, one in glBindTexture.
 
-1. _glCalculateAverageTexel() read the texture format from the wrong bits.
-   The format is a three-bit field at bits 27-29 of the PVR format word;
-   bit 26 is GPU_TXRFMT_TWIDDLED. The old expression folded the twiddle flag
-   in as the format's low bit, so twiddled ARGB4444 -- what
-   _glGenerateMipmapTwiddled() produces -- was averaged as ARGB1555.
+GL/framebuffer.c
 
-2. The ARGB4444 channel readers returned the raw 0-15 nibble, but
-   PACK_ARGB4444 is a 0-255 -> 0-15 packer (_PACK4(v) = v * 0xF / 0xFF).
-   For any n <= 16, n * 15 <= 240 < 255, so the division truncated every
-   channel to zero and every ARGB4444 mip texel came out 0x0000 -- with
-   alpha testing on, a black or vanishing polygon at whichever level the
-   PVR picked. Fixed in the readers, not the macro: PACK_ARGB4444's other
-   caller is the palette path in texture.c, which passes 0-255 components.
+ 1. _glCalculateAverageTexel() read the texture format from the wrong bits.
+    The format is a three-bit field at bits 27-29 of the PVR format word;
+    bit 26 is GPU_TXRFMT_TWIDDLED. The old expression folded the twiddle flag
+    in as the format's low bit, so twiddled ARGB4444 -- what
+    _glGenerateMipmapTwiddled() produces -- was averaged as ARGB1555.
 
-The two interact. Fixing only (1) routes twiddled ARGB4444 into the 4444
-branch for the first time, where (2) then zeroes it -- so (1) alone turns
-wrong colours into transparent black. Both are needed.
+ 2. The ARGB4444 channel readers returned the raw 0-15 nibble, but
+    PACK_ARGB4444 is a 0-255 -> 0-15 packer (_PACK4(v) = v * 0xF / 0xFF).
+    For any n <= 16, n * 15 <= 240 < 255, so the division truncated every
+    channel to zero and every ARGB4444 mip texel came out 0x0000. Fixed in
+    the readers, not the macro: PACK_ARGB4444's other caller is the palette
+    path in texture.c, which passes 0-255 components.
 
-Apply to GL/framebuffer.c in both the dist/ and build/ copies of the libGL
-kos-port, then rebuild:  make GL  in build/libGL-1.1.1, and copy the resulting
-libGL.a over inst/lib/libGL.a. See README.DC.md, 'Patched toolchain'.
+    These two interact. Fixing only (1) routes twiddled ARGB4444 into the
+    4444 branch for the first time, where (2) then zeroes it -- so (1) alone
+    turns wrong colours into transparent black. Both are needed.
+
+GL/texture.c
+
+ 3. glBindTexture()'s recovery path shadowed its own variable:
+
+        TextureObject* txr = named_array_get(...);
+        if(!txr) {
+            TextureObject* txr = named_array_reserve(...);   /* shadows */
+            _glInitializeTextureObject(txr, texture);
+        }
+        TEXTURE_UNITS[ACTIVE_TEXTURE] = txr;                 /* still NULL */
+        gl_assert(TEXTURE_UNITS[ACTIVE_TEXTURE]->index == texture);
+
+    so the branch initialised an object and threw the pointer away, leaving
+    the outer txr NULL for the store and the assertion below it. Binding an
+    id that did not come from glGenTextures -- or a reserve that failed
+    because the heap was exhausted -- asserted inside the driver instead of
+    returning an error. Observed as a dark screen with no audio and no
+    message, after eighteen failed sound allocations:
+
+      Out of memory. Requested sbrk_base 8d009000, was 8cfd4000, diff 217088
+      GL ERROR: GL_INVALID_VALUE when calling _glTexImage2DValidate
+      Assertion failed at GL/texture.c:751
+
+Apply to both the dist/ and build/ copies of the libGL kos-port, then rebuild:
+make GL in build/libGL-1.1.1, and copy the resulting libGL.a over
+inst/lib/libGL.a. See README.DC.md, 'Patched toolchain'.
 
 --- a/GL/framebuffer.c
 +++ b/GL/framebuffer.c
@@ -119,3 +143,29 @@ libGL.a over inst/lib/libGL.a. See README.DC.md, 'Patched toolchain'.
      if((pvrFormat & GPU_TXRFMT_PAL8BPP) == GPU_TXRFMT_PAL8BPP) {
          /* Paletted... all we can do really is just pick one of the
           * 4 texels.. unless we want to change the palette (bad) or
+--- a/GL/texture.c
++++ b/GL/texture.c
+@@ -742,7 +742,22 @@
+     /* If this didn't come from glGenTextures, then we should initialize the
+         * texture the first time it's bound */
+     if(!txr) {
+-        TextureObject* txr = named_array_reserve(&TEXTURE_OBJECTS, texture);
++        /* The inner declaration here used to shadow the outer txr:
++
++               TextureObject* txr = named_array_reserve(...);
++
++           so this branch initialised a fresh object and then discarded the
++           pointer, leaving the OUTER txr NULL. The line below stored that NULL
++           in TEXTURE_UNITS and the assertion after it dereferenced it, so a
++           bind of an id that did not come from glGenTextures -- or a reserve
++           that failed because the heap was exhausted -- turned into an assert
++           inside the driver rather than a survivable error. Assign to the outer
++           variable, and do not initialise a NULL. */
++        txr = named_array_reserve(&TEXTURE_OBJECTS, texture);
++        if(!txr) {
++            _glKosThrowError(GL_OUT_OF_MEMORY, __func__);
++            return;
++        }
+         _glInitializeTextureObject(txr, texture);
+     }
+ 

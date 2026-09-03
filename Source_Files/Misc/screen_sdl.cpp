@@ -89,6 +89,9 @@ static void update_fps_display(SDL_Surface *s);
 static void DisplayPosition(SDL_Surface *s);
 static void DisplayMessages(SDL_Surface *s);
 static void DrawHUD(SDL_Rect &dest_rect);
+#if defined(DC) && defined(HAVE_OPENGL)
+static void dc_ui_reserve_overlay(void);	// defined below; called from initialize_screen
+#endif
 
 
 /*
@@ -138,6 +141,35 @@ void initialize_screen(struct screen_mode_data *mode)
 	// Set screen to 640x480 without OpenGL for menu
 	screen_mode = *mode;
 	change_screen_mode(640, 480, bit_depth, true);
+
+#if defined(DC) && defined(HAVE_OPENGL)
+	/*
+	 *	Claim the UI overlay surface here, at startup, before anything else has
+	 *	touched the heap.
+	 *
+	 *	It is 640x480x2 = 614400 bytes and dc_ui_target() used to allocate it on
+	 *	first use, which is the first pause. By then the level's collections have
+	 *	been read and sbrk cannot extend that far any more, so the allocation
+	 *	returned NULL -- and because a failed attempt leaves the static NULL, the
+	 *	pause menu retried it on every call:
+	 *
+	 *	  [dctrace 61] ui: overlay surface 0x0 px=0x0        (x5)
+	 *	  Out of memory. Requested sbrk_base 8cffe000, was 8cf68000, diff 614400
+	 *
+	 *	which froze the game and then killed the sound.
+	 *
+	 *	Doing it from ReloadViewContext was not early enough: that runs after
+	 *	OGL_StartRun, and dc_enter_game_video_mode brings GL up only after the
+	 *	collections are loaded. This is the earliest point that exists, and it
+	 *	cannot go through dc_ui_target() because main_surface is not an
+	 *	SDL_OPENGL surface yet, so that function would just hand back
+	 *	main_surface without allocating anything.
+	 *
+	 *	The cost is 600KB held for the whole session, which it needs anyway the
+	 *	moment the player pauses once.
+	 */
+	dc_ui_reserve_overlay();
+#endif
 
 	screen_initialized = true;
 }
@@ -458,9 +490,27 @@ static void change_screen_mode(int width, int height, int depth, bool nogl)
  *	this costs 600KB of video RAM rather than the 1MB the padded dimensions
  *	would suggest.
  */
+static SDL_Surface *UIOverlaySurface = NULL;
+
+/*
+ *	Allocate the overlay surface. Called once from initialize_screen(), before
+ *	any level load has raised the heap's high-water mark; see the note there.
+ */
+static void dc_ui_reserve_overlay(void)
+{
+	if (UIOverlaySurface != NULL)
+		return;
+
+	UIOverlaySurface = SDL_CreateRGBSurface(SDL_SWSURFACE, 640, 480, 16,
+	                                        0x7c00, 0x03e0, 0x001f, 0x8000);
+	dc_trace(61, "ui: reserved overlay %p px=%p",
+	         (void *)UIOverlaySurface,
+	         UIOverlaySurface ? UIOverlaySurface->pixels : NULL);
+}
+
 SDL_Surface *dc_ui_target(void)
 {
-	static SDL_Surface *UISurface = NULL;
+	SDL_Surface *&UISurface = UIOverlaySurface;
 
 	if (main_surface == NULL)
 		return NULL;
@@ -565,6 +615,28 @@ void dc_ui_draw_surface(SDL_Surface *s, int x, int y, int w, int h)
 		}
 	}
 
+	/*
+	 *	glPushAttrib and glPopAttrib are no-ops in dc_gl_compat.h -- GLdc keeps
+	 *	no attribute stack -- so the pop at the bottom of this function restores
+	 *	nothing, and everything disabled here stayed disabled for whatever drew
+	 *	next. What drew next is OGL_DrawHUD, and the symptom was the HUD panel
+	 *	artwork missing in overhead-map and terminal mode while its text still
+	 *	appeared: FontSpecifier::OGL_Render sets its own state, the panel quads
+	 *	do not. In normal play the world render establishes the state first,
+	 *	which is why the panel was only ever missing in the two modes that
+	 *	present a software surface.
+	 *
+	 *	So save and restore by hand. GLdc's glIsEnabled answers for CULL_FACE,
+	 *	DEPTH_TEST, BLEND and FOG. It does not answer for TEXTURE_2D or
+	 *	ALPHA_TEST, so those two are put back to what the world renderer wants
+	 *	rather than to what they were: texturing on, and alpha test on because
+	 *	every world polygon has been punch-through since the water fix.
+	 */
+	const GLboolean WasCull  = glIsEnabled(GL_CULL_FACE);
+	const GLboolean WasDepth = glIsEnabled(GL_DEPTH_TEST);
+	const GLboolean WasBlend = glIsEnabled(GL_BLEND);
+	const GLboolean WasFog   = glIsEnabled(GL_FOG);
+
 	glPushAttrib(GL_ALL_ATTRIB_BITS);
 	glDisable(GL_CULL_FACE);
 	glDisable(GL_DEPTH_TEST);
@@ -579,6 +651,27 @@ void dc_ui_draw_surface(SDL_Surface *s, int x, int y, int w, int h)
 		glDisable(GL_BLEND);
 	}
 
+	/*
+	 *	The viewport has to match the projection set up below.
+	 *
+	 *	This function builds a 640x480 orthographic projection, but the viewport
+	 *	it inherits is whatever the world render left -- OGL_SetWindow(sr, vr,
+	 *	true) sets it to the view rect, which is 640x320 when the HUD is showing.
+	 *	A 0..480 projection squeezed into a 320-pixel viewport scales everything
+	 *	by 320/480, so the terminal's 320-row quad landed in 213 pixels and the
+	 *	remaining 107 were the black band below it. That is the whole of the
+	 *	"terminal is squished to about 60%" bug: 320 * 320/480 = 213.
+	 *
+	 *	Nothing needs restoring afterwards -- GLdc does not answer
+	 *	glGetIntegerv(GL_VIEWPORT) anyway. Everything drawn after this sets its
+	 *	own: OGL_SetWindow runs once per frame for the world and again for the
+	 *	HUD, which is how the HUD at y=320..480 drew at all while the viewport
+	 *	was 320 tall.
+	 *
+	 *	darken_world_window() has the same mismatch and has not been touched.
+	 */
+	glViewport(0, 0, main_surface->w, main_surface->h);
+
 	glMatrixMode(GL_PROJECTION);
 	glPushMatrix();
 	glLoadIdentity();
@@ -587,6 +680,22 @@ void dc_ui_draw_surface(SDL_Surface *s, int x, int y, int w, int h)
 	glPushMatrix();
 	glLoadIdentity();
 
+	/*
+	 *	Texture coordinates run 0..1 and are NOT hand-computed against the
+	 *	padded PVR height. Tried that -- clamping V to h/nextPow2(h) -- on the
+	 *	theory that GLdc pads NPOT height to a power of two (it does:
+	 *	pvrHeight in texture.c:1809-1810) and that only width is rescued by the
+	 *	stride register. The result was a terminal at the right scale with its
+	 *	bottom third sampled away: the footer bar disappeared and the text was
+	 *	cut mid-row. So GLdc does scale the coordinates itself, as the note above
+	 *	dc_ui_target() already said, and 0..1 spans the real surface.
+	 *
+	 *	The terminal is still compressed vertically and that is still unexplained
+	 *	-- but it is compressed with all of its content present, which is the
+	 *	better of the two failures. The measurement to start from next time is
+	 *	trace 62: surface, destination rect and view are all 640x320, so nothing
+	 *	between the surface and the screen is scaling anything.
+	 */
 	glColor4f(1.0, 1.0, 1.0, 1.0);
 	glBegin(GL_QUADS);
 		glTexCoord2f(0.0, 0.0); glVertex2i(x,     y);
@@ -600,6 +709,14 @@ void dc_ui_draw_surface(SDL_Surface *s, int x, int y, int w, int h)
 	glMatrixMode(GL_MODELVIEW);
 	glPopMatrix();
 	glPopAttrib();
+
+	/* The matrices above pop properly; these do not, so put them back. */
+	if (WasCull)  glEnable(GL_CULL_FACE);  else glDisable(GL_CULL_FACE);
+	if (WasDepth) glEnable(GL_DEPTH_TEST); else glDisable(GL_DEPTH_TEST);
+	if (WasBlend) glEnable(GL_BLEND);      else glDisable(GL_BLEND);
+	if (WasFog)   glEnable(GL_FOG);        else glDisable(GL_FOG);
+	glEnable(GL_TEXTURE_2D);
+	glEnable(GL_ALPHA_TEST);
 #else
 	(void)s; (void)x; (void)y; (void)w; (void)h;
 #endif
@@ -1158,9 +1275,24 @@ void render_computer_interface(struct view_data *view)
 	 *	So present it, over the world view only: the HUD below is drawn by
 	 *	HUDRenderer_OGL and must not be covered.
 	 */
-	if (main_surface != NULL && (main_surface->flags & SDL_OPENGL))
+	if (main_surface != NULL && (main_surface->flags & SDL_OPENGL)) {
+		/* DIAGNOSTIC: the terminal's own numbers, so the black band below it
+		   can be reasoned about from measurements rather than screenshots. */
+		{
+			static int traced = 0;
+			if (!traced) {
+				traced = 1;
+				dc_trace(62, "term: wp %dx%d  rect %d,%d %dx%d  view %dx%d",
+				         world_pixels ? world_pixels->w : -1,
+				         world_pixels ? world_pixels->h : -1,
+				         dc_view_rect.x, dc_view_rect.y,
+				         dc_view_rect.w, dc_view_rect.h,
+				         view->screen_width, view->screen_height);
+			}
+		}
 		dc_ui_draw_surface(world_pixels, dc_view_rect.x, dc_view_rect.y,
 		                   dc_view_rect.w, dc_view_rect.h);
+	}
 #endif
 }
 
