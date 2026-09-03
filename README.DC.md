@@ -35,13 +35,21 @@ way.
 
 ### Patched toolchain
 
-**This port's libGL is patched.** `tools/patches/gldc-1.1.1-mipmap-format-field.patch`
-fixes `_glCalculateAverageTexel()` in GLdc 1.1.1, which read the texture format
-out of the wrong bits of the PVR format word — bit 26 is the twiddle flag, not
-part of the three-bit format field at bits 27-29 — so twiddled ARGB4444, the
-format this port uses, was averaged as ARGB1555 and every generated mip level
-came out discoloured. Its header says how to apply and rebuild; the reasoning and
-the before/after truth table are in `HANDOFF-2026-09-02.md`.
+**This port's libGL is patched.** `tools/patches/gldc-1.1.1-mipmap-fixes.patch`
+fixes two bugs in GLdc 1.1.1's mipmap generation, both in `GL/framebuffer.c`:
+
+- `_glCalculateAverageTexel()` read the texture format from the wrong bits of the
+  PVR format word. Bit 26 is the twiddle flag, not part of the three-bit format
+  field at bits 27-29, so twiddled ARGB4444 — the format this port uses — was
+  averaged as ARGB1555.
+- The ARGB4444 channel readers returned a raw 0-15 nibble to `PACK_ARGB4444`,
+  which is a 0-255 packer. `n * 0xF / 0xFF` is zero for every n up to 16, so
+  every ARGB4444 mip texel came out `0x0000`: transparent black, and with alpha
+  testing on, walls that vanished or blacked out at distance.
+
+They interact — fixing only the first routes ARGB4444 into the branch the second
+one breaks — so the patch carries both. Its header says how to apply and rebuild;
+the reasoning and the before/after tables are in `HANDOFF-2026-09-02.md`.
 
 A build against an unpatched libGL will link and run, but mipmapped textures will
 not look the same, so it is not comparable to the builds recorded in `BUILDS.md`

@@ -449,6 +449,18 @@ void FontSpecifier::OGL_Reset(bool IsStarting)
 			RGBA[4*t + 3] = Alpha;
 		}
 
+		// Drain first, or the probe below reports somebody else's error. The
+		// renderer leaves GL_INVALID_VALUE behind on nearly every frame from
+		// glEnable/glDisable, so an undrained glGetError here returns 0x501 and
+		// blames the upload for it -- which then drops a perfectly good font,
+		// rebuilds it on the next draw, and re-uploads 256 KB every other frame
+		// for as long as the map is open. Measured doing exactly that: 33 bogus
+		// failures on the 512x256 Monaco 18 atlas in one run. dc_ui_draw_surface
+		// in screen_sdl.cpp had already been caught by this and drains the same
+		// way.
+		while (glGetError() != GL_NO_ERROR)
+			;
+
 		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, TxtrWidth, TxtrHeight,
 			0, GL_RGBA, GL_UNSIGNED_BYTE, RGBA);
 
