@@ -30,6 +30,7 @@
 #include <stdlib.h>
 
 #include <GL/gl.h>
+#include <GL/glext.h>
 
 #ifndef GLU_INVALID_ENUM
 #define GLU_INVALID_ENUM	100900
@@ -123,50 +124,13 @@ int gluBuild2DMipmaps(GLenum target, GLint internalFormat,
                       GLsizei width, GLsizei height,
                       GLenum format, GLenum type, const void *data)
 {
-	const uint8_t *level_data = (const uint8_t *)data;
-	uint8_t *owned = NULL;
-	GLsizei w = width, h = height;
-	GLint level = 0;
-
-	if (format != GL_RGBA || type != GL_UNSIGNED_BYTE)
-		return GLU_INVALID_ENUM;
-
 	if (width <= 0 || height <= 0)
 		return GLU_INVALID_ENUM;
 
-	for (;;) {
-		uint8_t *next;
-		GLsizei nw, nh;
-
-		glTexImage2D(target, level, internalFormat, w, h, 0,
-		             format, type, level_data);
-
-		if (w == 1 && h == 1)
-			break;
-
-		nw = (w > 1) ? w / 2 : 1;
-		nh = (h > 1) ? h / 2 : 1;
-
-		next = (uint8_t *)malloc((size_t)nw * nh * 4);
-		if (!next)
-			break;
-
-		gluScaleImage(format, w, h, type, level_data,
-		              nw, nh, type, next);
-
-		/* The caller owns the base image; every level after it is ours. */
-		if (owned)
-			free(owned);
-		owned = next;
-		level_data = next;
-
-		w = nw;
-		h = nh;
-		level++;
-	}
-
-	if (owned)
-		free(owned);
+	/* EXPERIMENT: upload level 0 and let GLdc build the chain. */
+	glTexImage2D(target, 0, internalFormat, width, height, 0,
+	             format, type, data);
+	glGenerateMipmap(target);
 
 	return 0;
 }

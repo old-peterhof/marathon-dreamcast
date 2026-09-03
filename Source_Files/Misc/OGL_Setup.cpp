@@ -160,7 +160,11 @@ void OGL_SetDefaults(OGL_ConfigureData& Data)
 		//
 		// Mipmaps are off for the same reason: they add a third again, and this
 		// is the wrong hardware to spend that on before anything renders at all.
-		TxtrData.FarFilter = 1;			// GL_LINEAR, no mipmap chain
+		// EXPERIMENT: mipmapped walls only.
+		if (k == OGL_Txtr_Wall)
+			TxtrData.FarFilter = 3;	// GL_LINEAR_MIPMAP_NEAREST
+		else
+			TxtrData.FarFilter = 1;	// GL_LINEAR, no mipmap chain
 		TxtrData.ColorFormat = 1;		// 16-bit color
 		
 		// Resolution is per texture type, and the types are not equal.

@@ -424,7 +424,10 @@ static void initialize_application(void)
 		OGL_ConfigureData& OGLData = Get_OGL_ConfigureData();
 
 		for (int k = 0; k < OGL_NUMBER_OF_TEXTURE_TYPES; k++) {
-			OGLData.TxtrConfigList[k].FarFilter = 1;
+			if (k == OGL_Txtr_Wall)
+				OGLData.TxtrConfigList[k].FarFilter = 3;
+			else
+				OGLData.TxtrConfigList[k].FarFilter = 1;
 			OGLData.TxtrConfigList[k].ColorFormat = 1;
 
 			// Everything is halved until the VRAM to pay for more exists.
