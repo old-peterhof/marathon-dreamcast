@@ -205,6 +205,17 @@ void OGL_SetDefaults(OGL_ConfigureData& Data)
 	// water bleeding through walls and was innocent both times -- the cause was
 	// polygon list assignment, see OGL_Render.cpp. Removing it costs
 	// see-through liquids for nothing.
+	// OGL_Flag_Map stays on. Turning it off to reach the software map -- and so
+	// avoid the five font atlases the OpenGL map class needs -- does not work:
+	// the software map draws into world_pixels, and under GL nothing presents
+	// that buffer. screen_sdl.cpp does test "overhead_map_active &&
+	// !OGL_MapActive" and call update_screen(), but update_screen() blits
+	// world_pixels into main_surface, which is an SDL_OPENGL surface with no
+	// pixels to blit into. This is exactly why terminals were blank until
+	// render_computer_interface() was given an explicit dc_ui_draw_surface()
+	// call; a software map would need the same, and would then trade 736 KB of
+	// font atlases for a ~600 KB surface re-uploaded every frame the map is
+	// open. The map fonts are deferred instead -- see OGL_ResetMapFonts().
 	Data.Flags = OGL_Flag_ZBuffer | OGL_Flag_FlatStatic | OGL_Flag_Fader |
 		OGL_Flag_Map | OGL_Flag_HUD | OGL_Flag_LiqSeeThru | OGL_Flag_FlatLand;
 #else

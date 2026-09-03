@@ -141,6 +141,14 @@ struct FontSpecifier
 	struct DCGlyph { float l, r, t, b; short w; };
 	DCGlyph DCGlyphs[256];
 	short DCAscent, DCDescent, DCPad;
+
+	// Build the atlas if it is not there yet. The overhead map's fonts are
+	// deferred rather than uploaded at OGL_StartRun (see OGL_ResetMapFonts),
+	// so whoever draws with one has to ask for it first. Cheap after the first
+	// call: OGL_Texture is the "already built" flag, and OGL_Reset clears it
+	// again if the upload fails, so a font that cannot be built stays skipped
+	// rather than being retried on every glyph.
+	void OGL_EnsureTexture() { if (!OGL_Texture) OGL_Reset(true); }
 #endif
 #endif
 };

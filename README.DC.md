@@ -26,6 +26,27 @@ Always go through `build.sh`; it sources `environ.sh`, which is where `KOS_BASE`
 `KOS_PORTS`, `KOS_CFLAGS`, `KOS_LDFLAGS` and `KOS_LIBS` come from. Calling
 `make -f Makefile.dc` directly fails on purpose.
 
+The GL renderer needs `GL=1`: `./build.sh GL=1 -j8`. Without it `ifdef GL` in
+`Makefile.dc` leaves out `-DHAVE_OPENGL` and every GL object, and you get the
+software build — which links cleanly and silently ignores any change you made to
+a GL source file. The defines are hashed into a configuration stamp, so toggling
+`GL=1` correctly forces a rebuild rather than reusing objects compiled the other
+way.
+
+### Patched toolchain
+
+**This port's libGL is patched.** `tools/patches/gldc-1.1.1-mipmap-format-field.patch`
+fixes `_glCalculateAverageTexel()` in GLdc 1.1.1, which read the texture format
+out of the wrong bits of the PVR format word — bit 26 is the twiddle flag, not
+part of the three-bit format field at bits 27-29 — so twiddled ARGB4444, the
+format this port uses, was averaged as ARGB1555 and every generated mip level
+came out discoloured. Its header says how to apply and rebuild; the reasoning and
+the before/after truth table are in `HANDOFF-2026-09-02.md`.
+
+A build against an unpatched libGL will link and run, but mipmapped textures will
+not look the same, so it is not comparable to the builds recorded in `BUILDS.md`
+— the same caveat as the `KOS_CFLAGS` one in `CLAUDE.md`.
+
 ### Targets
 
 | Target      | Result                                                     |

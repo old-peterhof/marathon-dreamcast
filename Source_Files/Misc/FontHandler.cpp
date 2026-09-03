@@ -76,6 +76,9 @@ void FontSpecifier::Init()
 	Update();
 #ifdef HAVE_OPENGL
 	OGL_Texture = NULL;
+	// TxtrID was left indeterminate here, and OGL_Reset's teardown path calls
+	// glDeleteTextures on it before anything has generated one.
+	TxtrID = 0;
 #endif
 }
 
@@ -231,9 +234,18 @@ void FontSpecifier::OGL_Reset(bool IsStarting)
 {
 	// Don't delete these if there is no valid texture;
 	// that indicates that there are no valid texture and display-list ID's.
-	if (!IsStarting && !OGL_Texture)
+	//
+	// The test used to read "!OGL_Texture", the opposite of what that comment
+	// describes, and both halves of it were wrong. A font that had been built
+	// skipped the delete and then had TxtrID overwritten by the glGenTextures
+	// below, leaking the atlas it already held; a font that had never been
+	// built called glDeleteTextures on a TxtrID that Init() never set. Neither
+	// showed up while every font was built exactly once at OGL_StartRun, and
+	// both are reachable now that the map fonts are built on demand.
+	if (!IsStarting && OGL_Texture)
 	{
 		glDeleteTextures(1,&TxtrID);
+		TxtrID = 0;
 #ifndef DC
 		glDeleteLists(DispList,256);
 #endif
@@ -338,12 +350,23 @@ void FontSpecifier::OGL_Reset(bool IsStarting)
 	// Copy to surface
 	for (int k = 0; k <= LastLine; k++)
 	{
-		char Which = CharStarts[k];
+		// Which has to be an int. Every font here carries glyphs past 127 --
+		// Monaco 5/18 and both Couriers are 0..255, Monaco 9/12 are 0..217 --
+		// so on a row starting at glyph 128 or above a signed char is negative,
+		// and widths_p[Which] then reads off the front of the array. The
+		// x-advances it produces stop agreeing with the texture coordinates
+		// built below, which have always used an int, so those glyphs are
+		// rasterised in one place and sampled from another. The Mac path above
+		// already uses an int. draw_text wants a one-byte string, so the glyph
+		// needs a char of its own; it casts to uint8 internally, and a high
+		// byte comes through intact.
+		int Which = CharStarts[k];
 		int VPos = (k * GlyphHeight) + ascent_p;
 		int HPos = Pad;
 		for (int m = 0; m < CharCounts[k]; m++)
 		{
-			::draw_text(FontSurface, &Which, 1, HPos, VPos, White, Info, Style);
+			char Glyph = (char)(unsigned char)Which;
+			::draw_text(FontSurface, &Glyph, 1, HPos, VPos, White, Info, Style);
 			HPos += widths_p[Which++];
 		}
 	}
@@ -430,6 +453,26 @@ void FontSpecifier::OGL_Reset(bool IsStarting)
 			0, GL_RGBA, GL_UNSIGNED_BYTE, RGBA);
 
 		delete []RGBA;
+
+		// GLdc does not abort when the texture pool is exhausted: it raises
+		// GL_OUT_OF_MEMORY and returns with the texture's data pointer left
+		// NULL. Binding that later hands the PVR a null pointer and crashes a
+		// long way from here. It matters more now that the map fonts are built
+		// on demand, mid-game, when VRAM is at its most crowded -- at
+		// OGL_StartRun there was always room. Give up on the font instead:
+		// OGL_Render() tests OGL_Texture and will draw nothing.
+		GLenum UpErr = glGetError();
+		if (UpErr != GL_NO_ERROR)
+		{
+			dc_trace(53, "font: upload FAILED, GL error 0x%x, %dx%d (%d KB)",
+			         (unsigned)UpErr, (int)TxtrWidth, (int)TxtrHeight,
+			         (int)(int(TxtrWidth)*int(TxtrHeight)*2/1024));
+			glDeleteTextures(1,&TxtrID);
+			TxtrID = 0;
+			delete[]OGL_Texture;
+			OGL_Texture = NULL;
+			return;
+		}
 	}
 #else
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_LUMINANCE_ALPHA, TxtrWidth, TxtrHeight,

@@ -1,0 +1,54 @@
+GLdc 1.1.1: _glCalculateAverageTexel() reads the wrong bits for the texture format.
+
+Apply to GL/framebuffer.c in both the dist/ and build/ copies of the libGL
+kos-port, then rebuild:  make GL  in build/libGL-1.1.1, and copy the resulting
+libGL.a over inst/lib/libGL.a. See README.DC.md, 'Patched toolchain'.
+
+--- a/GL/framebuffer.c
++++ b/GL/framebuffer.c
+@@ -149,12 +149,43 @@
+ static GL_NO_INSTRUMENT GLboolean _glCalculateAverageTexel(GLuint pvrFormat, const GLubyte* src1, const GLubyte* src2, const GLubyte* src3, const GLubyte* src4, GLubyte* t) {
+     GLuint a, r, g, b;
+ 
+-    GLubyte format = ((pvrFormat & (1 << 27)) | (pvrFormat & (1 << 26))) >> 26;
+-
+     const GLubyte ARGB1555 = 0;
+     const GLubyte ARGB4444 = 1;
+     const GLubyte RGB565 = 2;
+ 
++    /* The pixel format is a three-bit field at bits 27-29 of the PVR format
++       word: ARGB1555 is 0 << 27, RGB565 is 1 << 27, ARGB4444 is 2 << 27.
++       Bit 26 is not part of it -- that is GPU_TXRFMT_TWIDDLED /
++       GPU_TXRFMT_NONTWIDDLED.
++
++       This used to read
++
++           ((pvrFormat & (1 << 27)) | (pvrFormat & (1 << 26))) >> 26
++
++       which folds the twiddle flag in as the format's low bit and never looks
++       at bit 28. Twiddled ARGB1555 and twiddled RGB565 came out right; every
++       other combination did not. Twiddled ARGB4444 -- which is what
++       _glGenerateMipmapTwiddled() below is generating -- evaluated to 0 and so
++       was averaged as ARGB1555, reading alpha from the top bit and the colour
++       channels off by a bit each. That is the discoloured mip chain.
++
++       Compare the field itself instead. Paletted formats (5 << 27, 6 << 27)
++       never reach here: PAL8BPP is handled above, and PAL4BPP is not handled
++       by this function at all. */
++    GLubyte format;
++
++    switch(pvrFormat & (7u << 27)) {
++        case GPU_TXRFMT_RGB565:
++            format = RGB565;
++            break;
++        case GPU_TXRFMT_ARGB4444:
++            format = ARGB4444;
++            break;
++        default:
++            format = ARGB1555;
++            break;
++    }
++
+     if((pvrFormat & GPU_TXRFMT_PAL8BPP) == GPU_TXRFMT_PAL8BPP) {
+         /* Paletted... all we can do really is just pick one of the
+          * 4 texels.. unless we want to change the palette (bad) or

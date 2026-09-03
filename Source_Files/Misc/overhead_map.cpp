@@ -340,6 +340,18 @@ void OGL_ResetMapFonts(bool IsStarting)
 {
 #ifdef HAVE_OPENGL
 	InitMapFonts();
+#ifdef DC
+	// The map fonts are the single largest block of texture this port uploads
+	// before a level draws: 736 KB of the 1120 KB that fonts occupy, two of
+	// them 512x256 Monaco 18 atlases. None of it is read unless the player
+	// opens the overhead map, and there are 8 MB of video RAM in the machine.
+	//
+	// So on a start we set the metrics up and leave every atlas unbuilt.
+	// OverheadMap_OGL_Class::draw_text builds one the first time it needs it.
+	// A teardown still has to run: once the map has been opened those textures
+	// exist, and OGL_ResetTextures() is what releases them.
+	if (IsStarting) return;
+#endif
 	for (int i=0; i<NUMBER_OF_ANNOTATION_DEFINITIONS; i++)
 	{
 		annotation_definition& NoteDef = OvhdMap_ConfigData.annotation_definitions[i];

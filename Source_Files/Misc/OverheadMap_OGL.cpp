@@ -346,7 +346,15 @@ void OverheadMap_OGL_Class::draw_text(
 	char *text,
 	FontSpecifier& FontData,
 	short justify)
-{	
+{
+#ifdef DC
+	// The map fonts are not uploaded until something asks to draw with one;
+	// OGL_ResetMapFonts() says why. This is that ask. If the atlas cannot be
+	// built the font is left unbuilt and OGL_Render() draws nothing, which
+	// costs the annotation rather than the frame.
+	FontData.OGL_EnsureTexture();
+#endif
+
 	// Find the left-side location
 	world_point2d left_location = location;
 	switch(justify)
