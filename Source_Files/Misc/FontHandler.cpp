@@ -79,6 +79,9 @@ void FontSpecifier::Init()
 	// TxtrID was left indeterminate here, and OGL_Reset's teardown path calls
 	// glDeleteTextures on it before anything has generated one.
 	TxtrID = 0;
+#ifdef DC
+	DCBuildFailed = false;
+#endif
 #endif
 }
 
@@ -246,6 +249,12 @@ void FontSpecifier::OGL_Reset(bool IsStarting)
 	{
 		glDeleteTextures(1,&TxtrID);
 		TxtrID = 0;
+#ifdef DC
+		// A genuine teardown -- OGL_ResetTextures() between levels, say --
+		// clears the latch: VRAM will look different next time, so a font that
+		// could not be built then may build now.
+		DCBuildFailed = false;
+#endif
 #ifndef DC
 		glDeleteLists(DispList,256);
 #endif
@@ -483,6 +492,8 @@ void FontSpecifier::OGL_Reset(bool IsStarting)
 			TxtrID = 0;
 			delete[]OGL_Texture;
 			OGL_Texture = NULL;
+			// Do not come back. See DCBuildFailed in FontHandler.h.
+			DCBuildFailed = true;
 			return;
 		}
 	}

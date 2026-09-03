@@ -142,13 +142,23 @@ struct FontSpecifier
 	DCGlyph DCGlyphs[256];
 	short DCAscent, DCDescent, DCPad;
 
+	// Set once OGL_Reset has tried to build this atlas and failed. Without it
+	// a failed build is retried on every annotation of every frame, and each
+	// attempt allocates a 256 KB atlas buffer plus a 512 KB RGBA conversion
+	// buffer -- three quarters of a megabyte of churn per retry on a 16 MB
+	// machine, until an allocation fails and takes the game with it. One
+	// failure is enough to know.
+	bool DCBuildFailed;
+
 	// Build the atlas if it is not there yet. The overhead map's fonts are
 	// deferred rather than uploaded at OGL_StartRun (see OGL_ResetMapFonts),
 	// so whoever draws with one has to ask for it first. Cheap after the first
-	// call: OGL_Texture is the "already built" flag, and OGL_Reset clears it
-	// again if the upload fails, so a font that cannot be built stays skipped
-	// rather than being retried on every glyph.
-	void OGL_EnsureTexture() { if (!OGL_Texture) OGL_Reset(true); }
+	// call, and cheap after a failed one: OGL_Texture is the "already built"
+	// flag and DCBuildFailed is the "do not try again" flag.
+	void OGL_EnsureTexture()
+	{
+		if (!OGL_Texture && !DCBuildFailed) OGL_Reset(true);
+	}
 #endif
 #endif
 };

@@ -1676,12 +1676,27 @@ static bool RenderAsRealWall(polygon_definition& RenderPolygon, bool IsVertical)
 		glDisableClientState(GL_COLOR_ARRAY);
 	}
 	else
+	{
+		//
+		// The braces are load-bearing. Without them the #ifdef DC counter
+		// became the entire else body and glDrawArrays fell outside the
+		// if/else, so it ran on every polygon -- including the split ones,
+		// which had just been drawn correctly by glDrawElements above and had
+		// GL_COLOR_ARRAY switched off on the line before. The second pass
+		// therefore painted a flat, uncoloured GL_POLYGON over the top of a
+		// correctly shaded one. Split polygons are a subset and splitting
+		// happens at clipping boundaries, which is why it showed up as black
+		// patches along wall tops and ceiling edges rather than everywhere.
+		//
+		// A diagnostic counter silently changed the control flow.
+		//
 		// Go!
 		// Don't care about triangulation here, because the polygon never got split
-		#ifdef DC
-			{ extern int dc_gl_polys; dc_gl_polys++; }
-		#endif
+#ifdef DC
+		{ extern int dc_gl_polys; dc_gl_polys++; }
+#endif
 		glDrawArrays(GL_POLYGON,0,NumVertices);
+	}
 
 #ifdef UNUSED
 #ifdef GL_ARB_multitexture
@@ -1869,8 +1884,37 @@ static bool RenderAsLandscape(polygon_definition& RenderPolygon)
 	#ifdef DC
 		{ extern int dc_gl_polys; dc_gl_polys++; }
 	#endif
+#ifdef DC
+	//
+	// The landscape must not write depth.
+	//
+	// It is a backdrop drawn with the screen projection, so its vertex depths
+	// are meaningless. Worse, it has just disabled blending and alpha test,
+	// which is exactly how GLdc chooses a PowerVR list (_glActivePolyList in
+	// private.h) -- so the landscape lands in the OPAQUE list, and the hardware
+	// renders all opaque polygons before all punch-through ones regardless of
+	// submission order. Every world polygon takes alpha test since the water
+	// fix, so all walls are punch-through, and GLdc forces
+	// GPU_DEPTHCMP_LEQUAL on that list (draw.c:728-732) with no way to override
+	// it from glDepthFunc.
+	//
+	// So the order is fixed and the comparison is fixed: landscape first,
+	// writing a near depth it invented, then walls that lose the LEQUAL test
+	// against it. The sky stayed on screen where a wall should have covered it.
+	// On a level whose flat landscape colour is black -- "Moon" has a black sky
+	// and "Outer Space" is black for both halves -- that reads as black
+	// polygonal holes, which is what it looked like for a long time.
+	//
+	// Masking depth for this one draw is the whole fix: the landscape still
+	// paints, still depth-tests against anything already there, and leaves the
+	// buffer alone so the walls that follow all pass.
+	glDepthMask(GL_FALSE);
 	glDrawArrays(GL_POLYGON,0,NumVertices);
-	
+	glDepthMask(GL_TRUE);
+#else
+	glDrawArrays(GL_POLYGON,0,NumVertices);
+#endif
+
 	return true;
 }
 

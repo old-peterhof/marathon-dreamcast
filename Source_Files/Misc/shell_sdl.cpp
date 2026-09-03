@@ -447,7 +447,24 @@ static void initialize_application(void)
 		}
 
 		OGLData.Flags &= ~OGL_Flag_3D_Models;
-		OGLData.Flags |= OGL_Flag_FlatLand;
+
+		// Real landscapes, not flat colours.
+		//
+		// OGL_Flag_FlatLand was set because converting a 1024x512 landscape
+		// needed 2MB for the full-size image plus 512KB for the reduced one,
+		// and on a 16MB machine that was the peak allocation of the level load.
+		// GetOGLTexture builds at the loaded size in one pass now, so that
+		// intermediate no longer exists -- see the note above the call in
+		// OGL_Textures.cpp. At Resolution 1 the landscape is 512x256, which is
+		// 256 KB of the texture pool, and deferring the overhead map's font
+		// atlases freed 736 KB.
+		//
+		// It matters because the flat fill is not a compromise on these levels,
+		// it is a hole: DefaultLscpColors gives "Moon" a black sky and "Outer
+		// Space" black for both halves, so every surface showing landscape
+		// rendered as flat black. Confirmed by painting the fake landscape
+		// magenta -- every black artifact in the level turned magenta.
+		OGLData.Flags &= ~OGL_Flag_FlatLand;
 	}
 #endif
 #ifdef DC
