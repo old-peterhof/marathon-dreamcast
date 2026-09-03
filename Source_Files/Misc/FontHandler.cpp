@@ -245,7 +245,11 @@ void FontSpecifier::OGL_Reset(bool IsStarting)
 	// built called glDeleteTextures on a TxtrID that Init() never set. Neither
 	// showed up while every font was built exactly once at OGL_StartRun, and
 	// both are reachable now that the map fonts are built on demand.
+#ifdef DC
+	if (!IsStarting && TxtrID)
+#else
 	if (!IsStarting && OGL_Texture)
+#endif
 	{
 		glDeleteTextures(1,&TxtrID);
 		TxtrID = 0;
@@ -483,6 +487,20 @@ void FontSpecifier::OGL_Reset(bool IsStarting)
 		// OGL_StartRun there was always room. Give up on the font instead:
 		// OGL_Render() tests OGL_Texture and will draw nothing.
 		GLenum UpErr = glGetError();
+		if (UpErr == GL_NO_ERROR)
+		{
+			/*
+			 *	Free the atlas buffer now. Nothing reads it again: the pixels
+			 *	are in the PVR's texture pool and OGL_Render draws from
+			 *	DCGlyphs and TxtrID. It was kept only because OGL_Texture
+			 *	doubled as the "is this built" flag, so 576 KB of heap was
+			 *	held for one bit of information -- 384 KB for the screen font
+			 *	and 192 KB for the HUD fonts, measured from the load traces.
+			 *	TxtrID is that flag on DC now.
+			 */
+			delete[]OGL_Texture;
+			OGL_Texture = NULL;
+		}
 		if (UpErr != GL_NO_ERROR)
 		{
 			dc_trace(53, "font: upload FAILED, GL error 0x%x, %dx%d (%d KB)",
@@ -583,7 +601,13 @@ void FontSpecifier::OGL_Reset(bool IsStarting)
 void FontSpecifier::OGL_Render(const char *Text)
 {
 	// Bug out if no texture to render
+#ifdef DC
+	// TxtrID, not OGL_Texture: the atlas buffer is freed after the upload now,
+	// so the texture name is what says whether this font was built.
+	if (!TxtrID) return;
+#else
 	if (!OGL_Texture) return;
+#endif
 	
 	glPushAttrib(GL_ALL_ATTRIB_BITS);
 	

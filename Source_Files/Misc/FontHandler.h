@@ -153,11 +153,13 @@ struct FontSpecifier
 	// Build the atlas if it is not there yet. The overhead map's fonts are
 	// deferred rather than uploaded at OGL_StartRun (see OGL_ResetMapFonts),
 	// so whoever draws with one has to ask for it first. Cheap after the first
-	// call, and cheap after a failed one: OGL_Texture is the "already built"
-	// flag and DCBuildFailed is the "do not try again" flag.
+	// call, and cheap after a failed one: TxtrID is the "already built" flag
+	// and DCBuildFailed is the "do not try again" flag.
 	void OGL_EnsureTexture()
 	{
-		if (!OGL_Texture && !DCBuildFailed) OGL_Reset(true);
+		// TxtrID is the "already built" flag: the atlas buffer is freed as soon
+		// as it has been uploaded, so OGL_Texture is NULL for a good font.
+		if (!TxtrID && !DCBuildFailed) OGL_Reset(true);
 	}
 #endif
 #endif

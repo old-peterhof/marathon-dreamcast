@@ -3,31 +3,31 @@ SOUND.C
 Friday, March 26, 1993 10:16:00 AM
 
 Friday, March 26, 1993 10:16:01 AM
-	this is the source file that will make minotaurÕs sound manager look like a truckload of dead
+	this is the source file that will make minotaurï¿½s sound manager look like a truckload of dead
 	rats in a tampon factory.
 Saturday, March 27, 1993 8:13:44 PM
 	a few things have been changed, i think most of the coding is done.
 Tuesday, April 6, 1993 9:26:54 PM
-	is there any way to use SyncCmdÕs to better synchronize the left and right channels of
+	is there any way to use SyncCmdï¿½s to better synchronize the left and right channels of
 	stereo sound?  why do all sounds end in a click when the sound manager is doing realtime
 	sound mixing?
 Tuesday, May 18, 1993 9:35:21 PM
-	ha ha ha.  after wwdc93, hacking out jim reekesÕ new stereo amplitude command, rewriting all
-	of this crap so itÕll actually work like you might expect.  fixed a bug where the sample
-	rate wasnÕt restored after drinking the potion.  we used to have tons of problems in our
-	amplitude calculations (that was why it didnÕt initially work under the new sound driver).
+	ha ha ha.  after wwdc93, hacking out jim reekesï¿½ new stereo amplitude command, rewriting all
+	of this crap so itï¿½ll actually work like you might expect.  fixed a bug where the sample
+	rate wasnï¿½t restored after drinking the potion.  we used to have tons of problems in our
+	amplitude calculations (that was why it didnï¿½t initially work under the new sound driver).
 Sunday, July 4, 1993 7:56:21 AM
 	there exists a bug such that for every channel (especially the monster channel) there is
 	a possibility that the channel will stop playing sounds but report no errors.
 Friday, July 16, 1993 6:04:11 PM
 	the last_played field of a sound definition was not being set by play_sound, so the sound
-	which was first loaded will be disposed of first.  would that manifest in the Ôpause bugÕ?
+	which was first loaded will be disposed of first.  would that manifest in the ï¿½pause bugï¿½?
 	alex has a version of Suitcase which was marking all the sounds I loaded as purgable.
 Friday, July 23, 1993 9:43:39 PM
-	the pause bug was SCSI ProbeÕs COMMAND-SPACE hotkey.  reduced sound space to 250k.  i canÕt
+	the pause bug was SCSI Probeï¿½s COMMAND-SPACE hotkey.  reduced sound space to 250k.  i canï¿½t
 	wait to rewrite this and make it real.
 Saturday, November 20, 1993 10:32:34 PM
-	Ômaking this realÕ means making it a true n-channel sound manager, where n is some function
+	ï¿½making this realï¿½ means making it a true n-channel sound manager, where n is some function
 	of the current cpu.  this means throwing away all that channel code garbage.
 Sunday, January 2, 1994 11:21:41 AM
 	sound_code was not being set in play_sound; added threshhold to best_channel
@@ -43,11 +43,11 @@ Friday, September 2, 1994 1:29:03 PM
 Tuesday, September 6, 1994 2:53:35 PM
 	added _depth_fading_flag and _high_quality_flag (resamples 22k to 11k if false).
 Sunday, November 6, 1994 9:17:24 PM  (Jason)
-	if the sound manager is never initialized, calling any of itÕs procedures doesnÕt crash.
+	if the sound manager is never initialized, calling any of itï¿½s procedures doesnï¿½t crash.
 Friday, December 2, 1994 5:26:10 PM  (Jason)
 	old= CurResFile(); UseResFile(_sm_sound_file_handle); Get1Resource('snd', ...); UseResFile(old);
 Saturday, December 10, 1994 4:32:46 PM  (Jason)
-	in search of the golden sample rate: changing rate22khz to 0x56220000 on PowerMacs didnÕt
+	in search of the golden sample rate: changing rate22khz to 0x56220000 on PowerMacs didnï¿½t
 	seem to make any difference.
 Friday, January 27, 1995 12:49:25 AM  (Jason')
 	the marathon 2 rewrite begins.
@@ -389,6 +389,10 @@ static void track_stereo_sounds(void);
 static void unlock_locked_sounds(void);
 
 static bool _load_sound(short sound);
+#ifdef DC
+extern "C" void dc_trace(int slot, const char *fmt, ...);
+#endif
+
 static short _release_least_useful_sound(void);
 
 static struct channel_data *best_channel(short sound_index, struct sound_variables *variables);
@@ -678,7 +682,7 @@ void direct_play_sound(
 	short volume,
 	_fixed pitch)
 {
-	/* donÕt do anything if weÕre not initialized or active, or our sound_code is NONE,
+	/* donï¿½t do anything if weï¿½re not initialized or active, or our sound_code is NONE,
 		or our volume is zero, our we have no sound channels */
 	if (sound_index!=NONE && _sm_active && sound_index<number_of_sound_definitions &&
 		_sm_parameters->volume>0 && _sm_globals->total_channel_count>0)
@@ -734,7 +738,7 @@ void _play_sound(
 	short identifier, /* NONE is no identifier and the sound is immediately orphaned */
 	_fixed pitch) /* on top of all existing pitch modifiers */
 {
-	/* donÕt do anything if weÕre not initialized or active, or our sound_code is NONE,
+	/* donï¿½t do anything if weï¿½re not initialized or active, or our sound_code is NONE,
 		or our volume is zero, our we have no sound channels */
 	if (sound_index!=NONE && _sm_active && sound_index<number_of_sound_definitions &&
 		_sm_parameters->volume>0 && _sm_globals->total_channel_count>0)
@@ -765,7 +769,7 @@ void _play_sound(
 				/* start the sound playing */
 				buffer_sound(channel, sound_index, pitch);
 
-				/* if we have a valid source, copy it, otherwise remember that we donÕt */
+				/* if we have a valid source, copy it, otherwise remember that we donï¿½t */
 				if (source)
 				{
 					channel->source= *source;
@@ -807,10 +811,10 @@ void stop_sound(
 		short i;
 		struct channel_data *channel;
 
-		// if weÕre stopping everything...
+		// if weï¿½re stopping everything...
 		if (identifier==NONE && sound_index==NONE)
 		{
-			// canÕt fade to silence here
+			// canï¿½t fade to silence here
 			
 			// stop the ambient sound channels, too
 			if (_sm_parameters->flags&_ambient_sound_flag)
@@ -835,7 +839,7 @@ void stop_sound(
 	return;
  }
 
-// doesnÕt check ambient sounds
+// doesnï¿½t check ambient sounds
 bool sound_is_playing(
 	short sound_index)
 {
@@ -1056,9 +1060,9 @@ static struct channel_data *best_channel(
 						}
 					}
 					
-					/* if we havenÕt found an alternative channel or this channel is at a lower
-						volume than our previously best channel (which isnÕt an unused channel),
-						then weÕve found a new best channel */
+					/* if we havenï¿½t found an alternative channel or this channel is at a lower
+						volume than our previously best channel (which isnï¿½t an unused channel),
+						then weï¿½ve found a new best channel */
 					if (!best_channel ||
 						(SLOT_IS_USED(best_channel) && best_channel->variables.volume>channel->variables.volume) ||
 						(SLOT_IS_USED(best_channel) && best_channel->variables.priority<channel->variables.priority))
@@ -1070,7 +1074,7 @@ static struct channel_data *best_channel(
 				{
 					if (channel->sound_index==sound_index && !(definition->flags&_sound_does_not_self_abort))
 					{
-						/* if weÕre already playing this sound at a higher volume, donÕt abort it */
+						/* if weï¿½re already playing this sound at a higher volume, donï¿½t abort it */
 						best_channel= (struct channel_data *) NULL;
 						break;
 					}
@@ -1078,7 +1082,7 @@ static struct channel_data *best_channel(
 			}
 			else
 			{
-				/* unused channel (we wonÕt get much better than this!) */
+				/* unused channel (we wonï¿½t get much better than this!) */
 				if (SLOT_IS_USED(channel)) free_channel(channel);
 				best_channel= channel;
 			}
@@ -1115,12 +1119,29 @@ static short _release_least_useful_sound(
 	{
 		stop_sound(NONE, least_used_sound_index);
 		dispose_sound(least_used_sound_index);
+#ifdef DC
+		/*
+		 *	Every eviction costs a CD read the next time that sound is wanted,
+		 *	so the rate is the thing to watch: a cache too small for the working
+		 *	set turns a memory problem into a disc-seek problem, which is heard
+		 *	as sound dropping out and felt as the game hitching while standing
+		 *	still. Reported every 32 so the trace itself is not the cost.
+		 */
+		{
+			static unsigned evictions = 0;
+			if ((++evictions % 32) == 0)
+				dc_trace(59, "sound: %u evictions, holding %ld KB of %ld KB",
+				         evictions,
+				         _sm_globals->loaded_sounds_size / 1024,
+				         _sm_globals->total_buffer_size / 1024);
+		}
+#endif
 	}
 	
 	return least_used_sound_index;
 }
 
-/* if .sound_handle isnÕt NULL then we still have a locked handle in our heap; so unlock the
+/* if .sound_handle isnï¿½t NULL then we still have a locked handle in our heap; so unlock the
 	handle and clear the .sound_handle field */
 static void free_channel(
 	struct channel_data *empty_channel)
@@ -1135,7 +1156,7 @@ static void free_channel(
 		empty_channel->sound_index= NONE;
 		MARK_SLOT_AS_FREE(empty_channel);
 		
-		// if anybody else is playing this sound_index, we canÕt unlock the handle
+		// if anybody else is playing this sound_index, we canï¿½t unlock the handle
 		if (!sound_is_playing(sound_index)) unlock_sound(sound_index);
 	}
 	
@@ -1155,6 +1176,33 @@ bool _load_sound(
 	{
 		if (!definition->ptr)
 		{
+			/*
+			 *	Make room BEFORE allocating, not after loading.
+			 *
+			 *	This used to read the sound first and only then evict down to the
+			 *	budget, so the one allocation that crossed the ceiling failed before
+			 *	the LRU was ever consulted -- and because a failed load leaves
+			 *	definition->ptr NULL, it was retried every time the sound was
+			 *	wanted. _snd_waterfall is 220,280 bytes and asked for 221,184 of a
+			 *	heap that had already reached 15.9MB of 16MB:
+			 *
+			 *	  Out of memory. Requested sbrk_base 8d01b000, was 8cfe5000,
+			 *	  diff 221184
+			 *	  read_sound_from_file(#96) got error #-1          (x11, x88)
+			 *
+			 *	The guard on the return value matters: _release_least_useful_sound
+			 *	answers NONE when there is nothing left to release, and without it
+			 *	this loop spins forever the moment one sound is larger than the
+			 *	whole budget.
+			 *
+			 *	The original post-load pass below is kept as insurance, since
+			 *	loaded_sounds_size is only an account of what was asked for.
+			 */
+			while (_sm_globals->loaded_sounds_size + definition->size
+			           > _sm_globals->total_buffer_size
+			       && _release_least_useful_sound() != NONE)
+				;
+
 			definition->ptr = read_sound_from_file(sound_index, definition->size);
 			definition->last_played= machine_tick_count();
 			

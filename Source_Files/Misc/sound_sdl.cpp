@@ -52,6 +52,11 @@ const int MINIMUM_SOUND_BUFFER_SIZE = 300*KILO;
 const int MORE_SOUND_BUFFER_SIZE = 600*KILO;
 const int AMBIENT_SOUND_BUFFER_SIZE = 1*MEG;
 const int MAXIMUM_SOUND_BUFFER_SIZE = 1*MEG;
+#ifdef DC
+// See where this is applied, in the buffer-size block below.
+const int DC_SOUND_BUFFER_CAP = 3*MEG;
+extern "C" void dc_trace(int slot, const char *fmt, ...);
+#endif
 
 
 // Desired and obtained audio formats
@@ -306,6 +311,44 @@ static void set_sound_manager_status(bool active)
 					_sm_globals->total_buffer_size *= 2;
 				if (_sm_globals->available_flags & _extra_memory_flag)
 					_sm_globals->total_buffer_size *= 2;
+
+#ifdef DC
+				/*
+				 *	Cap the sound cache to something a 16MB machine can hold.
+				 *
+				 *	total_buffer_size is the budget the LRU in mysound.cpp
+				 *	evicts against:
+				 *
+				 *	  while (loaded_sounds_size > total_buffer_size)
+				 *	      _release_least_useful_sound();
+				 *
+				 *	so the eviction has been there all along -- with a desktop
+				 *	budget. The arithmetic above reaches (600K + 1M) * 2 * 2 =
+				 *	6.5MB in the worst case, which on this machine the heap can
+				 *	never satisfy: sbrk hit its ceiling around 15.9MB of the
+				 *	16MB while loaded_sounds_size was still well under budget,
+				 *	so the LRU never fired once and read_sound_from_file just
+				 *	failed instead. Observed as combat dying after about ninety
+				 *	seconds:
+				 *
+				 *	  Out of memory. Requested sbrk_base 8d01b000, was
+				 *	  8cfe5000, diff 221184
+				 *	  read_sound_from_file(#96) got error #-1      (x11, x88)
+				 *
+				 *	one sound group of 216KB, retried every time it was needed.
+				 *
+				 *	With a real cap the existing LRU does the work: sounds that
+				 *	have not been used recently are released to make room, which
+				 *	is exactly what it was written for. A group is up to ~216KB,
+				 *	so 1MB holds several and still leaves the heap room to
+				 *	breathe. Raise it if sounds start audibly reloading.
+				 */
+				if (_sm_globals->total_buffer_size > DC_SOUND_BUFFER_CAP)
+					_sm_globals->total_buffer_size = DC_SOUND_BUFFER_CAP;
+
+				dc_trace(58, "sound: buffer budget %ld KB",
+				         _sm_globals->total_buffer_size / 1024);
+#endif
 
 				_sm_globals->sound_source = (_sm_parameters->flags & _16bit_sound_flag) ? _16bit_22k_source : _8bit_22k_source;
 				_sm_globals->base_sound_definitions = sound_definitions + _sm_globals->sound_source * number_of_sound_definitions;
