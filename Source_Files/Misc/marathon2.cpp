@@ -65,6 +65,10 @@ Aug 10, 2000 (Loren Petrich):
 
 #include <limits.h>
 
+#ifdef DC
+extern "C" unsigned dc_heap_top(void);	/* dc/dc_compat.c */
+#endif
+
 #ifdef env68k
 #pragma segment marathon
 #endif
@@ -262,6 +266,12 @@ bool entering_map(bool restoring_saved)
 	load_collections();
 #ifdef DC
 	dc_trace(54, "load: collections %u ms", SDL_GetTicks() - dc_t0);
+#ifdef DC
+	{
+		dc_trace(60, "load: heap top after collections 0x%x (%u KB in use)",
+		         dc_heap_top(), (dc_heap_top() - 0x8c000000u) / 1024);
+	}
+#endif
 #ifdef DC
 	/* Read amplification of the shapes cache: how many bytes the parse asked
 	   for against how many came off the disc, and in how many reads. */

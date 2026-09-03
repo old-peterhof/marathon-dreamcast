@@ -5,7 +5,7 @@ Saturday, September 4, 1993 9:26:41 AM
 Thursday, May 19, 1994 9:06:28 AM
 	unification of wall and object shapes complete, new shading table builder.
 Wednesday, June 22, 1994 11:55:07 PM
-	we now read data from alainÕs shape extractor.
+	we now read data from alainï¿½s shape extractor.
 Saturday, July 9, 1994 3:22:11 PM
 	lightening_table removed; we now build darkening tables on a collection-by-collection basis
 	(one 8k darkening table per clut permutation of the given collection)
@@ -116,7 +116,7 @@ enum /* collection status */
 	markNONE,
 	markLOAD= 1,
 	markUNLOAD= 2,
-	markSTRIP= 4 /* we donÕt want bitmaps, just high/low-level shape data */
+	markSTRIP= 4 /* we donï¿½t want bitmaps, just high/low-level shape data */
 };
 
 enum /* flags */
@@ -740,7 +740,7 @@ void strip_collection(
 	return;
 }
 
-/* returns count, doesnÕt fill NULL buffer */
+/* returns count, doesnï¿½t fill NULL buffer */
 short get_shape_descriptors(
 	short shape_type,
 	shape_descriptor *buffer)
@@ -847,7 +847,7 @@ struct shape_information_data *extended_get_shape_information(
 	// collection= get_collection_definition(collection_index);
 	low_level_shape= get_low_level_shape_definition(collection_index, low_level_shape_index);
 
-	/* this will be removed when itÕs calculated in the extractor */
+	/* this will be removed when itï¿½s calculated in the extractor */
 #ifdef OBSOLETE
 	{
 		struct bitmap_definition *bitmap= get_bitmap_definition(collection_index, low_level_shape->bitmap_index);
@@ -1005,7 +1005,7 @@ void load_collections(
 	/* ... then go back through the list of collections and load any that we were asked to */
 	for (collection_index= 0, header= collection_headers; collection_index<MAXIMUM_COLLECTIONS; ++collection_index, ++header)
 	{
-		/* donÕt reload collections which are already in memory, but do lock them */
+		/* donï¿½t reload collections which are already in memory, but do lock them */
 		if (collection_loaded(header))
 		{
 			// In case the substitute images had been changed by some level-specific MML...
@@ -1055,6 +1055,35 @@ static void precalculate_bit_depth_constants(
 			shading_table_size= PIXEL8_MAXIMUM_COLORS*sizeof(pixel8);
 			break;
 		case 16:
+			/*
+			 *	Two shading levels under GL instead of sixty-four.
+			 *
+			 *	The GL renderer shades per vertex and reads exactly two of these
+			 *	tables: OGL_Textures.cpp takes level 0 as the glow table and
+			 *	level (number_of_shading_tables - 1) as the normal one. The 62
+			 *	between are only ever read by the software rasteriser's
+			 *	CALCULATE_SHADING_TABLE, which a GL build never reaches for world
+			 *	polygons -- terminals and the overhead map draw into software
+			 *	surfaces but do not go through the polygon shading machinery, and
+			 *	the HUD is HUDRenderer_OGL.
+			 *
+			 *	get_shading_table_size() is number_of_shading_tables *
+			 *	shading_table_size, so this takes a collection's tables from
+			 *	32 KB per CLUT to 1 KB, and the CLUT and tint-table offsets in
+			 *	get_collection_shading_tables/get_collection_tint_tables are
+			 *	expressed in terms of it, so the layout follows. The builders
+			 *	interpolate across whatever count they are given, so levels 0 and
+			 *	1 come out as the darkest and brightest -- the two GL wants.
+			 *
+			 *	Ceiling on the saving: the Shapes file's 29 loadable collections
+			 *	carry 61 CLUTs between them, so 61 x 31 KB = 1891 KB if a level
+			 *	loaded all of them. A level loads a subset.
+			 *
+			 *	Gated on the surface actually being an SDL_OPENGL one, not on
+			 *	HAVE_OPENGL -- which would cripple the software fallback -- and
+			 *	not on OGL_IsActive(), which is still false here because
+			 *	collections load before OGL_StartRun().
+			 */
 			number_of_shading_tables= 64;
 			shading_table_fractional_bits= 6;
 //			next_shading_table_shift= 9;
@@ -1072,7 +1101,7 @@ static void precalculate_bit_depth_constants(
 }
 
 /* given a list of RGBColors, find out which one, if any, match the given color.  if there
-	arenÕt any matches, add a new entry and return that index. */
+	arenï¿½t any matches, add a new entry and return that index. */
 static short find_or_add_color(
 	struct rgb_color_value *color,
 	register struct rgb_color_value *colors,
@@ -1146,8 +1175,8 @@ static void update_color_environment(
 	colors[0].flags= colors[0].value= 0;
 	color_count= 1;
 
-	/* loop through all collections, only paying attention to the loaded ones.  weÕre
-		depending on finding the gray run (white to black) first; so itÕs the responsibility
+	/* loop through all collections, only paying attention to the loaded ones.  weï¿½re
+		depending on finding the gray run (white to black) first; so itï¿½s the responsibility
 		of the lowest numbered loaded collection to give us this */
 	for (collection_index=0;collection_index<MAXIMUM_COLLECTIONS;++collection_index)
 	{
@@ -1164,7 +1193,7 @@ static void update_color_environment(
 //			if (collection_index==15) dprintf("primary clut %p", primary_colors);
 //			dprintf("primary clut %d entries;dm #%d #%d", collection->color_count, primary_colors, collection->color_count*sizeof(ColorSpec));
 
-			/* add the colors from this collectionÕs primary color table to the aggregate color
+			/* add the colors from this collectionï¿½s primary color table to the aggregate color
 				table and build the remapping table */
 			for (color_index=0;color_index<collection->color_count-NUMBER_OF_PRIVATE_COLORS;++color_index)
 			{
@@ -1256,7 +1285,7 @@ static void update_color_environment(
 			/* 8-bit interface, non-8-bit main window; remember interface CLUT separately */
 			if (collection_index==_collection_interface && interface_bit_depth==8 && bit_depth!=interface_bit_depth) _change_clut(change_interface_clut, colors, color_count);
 			
-			/* if weÕre not in 8-bit, we donÕt have to carry our colors over into the next collection */
+			/* if weï¿½re not in 8-bit, we donï¿½t have to carry our colors over into the next collection */
 			if (bit_depth!=8) color_count= 1;
 		}
 	}

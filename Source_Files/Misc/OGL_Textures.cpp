@@ -104,6 +104,27 @@ struct TxtrTypeInfoData
 
 static TxtrTypeInfoData TxtrTypeInfoList[OGL_NUMBER_OF_TEXTURE_TYPES];
 
+#ifdef DC
+/*
+ *	While set, TextureManager uses full resolution regardless of the texture
+ *	type's configured Resolution.
+ *
+ *	The HUD has no texture type of its own -- HUD_OGL_Class::DrawShape and
+ *	DrawShapeAtXY both borrow OGL_Txtr_WeaponsInHand -- and shell_sdl.cpp forces
+ *	Resolution 1 on every type, which b74 did on purpose after b73 ran out of
+ *	VRAM with full-resolution sprites. So the HUD's own graphics were uploaded
+ *	at half size and then drawn across geometry sized from Texture->width, the
+ *	original dimensions. A half-resolution texture stretched over a full-size
+ *	quad, with GL_LINEAR on top: that is the blurry motion sensor.
+ *
+ *	The weapon sprites keep their half resolution, which is where the VRAM went;
+ *	only the HUD's shapes are exempted. Cached per (collection, bitmap, type),
+ *	and the HUD's bitmaps are not the weapon-in-hand ones, so the two do not
+ *	fight over one cache entry.
+ */
+bool DC_ForceFullResolution = false;
+#endif
+
 
 // Infravision: use algorithm (red + green + blue)/3 to compose intensity,
 // then shade with these colors, one color for each collection.
@@ -449,8 +470,13 @@ bool TextureManager::Setup()
 		}
 		
 		// Display size: may be shrunk
-		LoadedWidth = MAX(TxtrWidth >> TxtrTypeInfo.Resolution, 1);
-		LoadedHeight = MAX(TxtrHeight >> TxtrTypeInfo.Resolution, 1);
+#ifdef DC
+		const int TxtrRes = DC_ForceFullResolution ? 0 : TxtrTypeInfo.Resolution;
+#else
+		const int TxtrRes = TxtrTypeInfo.Resolution;
+#endif
+		LoadedWidth = MAX(TxtrWidth >> TxtrRes, 1);
+		LoadedHeight = MAX(TxtrHeight >> TxtrRes, 1);
 		
 		// If not, then load the expected textures.
 		//
@@ -1469,8 +1495,13 @@ void LoadModelSkin(ImageDescriptor& Image, short Collection, short CLUT)
 	TxtrTypeInfoData& TxtrTypeInfo = TxtrTypeInfoList[OGL_Txtr_Inhabitant];
 
 	// Display size: may be shrunk
-	int LoadedWidth = MAX(TxtrWidth >> TxtrTypeInfo.Resolution, 1);
-	int LoadedHeight = MAX(TxtrHeight >> TxtrTypeInfo.Resolution, 1);
+#ifdef DC
+	const int TxtrRes = DC_ForceFullResolution ? 0 : TxtrTypeInfo.Resolution;
+#else
+	const int TxtrRes = TxtrTypeInfo.Resolution;
+#endif
+	int LoadedWidth = MAX(TxtrWidth >> TxtrRes, 1);
+	int LoadedHeight = MAX(TxtrHeight >> TxtrRes, 1);
 	
 	if (LoadedWidth != TxtrWidth || LoadedHeight != TxtrHeight)
 	{

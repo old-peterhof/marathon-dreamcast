@@ -149,6 +149,17 @@ unsigned dc_heap_used(void)
 	return now - base;
 }
 
+/*
+ *	Absolute heap top. dc_heap_used() is relative to whenever it was first
+ *	called, which is after the collections load, so it cannot see the largest
+ *	consumer in the game. This can.
+ */
+unsigned dc_heap_top(void)
+{
+	extern void *sbrk(int);
+	return (unsigned)(uintptr_t)sbrk(0);
+}
+
 void dc_heap_trace(int slot, const char *where)
 {
 	dc_trace(slot, "heap: %-18s %u KB", where, dc_heap_used() / 1024);

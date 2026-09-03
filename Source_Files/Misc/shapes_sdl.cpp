@@ -81,6 +81,8 @@ SDL_Surface *get_shape_surface(int shape)
 
 #ifdef DC
 #include <malloc.h>	/* memalign; see the buffer allocation below */
+#include <stdint.h>
+extern "C" void dc_trace(int slot, const char *fmt, ...);
 
 /*
  *	Sector-aligned read cache over the shapes file.
@@ -236,6 +238,10 @@ static SDL_RWops *dc_shapes_cached(SDL_RWops *src)
 		Wrapper->close = dc_shapes_close;
 		Wrapper->type  = 0;
 		Wrapper->hidden.unknown.data1 = &Cache;
+		dc_trace(63, "shapes: cache buf %p (%s32-byte aligned), %d KB",
+		         (void *)Cache.buf,
+		         (((uintptr_t)Cache.buf & 31u) == 0) ? "" : "NOT ",
+		         DC_SHAPES_CACHE / 1024);
 		Cache.base = -1;
 		Cache.len = 0;
 		Cache.refills = 0;
