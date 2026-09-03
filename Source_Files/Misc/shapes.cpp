@@ -1084,8 +1084,20 @@ static void precalculate_bit_depth_constants(
 			 *	not on OGL_IsActive(), which is still false here because
 			 *	collections load before OGL_StartRun().
 			 */
-			number_of_shading_tables= 64;
-			shading_table_fractional_bits= 6;
+			{
+				bool compact_gl_tables = false;
+#if defined(DC) && defined(HAVE_OPENGL)
+				SDL_Surface *surface = SDL_GetVideoSurface();
+				compact_gl_tables = surface && (surface->flags & SDL_OPENGL);
+#endif
+				if (compact_gl_tables) {
+					number_of_shading_tables= 2;
+					shading_table_fractional_bits= 1;
+				} else {
+					number_of_shading_tables= 64;
+					shading_table_fractional_bits= 6;
+				}
+			}
 //			next_shading_table_shift= 9;
 			shading_table_size= PIXEL8_MAXIMUM_COLORS*sizeof(pixel16);
 			break;
