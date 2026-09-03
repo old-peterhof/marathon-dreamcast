@@ -262,6 +262,19 @@ bool entering_map(bool restoring_saved)
 	load_collections();
 #ifdef DC
 	dc_trace(54, "load: collections %u ms", SDL_GetTicks() - dc_t0);
+#ifdef DC
+	/* Read amplification of the shapes cache: how many bytes the parse asked
+	   for against how many came off the disc, and in how many reads. */
+	{
+		extern unsigned long dc_shapes_cache_served(void);
+		extern unsigned long dc_shapes_cache_fetched(void);
+		extern unsigned dc_shapes_cache_refills(void);
+		dc_trace(57, "load: shapes served %lu KB, fetched %lu KB, %u reads",
+		         dc_shapes_cache_served() / 1024,
+		         dc_shapes_cache_fetched() / 1024,
+		         dc_shapes_cache_refills());
+	}
+#endif
 	dc_t0 = SDL_GetTicks();
 #endif
 
@@ -278,13 +291,13 @@ bool entering_map(bool restoring_saved)
 	/* tell the keyboard controller to start recording keyboard flags */
 	if (game_is_networked) success= NetSync(); /* make sure everybody is ready */
 	
-	/* make sure nobodyÕs holding a weapon illegal in the new environment */
+	/* make sure nobodyï¿½s holding a weapon illegal in the new environment */
 	check_player_weapons_for_environment_change();
 
 	if (dynamic_world->player_count>1) initialize_net_game();	
 	randomize_scenery_shapes();
 
-	reset_player_queues(); //¦¦
+	reset_player_queues(); //ï¿½ï¿½
 	//CP Addition: Run startup script (if available)
 	script_init(restoring_saved);
 //	sync_heartbeat_count();
@@ -375,13 +388,13 @@ short calculate_level_completion_state(
 {
 	short completion_state= _level_finished;
 	
-	/* if there are any monsters left on an extermination map, we havenÕt finished yet */
+	/* if there are any monsters left on an extermination map, we havenï¿½t finished yet */
 	if (static_world->mission_flags&_mission_extermination)
 	{
 		if (live_aliens_on_map()) completion_state= _level_unfinished;
 	}
 	
-	/* if there are any polygons which must be explored and have not been entered, weÕre not done */
+	/* if there are any polygons which must be explored and have not been entered, weï¿½re not done */
 	if (static_world->mission_flags&_mission_exploration)
 	{
 		short polygon_index;
@@ -397,19 +410,19 @@ short calculate_level_completion_state(
 		}
 	}
 	
-	/* if there are any items left on this map, weÕre not done */
+	/* if there are any items left on this map, weï¿½re not done */
 	if (static_world->mission_flags&_mission_retrieval)
 	{
 		if (unretrieved_items_on_map()) completion_state= _level_unfinished;
 	}
 	
-	/* if there are any untoggled repair switches on this level then weÕre not there */
+	/* if there are any untoggled repair switches on this level then weï¿½re not there */
 	if (static_world->mission_flags&_mission_repair)
 	{
 		if (untoggled_repair_switches_on_level()) completion_state= _level_unfinished;
 	}
 
-	/* if weÕve finished the level, check failure conditions */
+	/* if weï¿½ve finished the level, check failure conditions */
 	if (completion_state==_level_finished)
 	{
 		/* if this is a rescue mission and more than half of the civilians died, the mission failed */
