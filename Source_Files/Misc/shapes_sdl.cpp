@@ -79,204 +79,10 @@ SDL_Surface *get_shape_surface(int shape)
  */
 
 
-#ifdef DC
-#include <malloc.h>	/* memalign; see the buffer allocation below */
-#include <stdint.h>
-extern "C" void dc_trace(int slot, const char *fmt, ...);
-
-/*
- *	Sector-aligned read cache over the shapes file.
- *
- *	load_collection() parses a collection with hundreds of small reads -- two
- *	bytes here, a name there, one bitmap row at a time -- and each one was a
- *	separate trip to the CD driver. That is where 26 of the level load's 42
- *	seconds went.
- *
- *	A previous attempt (c30cf24) put a 64KB buffer on the stdio stream instead
- *	and hung the driver: 0 of 3 controlled runs reached first render. Collection
- *	0 starts at offset 1024, half a sector, and KOS's ISO9660 fast path wants
- *	sector-aligned requests of at least a sector. A large buffered read from a
- *	misaligned position both misses the fast path and, at 64KB, wedges it. An
- *	8KB buffer completed but saved nothing, because misalignment defeats the
- *	fast path at any size.
- *
- *	So do the aligning here rather than asking stdio to do it. Every refill
- *	reads DC_SHAPES_CACHE bytes from a 2048-aligned offset -- pos & ~2047 -- and
- *	the leading bytes before the requested position are simply skipped in the
- *	buffer. The parse is untouched except that its seeks go through this wrapper,
- *	so the change is confined to how bytes are fetched.
- *
- *	Positions here are absolute file offsets. OpenedFile::SetPosition adds a
- *	fork_offset before seeking, so load_collection discovers that offset once
- *	and adds it; see COLL_SEEK.
- */
-#define DC_SHAPES_SECTOR	2048
-#define DC_SHAPES_CACHE		(32 * DC_SHAPES_SECTOR)		/* 64KB, 32 sectors */
-
-struct dc_shapes_cache {
-	SDL_RWops *src;		/* the real file */
-	long pos;			/* logical position, absolute in the file */
-	long base;			/* file offset of buf[0], sector aligned; -1 = empty */
-	long len;			/* valid bytes in buf */
-	uint8 *buf;
-	unsigned refills;	/* real reads issued */
-	unsigned long served;	/* bytes handed to the parse */
-	unsigned long fetched;	/* bytes actually read off the disc */
-};
-
-static int dc_shapes_seek(SDL_RWops *ctx, int offset, int whence)
-{
-	struct dc_shapes_cache *c = (struct dc_shapes_cache *)ctx->hidden.unknown.data1;
-
-	switch (whence) {
-	case SEEK_SET:	c->pos = offset; break;
-	case SEEK_CUR:	c->pos += offset; break;
-	default:
-		/* SEEK_END is not used by the parse; let the real file answer it. */
-		c->pos = SDL_RWseek(c->src, offset, whence);
-		break;
-	}
-	return (int)c->pos;
-}
-
-static int dc_shapes_read(SDL_RWops *ctx, void *ptr, int size, int maxnum)
-{
-	struct dc_shapes_cache *c = (struct dc_shapes_cache *)ctx->hidden.unknown.data1;
-	long want = (long)size * (long)maxnum;
-	uint8 *out = (uint8 *)ptr;
-	long done = 0;
-
-	while (done < want) {
-		if (c->base < 0 || c->pos < c->base || c->pos >= c->base + c->len) {
-			int got;
-
-			c->base = c->pos & ~(long)(DC_SHAPES_SECTOR - 1);
-			if (SDL_RWseek(c->src, c->base, SEEK_SET) < 0)
-				break;
-			got = SDL_RWread(c->src, c->buf, 1, DC_SHAPES_CACHE);
-			c->refills++;
-			if (got > 0)
-				c->fetched += (unsigned long)got;
-			if (got <= 0) {
-				c->len = 0;
-				break;
-			}
-			c->len = got;
-		}
-
-		{
-			long off = c->pos - c->base;
-			long avail = c->len - off;
-			long n;
-
-			if (avail <= 0)
-				break;
-			n = want - done;
-			if (n > avail)
-				n = avail;
-			memcpy(out + done, c->buf + off, (size_t)n);
-			done += n;
-			c->pos += n;
-		}
-	}
-
-	c->served += (unsigned long)done;
-	return size ? (int)(done / size) : 0;
-}
-
-static int dc_shapes_write(SDL_RWops *ctx, const void *ptr, int size, int num)
-{
-	(void)ctx; (void)ptr; (void)size; (void)num;
-	return -1;		/* read-only */
-}
-
-static int dc_shapes_close(SDL_RWops *ctx)
-{
-	(void)ctx;		/* the wrapper and its buffer are reused, not freed */
-	return 0;
-}
-
-/*
- *	One wrapper, reused for every collection and every level load. Returns the
- *	raw stream unchanged if the buffer cannot be had, so a tight heap costs
- *	speed rather than the level.
- */
-static struct dc_shapes_cache *dc_shapes_stats = NULL;
-
-unsigned long dc_shapes_cache_served(void)
-{ return dc_shapes_stats ? dc_shapes_stats->served : 0; }
-
-unsigned long dc_shapes_cache_fetched(void)
-{ return dc_shapes_stats ? dc_shapes_stats->fetched : 0; }
-
-unsigned dc_shapes_cache_refills(void)
-{ return dc_shapes_stats ? dc_shapes_stats->refills : 0; }
-
-static SDL_RWops *dc_shapes_cached(SDL_RWops *src)
-{
-	static SDL_RWops *Wrapper = NULL;
-	static struct dc_shapes_cache Cache;
-
-	if (Wrapper == NULL) {
-		/*
-		 *	memalign, not malloc: KOS's ISO9660 fast path wants a 32-byte
-		 *	aligned destination as well as a sector-aligned offset, and falls
-		 *	back to a slower copy without it.
-		 */
-		Cache.buf = (uint8 *)memalign(32, DC_SHAPES_CACHE);
-		if (Cache.buf == NULL)
-			return src;
-		Wrapper = SDL_AllocRW();
-		if (Wrapper == NULL) {
-			free(Cache.buf);
-			Cache.buf = NULL;
-			return src;
-		}
-		Wrapper->seek  = dc_shapes_seek;
-		Wrapper->read  = dc_shapes_read;
-		Wrapper->write = dc_shapes_write;
-		Wrapper->close = dc_shapes_close;
-		Wrapper->type  = 0;
-		Wrapper->hidden.unknown.data1 = &Cache;
-		dc_trace(63, "shapes: cache buf %p (%s32-byte aligned), %d KB",
-		         (void *)Cache.buf,
-		         (((uintptr_t)Cache.buf & 31u) == 0) ? "" : "NOT ",
-		         DC_SHAPES_CACHE / 1024);
-		Cache.base = -1;
-		Cache.len = 0;
-		Cache.refills = 0;
-	}
-
-	if (Cache.src != src) {
-		/* Different file: whatever is buffered belongs to the old one. */
-		Cache.src = src;
-		Cache.base = -1;
-		Cache.len = 0;
-	}
-	Cache.pos = 0;
-	dc_shapes_stats = &Cache;
-	return Wrapper;
-}
-#endif	/* DC */
 
 static bool load_collection(short collection_index, bool strip)
 {
 	SDL_RWops *p = ShapesFile.GetRWops();	// Source stream
-#ifdef DC
-	/*
-	 *	Read the collection through the sector-aligned cache above rather than
-	 *	straight off the disc. SetPosition() adds a fork offset before seeking,
-	 *	so find that offset once -- seek to fork position 0 and ask the real
-	 *	stream where that landed -- and add it to every absolute seek below.
-	 */
-	long ForkBase;
-	ShapesFile.SetPosition(0);
-	ForkBase = SDL_RWtell(p);
-	p = dc_shapes_cached(p);
-#define COLL_SEEK(off)	SDL_RWseek(p, ForkBase + (long)(off), SEEK_SET)
-#else
-#define COLL_SEEK(off)	ShapesFile.SetPosition(off)
-#endif
 	uint32 *t;								// Offset table pointer
 
 	// Get offset and length of data in source file from header
@@ -292,7 +98,7 @@ static bool load_collection(short collection_index, bool strip)
 	}
 
 	// Read collection definition
-	COLL_SEEK(src_offset);
+	ShapesFile.SetPosition(src_offset);
 	int16 version = SDL_ReadBE16(p);
 	int16 type = SDL_ReadBE16(p);
 	uint16 flags = SDL_ReadBE16(p);
@@ -332,7 +138,7 @@ static bool load_collection(short collection_index, bool strip)
 #define dst_offset (q - (uint8 *)c)
 
 	// Convert CLUTs
-	COLL_SEEK(src_offset + color_table_offset);
+	ShapesFile.SetPosition(src_offset + color_table_offset);
 	cd->color_table_offset = dst_offset;
 	for (int i=0; i<clut_count*color_count; i++) {
 		rgb_color_value *r = (rgb_color_value *)q;
@@ -344,7 +150,7 @@ static bool load_collection(short collection_index, bool strip)
 	}
 
 	// Convert high-level shape definitions
-	COLL_SEEK(src_offset + high_level_shape_offset_table_offset);
+	ShapesFile.SetPosition(src_offset + high_level_shape_offset_table_offset);
 	cd->high_level_shape_offset_table_offset = dst_offset;
 
 	t = (uint32 *)q;	// Offset table
@@ -355,7 +161,7 @@ static bool load_collection(short collection_index, bool strip)
 	for (int i=0; i<high_level_shape_count; i++) {
 
 		// Seek to offset in source file, correct destination offset
-		COLL_SEEK(src_offset + t[i]);
+		ShapesFile.SetPosition(src_offset + t[i]);
 		t[i] = dst_offset;
 
 		// Convert high-level shape definition
@@ -409,7 +215,7 @@ static bool load_collection(short collection_index, bool strip)
 	}
 
 	// Convert low-level shape definitions
-	COLL_SEEK(src_offset + low_level_shape_offset_table_offset);
+	ShapesFile.SetPosition(src_offset + low_level_shape_offset_table_offset);
 	cd->low_level_shape_offset_table_offset = dst_offset;
 
 	t = (uint32 *)q;	// Offset table
@@ -420,7 +226,7 @@ static bool load_collection(short collection_index, bool strip)
 	for (int i=0; i<low_level_shape_count; i++) {
 
 		// Seek to offset in source file, correct destination offset
-		COLL_SEEK(src_offset + t[i]);
+		ShapesFile.SetPosition(src_offset + t[i]);
 		t[i] = dst_offset;
 
 		// Convert low-level shape definition
@@ -443,7 +249,7 @@ static bool load_collection(short collection_index, bool strip)
 	}
 
 	// Convert bitmap definitions
-	COLL_SEEK(src_offset + bitmap_offset_table_offset);
+	ShapesFile.SetPosition(src_offset + bitmap_offset_table_offset);
 	cd->bitmap_offset_table_offset = dst_offset;
 
 	t = (uint32 *)q;	// Offset table
@@ -456,7 +262,7 @@ static bool load_collection(short collection_index, bool strip)
 	for (int i=0; i<bitmap_count; i++) {
 
 		// Seek to offset in source file, correct destination offset
-		COLL_SEEK(src_offset + t[i]);
+		ShapesFile.SetPosition(src_offset + t[i]);
 		t[i] = dst_offset;
 
 		// Convert bitmap definition
@@ -523,8 +329,6 @@ static bool load_collection(short collection_index, bool strip)
 	// Everything OK
 	return true;
 }
-
-#undef COLL_SEEK
 
 
 /*

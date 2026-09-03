@@ -272,19 +272,6 @@ bool entering_map(bool restoring_saved)
 		         dc_heap_top(), (dc_heap_top() - 0x8c000000u) / 1024);
 	}
 #endif
-#ifdef DC
-	/* Read amplification of the shapes cache: how many bytes the parse asked
-	   for against how many came off the disc, and in how many reads. */
-	{
-		extern unsigned long dc_shapes_cache_served(void);
-		extern unsigned long dc_shapes_cache_fetched(void);
-		extern unsigned dc_shapes_cache_refills(void);
-		dc_trace(57, "load: shapes served %lu KB, fetched %lu KB, %u reads",
-		         dc_shapes_cache_served() / 1024,
-		         dc_shapes_cache_fetched() / 1024,
-		         dc_shapes_cache_refills());
-	}
-#endif
 	dc_t0 = SDL_GetTicks();
 #endif
 
