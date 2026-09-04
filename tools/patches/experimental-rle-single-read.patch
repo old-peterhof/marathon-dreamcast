@@ -1,0 +1,201 @@
+Experimental, NOT landed: one bulk read per RLE bitmap record instead of
+three SDL_RW calls per row.
+
+Measured no change: 24614 ms of bitmap parse either way, three runs each.
+It does cut ~100,000 SDL calls to ~1,300 and costs no permanent RAM, and it
+carries the per-row path as a validated fallback, so it may be worth having
+on hardware if the cost profile there is different. Bounds come from the
+bitmap offset table the way unpack_collection() does it: next offset as the
+end, src_length as the sentinel for the last.
+
+Apply with: git apply tools/patches/experimental-rle-single-read.patch
+
+diff --git a/Source_Files/Misc/shapes_sdl.cpp b/Source_Files/Misc/shapes_sdl.cpp
+index 0a46ded..7763356 100644
+--- a/Source_Files/Misc/shapes_sdl.cpp
++++ b/Source_Files/Misc/shapes_sdl.cpp
+@@ -80,8 +80,24 @@ SDL_Surface *get_shape_surface(int shape)
+ 
+ 
+ 
++#ifdef DC
++/*
++ *	Aggregate breakdown of load_collection, accumulated silently and printed
++ *	once by load_collections. Nothing is traced per collection or per bitmap:
++ *	dc_trace goes out over the emulated serial line and would dominate what it
++ *	is trying to measure.
++ */
++unsigned dc_lc_ms_header = 0, dc_lc_ms_alloc = 0, dc_lc_ms_clut = 0;
++unsigned dc_lc_ms_high = 0, dc_lc_ms_low = 0, dc_lc_ms_bitmaps = 0;
++unsigned dc_lc_n_rle = 0, dc_lc_n_raw = 0, dc_lc_n_rle_rows = 0;
++unsigned long dc_lc_bytes_rle = 0, dc_lc_bytes_raw = 0;
++#endif
++
+ static bool load_collection(short collection_index, bool strip)
+ {
++#ifdef DC
++	unsigned dc_t = SDL_GetTicks();
++#endif
+ 	SDL_RWops *p = ShapesFile.GetRWops();	// Source stream
+ 	uint32 *t;								// Offset table pointer
+ 
+@@ -114,6 +130,10 @@ static bool load_collection(short collection_index, bool strip)
+ 	int16 pixels_to_world = SDL_ReadBE16(p);
+ 	int32 size = SDL_ReadBE32(p);
+ 
++#ifdef DC
++	dc_lc_ms_header += SDL_GetTicks() - dc_t;
++	dc_t = SDL_GetTicks();
++#endif
+ 	// Allocate memory for collection
+ 	int extra_length = 1024 + high_level_shape_count * 4 + low_level_shape_count * 4 + bitmap_count * 2048;
+ 	void *c = malloc(src_length + extra_length);
+@@ -133,6 +153,10 @@ static bool load_collection(short collection_index, bool strip)
+ 	cd->pixels_to_world = pixels_to_world;
+ //	printf(" index %d, version %d, type %d, %d colors, %d cluts, %d hl, %d ll, %d bitmaps\n", collection_index, version, type, color_count, clut_count, high_level_shape_count, low_level_shape_count, bitmap_count);
+ 
++#ifdef DC
++	dc_lc_ms_alloc += SDL_GetTicks() - dc_t;
++	dc_t = SDL_GetTicks();
++#endif
+ 	// Set up destination pointer
+ 	uint8 *q = (uint8 *)c + 0x220;
+ #define dst_offset (q - (uint8 *)c)
+@@ -149,6 +173,10 @@ static bool load_collection(short collection_index, bool strip)
+ 		q += sizeof(rgb_color_value);
+ 	}
+ 
++#ifdef DC
++	dc_lc_ms_clut += SDL_GetTicks() - dc_t;
++	dc_t = SDL_GetTicks();
++#endif
+ 	// Convert high-level shape definitions
+ 	ShapesFile.SetPosition(src_offset + high_level_shape_offset_table_offset);
+ 	cd->high_level_shape_offset_table_offset = dst_offset;
+@@ -214,6 +242,10 @@ static bool load_collection(short collection_index, bool strip)
+ 			q += 4 - (dst_offset & 3);
+ 	}
+ 
++#ifdef DC
++	dc_lc_ms_high += SDL_GetTicks() - dc_t;
++	dc_t = SDL_GetTicks();
++#endif
+ 	// Convert low-level shape definitions
+ 	ShapesFile.SetPosition(src_offset + low_level_shape_offset_table_offset);
+ 	cd->low_level_shape_offset_table_offset = dst_offset;
+@@ -248,6 +280,10 @@ static bool load_collection(short collection_index, bool strip)
+ 		q += sizeof(low_level_shape_definition);
+ 	}
+ 
++#ifdef DC
++	dc_lc_ms_low += SDL_GetTicks() - dc_t;
++	dc_t = SDL_GetTicks();
++#endif
+ 	// Convert bitmap definitions
+ 	ShapesFile.SetPosition(src_offset + bitmap_offset_table_offset);
+ 	cd->bitmap_offset_table_offset = dst_offset;
+@@ -261,6 +297,17 @@ static bool load_collection(short collection_index, bool strip)
+ 
+ 	for (int i=0; i<bitmap_count; i++) {
+ 
++		/*
++		 *	Record bounds, taken the way unpack_collection() does it: the next
++		 *	bitmap's offset is this one's end, with src_length as the sentinel
++		 *	for the last. t[i+1] is still a SOURCE offset at this point -- the
++		 *	loop overwrites forward, one entry behind us -- so no copy of the
++		 *	table is needed.
++		 */
++		const uint32 src_bitmap_offset = t[i];
++		const uint32 src_bitmap_end =
++			(i + 1 < bitmap_count) ? t[i + 1] : (uint32)src_length;
++
+ 		// Seek to offset in source file, correct destination offset
+ 		ShapesFile.SetPosition(src_offset + t[i]);
+ 		t[i] = dst_offset;
+@@ -283,16 +330,68 @@ static bool load_collection(short collection_index, bool strip)
+ 		// Copy bitmap data
+ 		if (d->bytes_per_row == NONE) {
+ 			// RLE format
+-			for (int j=0; j<rows; j++) {
+-				int16 first = SDL_ReadBE16(p);
+-				int16 last = SDL_ReadBE16(p);
+-				*q++ = first >> 8; *q++ = first;
+-				*q++ = last >> 8; *q++ = last;
+-				SDL_RWread(p, q, 1, last - first);
+-				q += last - first;
++#ifdef DC
++			dc_lc_n_rle++;
++			dc_lc_n_rle_rows += (unsigned)rows;
++#endif
++			/*
++			 *	One read for the whole record instead of three per row.
++			 *
++			 *	The RLE bytes on disc are already exactly what belongs in the
++			 *	destination: each row is a big-endian first/last pair followed
++			 *	by (last - first) bytes, and the loop this replaces read that
++			 *	pair only to write the same four bytes straight back. So the
++			 *	remainder of the record can go into q verbatim -- first/last
++			 *	stay big-endian in memory, which is what the renderer expects.
++			 *
++			 *	Measured before this: 567 RLE bitmaps, 33342 rows, ~100,000
++			 *	SDL_RW calls to move 1492 KB, and 24.6 of the level load's 25.9
++			 *	seconds. The 87 raw bitmaps moved a comparable 1145 KB in 87
++			 *	bulk reads. The cost was never the bytes, it was the calls.
++			 *
++			 *	The extent comes from the bitmap offset table, as in
++			 *	unpack_collection(). If anything about it fails to validate the
++			 *	old per-row path still runs, so a malformed table costs speed
++			 *	rather than the level.
++			 */
++			{
++				const long consumed = 26 + (long)(rows + 1) * (long)sizeof(uint32);
++				const long data_len = (long)src_bitmap_end
++				                    - (long)src_bitmap_offset - consumed;
++				const bool bounded =
++					src_bitmap_end > src_bitmap_offset &&
++					(long)src_bitmap_end <= src_length &&
++					data_len >= 0 &&
++					data_len <= src_length;
++
++				if (bounded && SDL_RWread(p, q, 1, data_len) == data_len) {
++#ifdef DC
++					dc_lc_bytes_rle += (unsigned long)data_len;
++#endif
++					q += data_len;
++				} else {
++					/* Fall back to the row-at-a-time read. */
++					ShapesFile.SetPosition(src_offset + src_bitmap_offset
++					                       + consumed);
++					for (int j=0; j<rows; j++) {
++						int16 first = SDL_ReadBE16(p);
++						int16 last = SDL_ReadBE16(p);
++#ifdef DC
++						dc_lc_bytes_rle += (unsigned long)(last - first);
++#endif
++						*q++ = first >> 8; *q++ = first;
++						*q++ = last >> 8; *q++ = last;
++						SDL_RWread(p, q, 1, last - first);
++						q += last - first;
++					}
++				}
+ 			}
+ 		} else {
+ 			// Raw format
++#ifdef DC
++			dc_lc_n_raw++;
++			dc_lc_bytes_raw += (unsigned long)rows * (unsigned long)d->bytes_per_row;
++#endif
+ 			SDL_RWread(p, q, d->bytes_per_row, rows);
+ 			q += rows * d->bytes_per_row;
+ 		}
+@@ -300,6 +399,10 @@ static bool load_collection(short collection_index, bool strip)
+ 			q += 8 - (dst_offset & 7);
+ 	}
+ 
++#ifdef DC
++	dc_lc_ms_bitmaps += SDL_GetTicks() - dc_t;
++#endif
++
+ 	// Set pointer to collection in collection header
+ 	header->collection = cd;
+ 	cd->size = dst_offset;

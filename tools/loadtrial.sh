@@ -11,7 +11,7 @@
 
 set -u
 DISC="$1"; LABEL="$2"; RUNS="${3:-3}"
-S=/private/tmp/claude-501/-Users-mgibbons-Desktop-Marathon-DC/5161da89-557e-45c1-a7f2-aebfaf8380ce/scratchpad
+S="${LOADTRIAL_SCRATCH:?set LOADTRIAL_SCRATCH to a writable directory holding timeload.py}"
 CFG="$HOME/Library/Application Support/Flycast/emu.cfg"
 DATA="$HOME/Library/Application Support/Flycast/data"
 
@@ -20,7 +20,11 @@ for i in $(seq 1 "$RUNS"); do
 	pkill -x Flycast 2>/dev/null
 	python3 -c "import time; time.sleep(3)"
 
-	rm -f "$DATA"/*vmu_save*.bin
+	if [ "${LOADTRIAL_KEEP_VMU:-0}" = "1" ]; then
+		: keep the card, to compare against a cleared one
+	else
+		rm -f "$DATA"/*vmu_save*.bin
+	fi
 	grep -q 'Debug.SerialConsoleEnabled = yes' "$CFG" || \
 		python3 - "$CFG" <<'PY'
 import io,sys
@@ -42,6 +46,10 @@ import io,re,sys
 d=io.open(sys.argv[1],'rb').read().decode('latin-1')
 for h in re.findall(r'load: (collections|monster sounds|game sounds) (\d+) ms', d):
     print('    %-16s %6s ms' % h)
+for h in re.findall(r'(prefs: gfx[^\r\n]*)', d):
+    print('    ' + h.strip())
+for h in re.findall(r'(sound: buffer budget[^\r\n]*)', d):
+    print('    ' + h.strip())
 if not re.search(r'load: collections', d):
     print('    STALLED: no collections trace')
 PY

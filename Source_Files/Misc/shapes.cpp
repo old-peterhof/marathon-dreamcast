@@ -68,6 +68,10 @@ Jan 17, 2001 (Loren Petrich):
 #include "cseries.h"
 
 #include <stdlib.h>
+#ifdef DC
+#include <SDL_timer.h>
+extern "C" void dc_trace(int slot, const char *fmt, ...);
+#endif
 #include <string.h>
 
 #include "shell.h"
@@ -974,10 +978,25 @@ void load_collections(
 {
 	struct collection_header *header;
 	short collection_index;
+#ifdef DC
+	/*
+	 *	Aggregate phase timing. Accumulated in locals and reported once at the
+	 *	end -- nothing is traced inside the loop, because dc_trace goes out over
+	 *	the emulated serial line and would end up measuring itself.
+	 */
+	unsigned dc_ms_free = 0, dc_ms_load = 0, dc_ms_models = 0, dc_ms_color = 0;
+	unsigned dc_n_loaded = 0, dc_t;
+#endif
 	
 	precalculate_bit_depth_constants();
 	
+#ifdef DC
+	dc_t = SDL_GetTicks();
+#endif
 	free_and_unlock_memory(); /* do our best to get a big, unfragmented heap */
+#ifdef DC
+	dc_ms_free = SDL_GetTicks() - dc_t;
+#endif
 	
 	/* first go through our list of shape collections and dispose of any collections which
 		were marked for unloading.  at the same time, unlock all those collections which
@@ -1017,11 +1036,22 @@ void load_collections(
 			if (header->status&markLOAD)
 			{
 				/* load and decompress collection */
+#ifdef DC
+				dc_t = SDL_GetTicks();
+#endif
 				if (!load_collection(collection_index, (header->status&markSTRIP) ? true : false))
 				{
 					alert_user(fatalError, strERRORS, outOfMemory, -1);
 				}
+#ifdef DC
+				dc_ms_load += SDL_GetTicks() - dc_t;
+				dc_n_loaded++;
+				dc_t = SDL_GetTicks();
+#endif
 				OGL_LoadModelsImages(collection_index);
+#ifdef DC
+				dc_ms_models += SDL_GetTicks() - dc_t;
+#endif
 			}
 		}
 		
@@ -1032,7 +1062,27 @@ void load_collections(
 	
 	/* remap the shapes, recalculate row base addresses, build our new world color table and
 		(finally) update the screen to reflect our changes */
+#ifdef DC
+	dc_t = SDL_GetTicks();
+#endif
 	update_color_environment();
+#ifdef DC
+	dc_ms_color = SDL_GetTicks() - dc_t;
+	dc_trace(65, "load: free %u ms | %u colls %u ms | models %u ms | colorenv %u ms",
+	         dc_ms_free, dc_n_loaded, dc_ms_load, dc_ms_models, dc_ms_color);
+	{
+		extern unsigned dc_lc_ms_header, dc_lc_ms_alloc, dc_lc_ms_clut;
+		extern unsigned dc_lc_ms_high, dc_lc_ms_low, dc_lc_ms_bitmaps;
+		extern unsigned dc_lc_n_rle, dc_lc_n_raw, dc_lc_n_rle_rows;
+		extern unsigned long dc_lc_bytes_rle, dc_lc_bytes_raw;
+		dc_trace(66, "  parse: hdr %u | alloc %u | clut %u | high %u | low %u | bitmaps %u ms",
+		         dc_lc_ms_header, dc_lc_ms_alloc, dc_lc_ms_clut,
+		         dc_lc_ms_high, dc_lc_ms_low, dc_lc_ms_bitmaps);
+		dc_trace(67, "  bitmaps: %u rle (%u rows, %lu KB) | %u raw (%lu KB)",
+		         dc_lc_n_rle, dc_lc_n_rle_rows, dc_lc_bytes_rle / 1024,
+		         dc_lc_n_raw, dc_lc_bytes_raw / 1024);
+	}
+#endif
 
 #ifdef DEBUG
 //	debug_shapes_memory();

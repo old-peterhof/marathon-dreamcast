@@ -80,8 +80,24 @@ SDL_Surface *get_shape_surface(int shape)
 
 
 
+#ifdef DC
+/*
+ *	Aggregate breakdown of load_collection, accumulated silently and printed
+ *	once by load_collections. Nothing is traced per collection or per bitmap:
+ *	dc_trace goes out over the emulated serial line and would dominate what it
+ *	is trying to measure.
+ */
+unsigned dc_lc_ms_header = 0, dc_lc_ms_alloc = 0, dc_lc_ms_clut = 0;
+unsigned dc_lc_ms_high = 0, dc_lc_ms_low = 0, dc_lc_ms_bitmaps = 0;
+unsigned dc_lc_n_rle = 0, dc_lc_n_raw = 0, dc_lc_n_rle_rows = 0;
+unsigned long dc_lc_bytes_rle = 0, dc_lc_bytes_raw = 0;
+#endif
+
 static bool load_collection(short collection_index, bool strip)
 {
+#ifdef DC
+	unsigned dc_t = SDL_GetTicks();
+#endif
 	SDL_RWops *p = ShapesFile.GetRWops();	// Source stream
 	uint32 *t;								// Offset table pointer
 
@@ -114,6 +130,10 @@ static bool load_collection(short collection_index, bool strip)
 	int16 pixels_to_world = SDL_ReadBE16(p);
 	int32 size = SDL_ReadBE32(p);
 
+#ifdef DC
+	dc_lc_ms_header += SDL_GetTicks() - dc_t;
+	dc_t = SDL_GetTicks();
+#endif
 	// Allocate memory for collection
 	int extra_length = 1024 + high_level_shape_count * 4 + low_level_shape_count * 4 + bitmap_count * 2048;
 	void *c = malloc(src_length + extra_length);
@@ -133,6 +153,10 @@ static bool load_collection(short collection_index, bool strip)
 	cd->pixels_to_world = pixels_to_world;
 //	printf(" index %d, version %d, type %d, %d colors, %d cluts, %d hl, %d ll, %d bitmaps\n", collection_index, version, type, color_count, clut_count, high_level_shape_count, low_level_shape_count, bitmap_count);
 
+#ifdef DC
+	dc_lc_ms_alloc += SDL_GetTicks() - dc_t;
+	dc_t = SDL_GetTicks();
+#endif
 	// Set up destination pointer
 	uint8 *q = (uint8 *)c + 0x220;
 #define dst_offset (q - (uint8 *)c)
@@ -149,6 +173,10 @@ static bool load_collection(short collection_index, bool strip)
 		q += sizeof(rgb_color_value);
 	}
 
+#ifdef DC
+	dc_lc_ms_clut += SDL_GetTicks() - dc_t;
+	dc_t = SDL_GetTicks();
+#endif
 	// Convert high-level shape definitions
 	ShapesFile.SetPosition(src_offset + high_level_shape_offset_table_offset);
 	cd->high_level_shape_offset_table_offset = dst_offset;
@@ -214,6 +242,10 @@ static bool load_collection(short collection_index, bool strip)
 			q += 4 - (dst_offset & 3);
 	}
 
+#ifdef DC
+	dc_lc_ms_high += SDL_GetTicks() - dc_t;
+	dc_t = SDL_GetTicks();
+#endif
 	// Convert low-level shape definitions
 	ShapesFile.SetPosition(src_offset + low_level_shape_offset_table_offset);
 	cd->low_level_shape_offset_table_offset = dst_offset;
@@ -248,6 +280,10 @@ static bool load_collection(short collection_index, bool strip)
 		q += sizeof(low_level_shape_definition);
 	}
 
+#ifdef DC
+	dc_lc_ms_low += SDL_GetTicks() - dc_t;
+	dc_t = SDL_GetTicks();
+#endif
 	// Convert bitmap definitions
 	ShapesFile.SetPosition(src_offset + bitmap_offset_table_offset);
 	cd->bitmap_offset_table_offset = dst_offset;
@@ -283,9 +319,16 @@ static bool load_collection(short collection_index, bool strip)
 		// Copy bitmap data
 		if (d->bytes_per_row == NONE) {
 			// RLE format
+#ifdef DC
+			dc_lc_n_rle++;
+			dc_lc_n_rle_rows += (unsigned)rows;
+#endif
 			for (int j=0; j<rows; j++) {
 				int16 first = SDL_ReadBE16(p);
 				int16 last = SDL_ReadBE16(p);
+#ifdef DC
+				dc_lc_bytes_rle += (unsigned long)(last - first);
+#endif
 				*q++ = first >> 8; *q++ = first;
 				*q++ = last >> 8; *q++ = last;
 				SDL_RWread(p, q, 1, last - first);
@@ -293,12 +336,20 @@ static bool load_collection(short collection_index, bool strip)
 			}
 		} else {
 			// Raw format
+#ifdef DC
+			dc_lc_n_raw++;
+			dc_lc_bytes_raw += (unsigned long)rows * (unsigned long)d->bytes_per_row;
+#endif
 			SDL_RWread(p, q, d->bytes_per_row, rows);
 			q += rows * d->bytes_per_row;
 		}
 		if (dst_offset & 7)	// Align to 64-bit boundary
 			q += 8 - (dst_offset & 7);
 	}
+
+#ifdef DC
+	dc_lc_ms_bitmaps += SDL_GetTicks() - dc_t;
+#endif
 
 	// Set pointer to collection in collection header
 	header->collection = cd;
