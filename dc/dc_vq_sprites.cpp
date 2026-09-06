@@ -13,6 +13,8 @@
 #include "dc_vq_sprites.h"
 
 extern "C" void dc_trace(int slot, const char *fmt, ...);
+extern "C" void *dc_read_file_span(const char *path, unsigned long offset, unsigned long length);
+extern "C" unsigned long dc_ms(void);
 extern bool OGL_TextureAllocationFits(unsigned bytes);
 
 namespace
@@ -47,11 +49,12 @@ struct PackEntry
 };
 #pragma pack(pop)
 
-FILE *PackFile = NULL;
+const char *PackPath = NULL;
 PackEntry *Entries = NULL;
 uint32_t EntryCount = 0;
 bool TriedOpening = false;
 unsigned UploadCount = 0;
+unsigned long ReadMs = 0;
 
 bool valid_header(const PackHeader& header)
 {
@@ -63,41 +66,50 @@ bool valid_header(const PackHeader& header)
 	                              header.entry_count * sizeof(PackEntry);
 }
 
+/*
+ * Everything comes off the disc through dc_read_file_span(): one aligned
+ * transfer per request. stdio would read a 40 KB sprite frame 1 KB at a time,
+ * one GD-ROM command per sector, which is what made the first seconds of every
+ * level a slideshow while monsters appeared.
+ */
 bool open_pack()
 {
 	if (TriedOpening)
-		return PackFile != NULL;
+		return PackPath != NULL;
 	TriedOpening = true;
 
-	PackFile = fopen("/cd/AlephOne/VQSprites.dat", "rb");
-	if (!PackFile)
-		PackFile = fopen("VQSprites.dat", "rb");
-	if (!PackFile)
+	static const char *const candidates[] = { "/cd/AlephOne/VQSprites.dat", "VQSprites.dat" };
+	PackHeader *header = NULL;
+	for (unsigned i = 0; i < 2 && !header; ++i)
+	{
+		header = static_cast<PackHeader *>(dc_read_file_span(candidates[i], 0, sizeof(PackHeader)));
+		if (header)
+			PackPath = candidates[i];
+	}
+	if (!header)
 	{
 		dc_trace(53, "vq: VQSprites.dat absent; raw sprite fallback");
 		return false;
 	}
-
-	PackHeader header;
-	if (fread(&header, sizeof(header), 1, PackFile) != 1 || !valid_header(header))
+	if (!valid_header(*header))
 	{
 		dc_trace(53, "vq: invalid pack header; raw sprite fallback");
-		fclose(PackFile);
-		PackFile = NULL;
+		free(header);
+		PackPath = NULL;
 		return false;
 	}
+	const uint32_t entry_count = header->entry_count;
+	free(header);
 
-	Entries = static_cast<PackEntry *>(malloc(header.entry_count * sizeof(PackEntry)));
-	if (!Entries || fread(Entries, sizeof(PackEntry), header.entry_count, PackFile) != header.entry_count)
+	Entries = static_cast<PackEntry *>(dc_read_file_span(PackPath, sizeof(PackHeader),
+	                                                     entry_count * sizeof(PackEntry)));
+	if (!Entries)
 	{
 		dc_trace(53, "vq: cannot read pack index; raw sprite fallback");
-		free(Entries);
-		Entries = NULL;
-		fclose(PackFile);
-		PackFile = NULL;
+		PackPath = NULL;
 		return false;
 	}
-	EntryCount = header.entry_count;
+	EntryCount = entry_count;
 	dc_trace(53, "vq: %u entries, %u KB index", EntryCount,
 	         (unsigned)(EntryCount * sizeof(PackEntry) / 1024));
 	return true;
@@ -162,24 +174,11 @@ bool dc_vq_sprite_upload(unsigned collection, unsigned clut, unsigned bitmap,
 	if (!OGL_TextureAllocationFits(entry->size))
 		return false;
 
-	/*
-	 * KOS's ISO path is dramatically faster when both ends of a transfer are
-	 * sector aligned.  The packer pads every payload through this boundary;
-	 * GLdc still receives only the real compressed byte count below.
-	 */
-	const size_t read_size = (entry->size + 2047u) & ~2047u;
-	const size_t allocation = (read_size + 31u) & ~31u;
-	void *data = memalign(32, allocation);
+	const unsigned long started = dc_ms();
+	void *data = dc_read_file_span(PackPath, entry->offset, entry->size);
+	ReadMs += dc_ms() - started;
 	if (!data)
 		return false;
-
-	bool read_ok = fseek(PackFile, (long)entry->offset, SEEK_SET) == 0 &&
-	               fread(data, 1, read_size, PackFile) == read_size;
-	if (!read_ok)
-	{
-		free(data);
-		return false;
-	}
 
 	/* Do not blame this upload for an older GL error. */
 	while (glGetError() != GL_NO_ERROR) {}
@@ -193,7 +192,7 @@ bool dc_vq_sprite_upload(unsigned collection, unsigned clut, unsigned bitmap,
 
 	++UploadCount;
 	if (UploadCount == 1 || (UploadCount % 25) == 0)
-		dc_trace(53, "vq: %u compressed sprite uploads", UploadCount);
+		dc_trace(53, "vq: %u compressed sprite uploads, %lu ms reading", UploadCount, ReadMs);
 	return true;
 }
 

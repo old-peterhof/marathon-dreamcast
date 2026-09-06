@@ -28,6 +28,7 @@
 #include <kos/fs_ramdisk.h>
 #include <dc/video.h>
 #include <dc/biosfont.h>
+#include <arch/timer.h>
 
 /*
  *	dc_trace -- draw a line of text straight into video RAM.
@@ -191,19 +192,29 @@ void dc_heap_trace(int slot, const char *where)
  */
 void *dc_read_file_span(const char *path, unsigned long offset, unsigned long length)
 {
-	static file_t fd = FILEHND_INVALID;
-	static char open_path[256];
+	/* Sounds and sprite frames interleave during play: keep a few files open. */
+	enum { kOpenFiles = 4 };
+	static file_t fds[kOpenFiles] = { FILEHND_INVALID, FILEHND_INVALID, FILEHND_INVALID, FILEHND_INVALID };
+	static char open_paths[kOpenFiles][256];
+	static unsigned next_slot = 0;
+	unsigned slot;
 
-	if (fd == FILEHND_INVALID || strcmp(open_path, path) != 0)
+	for (slot = 0; slot < kOpenFiles; ++slot)
+		if (fds[slot] != FILEHND_INVALID && strcmp(open_paths[slot], path) == 0)
+			break;
+	if (slot == kOpenFiles)
 	{
-		if (fd != FILEHND_INVALID)
-			fs_close(fd);
-		fd = fs_open(path, O_RDONLY);
-		if (fd == FILEHND_INVALID)
+		slot = next_slot;
+		next_slot = (next_slot + 1) % kOpenFiles;
+		if (fds[slot] != FILEHND_INVALID)
+			fs_close(fds[slot]);
+		fds[slot] = fs_open(path, O_RDONLY);
+		if (fds[slot] == FILEHND_INVALID)
 			return NULL;
-		strncpy(open_path, path, sizeof(open_path) - 1);
-		open_path[sizeof(open_path) - 1] = 0;
+		strncpy(open_paths[slot], path, sizeof(open_paths[slot]) - 1);
+		open_paths[slot][sizeof(open_paths[slot]) - 1] = 0;
 	}
+	const file_t fd = fds[slot];
 
 	const unsigned long start = offset & ~2047UL;
 	const unsigned long skip = offset - start;
@@ -216,7 +227,7 @@ void *dc_read_file_span(const char *path, unsigned long offset, unsigned long le
 	{
 		free(buf);
 		fs_close(fd);
-		fd = FILEHND_INVALID;
+		fds[slot] = FILEHND_INVALID;
 		return NULL;
 	}
 
@@ -237,6 +248,12 @@ void *dc_read_file_span(const char *path, unsigned long offset, unsigned long le
 	if (skip)
 		memmove(buf, buf + skip, length);
 	return buf;
+}
+
+/* Milliseconds since boot, for C++98 callers that cannot include KOS's timer.h. */
+unsigned long dc_ms(void)
+{
+	return (unsigned long)timer_ms_gettime64();
 }
 
 /*
