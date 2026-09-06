@@ -102,6 +102,7 @@ Nov 26, 2000 (Loren Petrich):
 
 #ifdef DC
 #include "dc_vmu.h"
+#include "mysound.h"
 extern "C" void dc_trace(int slot, const char *fmt, ...);
 #endif
 
@@ -299,6 +300,18 @@ bool load_level_from_map(
 	struct wad_data *wad;
 	short index_to_load;
 	bool restoring_game= false;
+
+#ifdef DC
+	/*
+	 *	Drop the sound cache before the load, not after. It holds up to 3 MB by
+	 *	the end of a level, and the load's transients -- a collection's source
+	 *	and destination together, the map wad -- landed on top of it: on My
+	 *	Own Private Thermopylae the heap top reached 0x8cf31000 at the reload,
+	 *	830 KB from the end of RAM. Sounds come back on demand at about 10 ms
+	 *	each now, so this costs nothing the player can hear.
+	 */
+	unload_all_sounds();
+#endif
 
 	if(file_is_set)
 	{
