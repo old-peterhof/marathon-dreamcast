@@ -183,7 +183,7 @@ SRCS = \
 # syscalls.c duplicates newlib symbols modern KOS already provides, and fs_mem.c
 # reimplements what is now fs_ramdisk. dc/dc_compat.c supplies the two pieces
 # that are actually still missing -- fs_mem_init() and access().
-DC_OBJS = dc/dc_fade.o dc/dc_compat.o dc/dc_input.o dc/dc_vmu.o dc/dc_profiler.o \
+DC_OBJS = dc/dc_fade.o dc/dc_compat.o dc/dc_input.o dc/dc_rumble.o dc/dc_vmu.o dc/dc_profiler.o \
           dc/dc_maple.o dc/dc_blit.o dc/dc_wad.o dc/vendor/sh4zam_src/shz_mem_sh4.o \
           dc/vendor/vmu_profiler.o
 
@@ -373,10 +373,11 @@ replay-test: $(TARGET) $(DISC)/.stamp
 	cp "$(FILM)" disc-replay/AlephOne/TestFilm
 	echo replay > disc-replay/AlephOne/AUTOSTART
 	echo on > disc-replay/AlephOne/DEBUG
-	rm -f disc-replay/AlephOne/FADETEST disc-replay/AlephOne/STATICTEST disc-replay/AlephOne/SAVETEST
+	rm -f disc-replay/AlephOne/FADETEST disc-replay/AlephOne/STATICTEST disc-replay/AlephOne/SAVETEST disc-replay/AlephOne/UPLOADTEST
 	test -z "$(FADETEST)" || echo on > disc-replay/AlephOne/FADETEST
 	test -z "$(STATICTEST)" || echo on > disc-replay/AlephOne/STATICTEST
 	test -z "$(SAVETEST)" || echo on > disc-replay/AlephOne/SAVETEST
+	test -z "$(UPLOADTEST)" || echo on > disc-replay/AlephOne/UPLOADTEST
 	$(MKDCDISC) -e $(TARGET) -d disc-replay/AlephOne -o alephone-$(BUILD_TAG)-replay$(REPLAY_SUFFIX).cdi \
 		-s $(DISCSERIAL) -n "$(DISCNAME) $(BUILD_TAG)" -a "$(DISCAUTH)" -N
 

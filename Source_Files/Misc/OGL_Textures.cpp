@@ -79,6 +79,7 @@ June 14, 2001 (Loren Petrich):
 #include "collection_definition.h"
 #ifdef DC
 // For the GL_*_TEXTURE_MEMORY_KOS queries used in PlaceTexture.
+#include <unistd.h>
 #include <GL/glkos.h>
 #include "dc_vq_sprites.h"
 extern "C" int pvr_wait_ready(void);
@@ -219,6 +220,18 @@ static CollBitmapTextureState* TextureStateSets[OGL_NUMBER_OF_TEXTURE_TYPES][MAX
 static unsigned DC_TextureFrame = 1;
 static const GLint DC_VRAM_LOW_WATER = 1024 * 1024;
 static const GLint DC_VRAM_HIGH_WATER = 1536 * 1024;
+static GLint DC_RequestedTextureBytes = 0;
+
+// GLdc's allocation fallback compacts immediately, even with polygons queued.
+// Refuse that path; retry after the frame-boundary eviction/compaction instead.
+bool OGL_TextureAllocationFits(unsigned bytes)
+{
+	GLint contiguous = 0;
+	glGetIntegerv(GL_FREE_CONTIGUOUS_TEXTURE_MEMORY_KOS, &contiguous);
+	if (bytes <= (unsigned)MAX(contiguous, 0)) return true;
+	DC_RequestedTextureBytes = MAX(DC_RequestedTextureBytes, (GLint)bytes);
+	return false;
+}
 
 void OGL_TextureFrameStart()
 {
@@ -229,8 +242,13 @@ void OGL_TextureFrameStart()
 	glGetIntegerv(GL_FREE_TEXTURE_MEMORY_KOS, &FreeVRAM);
 	GLint Contiguous = 0;
 	glGetIntegerv(GL_FREE_CONTIGUOUS_TEXTURE_MEMORY_KOS, &Contiguous);
-	if (FreeVRAM >= DC_VRAM_LOW_WATER && Contiguous >= DC_VRAM_LOW_WATER)
+	const GLint Required = MAX(DC_VRAM_LOW_WATER, DC_RequestedTextureBytes);
+	const GLint Target = MAX(DC_VRAM_HIGH_WATER, Required);
+	if (FreeVRAM >= Required && Contiguous >= Required)
+	{
+		DC_RequestedTextureBytes = 0;
 		return;
+	}
 
 	/* This is the uncommon slow path; do not serialize every frame. */
 	dc_trace(53, "vram lru: free=%d KB largest=%d KB; waiting for PVR",
@@ -244,7 +262,7 @@ void OGL_TextureFrameStart()
 	const GLint Before = FreeVRAM;
 	unsigned Evicted = 0;
 
-	while (FreeVRAM < DC_VRAM_HIGH_WATER)
+	while (FreeVRAM < Target)
 	{
 		TextureState *Oldest = NULL;
 		unsigned OldestAge = 0;
@@ -280,10 +298,11 @@ void OGL_TextureFrameStart()
 
 	// Compact while the lists are empty and the PVR is idle (see above).
 	glGetIntegerv(GL_FREE_CONTIGUOUS_TEXTURE_MEMORY_KOS, &Contiguous);
-	if (Contiguous < DC_VRAM_LOW_WATER) {
+	if (Contiguous < Required) {
 		glDefragmentTextureMemory_KOS();
 		glGetIntegerv(GL_FREE_CONTIGUOUS_TEXTURE_MEMORY_KOS, &Contiguous);
 	}
+	if (Contiguous >= Required) DC_RequestedTextureBytes = 0;
 	dc_trace(53, "vram lru: evicted %u, %d -> %d KB free, largest=%d KB",
 	         Evicted, (int)(Before/1024), (int)(FreeVRAM/1024), (int)(Contiguous/1024));
 }
@@ -529,14 +548,29 @@ bool TextureManager::Setup()
 	 *	Static -- a teleporting object, the compiler's shot landing -- is a
 	 *	texture whose opaque texels are noise, rebuilt every frame so the noise
 	 *	moves (see StoreSourceRow). The PowerVR has no logic ops or stipple, so
-	 *	the desktop renderer's flicker has to live in the texels. The previous
-	 *	frame's texture is deleted here while that frame may still be sampling
-	 *	it; a frame of the wrong noise in a noise sprite is not visible.
+	 *	the desktop renderer's flicker has to live in the texels.
+	 *
+	 *	The texture object is kept and re-uploaded in place, not deleted and
+	 *	recreated: glTexImage2D onto an existing GLdc texture of the same size
+	 *	writes into the same VRAM block, so nothing is freed while a polygon
+	 *	already queued this frame -- another object using this bitmap, say --
+	 *	still holds the address. A frame that is still sampling the block gets
+	 *	the next frame's noise, which in a noise sprite is not visible. No
+	 *	deletes, so no waiting on the PVR at the frame boundary either.
 	 */
 	StaticNoise = (TransferMode == _static_transfer);
-	if (StaticNoise) CTState.Reset();
+	if (StaticNoise && CTState.IsUsed)
+	{
+		CTState.IDsInUse[TextureState::Normal] = false;
+		CTState.IDsInUse[TextureState::Glowing] = false;
+	}
 #endif
-	if (!CTState.IsUsed)
+	if (!CTState.IsUsed
+#ifdef DC
+	    || !CTState.IDsInUse[TextureState::Normal]
+	    || (CTState.IsGlowing && !CTState.IDsInUse[TextureState::Glowing])
+#endif
+	   )
 	{
 		// Initial sprite scale/offset
 		U_Scale = V_Scale = 1;
@@ -1434,12 +1468,24 @@ uint32 *TextureManager::Shrink(uint32 *Buffer)
 
 // This places a texture into the OpenGL software and gives it the right
 // mapping attributes
-void TextureManager::PlaceTexture(uint32 *Buffer, bool Glowing)
+bool TextureManager::PlaceTexture(uint32 *Buffer, bool Glowing)
 {
 
 	TxtrTypeInfoData& TxtrTypeInfo = TxtrTypeInfoList[TextureType];
 
 #ifdef DC
+	// Emulator-only fault injection: fail one upload, then observe the same
+	// texture state succeeding on a later draw. Never staged in hardware images.
+	static int UploadTest = -1;
+	static TextureState *FailedTestState = NULL;
+	if (UploadTest < 0) UploadTest = access("/cd/AlephOne/UPLOADTEST", F_OK) == 0;
+	if (UploadTest == 1)
+	{
+		UploadTest = 2;
+		FailedTestState = TxtrStatePtr;
+		dc_trace(39, "upload-test: injected failure");
+		return false;
+	}
 	/*
 	 * These blobs are already ARGB4444, VQ-compressed and twiddled for the
 	 * PowerVR. GLdc copies them directly into its texture pool. Dimensions are
@@ -1449,6 +1495,17 @@ void TextureManager::PlaceTexture(uint32 *Buffer, bool Glowing)
 	if (UseVQPack && dc_vq_sprite_upload(Collection, CTable, Bitmap, Glowing,
 	                                    LoadedWidth, LoadedHeight))
 		goto texture_uploaded;
+
+	// PVR true-colour textures are 16-bit. Mip generation can need the old
+	// base allocation and the new 4/3-size chain simultaneously; reserve both.
+	if (!OGL_TextureAllocationFits((unsigned)LoadedWidth * LoadedHeight *
+	    ((TxtrTypeInfo.FarFilter == GL_NEAREST ||
+	      TxtrTypeInfo.FarFilter == GL_LINEAR) ? 2u : 5u)))
+	{
+		dc_trace(39, "txtr: deferred %dx%d upload until safe compaction",
+		         LoadedWidth, LoadedHeight);
+		return false;
+	}
 
 	/* A failed pack read/upload remains recoverable through the old path. */
 	if (!Buffer)
@@ -1501,6 +1558,12 @@ texture_uploaded:
 		if (error || uploads == 1 || uploads % 25 == 0)
 			dc_trace(39, "txtr: %u uploads; %dx%d type=%d error=%04x free=%d KB",
 			         uploads, LoadedWidth, LoadedHeight, TextureType, error, available/1024);
+		if (error != GL_NO_ERROR) return false;
+		if (FailedTestState == TxtrStatePtr)
+		{
+			dc_trace(39, "upload-test: failed texture recovered");
+			FailedTestState = NULL;
+		}
 	}
 #endif
 	
@@ -1533,6 +1596,7 @@ texture_uploaded:
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP);
 		break;
 	}
+	return true;
 }
 
 
@@ -1550,7 +1614,7 @@ void TextureManager::RenderNormal()
 #else
 		assert(NormalBuffer);
 #endif
-		PlaceTexture(NormalBuffer, false);
+		TxtrStatePtr->IDsInUse[TextureState::Normal] = PlaceTexture(NormalBuffer, false);
 	}
 }
 
@@ -1564,7 +1628,7 @@ void TextureManager::RenderGlowing()
 #else
 		assert(GlowBuffer);
 #endif
-		PlaceTexture(GlowBuffer, true);
+		TxtrStatePtr->IDsInUse[TextureState::Glowing] = PlaceTexture(GlowBuffer, true);
 	}
 }
 

@@ -13,6 +13,7 @@
 #include "dc_vq_sprites.h"
 
 extern "C" void dc_trace(int slot, const char *fmt, ...);
+extern bool OGL_TextureAllocationFits(unsigned bytes);
 
 namespace
 {
@@ -157,6 +158,8 @@ bool dc_vq_sprite_upload(unsigned collection, unsigned clut, unsigned bitmap,
 	const PackEntry *entry = matching_entry(collection, clut, bitmap, glowing,
 	                                        width, height);
 	if (!entry)
+		return false;
+	if (!OGL_TextureAllocationFits(entry->size))
 		return false;
 
 	/*

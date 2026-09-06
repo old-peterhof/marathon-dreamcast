@@ -167,7 +167,7 @@ class TextureManager
 	uint32 *Shrink(uint32 *Buffer);
 	
 	// This si for placing a texture in OpenGL
-	void PlaceTexture(uint32 *Buffer, bool Glowing);
+	bool PlaceTexture(uint32 *Buffer, bool Glowing);
 	
 public:
 

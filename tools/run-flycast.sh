@@ -2,7 +2,9 @@
 #
 # run-flycast.sh -- launch a disc image in Flycast, retrying past its startup bug.
 #
-#   tools/run-flycast.sh <disc.cdi> <logfile> [settle-seconds]
+#   tools/run-flycast.sh <disc.cdi> <logfile> [settle-seconds] [monitor-seconds]
+# A nonzero monitor duration keeps the launcher attached and reports an early
+# emulator exit. Inspect gameplay traces as well: process liveness is not a pass.
 #
 # Flycast on macOS fails to initialise roughly half the time with
 #
@@ -25,6 +27,7 @@ set -u
 DISC="${1:?usage: run-flycast.sh <disc.cdi> <logfile> [settle-seconds]}"
 LOG="${2:?usage: run-flycast.sh <disc.cdi> <logfile> [settle-seconds]}"
 SETTLE="${3:-8}"
+MONITOR="${4:-0}"
 BIN=/Applications/Flycast.app/Contents/MacOS/Flycast
 ATTEMPTS=15
 
@@ -40,6 +43,21 @@ for attempt in $(seq 1 $ATTEMPTS); do
 
 	if kill -0 "$pid" 2>/dev/null; then
 		echo "flycast running (pid $pid, attempt $attempt)"
+		if [ "$MONITOR" -gt 0 ]; then
+			deadline=$((SECONDS + MONITOR))
+			while [ "$SECONDS" -lt "$deadline" ]; do
+				if ! kill -0 "$pid" 2>/dev/null; then
+					wait "$pid"
+					status=$?
+					echo "Flycast exited during monitoring (status $status)" >&2
+					exit 1
+				fi
+				sleep 1
+			done
+			echo "monitor duration reached; stopping test PID $pid"
+			kill "$pid"
+			wait "$pid" 2>/dev/null || true
+		fi
 		exit 0
 	fi
 
