@@ -42,9 +42,14 @@ typedef struct {
 	int          blocks;		/* what it costs on the card */
 } dc_save_info_t;
 
-/* Restore every save on the card into the ramdisk, and build the slot table.
-   Called once at start-up, before Aleph One looks at saved_games_dir. */
+/* Build the slot table from the headers of every save on the card. Called once
+   at start-up, after the Maple scan has attached the card. The saves stay on
+   the card until one is chosen. */
 void dc_vmu_load_saves(const char *ram_dir, const char *map_path);
+
+/* Decompress one slot's save into the ramdisk for the loader, dropping any
+   other slot's copy so at most one is resident. Returns 1 when it is there. */
+int  dc_vmu_restore_slot(int slot);
 
 /* Mirror one freshly written save to the card. Pass target_slot 0 to keep the
    old behaviour of matching by name. */

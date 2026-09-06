@@ -325,7 +325,7 @@ void dc_manage_saves(void)
 			snprintf(path, sizeof path, "/ram/%s", info[slot - 1].ram_name);
 			file = path;
 
-			if (!load_and_start_game(file)) {
+			if (!dc_vmu_restore_slot(slot) || !load_and_start_game(file)) {
 				dc_alert_text("COULD NOT LOAD",
 				              "That saved game would not open.",
 				              "It may have been written by another build.");
@@ -361,7 +361,7 @@ bool dc_continue_newest_game(void)
 	snprintf(path, sizeof path, "/ram/%s", info[slot - 1].ram_name);
 	file = path;
 
-	return load_and_start_game(file);
+	return dc_vmu_restore_slot(slot) && load_and_start_game(file);
 }
 
 bool dc_have_any_save(void)

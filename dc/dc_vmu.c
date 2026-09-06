@@ -591,6 +591,119 @@ const char *dc_vmu_slot_ram_name(int slot)
  *	the four-slot interface. They are logged so that is visible rather than
  *	mysterious.
  */
+static char saves_ram_dir[64] = "/ram";
+static char saves_map_path[128];
+
+/*
+ *	Decompress and unfold one save from the card into the ramdisk, where the
+ *	game's loader expects it. Called when the player picks a slot, not at boot:
+ *	a save is 215 KB unfolded, and holding every slot's copy in RAM for the
+ *	whole session cost 430 KB of heap for two saves before it was noticed.
+ *	Any other slot's ramdisk copy is dropped first, so at most one is resident.
+ */
+static int restore_slot_file(const char *unit, int card_slot, const char *ram_name)
+{
+	char src[80], dst[160];
+	uint8_t hdr[SAVE_HDR_MAX], flags;
+	uint32_t raw_len, stored_len;
+	dc_save_info_t info;
+	int level = 0, hdr_len, ok = 0;
+	FILE *in, *out;
+	uint8_t *stored, *raw;
+
+	snprintf(src, sizeof src, "%s/AOSAVE%02d.SAV", unit, card_slot);
+	in = fopen(src, "rb");
+	if (!in)
+		return 0;
+	if (fread(hdr, 1, SAVE_HDR_MAX, in) < SAVE_HDR_V1_LEN) {
+		fclose(in);
+		return 0;
+	}
+	hdr_len = save_hdr_get(hdr, &raw_len, &stored_len, &flags, &level, &info);
+	if (!hdr_len || raw_len == 0 || stored_len == 0 ||
+	    stored_len > 256 * 1024 || raw_len > 4 * 1024 * 1024 ||
+	    fseek(in, hdr_len, SEEK_SET) != 0) {
+		fclose(in);
+		return 0;
+	}
+	stored = malloc(stored_len);
+	if (!stored) {
+		fclose(in);
+		return 0;
+	}
+	if (fread(stored, 1, stored_len, in) != stored_len) {
+		free(stored);
+		fclose(in);
+		return 0;
+	}
+	fclose(in);
+
+	if (flags & SAVE_FLAG_ZLIB) {
+		uLongf out_len = raw_len;
+		raw = malloc(raw_len);
+		if (!raw) {
+			free(stored);
+			return 0;
+		}
+		if (uncompress(raw, &out_len, stored, stored_len) != Z_OK || out_len != raw_len) {
+			dc_trace(17, "vmu: %s failed to decompress", ram_name);
+			free(raw);
+			free(stored);
+			return 0;
+		}
+		free(stored);
+	} else {
+		raw = stored;
+	}
+
+	/* Unfold against the level, which is the same XOR that folded it. */
+	if ((flags & SAVE_FLAG_DELTA) &&
+	    dc_wad_xor_level(raw, (long)raw_len, saves_map_path, level) < 0) {
+		dc_trace(17, "vmu: %s needs level %d, which could not be read", ram_name, level);
+		free(raw);
+		return 0;
+	}
+
+	snprintf(dst, sizeof dst, "%s/%s", saves_ram_dir, ram_name);
+	out = fopen(dst, "wb");
+	if (out) {
+		ok = fwrite(raw, 1, raw_len, out) == raw_len;
+		fclose(out);
+	}
+	free(raw);
+	return ok;
+}
+
+int dc_vmu_restore_slot(int slot)
+{
+	char path[160];
+	int i;
+
+	if (slot < 1 || slot > DC_SAVE_SLOTS || !slots[slot - 1].used)
+		return 0;
+
+	for (i = 0; i < DC_SAVE_SLOTS; i++) {
+		if (i == slot - 1 || !slots[i].used)
+			continue;
+		snprintf(path, sizeof path, "%s/%s", saves_ram_dir, slots[i].ram_name);
+		remove(path);
+	}
+
+	/* Already in the ramdisk -- just saved, or loaded a moment ago. */
+	snprintf(path, sizeof path, "%s/%s", saves_ram_dir, slots[slot - 1].ram_name);
+	if (access(path, F_OK) == 0)
+		return 1;
+
+	if (!slot_card[slot - 1] || !slot_unit[slot - 1][0])
+		return 0;
+
+	if (!restore_slot_file(slot_unit[slot - 1], slot_card[slot - 1], slots[slot - 1].ram_name))
+		return 0;
+
+	dc_trace(17, "vmu: restored slot %d from %s", slot, slot_unit[slot - 1]);
+	return 1;
+}
+
 void dc_vmu_load_saves(const char *ram_dir, const char *map_path)
 {
 	char unit[32];
@@ -604,6 +717,8 @@ void dc_vmu_load_saves(const char *ram_dir, const char *map_path)
 	memset(slots, 0, sizeof slots);
 	memset(slot_card, 0, sizeof slot_card);
 	highest_seq = 0;
+	snprintf(saves_ram_dir, sizeof saves_ram_dir, "%s", ram_dir);
+	snprintf(saves_map_path, sizeof saves_map_path, "%s", map_path ? map_path : "");
 
 	dir = opendir("/vmu");
 	if (!dir)
@@ -619,14 +734,12 @@ void dc_vmu_load_saves(const char *ram_dir, const char *map_path)
 	snprintf(unit, sizeof unit, "/vmu/%s", de->d_name);
 
 	for (slot = 1; slot <= SAVE_SLOTS; slot++) {
-		char src[80], dst[160];
+		char src[80];
 		uint8_t hdr[SAVE_HDR_MAX], flags;
 		uint32_t raw_len, stored_len;
 		dc_save_info_t info;
 		int level = 0, hdr_len;
-		FILE *in, *out;
-		uint8_t *stored, *raw;
-		size_t got;
+		FILE *in;
 
 		snprintf(src, sizeof src, "%s/AOSAVE%02d.SAV", unit, slot);
 
@@ -657,63 +770,8 @@ void dc_vmu_load_saves(const char *ram_dir, const char *map_path)
 			continue;
 		}
 
-		if (fseek(in, hdr_len, SEEK_SET) != 0) {
-			fclose(in);
-			continue;
-		}
-
-		stored = malloc(stored_len);
-		if (!stored) {
-			fclose(in);
-			continue;
-		}
-
-		got = fread(stored, 1, stored_len, in);
 		fclose(in);
-
-		if (got != stored_len) {
-			free(stored);
-			continue;
-		}
-
-		if (flags & SAVE_FLAG_ZLIB) {
-			uLongf out_len = raw_len;
-
-			raw = malloc(raw_len);
-			if (!raw) {
-				free(stored);
-				continue;
-			}
-
-			if (uncompress(raw, &out_len, stored, stored_len) != Z_OK ||
-			    out_len != raw_len) {
-				dc_trace(17, "vmu: %s failed to decompress", info.ram_name);
-				free(raw);
-				free(stored);
-				continue;
-			}
-
-			free(stored);
-		} else {
-			raw = stored;
-		}
-
-		/* Unfold against the level, which is the same XOR that folded it. */
-		if (flags & SAVE_FLAG_DELTA) {
-			if (dc_wad_xor_level(raw, (long)raw_len, map_path, level) < 0) {
-				dc_trace(17, "vmu: %s needs level %d, which could not be read",
-				         info.ram_name, level);
-				free(raw);
-				continue;
-			}
-		}
-
-		snprintf(dst, sizeof dst, "%s/%s", ram_dir, info.ram_name);
-		out = fopen(dst, "wb");
-		if (out) {
-			fwrite(raw, 1, raw_len, out);
-			fclose(out);
-			restored++;
+		restored++;
 
 			if (taken < DC_SAVE_SLOTS) {
 				info.slot = taken + 1;
@@ -731,9 +789,6 @@ void dc_vmu_load_saves(const char *ram_dir, const char *map_path)
 			} else {
 				spilled++;
 			}
-		}
-
-		free(raw);
 	}
 
 	}
@@ -741,7 +796,7 @@ void dc_vmu_load_saves(const char *ram_dir, const char *map_path)
 	closedir(dir);
 
 	if (restored)
-		dc_trace(17, "vmu: restored %d saved game(s), %d in slots", restored, taken);
+		dc_trace(17, "vmu: %d saved game(s) on the card, %d in slots", restored, taken);
 
 	if (spilled)
 		dc_trace(17, "vmu: %d save(s) past slot %d are on the card but not "
