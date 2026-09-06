@@ -430,9 +430,13 @@ free and largest-block figures before and after, slot 62 reports level, tick,
 health, heap top and VRAM once a second, and slot 63 reports the allocator's live
 and reusable bytes and the PVR vertex buffer's peak.
 
-Not yet measured on a console: the pack means a GD-ROM read the first time each
-sprite frame appears. The reads are sector aligned at both ends, which is what
-made collection loading fast, but a physical drive seeks and Flycast does not.
+The pack means a GD-ROM read the first time each sprite frame appears. Those
+reads go through `dc_read_file_span()` like collections and sounds: sector
+aligned at both ends, one transfer per frame. They were stdio reads until b81,
+which meant newlib's 1 KB buffer and one GD-ROM command per sector; the first
+seconds of every level ran at 1-3 fps while monsters appeared. In Flycast a
+thousand frame reads now total about 150 ms. Not yet measured on a console,
+where a physical drive seeks and Flycast does not.
 
 ## Working on this code
 

@@ -316,6 +316,13 @@ synchronised at the end of the session.
   2026-09-06-audit/static-{quarter,half,budget4k}.png`.
 - Item 4's save/load round trip is done; films, heap and map were covered
   overnight. Hardware remains untested.
+- **Moving gameplay, measured** (the audit asked for it): b80 soaked films 21,
+  8, 2, 5, 11, 16, 19, 24, no fatals, no failed uploads, heap tops within the
+  b78 envelope. The fps traces showed 3-7 seconds at 1-3 fps after every level
+  start on films 2 and 5. The VQ sprite pack was still read through stdio, one
+  GD-ROM command per sector per new sprite frame; `5540eb5` routes it through
+  `dc_read_file_span()`. Film 2: 21 sub-10 fps seconds of 279 before, 7 of 284
+  after, all of them the load second. Build b81 "vqspan".
 - **Saves now stay on the card until chosen.** With the restore working, boot
   decompressed every save into the ramdisk and kept it: 430 KB live for two
   saves on level 21 (heap top 0x8cf06000 at the reload). The boot scan reads
