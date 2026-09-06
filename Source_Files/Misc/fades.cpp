@@ -201,7 +201,7 @@ static void dc_tint_add(const struct rgb_color *colour, _fixed opacity)
  *	What to blend over the world, as 0-255. Returns false when there is nothing
  *	to do, which is almost every frame.
  */
-extern "C" bool dc_fade_tint(int *r, int *g, int *b, int *alpha)
+extern "C" int dc_fade_tint(int *r, int *g, int *b, int *alpha)
 {
 	if (dc_tint_alpha <= 0)
 		return false;

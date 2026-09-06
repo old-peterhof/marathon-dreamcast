@@ -82,6 +82,7 @@ June 14, 2001 (Loren Petrich):
 #include <GL/glkos.h>
 #include "dc_vq_sprites.h"
 extern "C" int pvr_wait_ready(void);
+extern "C" int pvr_wait_render_done(void);
 #endif
 
 #include "OGL_Setup.h"
@@ -105,27 +106,6 @@ struct TxtrTypeInfoData
 
 
 static TxtrTypeInfoData TxtrTypeInfoList[OGL_NUMBER_OF_TEXTURE_TYPES];
-
-#ifdef DC
-/*
- *	While set, TextureManager uses full resolution regardless of the texture
- *	type's configured Resolution.
- *
- *	The HUD has no texture type of its own -- HUD_OGL_Class::DrawShape and
- *	DrawShapeAtXY both borrow OGL_Txtr_WeaponsInHand -- and shell_sdl.cpp forces
- *	Resolution 1 on every type, which b74 did on purpose after b73 ran out of
- *	VRAM with full-resolution sprites. So the HUD's own graphics were uploaded
- *	at half size and then drawn across geometry sized from Texture->width, the
- *	original dimensions. A half-resolution texture stretched over a full-size
- *	quad, with GL_LINEAR on top: that is the blurry motion sensor.
- *
- *	The weapon sprites keep their half resolution, which is where the VRAM went;
- *	only the HUD's shapes are exempted. Cached per (collection, bitmap, type),
- *	and the HUD's bitmaps are not the weapon-in-hand ones, so the two do not
- *	fight over one cache entry.
- */
-bool DC_ForceFullResolution = false;
-#endif
 
 
 // Infravision: use algorithm (red + green + blue)/3 to compose intensity,
@@ -221,9 +201,20 @@ static CollBitmapTextureState* TextureStateSets[OGL_NUMBER_OF_TEXTURE_TYPES][MAX
 /*
  * Keep a deliberate reserve rather than waiting for GLdc allocation failure.
  * A full-resolution raw fallback with a glow map can require hundreds of KiB
- * in one frame. Eviction happens only before that frame starts and only after
- * pvr_wait_ready(), because queued GLdc vertices contain direct VRAM texture
- * addresses and glDeleteTextures releases the allocation immediately.
+ * in one frame, and a full sky is 1 MB that has to be contiguous.
+ *
+ * Deleting or moving a texture is only safe while nothing refers to its
+ * address. GLdc holds a frame's polygons in RAM, texture addresses included,
+ * until glKosSwapBuffers submits them; the PVR then samples those textures
+ * while it renders. So this runs at the start of a frame, when the RAM lists
+ * are empty, and waits for the PVR: pvr_wait_ready() returns as soon as the
+ * last scene has *started* rendering (KOS clears ta_busy at that moment), so
+ * pvr_wait_render_done() is the call that means the hardware is idle. Both
+ * are cheap when nothing is pending and this path is rare.
+ *
+ * GLdc's own defrag, the one it runs when an allocation fails mid-frame, has
+ * neither guarantee: it updates texture objects but not the addresses already
+ * in the RAM lists. The reserve exists so it never needs to run.
  */
 static unsigned DC_TextureFrame = 1;
 static const GLint DC_VRAM_LOW_WATER = 1024 * 1024;
@@ -236,15 +227,17 @@ void OGL_TextureFrameStart()
 
 	GLint FreeVRAM = 0;
 	glGetIntegerv(GL_FREE_TEXTURE_MEMORY_KOS, &FreeVRAM);
-	if (FreeVRAM >= DC_VRAM_LOW_WATER)
+	GLint Contiguous = 0;
+	glGetIntegerv(GL_FREE_CONTIGUOUS_TEXTURE_MEMORY_KOS, &Contiguous);
+	if (FreeVRAM >= DC_VRAM_LOW_WATER && Contiguous >= DC_VRAM_LOW_WATER)
 		return;
 
 	/* This is the uncommon slow path; do not serialize every frame. */
-	dc_trace(53, "vram lru: low-water at %d KB; waiting for PVR",
-	         (int)(FreeVRAM/1024));
-	if (pvr_wait_ready() < 0)
+	dc_trace(53, "vram lru: free=%d KB largest=%d KB; waiting for PVR",
+	         (int)(FreeVRAM/1024), (int)(Contiguous/1024));
+	if (pvr_wait_ready() < 0 || pvr_wait_render_done() < 0)
 	{
-		/* Never free storage that a scene may still be sampling. */
+		/* Never free or move storage that a render may still be sampling. */
 		dc_trace(53, "vram lru: PVR wait timed out; eviction deferred");
 		return;
 	}
@@ -271,7 +264,7 @@ void OGL_TextureFrameStart()
 						TextureState& State = Set[ib].CTStates[is];
 						if (!State.IsUsed) continue;
 						const unsigned Age = DC_TextureFrame - State.LastUsedFrame;
-						/* Last frame may still be referenced by GLdc/PVR. */
+						/* What was just drawn is about to be drawn again. */
 						if (Age <= 1 || Age <= OldestAge) continue;
 						Oldest = &State;
 						OldestAge = Age;
@@ -285,8 +278,14 @@ void OGL_TextureFrameStart()
 		glGetIntegerv(GL_FREE_TEXTURE_MEMORY_KOS, &FreeVRAM);
 	}
 
-	dc_trace(53, "vram lru: evicted %u, %d -> %d KB free",
-	         Evicted, (int)(Before/1024), (int)(FreeVRAM/1024));
+	// Compact while the lists are empty and the PVR is idle (see above).
+	glGetIntegerv(GL_FREE_CONTIGUOUS_TEXTURE_MEMORY_KOS, &Contiguous);
+	if (Contiguous < DC_VRAM_LOW_WATER) {
+		glDefragmentTextureMemory_KOS();
+		glGetIntegerv(GL_FREE_CONTIGUOUS_TEXTURE_MEMORY_KOS, &Contiguous);
+	}
+	dc_trace(53, "vram lru: evicted %u, %d -> %d KB free, largest=%d KB",
+	         Evicted, (int)(Before/1024), (int)(FreeVRAM/1024), (int)(Contiguous/1024));
 }
 #endif
 
@@ -298,12 +297,18 @@ void OGL_StartTextures()
 	for (int it=0; it<OGL_NUMBER_OF_TEXTURE_TYPES; it++)
 		for (int ic=0; ic<MAXIMUM_COLLECTIONS; ic++)
 		{
+#ifdef DC
+			// Most collections are only rendered through one texture type.
+			// Allocate their accounting when that type first uses them.
+			TextureStateSets[it][ic] = NULL;
+#else
 			bool CollectionPresent = is_collection_present(ic);
 			short NumberOfBitmaps =
 				CollectionPresent ? get_number_of_collection_bitmaps(ic) : 0;
 			TextureStateSets[it][ic] =
 				(CollectionPresent && NumberOfBitmaps) ?
 					(new CollBitmapTextureState[NumberOfBitmaps]) : 0;
+#endif
 		}
 	
 	// Initialize the texture-type info
@@ -374,7 +379,10 @@ void OGL_StopTextures()
 	// Clear the texture accounting
 	for (int it=0; it<OGL_NUMBER_OF_TEXTURE_TYPES; it++)
 		for (int ic=0; ic<MAXIMUM_COLLECTIONS; ic++)
-			if (TextureStateSets[it][ic]) delete []TextureStateSets[it][ic];
+		{
+			delete []TextureStateSets[it][ic];
+			TextureStateSets[it][ic] = NULL;
+		}
 }
 
 
@@ -493,6 +501,14 @@ bool TextureManager::Setup()
 	
 	// Get the texture-state info: first, per-collection, then per-bitmap
 	CollBitmapTextureState *CBTSList = TextureStateSets[TextureType][Collection];
+#ifdef DC
+	if (!CBTSList && is_collection_present(Collection)) {
+		const int Count = get_number_of_collection_bitmaps(Collection);
+		if (Count <= 0 || Bitmap < 0 || Bitmap >= Count) return false;
+		CBTSList = new CollBitmapTextureState[Count];
+		TextureStateSets[TextureType][Collection] = CBTSList;
+	}
+#endif
 	if (CBTSList == NULL) return false;
 	CollBitmapTextureState& CBTS = CBTSList[Bitmap];
 	
@@ -564,11 +580,7 @@ bool TextureManager::Setup()
 		}
 		
 		// Display size: may be shrunk
-#ifdef DC
-		const int TxtrRes = DC_ForceFullResolution ? 0 : TxtrTypeInfo.Resolution;
-#else
 		const int TxtrRes = TxtrTypeInfo.Resolution;
-#endif
 		LoadedWidth = MAX(TxtrWidth >> TxtrRes, 1);
 		LoadedHeight = MAX(TxtrHeight >> TxtrRes, 1);
 
@@ -1110,10 +1122,21 @@ static void FlushAccumRow(uint32 *Buffer, int LoadedW, int Row,
 static void StoreSourceRow(uint32 *Buffer, uint32 *Acc, int& AccRow,
 	int LoadedW, int LoadedH, int XShift, int YShift,
 	unsigned BlockPixels, bool Reduce,
-	int oy, int ox, int Count, const byte *Src, const uint32 *ColorTable)
+	int oy, int ox, int Count, const byte *Src, const uint32 *ColorTable,
+	bool Packed)
 {
 	if (!Reduce)
 	{
+		if (Packed) {
+			uint16 *Dest = (uint16 *)Buffer + (size_t)oy*LoadedW + ox;
+			for (int w=0; w<Count; ++w) {
+				const uint8 *p = (const uint8 *)&ColorTable[*(Src++)];
+				// Exactly GLdc's RGBA8888 -> ARGB4444 conversion.
+				*(Dest++) = ((p[3]&0xf0)<<8) | ((p[0]&0xf0)<<4) |
+				             (p[1]&0xf0) | (p[2]>>4);
+			}
+			return;
+		}
 		uint32 *Dest = Buffer + (size_t)oy*LoadedW + ox;
 		for (int w=0; w<Count; w++)
 			*(Dest++) = ColorTable[*(Src++)];
@@ -1162,12 +1185,19 @@ uint32 *TextureManager::GetOGLTexture(uint32 *ColorTable)
 	while ((int(TxtrHeight) >> YShift) > LoadedH) YShift++;
 	
 	const bool Reduce = (XShift != 0 || YShift != 0);
+	bool Packed = false;
+#ifdef DC
+	// A stock full-size sky needs no RGBA staging image. Preserve every texel
+	// in the same 16-bit representation the PVR would receive from GLdc.
+	Packed = PackedLandscape = !Reduce && TextureType == OGL_Txtr_Landscape;
+#endif
 	const unsigned BlockPixels = (1u << XShift) << YShift;
 	
 	// Allocate and set to black and transparent
 	int NumPixels = LoadedW*LoadedH;
-	uint32 *Buffer = new uint32[NumPixels];
-	objlist_clear(Buffer,NumPixels);
+	const int Words = Packed ? (NumPixels+1)/2 : NumPixels;
+	uint32 *Buffer = new uint32[Words];
+	objlist_clear(Buffer,Words);
 	
 	// Accumulator for the one destination row currently being built.
 	uint32 *Acc = Reduce ? new uint32[4*LoadedW] : NULL;
@@ -1239,7 +1269,7 @@ uint32 *TextureManager::GetOGLTexture(uint32 *ColorTable)
 			
 			StoreSourceRow(Buffer,Acc,AccRow,LoadedW,LoadedH,XShift,YShift,
 				BlockPixels,Reduce,OGLHeightOffset+h,OGLWidthOffset,Width,
-				OrigStrip,ColorTable);
+				OrigStrip,ColorTable,Packed);
 			horig++;
 		}
 	}
@@ -1265,7 +1295,7 @@ uint32 *TextureManager::GetOGLTexture(uint32 *ColorTable)
 			byte *OrigStrip = Texture->row_addresses[horig] + OrigWidthOffset;
 			StoreSourceRow(Buffer,Acc,AccRow,LoadedW,LoadedH,XShift,YShift,
 				BlockPixels,Reduce,OGLHeightOffset+h,OGLWidthOffset,Width,
-				OrigStrip,ColorTable);
+				OrigStrip,ColorTable,Packed);
 			horig++;
 		}
 	}
@@ -1370,81 +1400,21 @@ void TextureManager::PlaceTexture(uint32 *Buffer, bool Glowing)
 	}
 #endif
 
+	// Attribute errors to this upload, including the mipmapped path.
+#ifdef DC
+	while (glGetError() != GL_NO_ERROR) {}
+	if (PackedLandscape) {
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_ARGB4444_TWID_KOS,
+		             LoadedWidth, LoadedHeight, 0, GL_BGRA,
+		             GL_UNSIGNED_SHORT_4_4_4_4_REV, Buffer);
+		goto texture_uploaded;
+	}
+#endif
 	// Load the texture
 	switch(TxtrTypeInfo.FarFilter)
 	{
 	case GL_NEAREST:
 	case GL_LINEAR:
-	#ifdef DC
-	{
-		static int nupload = 0;
-		++nupload;
-		{
-			// Every upload, not every 25th: glGetError reports the first
-			// error since it was last called, so sampling drops all but
-			// one in 25 and the one it keeps is whichever came first.
-			GLenum UpErr = glGetError();
-			if (UpErr != GL_NO_ERROR)
-			{
-				GLint FreeNow = 0;
-				glGetIntegerv(GL_FREE_TEXTURE_MEMORY_KOS, &FreeNow);
-				dc_trace(48, "txtr: GL ERROR 0x%x on upload %d (%dx%d), vram %d KB free",
-				         (unsigned)UpErr, nupload,
-				         (int)LoadedWidth, (int)LoadedHeight, (int)(FreeNow/1024));
-			}
-		}
-		{
-			// Bytes uploaded per texture type. Everything is 2 bytes/texel
-			// (ARGB4444) today, so this is what each type actually occupies in
-			// the PVR's texture pool -- which is the budget that matters, since
-			// the RAM buffer is freed straight after the upload.
-			static unsigned TypeBytes[OGL_NUMBER_OF_TEXTURE_TYPES] = {0};
-			static int TypeCount[OGL_NUMBER_OF_TEXTURE_TYPES] = {0};
-			if (TextureType >= 0 && TextureType < OGL_NUMBER_OF_TEXTURE_TYPES)
-			{
-				TypeBytes[TextureType] += (unsigned)LoadedWidth*(unsigned)LoadedHeight*2;
-				TypeCount[TextureType]++;
-			}
-			if (nupload == 1)
-			{
-				// What is already gone before Aleph One uploads its first
-				// texture? The pool is ALLOC_SIZE and GLdc reports used as
-				// ALLOC_SIZE minus free, so a large figure here means the
-				// gap is not our textures at all.
-				GLint F0 = 0, U0 = 0;
-				glGetIntegerv(GL_FREE_TEXTURE_MEMORY_KOS, &F0);
-				glGetIntegerv(GL_USED_TEXTURE_MEMORY_KOS, &U0);
-				dc_trace(52, "vram baseline at first upload: %d KB used / %d KB free (pool %d KB)",
-				         (int)(U0/1024), (int)(F0/1024), (int)((U0+F0)/1024));
-			}
-			if ((nupload % 50) == 0)
-				dc_trace(51, "vram by type KB: wall %u (%d)  lscp %u (%d)  inhab %u (%d)  weap %u (%d)",
-				         TypeBytes[0]/1024, TypeCount[0], TypeBytes[1]/1024, TypeCount[1],
-				         TypeBytes[2]/1024, TypeCount[2], TypeBytes[3]/1024, TypeCount[3]);
-		}
-		if ((nupload % 25) == 0)
-		{
-			// Uploaded textures live in the PVR's 8MB of VRAM, not in the
-			// heap -- the RAM buffer is freed as soon as glTexImage2D has
-			// copied it. So texture resolution is a VRAM budget, and the
-			// heap figure beside it will not move when resolution changes.
-			// GLdc keeps the accounting; ask it.
-			GLint FreeVRAM = 0, UsedVRAM = 0;
-			glGetIntegerv(GL_FREE_TEXTURE_MEMORY_KOS, &FreeVRAM);
-			glGetIntegerv(GL_USED_TEXTURE_MEMORY_KOS, &UsedVRAM);
-			// GLdc does not abort when the texture pool is exhausted: it
-			// throws GL_OUT_OF_MEMORY and returns leaving texture->data
-			// NULL, and the PVR is then handed a null texture pointer.
-			// Say so loudly, because the symptom downstream is a crash a
-			// long way from the cause.
-
-			dc_trace(39, "txtr: %d uploaded, heap %u KB, vram %d KB used / %d KB free, last %dx%d",
-			         nupload, dc_heap_used() / 1024,
-			         (int)(UsedVRAM/1024), (int)(FreeVRAM/1024),
-			         (int)LoadedWidth, (int)LoadedHeight);
-		}
-	}
-#endif
 	glTexImage2D(GL_TEXTURE_2D, 0, TxtrTypeInfo.ColorFormat, LoadedWidth, LoadedHeight,
 			0, GL_RGBA, GL_UNSIGNED_BYTE, Buffer);
 		break;
@@ -1463,6 +1433,16 @@ void TextureManager::PlaceTexture(uint32 *Buffer, bool Glowing)
 
 #ifdef DC
 texture_uploaded:
+	{
+		static unsigned uploads = 0;
+		GLenum error = glGetError();
+		GLint available = 0;
+		glGetIntegerv(GL_FREE_TEXTURE_MEMORY_KOS, &available);
+		++uploads;
+		if (error || uploads == 1 || uploads % 25 == 0)
+			dc_trace(39, "txtr: %u uploads; %dx%d type=%d error=%04x free=%d KB",
+			         uploads, LoadedWidth, LoadedHeight, TextureType, error, available/1024);
+	}
 #endif
 	
 	// Set texture-mapping features
@@ -1547,6 +1527,7 @@ TextureManager::TextureManager()
 	TxtrOptsPtr = 0;
 #ifdef DC
 	UseVQPack = false;
+	PackedLandscape = false;
 #endif
 	
 	// Marathon default
@@ -1607,7 +1588,7 @@ void LoadModelSkin(ImageDescriptor& Image, short Collection, short CLUT)
 	
 	int TxtrWidth = Image.GetWidth();
 	int TxtrHeight = Image.GetHeight();
-	Buffer = Image.GetPixelBasePtr();
+	Buffer = (GLuint *)Image.GetPixelBasePtr();
 	
 	bool IsInfravision = (CLUT == INFRAVISION_BITMAP_SET);
 	bool IsSilhouette = (CLUT == SILHOUETTE_BITMAP_SET);
@@ -1649,11 +1630,7 @@ void LoadModelSkin(ImageDescriptor& Image, short Collection, short CLUT)
 	TxtrTypeInfoData& TxtrTypeInfo = TxtrTypeInfoList[OGL_Txtr_Inhabitant];
 
 	// Display size: may be shrunk
-#ifdef DC
-	const int TxtrRes = DC_ForceFullResolution ? 0 : TxtrTypeInfo.Resolution;
-#else
 	const int TxtrRes = TxtrTypeInfo.Resolution;
-#endif
 	int LoadedWidth = MAX(TxtrWidth >> TxtrRes, 1);
 	int LoadedHeight = MAX(TxtrHeight >> TxtrRes, 1);
 	

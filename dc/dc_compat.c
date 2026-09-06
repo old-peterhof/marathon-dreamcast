@@ -17,6 +17,7 @@
 
 #include <stdio.h>
 #include <stdint.h>
+#include <malloc.h>
 #include <unistd.h>
 #include <stdarg.h>
 #include <sys/stat.h>
@@ -163,4 +164,16 @@ unsigned dc_heap_top(void)
 void dc_heap_trace(int slot, const char *where)
 {
 	dc_trace(slot, "heap: %-18s %u KB", where, dc_heap_used() / 1024);
+}
+
+/*
+ *	dc_heap_top() is a high-water mark: freed blocks stay below it and are
+ *	reused. This is what is actually live, and what is free to reuse.
+ */
+void dc_memory_trace(void)
+{
+	if (!dc_trace_enabled()) return;
+	struct mallinfo heap = mallinfo();
+	dc_trace(63, "ram: live=%u KB reusable=%u KB",
+	         (unsigned)(heap.uordblks/1024), (unsigned)(heap.fordblks/1024));
 }

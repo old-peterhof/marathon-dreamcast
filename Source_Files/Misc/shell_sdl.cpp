@@ -434,66 +434,13 @@ static void initialize_application(void)
 				OGLData.TxtrConfigList[k].FarFilter = 1;
 			OGLData.TxtrConfigList[k].ColorFormat = 1;
 
-			// Full-size crisp sprites are paid for by the prebuilt native VQ
-			// pack and the bounded texture-residency cache. Environment art
-			// remains halved for this controlled first pass.
-			//
-			// b73 raised sprites and the weapon to full resolution. It
-			// renders correctly and it fits at level start, but it costs
-			// 1630 KB out of a texture pool of about 4.8MB, and textures
-			// keep loading as play continues. Measured: free VRAM fell to
-			// 270 KB by 125 uploads and the game then died to a black
-			// screen, on hardware and under Flycast alike. GLdc does not
-			// fail an upload loudly -- it returns with texture->data NULL
-			// and the PVR is handed a null pointer.
-			//
-			// That build had neither VQ nor eviction, and also predated the
-			// font-atlas work that reclaimed about 670 KB of baseline VRAM.
-			OGLData.TxtrConfigList[k].Resolution =
-				(k == OGL_Txtr_Inhabitant || k == OGL_Txtr_WeaponsInHand) ? 0 : 1;
+			OGLData.TxtrConfigList[k].Resolution = 0;
 		}
 
 		OGLData.Flags &= ~OGL_Flag_3D_Models;
 
-		// Real landscapes, not flat colours.
-		//
-		// OGL_Flag_FlatLand was set because converting a 1024x512 landscape
-		// needed 2MB for the full-size image plus 512KB for the reduced one,
-		// and on a 16MB machine that was the peak allocation of the level load.
-		// GetOGLTexture builds at the loaded size in one pass now, so that
-		// intermediate no longer exists -- see the note above the call in
-		// OGL_Textures.cpp. At Resolution 1 the landscape is 512x256, which is
-		// 256 KB of the texture pool, and deferring the overhead map's font
-		// atlases freed 736 KB.
-		//
-		// It matters because the flat fill is not a compromise on these levels,
-		// it is a hole: DefaultLscpColors gives "Moon" a black sky and "Outer
-		// Space" black for both halves, so every surface showing landscape
-		// rendered as flat black. Confirmed by painting the fake landscape
-		// magenta -- every black artifact in the level turned magenta.
-		//
-		// REVERTED, 2026-09-03. Clearing this to get real sky textures costs
-		// more heap than the machine has left. GetOGLTexture builds the
-		// landscape at its loaded size -- 512x256 RGBA is 512 KB -- and though
-		// that buffer is freed after the upload, the heap's high-water mark
-		// does not come back down, so sbrk cannot extend later. The pause menu
-		// then fails to allocate its 640x480x2 surface:
-		//
-		//   Out of memory. Requested sbrk_base 8d027000, was 8cf91000,
-		//   diff 614400          <- 640*480*2 exactly
-		//
-		// and retries forever, which freezes the game and then kills the sound.
-		// The flat fill is much less objectionable now that the landscape no
-		// longer writes depth (see RenderAsLandscape): the sky shows only
-		// through real openings instead of punching through walls, and on
-		// "Outer Space" a black sky is close to right anyway.
-		//
-		// To get real landscapes back, the peak allocation has to come down or
-		// move: quarter-resolution landscapes would make the intermediate
-		// 128 KB, and allocating the pause menu's surface once at startup --
-		// before the level load raises the high-water mark -- would take it out
-		// of the race entirely.
-		OGLData.Flags |= OGL_Flag_FlatLand;
+		// Native 16-bit staging keeps the original sky within the RAM budget.
+		OGLData.Flags &= ~OGL_Flag_FlatLand;
 	}
 #endif
 #ifdef DC
@@ -1076,6 +1023,8 @@ static int dc_autostart_mode(void)
 						mode = 4;
 					else if (strncmp(buf, "binds", 5) == 0)
 						mode = 5;
+					else if (strncmp(buf, "replay", 6) == 0)
+						mode = 6;
 				}
 				fclose(f);
 			}
@@ -1149,6 +1098,11 @@ static void main_event_loop(void)
 				} else if (mode == 5) {
 					dc_trace(2, "autostart: opening CONFIGURE CONTROLLER");
 					dc_pad_config();
+				} else if (mode == 6) {
+					extern bool handle_open_replay(FileSpecifier&);
+					FileSpecifier film = "/cd/AlephOne/TestFilm";
+					dc_trace(2, "autostart: replay TestFilm");
+					handle_open_replay(film);
 				} else {
 					dc_trace(2, "autostart: selecting iNewGame");
 					do_menu_item_command(mInterface, iNewGame, false);

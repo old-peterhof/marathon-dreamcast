@@ -101,7 +101,7 @@ Nov 26, 2000 (Loren Petrich):
 #include "Packing.h"
 
 #ifdef DC
-extern "C" void dc_vmu_save_game(const char *ram_path, const char *map_path, int level);
+#include "dc_vmu.h"
 extern "C" void dc_trace(int slot, const char *fmt, ...);
 #endif
 
@@ -1307,7 +1307,10 @@ bool save_game_file(FileSpecifier& File)
 	// made on, which is the difference between 163 blocks on a memory card and 22.
 	if (success)
 		dc_vmu_save_game(File.GetPath(), MapFileSpec.GetPath(),
-		                 dynamic_world->current_level_number);
+		                 dynamic_world->current_level_number,
+		                 static_world->level_name, dynamic_world->tick_count,
+		                 dynamic_world->game_information.difficulty_level,
+		                 dc_vmu_take_target_slot());
 #endif
 	
 	return success;

@@ -214,25 +214,8 @@ void HUD_OGL_Class::DrawShape(shape_descriptor shape, screen_rectangle *dest, sc
 	TMgr.IsShadeless = true;
 	TMgr.TransferMode = _shadeless_transfer;
 	TMgr.TextureType = OGL_Txtr_WeaponsInHand;
-#ifdef DC
-	/*
-	 *	Full resolution for the HUD's own graphics. The type is borrowed from
-	 *	the weapon sprites, whose half resolution is deliberate; see
-	 *	DC_ForceFullResolution in OGL_Textures.cpp. Cleared straight after
-	 *	Setup(), which is the only call that reads it.
-	 */
-	{
-		extern bool DC_ForceFullResolution;
-		DC_ForceFullResolution = true;
-		const bool SetupOK = TMgr.Setup();
-		DC_ForceFullResolution = false;
-		if (!SetupOK)
-			return;
-	}
-#else
 	if (!TMgr.Setup())
 		return;
-#endif
 
 	// Get dimensions
 	int orig_width = TMgr.Texture->width, orig_height = TMgr.Texture->height;
@@ -269,25 +252,8 @@ void HUD_OGL_Class::DrawShapeAtXY(shape_descriptor shape, short x, short y, bool
 	TMgr.IsShadeless = true;
 	TMgr.TransferMode = _shadeless_transfer;
 	TMgr.TextureType = OGL_Txtr_WeaponsInHand;
-#ifdef DC
-	/*
-	 *	Full resolution for the HUD's own graphics. The type is borrowed from
-	 *	the weapon sprites, whose half resolution is deliberate; see
-	 *	DC_ForceFullResolution in OGL_Textures.cpp. Cleared straight after
-	 *	Setup(), which is the only call that reads it.
-	 */
-	{
-		extern bool DC_ForceFullResolution;
-		DC_ForceFullResolution = true;
-		const bool SetupOK = TMgr.Setup();
-		DC_ForceFullResolution = false;
-		if (!SetupOK)
-			return;
-	}
-#else
 	if (!TMgr.Setup())
 		return;
-#endif
 
 	// Get dimensions
 	int width = TMgr.Texture->width, height = TMgr.Texture->height;

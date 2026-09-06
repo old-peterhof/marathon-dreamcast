@@ -295,6 +295,8 @@ void exit_screen(void)
 // display itself is the thing that is broken.
 extern "C" void dc_trace(int slot, const char *fmt, ...);
 extern "C" void dc_heap_trace(int slot, const char *where);
+extern "C" unsigned dc_heap_top(void);
+extern "C" void dc_memory_trace(void);
 extern "C" void dc_profiler_frame(void);
 // The row copy lives in dc/dc_blit.c, compiled as C: sh4zam's headers need C++11
 // and asm string forms this file cannot use under -std=gnu++98.
@@ -1000,6 +1002,14 @@ void render_screen(short ticks_elapsed)
 				dc_trace(47, "gl: polys=%d walls=%d setupfail=%d vecfail=%d",
 				         dc_gl_polys, dc_wall_calls, dc_wall_setup_fail, dc_wall_vec_fail);
 				dc_gl_polys = dc_wall_calls = dc_wall_setup_fail = dc_wall_vec_fail = 0;
+				GLint free_vram = 0, contiguous = 0;
+				glGetIntegerv(GL_FREE_TEXTURE_MEMORY_KOS, &free_vram);
+				glGetIntegerv(GL_FREE_CONTIGUOUS_TEXTURE_MEMORY_KOS, &contiguous);
+				dc_trace(62, "mem: level=%d tick=%ld hp=%d heap=%08x vram=%d KB largest=%d KB",
+				         dynamic_world->current_level_number, (long)dynamic_world->tick_count,
+				         local_player->suit_energy, dc_heap_top(),
+				         free_vram/1024, contiguous/1024);
+				dc_memory_trace();
 			}
 #endif
 			dc_frames = 0;

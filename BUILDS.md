@@ -48,3 +48,4 @@ to the engine clamp, and the VMU Profiler. Git history has the detail.
 | b34 | gl-full-link | e720ab5 | Whole GL renderer builds: textures, faders, HUD, fonts |
 | b35 | prefs-version | 730c268 | Reset stale DC settings; hi-res can no longer stick off |
 | b77 | gl-memory | c3d8fda | Sky depth, terminals, HUD, pause menu; sound cache capped; 2-table shading |
+| b78 | residency | 392978c | Full-resolution textures throughout: VQ-packed sprites, VRAM eviction + compaction at frame start, real skies staged as 16-bit, per-type texture state on demand; VMU save call passed 3 of 7 arguments |

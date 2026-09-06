@@ -381,6 +381,10 @@ it actually resolves to before assuming this fixes the blur.
 
 ### 2. Sky textures are flat colours
 
+**Done, b78.** The flag is cleared. The 2 MB intermediate below became 1 MB by
+staging the landscape as ARGB4444 instead of RGBA; see "Textures at full size"
+in `README.DC.md`. The analysis below stands as written.
+
 `OGL_Flag_FlatLand` is set in the Dreamcast defaults. b36 set it because a real
 landscape is a single 1024x512 texture and converting it costs a 2MB
 intermediate — the allocation that fell off the end of the machine. So this is a

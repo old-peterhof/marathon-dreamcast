@@ -140,6 +140,7 @@ class TextureManager
 #ifdef DC
 	// True when the stock sprite has a prebuilt PowerVR VQ candidate.
 	bool UseVQPack;
+	bool PackedLandscape;
 #endif
 		
 	// Private methods

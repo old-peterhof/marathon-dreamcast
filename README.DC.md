@@ -329,6 +329,61 @@ just filled. Once walls started depth-testing, a liquid surface at a nearer
 depth began rejecting it and water drew over the gun. It is taken out of the
 test entirely in `OGL_RenderSprite`.
 
+### Textures at full size
+
+Every texture type is uploaded at its native size in 16-bit colour, skies
+included. Three things make that fit in a texture pool of about 4.9 MB (GLdc
+keeps the rest of the 8 MB for its vertex buffers and the PVR's tile bins).
+
+**Sprites come pre-encoded for the PowerVR.** `tools/build-vq-sprites.py` reads
+the `Shapes` file, expands each object and scenery frame through its own colour
+table, pads it to the same power-of-two size `OGL_Textures.cpp` would, and
+runs KOS's `pvrtex` to produce twiddled ARGB4444 VQ. The result is one
+sector-aligned `VQSprites.dat` on the disc; `dc/dc_vq_sprites.cpp` keeps only
+its index in RAM and reads a frame the first time it is drawn. VQ is roughly an
+eighth the size of the raw 16-bit texture, and the upload skips the RGBA staging
+image entirely. Only stock, crisp inhabitant and weapon frames use it; anything
+the engine recolours at run time (infravision, silhouettes, MML substitutes,
+non-crisp opacity) takes the ordinary path, as does any frame whose VQ encoding
+would not have been smaller. A missing or stale pack falls back to the ordinary
+path too.
+
+**Textures are evicted.** `OGL_TextureFrameStart()` runs at the top of each
+world frame. When free VRAM or the largest free block drops under 1 MB it
+deletes the least recently drawn textures until 1.5 MB is free, skipping the
+interface collection and anything drawn in the previous frame, then compacts
+the pool if the largest block is still under 1 MB. A full sky is exactly 1 MB and
+has to be contiguous, which is why the block size is checked and not just the
+total. Deleting or moving a texture is only safe while nothing holds its address:
+GLdc keeps a frame's polygons in RAM, texture addresses included, until the swap,
+and the PVR samples them while rendering. So this waits for `pvr_wait_ready()`
+*and* `pvr_wait_render_done()` first. The first returns as soon as the last
+scene has started rendering, not when it has finished; the second is the one that
+means the hardware is idle. GLdc's own defragmenter, which it runs when an
+allocation fails mid-frame, has neither guarantee, which is what the reserve is
+for.
+
+**Skies are staged as 16-bit.** A 1024x512 landscape expanded to RGBA needs a
+2 MB temporary on a machine that has about that much heap left after a level
+loads. `StoreSourceRow` writes ARGB4444 directly for a full-size landscape, using
+the same nibble truncation GLdc applies, and the upload passes it through
+untouched (`GL_BGRA`, `GL_UNSIGNED_SHORT_4_4_4_4_REV`). Half the temporary, same
+texels.
+
+Also: per-bitmap texture state is allocated per (texture type, collection) the
+first time that pairing is used, rather than four copies of every collection at
+level start (488 KB on the first level).
+
+Under `DEBUG`, slot 39 reports every 25th upload and every failed one with the
+GL error and free VRAM, slot 53 reports VQ uploads and every eviction pass with
+free and largest-block figures before and after, slot 62 reports level, tick,
+health, heap top and VRAM once a second, and slot 63 reports the allocator's live
+and reusable bytes and the PVR vertex buffer's peak.
+
+Not yet measured on a console: the pack means a GD-ROM read the first time each
+sprite frame appears. The reads are sector aligned at both ends, which is what
+made collection loading fast, but a physical drive seeks and Flycast does not.
+
 ## Working on this code
 
 Two traps worth knowing before you start.

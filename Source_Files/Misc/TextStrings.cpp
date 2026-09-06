@@ -113,7 +113,7 @@ void StringSet::Add(short Index, unsigned char *String)
 	
 	unsigned short Length = String[0];
 	unsigned char *_String = new unsigned char[Length+2];
-	memcpy(_String,String,Length+2);
+	memcpy(_String,String,Length+1);
 	_String[Length+1] = 0;	//  for making an in-place C string
 	
 	Strings[Index] = _String;
@@ -455,4 +455,3 @@ XML_ElementParser *TS_GetParser()
 	StringSetParser.AddChild(&StringParser);
 	return &StringSetParser;
 }
-

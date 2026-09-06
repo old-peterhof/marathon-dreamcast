@@ -360,6 +360,22 @@ play: $(TARGET) $(DISC)/.stamp
 	$(MKDCDISC) -e $(TARGET) -d $(DISC)/AlephOne -o alephone-$(BUILD_TAG)-play.cdi \
 		-s $(DISCSERIAL) -n "$(DISCNAME) $(BUILD_TAG)" -a "$(DISCAUTH)" -N
 
+# A native Marathon film drives simulation inputs, including movement/combat.
+# Keep the film in a separate staging tree so it cannot enter a hardware image.
+# REPLAY_SUFFIX names the image, so two films can be on disk (and one running
+# in Flycast) at the same time.
+REPLAY_SUFFIX ?=
+replay-test: $(TARGET) $(DISC)/.stamp
+	@test -f "$(FILM)" || { echo 'Supply FILM=/path/to/native-film'; exit 1; }
+	mkdir -p disc-replay
+	cp -R $(DISC)/AlephOne disc-replay/
+	rm -f disc-replay/AlephOne/PADTEST disc-replay/AlephOne/AUTOKEY
+	cp "$(FILM)" disc-replay/AlephOne/TestFilm
+	echo replay > disc-replay/AlephOne/AUTOSTART
+	echo on > disc-replay/AlephOne/DEBUG
+	$(MKDCDISC) -e $(TARGET) -d disc-replay/AlephOne -o alephone-$(BUILD_TAG)-replay$(REPLAY_SUFFIX).cdi \
+		-s $(DISCSERIAL) -n "$(DISCNAME) $(BUILD_TAG)" -a "$(DISCAUTH)" -N
+
 # Unattended test of the file dialogs. Autostarts into CONTINUE SAVED GAME and
 # presses Return inside the dialog, which is the one path a human otherwise has
 # to drive by hand -- and the path that was broken: a saved game could be listed
