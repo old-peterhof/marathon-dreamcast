@@ -297,6 +297,7 @@ extern "C" void dc_trace(int slot, const char *fmt, ...);
 extern "C" void dc_heap_trace(int slot, const char *where);
 extern "C" unsigned dc_heap_top(void);
 extern "C" void dc_memory_trace(void);
+extern "C" void dc_pvr_trace(int slot, const char *where);
 extern "C" void dc_profiler_frame(void);
 // The row copy lives in dc/dc_blit.c, compiled as C: sh4zam's headers need C++11
 // and asm string forms this file cannot use under -std=gnu++98.
@@ -748,11 +749,13 @@ void dc_ui_flush(SDL_Surface *s)
 #ifdef HAVE_OPENGL
 	dc_ui_draw_surface(s, 0, 0, s->w, s->h);
 	SDL_GL_SwapBuffers();
-	/* Which VRAM address is on the display, and which is being rendered to.
-	   A UI frame that is drawn but never seen is one of these disagreeing. */
-	dc_trace(66, "ui: flush disp=%08lx rend=%08lx",
-	         (unsigned long)*(volatile uint32 *)0xa05f8050,
-	         (unsigned long)*(volatile uint32 *)0xa05f8060);
+	/*
+	 *	In Flycast this frame appears several seconds late: the emulator keeps
+	 *	presenting its last rendered frame and only falls back to the real
+	 *	framebuffer after a pause in rendering. dc_pvr_trace() showed the
+	 *	PowerVR had rendered and flipped to this frame within two vblanks.
+	 *	A console shows it at once. Do not chase it in the emulator again.
+	 */
 #endif
 }
 #endif

@@ -21,6 +21,7 @@
 #include <fcntl.h>
 #include <malloc.h>
 #include <kos/fs.h>
+#include <dc/pvr.h>
 #include <unistd.h>
 #include <stdarg.h>
 #include <sys/stat.h>
@@ -242,6 +243,25 @@ void *dc_read_file_span(const char *path, unsigned long offset, unsigned long le
  *	dc_heap_top() is a high-water mark: freed blocks stay below it and are
  *	reused. This is what is actually live, and what is free to reuse.
  */
+/*
+ *	What the PVR is doing right now: the frame on the display, the frame being
+ *	rendered, how many frames it has flipped, how many vblanks it has seen, and
+ *	whether the TA is ready for another scene. For finding out why a frame that
+ *	was drawn is not being shown.
+ */
+void dc_pvr_trace(int slot, const char *where)
+{
+	pvr_stats_t st;
+	if (!dc_trace_enabled()) return;
+	pvr_get_stats(&st);
+	dc_trace(slot, "pvr %-8s disp=%08lx rend=%08lx frames=%lu vbl=%lu ready=%d",
+	         where,
+	         (unsigned long)*(volatile uint32_t *)0xa05f8050,
+	         (unsigned long)*(volatile uint32_t *)0xa05f8060,
+	         (unsigned long)st.frame_count, (unsigned long)st.vbl_count,
+	         pvr_check_ready());
+}
+
 void dc_memory_trace(void)
 {
 	if (!dc_trace_enabled()) return;

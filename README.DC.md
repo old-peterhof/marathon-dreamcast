@@ -183,6 +183,13 @@ itself. Four marker files on the disc, all staged by `make test` and never by
 Without `DEBUG` the build is silent; the traces stay in the source rather than
 being deleted.
 
+**Flycast shows a menu drawn after gameplay several seconds late.** The pause
+menu and the save picker render and flip within two vblanks -- `dc_pvr_trace()`
+in `dc_compat.c` reads the display and render addresses and the frame counter to
+prove it -- but Flycast keeps presenting its last rendered frame until it decides
+rendering has stopped and falls back to the framebuffer. Screenshot at least six
+seconds after opening a screen, and do not read the delay as a bug in the port.
+
 `tools/run-flycast.sh <disc> <log>` launches an image and retries past Flycast's
 startup bug. Flycast on macOS fails to initialise perhaps half the time with a
 `Verify Failed ... driver.cpp:349` assertion — it depends on ASLR, not on the
