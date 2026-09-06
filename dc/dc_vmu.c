@@ -995,12 +995,40 @@ void dc_vmu_save_game(const char *ram_path, const char *map_path, int level,
 		return;
 	}
 
-	if (compress2(out + SAVE_HDR_V2_LEN, &bound, raw, (uLong)size,
-	              Z_BEST_COMPRESSION) != Z_OK) {
-		dc_trace(17, "vmu: could not compress %s", name);
-		free(raw);
-		free(out);
-		return;
+	/*
+	 *	deflateInit2 rather than compress2: the default 32 KB window and
+	 *	memLevel 8 cost about 384 KB of heap for the duration of the save, on
+	 *	top of the raw and compressed copies, and the save happens mid-level
+	 *	when the heap is at its fullest. An 8 KB window and memLevel 5 need
+	 *	about a sixth of that. The input is mostly zeroes after the fold, so
+	 *	the window size barely matters to the result, and inflate accepts any
+	 *	window no larger than its own.
+	 */
+	{
+		z_stream zs;
+		int rc;
+
+		memset(&zs, 0, sizeof zs);
+		if (deflateInit2(&zs, Z_BEST_COMPRESSION, Z_DEFLATED, 13, 5,
+		                 Z_DEFAULT_STRATEGY) != Z_OK) {
+			dc_trace(17, "vmu: could not start compressing %s", name);
+			free(raw);
+			free(out);
+			return;
+		}
+		zs.next_in = raw;
+		zs.avail_in = (uInt)size;
+		zs.next_out = out + SAVE_HDR_V2_LEN;
+		zs.avail_out = (uInt)bound;
+		rc = deflate(&zs, Z_FINISH);
+		bound = zs.total_out;
+		deflateEnd(&zs);
+		if (rc != Z_STREAM_END) {
+			dc_trace(17, "vmu: could not compress %s (%d)", name, rc);
+			free(raw);
+			free(out);
+			return;
+		}
 	}
 
 	free(raw);

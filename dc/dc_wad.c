@@ -35,6 +35,8 @@
 #include <string.h>
 #include <stdlib.h>
 
+extern void *dc_read_file_span(const char *path, unsigned long offset, unsigned long length);
+
 extern void dc_trace(int slot, const char *fmt, ...);
 
 /* Wad files are big-endian, whatever the machine reading them. */
@@ -165,20 +167,14 @@ static uint8_t *read_level_entry(const char *map_path, int level, long *len)
 		return NULL;
 	}
 
-	buf = malloc((size_t)length);
-	if (!buf) {
-		fclose(f);
-		return NULL;
-	}
-
-	if (fseek(f, base + start, SEEK_SET) != 0 ||
-	    fread(buf, 1, (size_t)length, f) != (size_t)length) {
-		free(buf);
-		fclose(f);
-		return NULL;
-	}
-
 	fclose(f);
+
+	/* One aligned transfer; this is a save mid-level, and the level entry is
+	   hundreds of KB that stdio would fetch a sector per command. */
+	buf = dc_read_file_span(map_path, (unsigned long)(base + start), (unsigned long)length);
+	if (!buf)
+		return NULL;
+
 	*len = length;
 	return buf;
 }

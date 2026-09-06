@@ -29,6 +29,8 @@
 
 #include <SDL.h>
 #include <stdio.h>
+#include <stdlib.h>
+#include <sys/stat.h>
 
 #include "dc_plate.h"
 
@@ -43,11 +45,23 @@ static SDL_Surface *plate[2];		/* indexed by dc_plate_kind */
 static int plate_tried[2];
 static int plate_kind = DC_PLATE_PLAIN;
 
+extern "C" void *dc_read_file_span(const char *path, unsigned long offset, unsigned long length);
+
 /*
- *	Load once and keep. The file is 24-bit and the display is 16, so it is
- *	converted on the way in and the 24-bit original freed -- otherwise every blit
- *	pays for a format conversion, and the plate is blitted on every widget
+ *	Load and keep -- one at a time. The file is 24-bit and the display is 16, so
+ *	it is converted on the way in and the 24-bit original freed; otherwise every
+ *	blit pays for a format conversion, and the plate is blitted on every widget
  *	redraw.
+ *
+ *	Only one plate is ever resident. A converted plate is 600 KB of heap, the
+ *	main-menu plate was loaded at start-up and kept, and the first in-game
+ *	screen loaded the plain one beside it: 1.2 MB held for the rest of the run
+ *	on a machine that was fighting for the last megabyte. The two are never on
+ *	screen together, so loading one frees the other.
+ *
+ *	The file is read in one aligned transfer (see dc_read_file_span) rather
+ *	than through SDL_LoadBMP's stdio, which the CD driver serves a sector per
+ *	command: 900 KB is 450 commands.
  *
  *	A missing or unreadable plate is not fatal. Everything falls back to the flat
  *	BACKGROUND_COLOR the dialogs used before, which is ugly but playable, and the
@@ -57,7 +71,7 @@ static SDL_Surface *load(int kind)
 {
 	static const char *names[2] = { "plate.bmp", "plate-main.bmp" };
 	char path[128];
-	SDL_Surface *raw, *conv;
+	SDL_Surface *raw = NULL, *conv;
 
 	if (kind < 0 || kind > 1)
 		return NULL;
@@ -67,9 +81,30 @@ static SDL_Surface *load(int kind)
 
 	plate_tried[kind] = 1;
 
+	if (plate[kind ^ 1]) {
+		SDL_FreeSurface(plate[kind ^ 1]);
+		plate[kind ^ 1] = NULL;
+		plate_tried[kind ^ 1] = 0;
+	}
+
 	sprintf(path, "%s%s", PLATE_DIR, names[kind]);
 
-	raw = SDL_LoadBMP(path);
+	{
+		struct stat st;
+		if (stat(path, &st) == 0 && st.st_size > 0) {
+			void *bytes = dc_read_file_span(path, 0, (unsigned long)st.st_size);
+			if (bytes) {
+				SDL_RWops *rw = SDL_RWFromMem(bytes, (int)st.st_size);
+				if (rw) {
+					raw = SDL_LoadBMP_RW(rw, 0);
+					SDL_FreeRW(rw);
+				}
+				free(bytes);
+			}
+		}
+	}
+	if (!raw)
+		raw = SDL_LoadBMP(path);
 	if (!raw) {
 		dc_trace(25, "plate: %s missing -- falling back to flat fill", path);
 		return NULL;

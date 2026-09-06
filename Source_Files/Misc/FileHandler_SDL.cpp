@@ -152,7 +152,16 @@ bool is_macbinary(SDL_RWops *f, long &data_length, long &rsrc_length)
  *  Opened file
  */
 
-OpenedFile::OpenedFile() : f(NULL), err(0), is_forked(false), fork_offset(0), fork_length(0) {}
+OpenedFile::OpenedFile() : f(NULL), err(0), is_forked(false), fork_offset(0), fork_length(0)
+{
+#ifdef DC
+	dc_path[0] = 0;
+#endif
+}
+
+#ifdef DC
+extern "C" void *dc_read_file_span(const char *path, unsigned long offset, unsigned long length);
+#endif
 
 bool OpenedFile::IsOpen()
 {
@@ -216,6 +225,24 @@ bool OpenedFile::Read(long Count, void *Buffer)
 		return false;
 
 	err = 0;
+#ifdef DC
+	/*
+	 *	A read of a sector or more goes to the disc as one aligned transfer
+	 *	instead of through stdio's 1 KB buffer, which KOS serves a sector per
+	 *	GD-ROM command; see dc_read_file_span. The stream is then moved past
+	 *	the bytes so the next small read carries on where this one ended.
+	 */
+	if (Count >= 2048 && dc_path[0]) {
+		long pos = SDL_RWtell(f);
+		void *span = dc_read_file_span(dc_path, (unsigned long)pos, (unsigned long)Count);
+		if (span) {
+			memcpy(Buffer, span, (size_t)Count);
+			free(span);
+			SDL_RWseek(f, pos + Count, SEEK_SET);
+			return true;
+		}
+	}
+#endif
 	if (SDL_RWread(f, Buffer, 1, Count) != Count)
 		err = errno;
 	return err == 0;
@@ -383,6 +410,13 @@ bool FileSpecifier::Open(OpenedFile &OFile, bool Writable)
 		set_game_error(systemError, err);
 		return false;
 	}
+#ifdef DC
+	OFile.dc_path[0] = 0;
+	if (!Writable) {
+		strncpy(OFile.dc_path, GetPath(), sizeof(OFile.dc_path) - 1);
+		OFile.dc_path[sizeof(OFile.dc_path) - 1] = 0;
+	}
+#endif
 	if (Writable)
 		return true;
 

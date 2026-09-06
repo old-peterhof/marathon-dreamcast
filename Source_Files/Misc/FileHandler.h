@@ -97,6 +97,9 @@ private:
 	int err;		// Error code
 	bool is_forked;
 	long fork_offset, fork_length;
+#ifdef DC
+	char dc_path[256];	// So large reads can bypass stdio; see OpenedFile::Read
+#endif
 #endif
 };
 

@@ -319,7 +319,13 @@ bool load_level_from_map(
 			{
 				if(index_to_load>=0 && index_to_load<header.wad_count)
 				{
+#ifdef DC
+					uint32 dc_t0 = SDL_GetTicks();
+#endif
 					wad= read_indexed_wad_from_file(MapFile, &header, index_to_load, true);
+#ifdef DC
+					dc_trace(57, "load: map wad %u ms", SDL_GetTicks() - dc_t0);
+#endif
 					if (wad)
 					{
 						/* Process everything... */
