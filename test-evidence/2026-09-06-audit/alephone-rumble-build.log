@@ -1,0 +1,225 @@
+/opt/toolchains/dc/sh-elf/bin/sh-elf-g++  -O3 -flto=auto -ffat-lto-objects -fno-PIC -fno-PIE -fomit-frame-pointer -fbuiltin -ffast-math -ffp-contract=fast -m4-single -ml -mfsrra -mfsca -ffunction-sections -fdata-sections -matomic-model=soft-gusa -ftls-model=local-exec -D__DREAMCAST__  -isystem /opt/toolchains/dc/kos/include -isystem /opt/toolchains/dc/kos/kernel/arch/dreamcast/include -isystem /opt/toolchains/dc/kos/addons/include/ -isystem /opt/toolchains/dc/kos/../kos-ports/include -D_arch_dreamcast=1 -D_arch_sub_pristine=1 -Wall -g -I/opt/toolchains/dc/kos/../kos-ports/include/SDL -Idc -Idc/vendor -ISource_Files/CSeries -ISource_Files/Expat -ISource_Files/Misc -ISource_Files/Network -ISource_Files/Pfhortran -ISource_Files/ModelView -DSDL -DHAVE_UNISTD_H -DPACKAGE='"AlephOne"' -DVERSION='"0.12.0"' -DDC -DHAVE_OPENGL -fno-strict-aliasing -fpermissive -Wno-write-strings -Wno-narrowing -O3 -ffast-math -flto -MMD -MP -std=gnu++98 -fno-rtti -fno-exceptions -include dc_gl_compat.h -c Source_Files/Misc/player.cpp -o Source_Files/Misc/player.o
+/opt/toolchains/dc/sh-elf/bin/sh-elf-g++  -O3 -flto=auto -ffat-lto-objects -fno-PIC -fno-PIE -fomit-frame-pointer -fbuiltin -ffast-math -ffp-contract=fast -m4-single -ml -mfsrra -mfsca -ffunction-sections -fdata-sections -matomic-model=soft-gusa -ftls-model=local-exec -D__DREAMCAST__  -isystem /opt/toolchains/dc/kos/include -isystem /opt/toolchains/dc/kos/kernel/arch/dreamcast/include -isystem /opt/toolchains/dc/kos/addons/include/ -isystem /opt/toolchains/dc/kos/../kos-ports/include -D_arch_dreamcast=1 -D_arch_sub_pristine=1 -Wall -g -I/opt/toolchains/dc/kos/../kos-ports/include/SDL -Idc -Idc/vendor -ISource_Files/CSeries -ISource_Files/Expat -ISource_Files/Misc -ISource_Files/Network -ISource_Files/Pfhortran -ISource_Files/ModelView -DSDL -DHAVE_UNISTD_H -DPACKAGE='"AlephOne"' -DVERSION='"0.12.0"' -DDC -DHAVE_OPENGL -fno-strict-aliasing -fpermissive -Wno-write-strings -Wno-narrowing -O3 -ffast-math -flto -MMD -MP -std=gnu++98 -fno-rtti -fno-exceptions -include dc_gl_compat.h -O1 -c Source_Files/Misc/weapons.cpp -o Source_Files/Misc/weapons.o
+/opt/toolchains/dc/sh-elf/bin/sh-elf-gcc  -O3 -flto=auto -ffat-lto-objects -fno-PIC -fno-PIE -fomit-frame-pointer -fbuiltin -ffast-math -ffp-contract=fast -m4-single -ml -mfsrra -mfsca -ffunction-sections -fdata-sections -matomic-model=soft-gusa -ftls-model=local-exec -D__DREAMCAST__  -isystem /opt/toolchains/dc/kos/include -isystem /opt/toolchains/dc/kos/kernel/arch/dreamcast/include -isystem /opt/toolchains/dc/kos/addons/include/ -isystem /opt/toolchains/dc/kos/../kos-ports/include -D_arch_dreamcast=1 -D_arch_sub_pristine=1 -Wall -g -I/opt/toolchains/dc/kos/../kos-ports/include/SDL -Idc -Idc/vendor -ISource_Files/CSeries -ISource_Files/Expat -ISource_Files/Misc -ISource_Files/Network -ISource_Files/Pfhortran -ISource_Files/ModelView -DSDL -DHAVE_UNISTD_H -DPACKAGE='"AlephOne"' -DVERSION='"0.12.0"' -DDC -DHAVE_OPENGL -fno-strict-aliasing -fpermissive -Wno-write-strings -Wno-narrowing -O3 -ffast-math -flto -MMD -MP -c dc/dc_input.c -o dc/dc_input.o
+/opt/toolchains/dc/sh-elf/bin/sh-elf-gcc  -O3 -flto=auto -ffat-lto-objects -fno-PIC -fno-PIE -fomit-frame-pointer -fbuiltin -ffast-math -ffp-contract=fast -m4-single -ml -mfsrra -mfsca -ffunction-sections -fdata-sections -matomic-model=soft-gusa -ftls-model=local-exec -D__DREAMCAST__  -isystem /opt/toolchains/dc/kos/include -isystem /opt/toolchains/dc/kos/kernel/arch/dreamcast/include -isystem /opt/toolchains/dc/kos/addons/include/ -isystem /opt/toolchains/dc/kos/../kos-ports/include -D_arch_dreamcast=1 -D_arch_sub_pristine=1 -Wall -g -I/opt/toolchains/dc/kos/../kos-ports/include/SDL -Idc -Idc/vendor -ISource_Files/CSeries -ISource_Files/Expat -ISource_Files/Misc -ISource_Files/Network -ISource_Files/Pfhortran -ISource_Files/ModelView -DSDL -DHAVE_UNISTD_H -DPACKAGE='"AlephOne"' -DVERSION='"0.12.0"' -DDC -DHAVE_OPENGL -fno-strict-aliasing -fpermissive -Wno-write-strings -Wno-narrowing -O3 -ffast-math -flto -MMD -MP -c dc/dc_rumble.c -o dc/dc_rumble.o
+Source_Files/Misc/player.cpp: In function ‘void update_players()’:
+Source_Files/Misc/player.cpp:547:33: warning: comparison of integer expressions of different signedness: ‘uint32’ {aka ‘long unsigned int’} and ‘const int’ [-Wsign-compare]
+  547 |                 if (action_flags==NONE)
+      |                     ~~~~~~~~~~~~^~~~~~
+Source_Files/Misc/player.cpp:544:38: warning: unused variable ‘polygon’ [-Wunused-variable]
+  544 |                 struct polygon_data *polygon= get_polygon_data(player->supporting_polygon_index);
+      |                                      ^~~~~~~
+Source_Files/Misc/player.cpp: In function ‘void damage_player(short int, short int, short int, damage_definition*)’:
+Source_Files/Misc/player.cpp:692:67: warning: comparison of integer expressions of different signedness: ‘short int’ and ‘unsigned int’ [-Wsign-compare]
+  692 |                                 definition->type!=damage_type && i<NUMBER_OF_DAMAGE_RESPONSE_DEFINITIONS;
+      |                                                                   ^
+Source_Files/Misc/player.cpp: In function ‘void update_player_teleport(short int)’:
+Source_Files/Misc/player.cpp:1318:95: warning: suggest parentheses around ‘&&’ within ‘||’ [-Wparentheses]
+ 1314 |                         ((polygon->type==_polygon_is_automatic_exit && calculate_level_completion_state()!=_level_unfinished) || polygon->type==_polygon_is_teleporter) &&
+      |                         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+ 1315 |                                 player->variables.position.x==player->variables.last_position.x &&
+      |                                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+ 1316 |                                 player->variables.position.y==player->variables.last_position.y &&
+      |                                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+ 1317 |                                 player->variables.position.z==player->variables.last_position.z &&
+      |                                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+ 1318 |                                 player->variables.last_direction==player->variables.direction &&
+      |                                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^~
+ 1319 |                                 object->location.z==polygon->floor_height)
+      |                                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~                      
+Source_Files/Misc/player.cpp: In function ‘void give_player_initial_items(short int)’:
+Source_Files/Misc/player.cpp:1712:26: warning: comparison of integer expressions of different signedness: ‘short int’ and ‘unsigned int’ [-Wsign-compare]
+ 1712 |         for(loop= 0; loop<NUMBER_OF_PLAYER_INITIAL_ITEMS; ++loop)
+      |                          ^
+Source_Files/Misc/player.cpp: In function ‘void remove_dead_player_items(short int)’:
+Source_Files/Misc/player.cpp:1738:21: warning: comparison of integer expressions of different signedness: ‘short int’ and ‘unsigned int’ [-Wsign-compare]
+ 1738 |         for (i= 0; i<NUMBER_OF_PLAYER_INITIAL_ITEMS; ++i)
+      |                     ^
+Source_Files/Misc/weapons.cpp:636:97: warning: trigraph ‘??!’ ignored, use ‘-trigraphs’ to enable [-Wtrigraphs]
+  636 |                                                                         dprintf("Error reloading??!");
+In file included from Source_Files/CSeries/sdl_cseries.h:84,
+                 from Source_Files/CSeries/cseries.h:9,
+                 from Source_Files/Misc/weapons.cpp:75:
+Source_Files/Misc/weapons.cpp: In function ‘void player_hit_target(short int, short int)’:
+Source_Files/Misc/weapons.cpp:430:41: warning: comparison of integer expressions of different signedness: ‘short int’ and ‘unsigned int’ [-Wsign-compare]
+  430 |         assert(weapon_id>=0 && weapon_id<NUMBER_OF_WEAPONS);
+Source_Files/CSeries/csalerts.h:35:24: note: in definition of macro ‘assert’
+   35 | #define assert(what) ((what) ? (void)0 : _alephone_assert(__FILE__,__LINE__,"Assertion failed: " #what))
+      |                        ^~~~
+Source_Files/Misc/weapons.cpp: In function ‘void process_new_item_for_reloading(short int, short int)’:
+Source_Files/Misc/weapons.cpp:625:68: warning: comparison of integer expressions of different signedness: ‘unsigned int’ and ‘short int’ [-Wsign-compare]
+  625 |                                                         weapon_type==player_weapons->current_weapon &&
+      |                                                         ~~~~~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Source_Files/Misc/weapons.cpp: In function ‘short int get_player_weapon_ammo_count(short int, short int, short int)’:
+Source_Files/Misc/weapons.cpp:1032:47: warning: comparison of integer expressions of different signedness: ‘short int’ and ‘unsigned int’ [-Wsign-compare]
+ 1032 |         assert(which_weapon>=0 && which_weapon<NUMBER_OF_WEAPONS);
+Source_Files/CSeries/csalerts.h:35:24: note: in definition of macro ‘assert’
+   35 | #define assert(what) ((what) ? (void)0 : _alephone_assert(__FILE__,__LINE__,"Assertion failed: " #what))
+      |                        ^~~~
+Source_Files/Misc/weapons.cpp: In function ‘void select_next_best_weapon(short int)’:
+Source_Files/Misc/weapons.cpp:1594:48: warning: comparison of integer expressions of different signedness: ‘short int’ and ‘unsigned int’ [-Wsign-compare]
+ 1594 |         for(index=current_weapon_index+1; index<NUMBER_OF_WEAPONS; ++index)
+Source_Files/Misc/weapons.cpp: In function ‘void select_next_weapon(short int, bool)’:
+Source_Files/Misc/weapons.cpp:1625:35: warning: comparison of integer expressions of different signedness: ‘short int’ and ‘unsigned int’ [-Wsign-compare]
+ 1625 |                 for(index=1; index<NUMBER_OF_WEAPONS; ++index)
+Source_Files/Misc/weapons.cpp: In function ‘trigger_definition* get_trigger_definition(short int, short int, short int)’:
+Source_Files/Misc/weapons.cpp:1660:47: warning: comparison of integer expressions of different signedness: ‘short int’ and ‘unsigned int’ [-Wsign-compare]
+ 1660 |         assert(which_weapon>=0 && which_weapon<NUMBER_OF_WEAPONS);
+Source_Files/CSeries/csalerts.h:35:24: note: in definition of macro ‘assert’
+   35 | #define assert(what) ((what) ? (void)0 : _alephone_assert(__FILE__,__LINE__,"Assertion failed: " #what))
+      |                        ^~~~
+Source_Files/Misc/weapons.cpp: In function ‘trigger_data* get_player_trigger_data(short int, short int)’:
+Source_Files/Misc/weapons.cpp:1707:83: warning: comparison of integer expressions of different signedness: ‘short int’ and ‘unsigned int’ [-Wsign-compare]
+ 1707 |         assert(player_weapons->current_weapon>=0 && player_weapons->current_weapon<NUMBER_OF_WEAPONS);
+Source_Files/CSeries/csalerts.h:35:24: note: in definition of macro ‘assert’
+   35 | #define assert(what) ((what) ? (void)0 : _alephone_assert(__FILE__,__LINE__,"Assertion failed: " #what))
+      |                        ^~~~
+Source_Files/Misc/weapons.cpp: In function ‘trigger_data* get_trigger_data(short int, short int, short int)’:
+Source_Files/Misc/weapons.cpp:1720:47: warning: comparison of integer expressions of different signedness: ‘short int’ and ‘unsigned int’ [-Wsign-compare]
+ 1720 |         assert(weapon_index>=0 && weapon_index<NUMBER_OF_WEAPONS);
+Source_Files/CSeries/csalerts.h:35:24: note: in definition of macro ‘assert’
+   35 | #define assert(what) ((what) ? (void)0 : _alephone_assert(__FILE__,__LINE__,"Assertion failed: " #what))
+      |                        ^~~~
+Source_Files/Misc/weapons.cpp: In function ‘weapon_data* get_player_current_weapon(short int)’:
+Source_Files/Misc/weapons.cpp:1730:83: warning: comparison of integer expressions of different signedness: ‘short int’ and ‘unsigned int’ [-Wsign-compare]
+ 1730 |         assert(player_weapons->current_weapon>=0 && player_weapons->current_weapon<NUMBER_OF_WEAPONS);
+Source_Files/CSeries/csalerts.h:35:24: note: in definition of macro ‘assert’
+   35 | #define assert(what) ((what) ? (void)0 : _alephone_assert(__FILE__,__LINE__,"Assertion failed: " #what))
+      |                        ^~~~
+Source_Files/Misc/weapons.cpp: In function ‘weapon_definition* get_current_weapon_definition(short int)’:
+Source_Files/Misc/weapons.cpp:1973:83: warning: comparison of integer expressions of different signedness: ‘short int’ and ‘unsigned int’ [-Wsign-compare]
+ 1973 |         assert(player_weapons->current_weapon>=0 && player_weapons->current_weapon<NUMBER_OF_WEAPONS);
+Source_Files/CSeries/csalerts.h:35:24: note: in definition of macro ‘assert’
+   35 | #define assert(what) ((what) ? (void)0 : _alephone_assert(__FILE__,__LINE__,"Assertion failed: " #what))
+      |                        ^~~~
+Source_Files/Misc/weapons.cpp: In function ‘void calculate_weapon_origin_and_vector(short int, short int, world_point3d*, world_point3d*, short int*, angle)’:
+Source_Files/Misc/weapons.cpp:2006:62: warning: suggest parentheses around ‘&&’ within ‘||’ [-Wparentheses]
+ 2006 |         if(definition->weapon_class==_twofisted_pistol_class &&
+      |            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^~
+ 2007 |                 (PRIMARY_WEAPON_IS_VALID(weapon_data) && !SECONDARY_WEAPON_IS_VALID(weapon_data)) ||
+      |                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Source_Files/Misc/weapons.cpp: In function ‘void calculate_ticks_from_shapes()’:
+Source_Files/Misc/weapons.cpp:3106:40: warning: comparison of integer expressions of different signedness: ‘short int’ and ‘unsigned int’ [-Wsign-compare]
+ 3106 |         for(weapon_type= 0; weapon_type<NUMBER_OF_WEAPONS; ++weapon_type)
+Source_Files/Misc/weapons.cpp: In function ‘void update_sequence(short int, short int)’:
+Source_Files/Misc/weapons.cpp:3325:59: warning: suggest parentheses around ‘&&’ within ‘||’ [-Wparentheses]
+ 3325 |                         if(which_trigger==_primary_weapon && (definition->flags & _weapon_is_automatic)
+      |                            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Source_Files/Misc/weapons.cpp: In function ‘short int find_weapon_power_index(short int)’:
+Source_Files/Misc/weapons.cpp:3979:36: warning: comparison of integer expressions of different signedness: ‘short int’ and ‘unsigned int’ [-Wsign-compare]
+ 3979 |                 for(index= 0; index<NUMBER_OF_WEAPONS; ++index)
+Source_Files/Misc/weapons.cpp: In function ‘uint8* unpack_player_weapon_data(uint8*, int)’:
+Source_Files/Misc/weapons.cpp:4192:28: warning: comparison of integer expressions of different signedness: ‘int’ and ‘unsigned int’ [-Wsign-compare]
+ 4192 |                 for (m=0; m<NUMBER_OF_WEAPONS; m++)
+Source_Files/Misc/weapons.cpp: In function ‘uint8* pack_player_weapon_data(uint8*, int)’:
+Source_Files/Misc/weapons.cpp:4210:32: warning: comparison of integer expressions of different signedness: ‘int’ and ‘unsigned int’ [-Wsign-compare]
+ 4210 |                 for (int m=0; m<NUMBER_OF_WEAPONS; m++)
+Source_Files/Misc/player.cpp: In function ‘set_player_shapes(short, bool)’:
+Source_Files/Misc/player.cpp:1494:32: warning: ‘torso_shape’ may be used uninitialized [-Wmaybe-uninitialized]
+ 1494 |                 new_torso_shape= BUILD_DESCRIPTOR(BUILD_COLLECTION(player_shapes.collection, player->color), torso_shape);
+Source_Files/Misc/player.cpp:1475:23: note: ‘torso_shape’ was declared here
+ 1475 |                 short torso_shape;
+      |                       ^~~~~~~~~~~
+Source_Files/Misc/player.cpp: In function ‘recreate_player(short)’:
+Source_Files/Misc/player.cpp:1604:55: warning: ‘team’ may be used uninitialized [-Wmaybe-uninitialized]
+ 1604 |         get_random_player_starting_location_and_facing(player_index, placement_team, &location);
+      |         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Source_Files/Misc/player.cpp:1922:15: note: ‘team’ was declared here
+ 1922 |         short team;
+      |               ^~~~
+In file included from Source_Files/Misc/weapons.cpp:76:
+In function ‘get_line_data(short)’,
+    inlined from ‘calculate_weapon_origin_and_vector(short, short, world_point3d*, world_point3d*, short*, short)’ at Source_Files/Misc/weapons.cpp:2049:22:
+Source_Files/Misc/map.h:1140:53: warning: ‘line_crossed’ may be used uninitialized [-Wmaybe-uninitialized]
+ 1140 |         struct line_data *line = GetMemberWithBounds(map_lines,line_index,dynamic_world->line_count);
+      |                                  ~~~~~~~~~~~~~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Source_Files/Misc/weapons.cpp: In function ‘calculate_weapon_origin_and_vector(short, short, world_point3d*, world_point3d*, short*, short)’:
+Source_Files/Misc/weapons.cpp:2038:23: note: ‘line_crossed’ was declared here
+ 2038 |                 short line_crossed;
+      |                       ^~~~~~~~~~~~
+Source_Files/Misc/weapons.cpp: In function ‘get_weapon_display_information(short*, weapon_display_information*)’:
+Source_Files/Misc/weapons.cpp:1189:57: warning: ‘which_trigger’ may be used uninitialized [-Wmaybe-uninitialized]
+ 1189 |                                 phase= weapon->triggers[which_trigger].phase;
+      |                                                         ^~~~~~~~~~~~~
+Source_Files/Misc/weapons.cpp:1168:30: note: ‘which_trigger’ was declared here
+ 1168 |                 short frame, which_trigger, shape_index, type, flags;
+      |                              ^~~~~~~~~~~~~
+In file included from Source_Files/Misc/map.h:64:
+Source_Files/Misc/shape_descriptors.h:73:82: warning: ‘shape_index’ may be used uninitialized [-Wmaybe-uninitialized]
+   73 | #define BUILD_DESCRIPTOR(collection,shape) (((collection)<<DESCRIPTOR_SHAPE_BITS)|(shape))
+      |                                            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^~~~~~~~~
+Source_Files/Misc/weapons.cpp:1168:45: note: ‘shape_index’ was declared here
+ 1168 |                 short frame, which_trigger, shape_index, type, flags;
+      |                                             ^~~~~~~~~~~
+Source_Files/Misc/weapons.cpp: In function ‘get_active_trigger_count_and_states(short, short, unsigned long, short*, bool*)’:
+Source_Files/Misc/weapons.cpp:3073:16: warning: ‘active_count’ may be used uninitialized [-Wmaybe-uninitialized]
+ 3073 |         return active_count;
+      |                ^~~~~~~~~~~~
+Source_Files/Misc/weapons.cpp:2979:15: note: ‘active_count’ was declared here
+ 2979 |         short active_count;
+      |               ^~~~~~~~~~~~
+In function ‘revive_player(short)’,
+    inlined from ‘update_players()’ at Source_Files/Misc/player.cpp:643:23:
+Source_Files/Misc/player.cpp:1535:55: warning: ‘team’ may be used uninitialized [-Wmaybe-uninitialized]
+ 1535 |         get_random_player_starting_location_and_facing(dynamic_world->player_count, team, &location);
+      |         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Source_Files/Misc/player.cpp: In function ‘update_players()’:
+Source_Files/Misc/player.cpp:1922:15: note: ‘team’ was declared here
+ 1922 |         short team;
+      |               ^~~~
+Source_Files/Misc/weapons.cpp: In function ‘change_to_desired_weapon(short)’:
+Source_Files/Misc/weapons.cpp:3894:56: warning: ‘first_trigger’ may be used uninitialized [-Wmaybe-uninitialized]
+ 3894 |         for(which_trigger= first_trigger; which_trigger<trigger_count; ++which_trigger)
+      |                                           ~~~~~~~~~~~~~^~~~~~~~~~~~~~
+Source_Files/Misc/weapons.cpp:3814:15: note: ‘first_trigger’ was declared here
+ 3814 |         short first_trigger, which_trigger, trigger_count;
+      |               ^~~~~~~~~~~~~
+Source_Files/Misc/weapons.cpp:3894:56: warning: ‘trigger_count’ may be used uninitialized [-Wmaybe-uninitialized]
+ 3894 |         for(which_trigger= first_trigger; which_trigger<trigger_count; ++which_trigger)
+      |                                           ~~~~~~~~~~~~~^~~~~~~~~~~~~~
+Source_Files/Misc/weapons.cpp:3814:45: note: ‘trigger_count’ was declared here
+ 3814 |         short first_trigger, which_trigger, trigger_count;
+      |                                             ^~~~~~~~~~~~~
+/opt/toolchains/dc/sh-elf/bin/sh-elf-g++  -O3 -flto=auto -ffat-lto-objects -fno-PIC -fno-PIE -fomit-frame-pointer -fbuiltin -ffast-math -ffp-contract=fast -m4-single -ml -mfsrra -mfsca -ffunction-sections -fdata-sections -matomic-model=soft-gusa -ftls-model=local-exec -D__DREAMCAST__  -isystem /opt/toolchains/dc/kos/include -isystem /opt/toolchains/dc/kos/kernel/arch/dreamcast/include -isystem /opt/toolchains/dc/kos/addons/include/ -isystem /opt/toolchains/dc/kos/../kos-ports/include -D_arch_dreamcast=1 -D_arch_sub_pristine=1 -Wall -g  -m4-single -ml -Wl,--gc-sections -T/opt/toolchains/dc/kos/utils/ldscripts/shlelf.xc -nostdlib -L/opt/toolchains/dc/kos/lib/dreamcast -L/opt/toolchains/dc/kos/addons/lib/dreamcast -L/opt/toolchains/dc/kos/../kos-ports/lib -O3 -ffast-math -flto Source_Files/CSeries/byte_swapping.o Source_Files/CSeries/csalerts_sdl.o Source_Files/CSeries/cscluts_sdl.o Source_Files/CSeries/csmisc_sdl.o Source_Files/CSeries/csstrings_sdl.o Source_Files/Expat/hashtable.o Source_Files/Expat/xmlparse.o Source_Files/Expat/xmlrole.o Source_Files/Expat/xmltok.o Source_Files/Misc/AnimatedTextures.o Source_Files/Misc/ChaseCam.o Source_Files/Misc/ColorParser.o Source_Files/Misc/Crosshairs_SDL.o Source_Files/Misc/DamageParser.o Source_Files/Misc/FileHandler_SDL.o Source_Files/Misc/FontHandler.o Source_Files/Misc/ImageLoader_SDL.o Source_Files/Misc/OGL_Render.o Source_Files/Misc/OGL_Setup.o Source_Files/Misc/OverheadMap_SDL.o Source_Files/Misc/OverheadMapRenderer.o Source_Files/Misc/PlayerName.o Source_Files/Misc/RenderPlaceObjs.o Source_Files/Misc/RenderRasterize.o Source_Files/Misc/RenderSortPoly.o Source_Files/Misc/RenderVisTree.o Source_Files/Misc/ShapesParser.o Source_Files/Misc/TextStrings.o Source_Files/Misc/ViewControl.o Source_Files/Misc/XML_Configure.o Source_Files/Misc/XML_DataBlock.o Source_Files/Misc/XML_ElementParser.o Source_Files/Misc/XML_LevelScript.o Source_Files/Misc/XML_MakeRoot.o Source_Files/Misc/XML_Loader_SDL.o Source_Files/Misc/computer_interface.o Source_Files/Misc/crc.o Source_Files/Misc/devices.o Source_Files/Misc/dynamic_limits.o Source_Files/Misc/effects.o Source_Files/Misc/fades.o Source_Files/Misc/find_files_sdl.o Source_Files/Misc/flood_map.o Source_Files/Misc/game_errors.o Source_Files/Misc/game_wad.o Source_Files/Misc/game_window.o Source_Files/Misc/game_window_sdl.o Source_Files/Misc/images.o Source_Files/Misc/import_definitions.o Source_Files/Misc/interface.o Source_Files/Misc/interface_sdl.o Source_Files/Misc/items.o Source_Files/Misc/lightsource.o Source_Files/Misc/map.o Source_Files/Misc/map_constructors.o Source_Files/Misc/marathon2.o Source_Files/Misc/media.o Source_Files/Misc/monsters.o Source_Files/Misc/motion_sensor.o Source_Files/Misc/mouse_sdl.o Source_Files/Misc/mysound.o Source_Files/Misc/overhead_map.o Source_Files/Misc/pathfinding.o Source_Files/Misc/physics.o Source_Files/Misc/placement.o Source_Files/Misc/platforms.o Source_Files/Misc/player.o Source_Files/Misc/preferences.o Source_Files/Misc/preprocess_map_sdl.o Source_Files/Misc/projectiles.o Source_Files/Misc/render.o Source_Files/Misc/resource_manager.o Source_Files/Misc/scenery.o Source_Files/Misc/scottish_textures.o Source_Files/Misc/screen_drawing.o Source_Files/Misc/screen_sdl.o Source_Files/Misc/dc_plate.o Source_Files/Misc/dc_slots.o Source_Files/Misc/dc_mainmenu.o Source_Files/Misc/dc_explain.o Source_Files/Misc/dc_padconfig.o Source_Files/Misc/dc_ui.o Source_Files/Misc/dc_screen.o Source_Files/Misc/dc_prefs.o Source_Files/Misc/sdl_dialogs.o Source_Files/Misc/sdl_fonts.o Source_Files/Misc/sdl_widgets.o Source_Files/Misc/shapes.o Source_Files/Misc/shell.o Source_Files/Misc/textures.o Source_Files/Misc/vbl.o Source_Files/Misc/vbl_sdl.o Source_Files/Misc/wad.o Source_Files/Misc/wad_sdl.o Source_Files/Misc/wad_prefs.o Source_Files/Misc/weapons.o Source_Files/Misc/world.o Source_Files/Misc/shell_misc.o Source_Files/Misc/HUDRenderer.o Source_Files/Misc/HUDRenderer_SW.o Source_Files/Network/network_dummy.o Source_Files/Network/network_games.o Source_Files/Pfhortran/script_instructions.o Source_Files/Pfhortran/script_parser.o Source_Files/Pfhortran/scripting.o dc/dc_fade.o dc/dc_compat.o dc/dc_input.o dc/dc_rumble.o dc/dc_vmu.o dc/dc_profiler.o dc/dc_maple.o dc/dc_blit.o dc/dc_wad.o dc/vendor/sh4zam_src/shz_mem_sh4.o dc/vendor/vmu_profiler.o dc/dc_glu.o Source_Files/ModelView/Model3D.o Source_Files/ModelView/StudioLoader.o Source_Files/ModelView/WavefrontLoader.o Source_Files/ModelView/ModelRenderer.o dc/dc_vq_sprites.o Source_Files/Misc/OGL_Textures.o Source_Files/Misc/OGL_Faders.o Source_Files/Misc/HUDRenderer_OGL.o Source_Files/Misc/OverheadMap_OGL.o -o alephone.elf -lSDL -lGL -lz -lstdc++ -lsupc++ -Wl,--start-group -lkallisti -lm -lc -lgcc -Wl,--end-group
+Source_Files/Misc/RenderVisTree.h:113:8: warning: type ‘struct node_data’ violates the C++ One Definition Rule [-Wodr]
+  113 | struct node_data
+      |        ^
+Source_Files/Misc/flood_map.cpp:47:8: note: a different type is defined in another translation unit
+   47 | struct node_data /* 16 bytes */
+      |        ^
+Source_Files/Misc/RenderVisTree.h:116:15: note: the first difference of corresponding definitions is field ‘polygon_index’
+  116 |         short polygon_index;
+      |               ^
+Source_Files/Misc/flood_map.cpp:51:15: note: a field with different name is defined in another translation unit
+   51 |         int16 parent_node_index; /* node index of the node we came from to get here; only used for backtracking */
+      |               ^
+Source_Files/Misc/game_wad.cpp: In function ‘load_lights’:
+Source_Files/Misc/game_wad.cpp:985:53: warning: argument 1 value ‘4294967295’ exceeds maximum object size 2147483647 [-Walloc-size-larger-than=]
+  985 |                 OldLights = new old_light_data[count];
+      |                                                     ^
+/opt/toolchains/dc/sh-elf/sh-elf/include/c++/15.2.0/new:140:26: note: in a call to allocation function ‘operator new []’ declared here
+  140 | _GLIBCXX_NODISCARD void* operator new[](std::size_t)
+      |                          ^
+mkdir -p disc-replay
+cp -R disc/AlephOne disc-replay/
+rm -f disc-replay/AlephOne/PADTEST disc-replay/AlephOne/AUTOKEY
+cp "/tmp/marathon2-replays/Marathon2_TC_JimM_films/21.My Own Private Thermopylae" disc-replay/AlephOne/TestFilm
+echo replay > disc-replay/AlephOne/AUTOSTART
+echo on > disc-replay/AlephOne/DEBUG
+rm -f disc-replay/AlephOne/FADETEST disc-replay/AlephOne/STATICTEST disc-replay/AlephOne/SAVETEST disc-replay/AlephOne/UPLOADTEST
+test -z "" || echo on > disc-replay/AlephOne/FADETEST
+test -z "" || echo on > disc-replay/AlephOne/STATICTEST
+test -z "" || echo on > disc-replay/AlephOne/SAVETEST
+test -z "" || echo on > disc-replay/AlephOne/UPLOADTEST
+/opt/toolchains/dc/mkdcdisc/build/mkdcdisc -e alephone.elf -d disc-replay/AlephOne -o alephone-b78-residency-replay-rumble.cdi \
+		-s MARATHON2 -n "Marathon 2 b78-residency" -a "Bungie / BERO" -N
+mkdcdisc v0.0.3 - Sega Dreamcast Disc Image Generator
+Copyright (C) 2022-2026 Simulant and contributors
+
+Loading main executable...        Done.
+Scrambling 1ST_READ.BIN...        Done.
+Gathering input files...          Done.
+Building IP.BIN...                Done.
+Generating data track...          Done.
+Writing disc image...             Done.
+Wrote alephone-b78-residency-replay-rumble.cdi

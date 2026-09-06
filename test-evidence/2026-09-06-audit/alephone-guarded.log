@@ -1,0 +1,1547 @@
+2026-09-06 08:51:41.392 Flycast[1762:954154] ℹ️ sdl/sdl.cpp:899 N[RENDERER]: Monitor refresh rate: 120 Hz (1800 x 1169)
+2026-09-06 08:51:41.393 Flycast[1762:954154] ℹ️ rend/vulkan/vulkan_context.cpp:303 N[RENDERER]: Vulkan API 1.1. Device Apple M5 Pro
+2026-09-06 08:51:41.394 Flycast[1762:954154] ℹ️ rend/vulkan/vulkan_context.cpp:456 N[RENDERER]: Device extension enabled: VK_KHR_swapchain
+2026-09-06 08:51:41.394 Flycast[1762:954154] ℹ️ rend/vulkan/vulkan_context.cpp:456 N[RENDERER]: Device extension enabled: VK_KHR_portability_subset
+2026-09-06 08:51:41.394 Flycast[1762:954154] ℹ️ rend/vulkan/vulkan_context.cpp:456 N[RENDERER]: Device extension enabled: VK_EXT_metal_objects
+2026-09-06 08:51:41.394 Flycast[1762:954154] ℹ️ rend/vulkan/vulkan_context.cpp:459 N[RENDERER]: Device extension unavailable: VK_EXT_provoking_vertex
+2026-09-06 08:51:41.394 Flycast[1762:954154] ℹ️ rend/vulkan/vulkan_context.cpp:456 N[RENDERER]: Device extension enabled: VK_KHR_buffer_device_address
+2026-09-06 08:51:41.394 Flycast[1762:954154] ℹ️ rend/vulkan/vulkan_context.cpp:552 N[RENDERER]: bufferDeviceAddressSupported 1
+2026-09-06 08:51:41.398 Flycast[1762:954154] ℹ️ rend/vulkan/vulkan_context.h:332 N[RENDERER]: Using depth format D32SfloatS8Uint tiling Optimal
+2026-09-06 08:51:41.441 Flycast[1762:954154] ℹ️ ui/gui.cpp:245 N[RENDERER]: Screen DPI is 255, size 2072 x 1122. Scaling by 2.00
+2026-09-06 08:51:41.453 Flycast[1762:954246] ℹ️ hw/mem/addrspace.cpp:425 N[VMEM]: Info: nvmem is enabled
+2026-09-06 08:51:41.456 Flycast[1762:954246] ℹ️ hw/mem/addrspace.cpp:461 N[VMEM]: BASE 0x12ce20000 RAM(16 MB) 0x138e20000 VRAM64(8 MB) 0x130e20000 ARAM(2 MB) 0x14ce20000
+2026-09-06 08:51:41.458 Flycast[1762:954246] ℹ️ hw/mem/addrspace.cpp:425 N[VMEM]: Info: nvmem is enabled
+2026-09-06 08:51:41.459 Flycast[1762:954246] ℹ️ hw/mem/addrspace.cpp:461 N[VMEM]: BASE 0x12ce20000 RAM(16 MB) 0x138e20000 VRAM64(8 MB) 0x130e20000 ARAM(2 MB) 0x14ce20000
+2026-09-06 08:51:41.460 Flycast[1762:954246] ℹ️ emulator.cpp:60 N[BOOT]: Game ID is [MARATHON2]
+2026-09-06 08:51:41.461 Flycast[1762:954246] ℹ️ emulator.cpp:617 N[BOOT]: Did not load BIOS, using reios
+2026-09-06 08:51:41.461 Flycast[1762:954246] ℹ️ emulator.cpp:60 N[BOOT]: Game ID is [MARATHON2]
+2026-09-06 08:51:41.602 Flycast[1762:954154] ℹ️ rend/vulkan/vulkan_renderer.cpp:246 N[RENDERER]: VulkanRenderer::Init
+2026-09-06 08:51:41.602 Flycast[1762:954248] ℹ️ oslib/oslib.cpp:568 N[COMMON]: Uploading minidump /tmp/561DA856-3AE9-41A3-A097-FB4924C620BD.dmp
+2026-09-06 08:51:41.708 Flycast[1762:954255] ℹ️ reios/reios.cpp:639 N[REIOS]: -----------------
+2026-09-06 08:51:41.708 Flycast[1762:954255] ℹ️ reios/reios.cpp:640 N[REIOS]: REIOS: Booting up
+2026-09-06 08:51:41.708 Flycast[1762:954255] ℹ️ reios/reios.cpp:641 N[REIOS]: -----------------
+
+--
+KallistiOS v2.3.0 [dreamcast/pristine]
+  Git revision: 670ce33-dirty
+  Sun Aug 16 10:51:04 PDT 2026
+  mgibbons@MaxBook-Pro.local:/opt/toolchains/dc/kos
+  sh-elf-gcc (GCC) 15.2.0
+maple: active drivers:
+    Dreameye (Camera): Camera
+    Sound Input Peripheral: Microphone
+    PuruPuru (Vibration) Pack: JumpPack
+    VMU Driver: Clock, LCD, MemoryCard
+    Mouse Driver: Mouse
+    Keyboard Driver: Keyboard
+    Controller Driver: Controller
+    Lightgun: LightGun
+vid_set_mode: 640x480IL NTSC with 1 framebuffers.
+
+Aleph One 0.12.0
+http://source.bungie.org/
+
+Original code by Bungie Software <http://www.bungie.com/>
+Additional work by Loren Petrich, Chris Pruett, Rhys Hill et al.
+Expat XML library by James Clark
+SDL port by Christian Bauer <Christian.Bauer@uni-mainz.de>
+
+This is free software with ABSOLUTELY NO WARRANTY.
+You are welcome to redistribute it under certain conditions.
+For details, see the file COPYING.
+fs_iso9660: disc change detected
+  (joliet level 3 extensions detected)
+[dctrace 20] maple A0: Dreamcast Controller          Produced By or Under License From SEGA ENTERPRISES,LTD.     �� func=01000000
+[dctrace 21] maple A1: Visual Memory                 Produced By or Under License From SEGA ENTERPRISES,LTD.     | func=0e000000
+[dctrace 22] maple A2: Visual Memory                 Produced By or Under License From SEGA ENTERPRISES,LTD.     | func=0e000000
+vmu_profiler_start(): Launching profiler thread.
+[dctrace 16] vmu: loaded 2525 bytes from /vmu/a1
+[dctrace 16] vmu: saved 2560 bytes to /vmu/a1
+vmufs_write: padded file 'ALEPHONE.PRF' from 2688 to 3072 bytes
+dprintf: Preferences Write Error: 16 type: 0
+[dctrace 58] sound: buffer budget 3072 KB
+Dreamcast audio driver initialized: dcAICAaudio
+vid_set_mode: 640x480IL NTSC with 1 framebuffers.
+[dctrace 0] mode 0: 640x480x16 -> surf 640x480x16 px=0xa5000000 flags=80000021
+[dctrace 32] gl: requested=1 obtained=0
+[dctrace 61] ui: reserved overlay 0x8c22dbe0 px=0x8c2546b0
+[dctrace 13] controller: found, polling
+[dctrace 1] autostart mode 6
+[dctrace 25] plate: plate-main.bmp loaded 640x480
+[dctrace 19] input_device=1 sens=30/30
+[dctrace 2] autostart: replay TestFilm
+[dctrace 57] load: map wad 33 ms
+vid_set_mode: 640x480IL NTSC with 1 framebuffers.
+
+Welcome to GLdc! Git revision: 1.1-698-ga1cd
+
+[dctrace 1] mode 1: 640x480x16 -> surf 640x480x16 px=0x0 flags=80000022
+[dctrace 32] gl: requested=1 obtained=1
+[dctrace 31] gl: PowerVR2 CLX2 100mHz / 1.2 (partial) - GLdc 1.1
+GL_VENDOR: KallistiOS / Kazade
+GL_RENDERER: PowerVR2 CLX2 100mHz
+GL_VERSION: 1.2 (partial) - GLdc 1.1
+[dctrace 65] load: free 0 ms | 11 colls 270 ms | models 0 ms | colorenv 188 ms
+[dctrace 66]   parse: hdr 78 | alloc 0 | clut 18 | high 2 | low 12 | bitmaps 160 ms
+[dctrace 67]   bitmaps: 567 rle (33342 rows, 1492 KB) | 87 raw (1145 KB)
+[dctrace 54] load: collections 478 ms
+[dctrace 60] load: heap top after collections 0x8cacf000 (11068 KB in use)
+[dctrace 55] load: monster sounds 10 ms
+[dctrace 56] load: game sounds 0 ms
+[dctrace 33] mode: 640x480x16 already set, not re-initialising
+[dctrace 40] heap: StartRun entry     0 KB
+[dctrace 37] txtr[0]: res=0 fmt=8056 far=2701
+[dctrace 38] txtr[1]: res=0 fmt=8056 far=2601
+[dctrace 39] txtr[2]: res=0 fmt=8056 far=2600
+[dctrace 39] txtr[3]: res=0 fmt=8056 far=2600
+[dctrace 41] heap: after StartTextures 0 KB
+[dctrace 42] heap: after screen font  0 KB
+[dctrace 43] heap: after map fonts    44 KB
+[dctrace 44] heap: after HUD fonts    236 KB
+[dctrace 45] heap: StartRun done      236 KB
+[dctrace 3] autostart: returned, state=8
+[dctrace 4] render_view wp=0x8ccc9bc8 640x320 bpp=16 pitch=1280
+[dctrace 36] heap: at first render    1844 KB
+[dctrace 39] txtr: 1 uploads; 128x128 type=0 error=0000 free=4529 KB
+[dctrace 6] frame 0: 0/12800 nonzero, first=0000
+[dctrace 39] txtr: 25 uploads; 256x16 type=3 error=0000 free=2689 KB
+[dctrace 12] fps 1.0  yaw=378 pitch=0 pos=8576,19648
+[dctrace 47] gl: polys=7 walls=56 setupfail=0 vecfail=0
+[dctrace 62] mem: level=0 tick=16 hp=150 heap=8cd2e000 vram=2681 KB largest=2666 KB
+[dctrace 63] ram: live=11336 KB reusable=145 KB
+[dctrace 7] frame 1: 0/12800 nonzero, first=0000
+[dctrace 8] frame 2: 0/12800 nonzero, first=0000
+[dctrace 39] txtr: 50 uploads; 64x16 type=2 error=0000 free=2663 KB
+[dctrace 31] gl: glEnable(0x3000) is not a PowerVR capability; dropped
+[dctrace 31] gl: clip plane 0 requested -- a model is being drawn
+[dctrace 39] txtr: 75 uploads; 64x16 type=2 error=0000 free=2656 KB
+[dctrace 39] txtr: 100 uploads; 8x8 type=2 error=0000 free=2645 KB
+[dctrace 39] txtr: 125 uploads; 8x8 type=2 error=0000 free=2636 KB
+[dctrace 39] txtr: 150 uploads; 8x8 type=2 error=0000 free=2632 KB
+[dctrace 39] txtr: 175 uploads; 64x32 type=2 error=0000 free=2631 KB
+[dctrace 39] txtr: 200 uploads; 64x32 type=2 error=0000 free=2633 KB
+[dctrace 39] txtr: 225 uploads; 8x8 type=2 error=0000 free=2623 KB
+[dctrace 39] txtr: 250 uploads; 64x32 type=2 error=0000 free=2624 KB
+[dctrace 12] fps 29.9  yaw=378 pitch=0 pos=9306,18154
+[dctrace 47] gl: polys=353 walls=1624 setupfail=0 vecfail=0
+[dctrace 62] mem: level=0 tick=47 hp=150 heap=8cd2e000 vram=2610 KB largest=2602 KB
+[dctrace 63] ram: live=11358 KB reusable=123 KB
+[dctrace 39] txtr: 275 uploads; 8x8 type=2 error=0000 free=2616 KB
+[dctrace 39] txtr: 300 uploads; 32x32 type=3 error=0000 free=2602 KB
+[dctrace 39] txtr: 325 uploads; 8x8 type=2 error=0000 free=2606 KB
+[dctrace 39] txtr: 350 uploads; 64x16 type=2 error=0000 free=2601 KB
+[dctrace 39] txtr: 375 uploads; 64x32 type=2 error=0000 free=2602 KB
+[dctrace 39] txtr: 400 uploads; 8x8 type=2 error=0000 free=2602 KB
+[dctrace 39] txtr: 425 uploads; 32x32 type=3 error=0000 free=2587 KB
+[dctrace 39] txtr: 450 uploads; 64x16 type=2 error=0000 free=2590 KB
+[dctrace 39] txtr: 475 uploads; 32x8 type=2 error=0000 free=2598 KB
+[dctrace 39] txtr: 500 uploads; 8x8 type=2 error=0000 free=2589 KB
+[dctrace 39] txtr: 525 uploads; 8x8 type=2 error=0000 free=2586 KB
+[dctrace 39] txtr: 550 uploads; 16x32 type=2 error=0000 free=2582 KB
+[dctrace 12] fps 28.6  yaw=381 pitch=0 pos=10556,19122
+[dctrace 47] gl: polys=405 walls=1428 setupfail=0 vecfail=0
+[dctrace 62] mem: level=0 tick=77 hp=150 heap=8cd2e000 vram=2566 KB largest=2562 KB
+[dctrace 63] ram: live=11440 KB reusable=41 KB
+[dctrace 39] txtr: 575 uploads; 16x32 type=2 error=0000 free=2580 KB
+[dctrace 39] txtr: 600 uploads; 16x32 type=2 error=0000 free=2572 KB
+[dctrace 39] txtr: 625 uploads; 64x16 type=2 error=0000 free=2566 KB
+[dctrace 39] txtr: 650 uploads; 64x32 type=2 error=0000 free=2579 KB
+[dctrace 39] txtr: 675 uploads; 64x16 type=2 error=0000 free=2570 KB
+[dctrace 39] txtr: 700 uploads; 64x32 type=2 error=0000 free=2572 KB
+[dctrace 39] txtr: 725 uploads; 64x32 type=2 error=0000 free=2573 KB
+[dctrace 39] txtr: 750 uploads; 64x16 type=2 error=0000 free=2571 KB
+[dctrace 39] txtr: 775 uploads; 32x32 type=2 error=0000 free=2569 KB
+[dctrace 39] txtr: 800 uploads; 64x32 type=2 error=0000 free=2569 KB
+[dctrace 12] fps 29.9  yaw=381 pitch=0 pos=12124,17900
+[dctrace 47] gl: polys=321 walls=1397 setupfail=0 vecfail=0
+[dctrace 62] mem: level=0 tick=108 hp=150 heap=8cd2e000 vram=2559 KB largest=2552 KB
+[dctrace 63] ram: live=11445 KB reusable=36 KB
+[dctrace 39] txtr: 825 uploads; 32x32 type=3 error=0000 free=2559 KB
+[dctrace 39] txtr: 850 uploads; 64x32 type=2 error=0000 free=2570 KB
+[dctrace 39] txtr: 875 uploads; 32x32 type=2 error=0000 free=2552 KB
+[dctrace 39] txtr: 900 uploads; 64x32 type=2 error=0000 free=2568 KB
+[dctrace 39] txtr: 925 uploads; 64x16 type=2 error=0000 free=2557 KB
+[dctrace 39] txtr: 950 uploads; 64x32 type=2 error=0000 free=2551 KB
+[dctrace 39] txtr: 975 uploads; 64x32 type=2 error=0000 free=2542 KB
+[dctrace 39] txtr: 1000 uploads; 64x16 type=2 error=0000 free=2540 KB
+[dctrace 39] txtr: 1025 uploads; 64x32 type=2 error=0000 free=2543 KB
+[dctrace 39] txtr: 1050 uploads; 8x8 type=2 error=0000 free=2548 KB
+[dctrace 39] txtr: 1075 uploads; 16x32 type=2 error=0000 free=2554 KB
+[dctrace 12] fps 26.0  yaw=381 pitch=0 pos=11264,18921
+[dctrace 47] gl: polys=394 walls=1505 setupfail=0 vecfail=0
+[dctrace 62] mem: level=0 tick=139 hp=150 heap=8cd2e000 vram=2536 KB largest=2532 KB
+[dctrace 63] ram: live=11445 KB reusable=36 KB
+[dctrace 39] txtr: 1100 uploads; 32x8 type=2 error=0000 free=2563 KB
+[dctrace 39] txtr: 1125 uploads; 64x16 type=2 error=0000 free=2544 KB
+[dctrace 39] txtr: 1150 uploads; 8x8 type=2 error=0000 free=2548 KB
+[dctrace 39] txtr: 1175 uploads; 16x32 type=2 error=0000 free=2553 KB
+[dctrace 39] txtr: 1200 uploads; 64x32 type=2 error=0000 free=2540 KB
+[dctrace 39] txtr: 1225 uploads; 8x8 type=2 error=0000 free=2544 KB
+[dctrace 39] txtr: 1250 uploads; 64x32 type=2 error=0000 free=2531 KB
+[dctrace 39] txtr: 1275 uploads; 64x16 type=2 error=0000 free=2538 KB
+[dctrace 39] txtr: 1300 uploads; 64x32 type=2 error=0000 free=2542 KB
+[dctrace 39] txtr: 1325 uploads; 16x32 type=2 error=0000 free=2530 KB
+[dctrace 39] txtr: 1350 uploads; 8x8 type=2 error=0000 free=2534 KB
+[dctrace 39] txtr: 1375 uploads; 64x32 type=2 error=0000 free=2536 KB
+[dctrace 39] txtr: 1400 uploads; 8x8 type=2 error=0000 free=2524 KB
+[dctrace 39] txtr: 1425 uploads; 16x32 type=2 error=0000 free=2525 KB
+[dctrace 12] fps 21.7  yaw=381 pitch=0 pos=11091,19517
+[dctrace 47] gl: polys=440 walls=1438 setupfail=0 vecfail=0
+[dctrace 62] mem: level=0 tick=170 hp=150 heap=8cd2e000 vram=2516 KB largest=2512 KB
+[dctrace 63] ram: live=11445 KB reusable=35 KB
+[dctrace 39] txtr: 1450 uploads; 64x32 type=2 error=0000 free=2538 KB
+[dctrace 39] txtr: 1475 uploads; 16x32 type=2 error=0000 free=2525 KB
+[dctrace 39] txtr: 1500 uploads; 16x32 type=2 error=0000 free=2531 KB
+[dctrace 39] txtr: 1525 uploads; 64x32 type=2 error=0000 free=2516 KB
+[dctrace 39] txtr: 1550 uploads; 64x16 type=2 error=0000 free=2521 KB
+[dctrace 39] txtr: 1575 uploads; 16x32 type=2 error=0000 free=2527 KB
+[dctrace 39] txtr: 1600 uploads; 64x32 type=2 error=0000 free=2514 KB
+[dctrace 39] txtr: 1625 uploads; 16x32 type=2 error=0000 free=2520 KB
+[dctrace 39] txtr: 1650 uploads; 16x32 type=2 error=0000 free=2523 KB
+[dctrace 39] txtr: 1675 uploads; 64x32 type=2 error=0000 free=2528 KB
+[dctrace 39] txtr: 1700 uploads; 32x32 type=2 error=0000 free=2514 KB
+[dctrace 39] txtr: 1725 uploads; 64x16 type=2 error=0000 free=2519 KB
+[dctrace 39] txtr: 1750 uploads; 8x8 type=2 error=0000 free=2522 KB
+[dctrace 12] fps 22.9  yaw=381 pitch=0 pos=11091,19517
+[dctrace 47] gl: polys=476 walls=1610 setupfail=0 vecfail=0
+[dctrace 62] mem: level=0 tick=200 hp=150 heap=8cd30000 vram=2512 KB largest=2504 KB
+[dctrace 63] ram: live=11469 KB reusable=19 KB
+[dctrace 39] txtr: 1775 uploads; 64x32 type=2 error=0000 free=2524 KB
+[dctrace 39] txtr: 1800 uploads; 64x32 type=2 error=0000 free=2530 KB
+[dctrace 39] txtr: 1825 uploads; 64x16 type=2 error=0000 free=2515 KB
+[dctrace 39] txtr: 1850 uploads; 16x32 type=2 error=0000 free=2517 KB
+[dctrace 39] txtr: 1875 uploads; 8x8 type=2 error=0000 free=2520 KB
+[dctrace 39] txtr: 1900 uploads; 64x16 type=2 error=0000 free=2521 KB
+[dctrace 39] txtr: 1925 uploads; 8x8 type=2 error=0000 free=2528 KB
+[dctrace 39] txtr: 1950 uploads; 32x32 type=3 error=0000 free=2512 KB
+[dctrace 39] txtr: 1975 uploads; 16x32 type=2 error=0000 free=2517 KB
+[dctrace 39] txtr: 2000 uploads; 16x32 type=2 error=0000 free=2520 KB
+[dctrace 39] txtr: 2025 uploads; 64x32 type=2 error=0000 free=2523 KB
+[dctrace 39] txtr: 2050 uploads; 64x32 type=2 error=0000 free=2529 KB
+[dctrace 39] txtr: 2075 uploads; 16x32 type=2 error=0000 free=2533 KB
+[dctrace 39] txtr: 2100 uploads; 64x16 type=2 error=0000 free=2513 KB
+[dctrace 12] fps 24.7  yaw=381 pitch=0 pos=11091,19517
+[dctrace 47] gl: polys=495 walls=1750 setupfail=0 vecfail=0
+[dctrace 62] mem: level=0 tick=231 hp=150 heap=8cd30000 vram=2510 KB largest=2508 KB
+[dctrace 63] ram: live=11469 KB reusable=19 KB
+[dctrace 39] txtr: 2125 uploads; 8x8 type=2 error=0000 free=2520 KB
+[dctrace 39] txtr: 2150 uploads; 64x16 type=2 error=0000 free=2521 KB
+[dctrace 39] txtr: 2175 uploads; 16x32 type=2 error=0000 free=2528 KB
+[dctrace 39] txtr: 2200 uploads; 32x32 type=3 error=0000 free=2512 KB
+[dctrace 39] txtr: 2225 uploads; 8x8 type=2 error=0000 free=2518 KB
+[dctrace 39] txtr: 2250 uploads; 8x8 type=2 error=0000 free=2523 KB
+[dctrace 39] txtr: 2275 uploads; 16x32 type=2 error=0000 free=2532 KB
+[dctrace 39] txtr: 2300 uploads; 16x32 type=2 error=0000 free=2513 KB
+[dctrace 39] txtr: 2325 uploads; 64x32 type=2 error=0000 free=2519 KB
+[dctrace 39] txtr: 2350 uploads; 16x32 type=2 error=0000 free=2532 KB
+[dctrace 39] txtr: 2375 uploads; 16x32 type=2 error=0000 free=2515 KB
+[dctrace 39] txtr: 2400 uploads; 16x32 type=2 error=0000 free=2520 KB
+[dctrace 39] txtr: 2425 uploads; 64x32 type=2 error=0000 free=2523 KB
+[dctrace 39] txtr: 2450 uploads; 16x32 type=2 error=0000 free=2529 KB
+[dctrace 12] fps 23.3  yaw=381 pitch=0 pos=11068,18873
+[dctrace 47] gl: polys=487 walls=1664 setupfail=0 vecfail=0
+[dctrace 62] mem: level=0 tick=262 hp=150 heap=8cd30000 vram=2504 KB largest=2498 KB
+[dctrace 63] ram: live=11469 KB reusable=19 KB
+[dctrace 39] txtr: 2475 uploads; 16x32 type=2 error=0000 free=2511 KB
+[dctrace 39] txtr: 2500 uploads; 64x32 type=2 error=0000 free=2517 KB
+[dctrace 39] txtr: 2525 uploads; 16x32 type=2 error=0000 free=2528 KB
+[dctrace 39] txtr: 2550 uploads; 16x32 type=2 error=0000 free=2511 KB
+[dctrace 39] txtr: 2575 uploads; 64x16 type=2 error=0000 free=2513 KB
+[dctrace 39] txtr: 2600 uploads; 16x32 type=2 error=0000 free=2524 KB
+[dctrace 39] txtr: 2625 uploads; 16x32 type=2 error=0000 free=2508 KB
+[dctrace 39] txtr: 2650 uploads; 64x32 type=2 error=0000 free=2513 KB
+[dctrace 39] txtr: 2675 uploads; 16x32 type=2 error=0000 free=2524 KB
+[dctrace 39] txtr: 2700 uploads; 64x16 type=2 error=0000 free=2502 KB
+[dctrace 39] txtr: 2725 uploads; 64x32 type=2 error=0000 free=2505 KB
+[dctrace 39] txtr: 2750 uploads; 8x8 type=2 error=0000 free=2512 KB
+[dctrace 39] txtr: 2775 uploads; 8x8 type=2 error=0000 free=2515 KB
+[dctrace 39] txtr: 2800 uploads; 16x32 type=2 error=0000 free=2512 KB
+[dctrace 39] txtr: 2825 uploads; 8x8 type=2 error=0000 free=2508 KB
+[dctrace 12] fps 25.6  yaw=381 pitch=0 pos=10247,18136
+[dctrace 47] gl: polys=432 walls=1279 setupfail=0 vecfail=0
+[dctrace 62] mem: level=0 tick=292 hp=150 heap=8cd30000 vram=2505 KB largest=2496 KB
+[dctrace 63] ram: live=11469 KB reusable=19 KB
+[dctrace 39] txtr: 2850 uploads; 32x32 type=3 error=0000 free=2503 KB
+[dctrace 39] txtr: 2875 uploads; 16x32 type=2 error=0000 free=2521 KB
+[dctrace 39] txtr: 2900 uploads; 16x32 type=2 error=0000 free=2520 KB
+[dctrace 39] txtr: 2925 uploads; 16x32 type=2 error=0000 free=2520 KB
+[dctrace 39] txtr: 2950 uploads; 64x32 type=2 error=0000 free=2512 KB
+[dctrace 39] txtr: 2975 uploads; 64x32 type=2 error=0000 free=2508 KB
+[dctrace 39] txtr: 3000 uploads; 32x32 type=2 error=0000 free=2506 KB
+[dctrace 39] txtr: 3025 uploads; 8x8 type=2 error=0000 free=2505 KB
+[dctrace 39] txtr: 3050 uploads; 16x32 type=2 error=0000 free=2503 KB
+[dctrace 39] txtr: 3075 uploads; 32x32 type=2 error=0000 free=2507 KB
+[dctrace 39] txtr: 3100 uploads; 16x32 type=2 error=0000 free=2509 KB
+[dctrace 39] txtr: 3125 uploads; 16x32 type=2 error=0000 free=2506 KB
+[dctrace 39] txtr: 3150 uploads; 16x32 type=2 error=0000 free=2488 KB
+[dctrace 39] txtr: 3175 uploads; 64x32 type=2 error=0000 free=2484 KB
+[dctrace 12] fps 26.9  yaw=381 pitch=0 pos=10447,18292
+[dctrace 47] gl: polys=415 walls=1334 setupfail=0 vecfail=0
+[dctrace 62] mem: level=0 tick=324 hp=150 heap=8cd30000 vram=2477 KB largest=2474 KB
+[dctrace 63] ram: live=11470 KB reusable=19 KB
+[dctrace 39] txtr: 3200 uploads; 8x8 type=2 error=0000 free=2493 KB
+[dctrace 39] txtr: 3225 uploads; 8x8 type=2 error=0000 free=2494 KB
+[dctrace 39] txtr: 3250 uploads; 8x8 type=2 error=0000 free=2494 KB
+[dctrace 39] txtr: 3275 uploads; 8x8 type=2 error=0000 free=2492 KB
+[dctrace 39] txtr: 3300 uploads; 16x32 type=2 error=0000 free=2491 KB
+[dctrace 39] txtr: 3325 uploads; 64x32 type=2 error=0000 free=2487 KB
+[dctrace 39] txtr: 3350 uploads; 64x32 type=2 error=0000 free=2487 KB
+2026-09-06 08:52:39.276 Flycast[1762:954154] ℹ️ rend/vulkan/vulkan_context.cpp:1620 N[RENDERER]: Swap interval changed to 2
+[dctrace 39] txtr: 3375 uploads; 16x32 type=2 error=0000 free=2491 KB
+[dctrace 39] txtr: 3400 uploads; 8x8 type=2 error=0000 free=2492 KB
+[dctrace 39] txtr: 3425 uploads; 16x32 type=2 error=0000 free=2493 KB
+[dctrace 39] txtr: 3450 uploads; 16x32 type=2 error=0000 free=2494 KB
+[dctrace 39] txtr: 3475 uploads; 16x32 type=2 error=0000 free=2494 KB
+[dctrace 39] txtr: 3500 uploads; 16x32 type=2 error=0000 free=2491 KB
+[dctrace 39] txtr: 3525 uploads; 8x8 type=2 error=0000 free=2485 KB
+[dctrace 12] fps 29.7  yaw=381 pitch=0 pos=9635,17769
+[dctrace 47] gl: polys=435 walls=1379 setupfail=0 vecfail=0
+[dctrace 62] mem: level=0 tick=355 hp=150 heap=8cd30000 vram=2482 KB largest=2474 KB
+[dctrace 63] ram: live=11470 KB reusable=19 KB
+[dctrace 39] txtr: 3550 uploads; 16x32 type=2 error=0000 free=2493 KB
+[dctrace 39] txtr: 3575 uploads; 8x8 type=2 error=0000 free=2485 KB
+[dctrace 39] txtr: 3600 uploads; 16x32 type=2 error=0000 free=2495 KB
+[dctrace 39] txtr: 3625 uploads; 16x32 type=2 error=0000 free=2494 KB
+[dctrace 39] txtr: 3650 uploads; 16x32 type=2 error=0000 free=2493 KB
+[dctrace 39] txtr: 3675 uploads; 8x8 type=2 error=0000 free=2492 KB
+[dctrace 39] txtr: 3700 uploads; 8x8 type=2 error=0000 free=2488 KB
+[dctrace 39] txtr: 3725 uploads; 16x32 type=2 error=0000 free=2487 KB
+[dctrace 39] txtr: 3750 uploads; 8x8 type=2 error=0000 free=2489 KB
+[dctrace 39] txtr: 3775 uploads; 16x32 type=2 error=0000 free=2488 KB
+[dctrace 39] txtr: 3800 uploads; 64x16 type=2 error=0000 free=2486 KB
+[dctrace 39] txtr: 3825 uploads; 8x8 type=2 error=0000 free=2484 KB
+[dctrace 39] txtr: 3850 uploads; 16x32 type=2 error=0000 free=2483 KB
+[dctrace 39] txtr: 3875 uploads; 32x32 type=3 error=0000 free=2481 KB
+[dctrace 39] txtr: 3900 uploads; 16x32 type=2 error=0000 free=2495 KB
+[dctrace 12] fps 30.3  yaw=393 pitch=0 pos=9443,18363
+[dctrace 47] gl: polys=436 walls=1461 setupfail=0 vecfail=0
+[dctrace 62] mem: level=0 tick=386 hp=150 heap=8cd30000 vram=2479 KB largest=2470 KB
+[dctrace 63] ram: live=11470 KB reusable=19 KB
+[dctrace 39] txtr: 3925 uploads; 16x32 type=2 error=0000 free=2494 KB
+[dctrace 39] txtr: 3950 uploads; 16x32 type=2 error=0000 free=2493 KB
+[dctrace 39] txtr: 3975 uploads; 64x32 type=2 error=0000 free=2489 KB
+[dctrace 39] txtr: 4000 uploads; 8x8 type=2 error=0000 free=2488 KB
+[dctrace 39] txtr: 4025 uploads; 8x8 type=2 error=0000 free=2491 KB
+[dctrace 39] txtr: 4050 uploads; 16x32 type=2 error=0000 free=2490 KB
+[dctrace 39] txtr: 4075 uploads; 16x32 type=2 error=0000 free=2485 KB
+[dctrace 39] txtr: 4100 uploads; 16x32 type=2 error=0000 free=2494 KB
+[dctrace 39] txtr: 4125 uploads; 16x32 type=2 error=0000 free=2491 KB
+[dctrace 39] txtr: 4150 uploads; 64x32 type=2 error=0000 free=2486 KB
+[dctrace 39] txtr: 4175 uploads; 32x32 type=3 error=0000 free=2483 KB
+[dctrace 39] txtr: 4200 uploads; 64x32 type=2 error=0000 free=2487 KB
+[dctrace 39] txtr: 4225 uploads; 8x8 type=2 error=0000 free=2492 KB
+[dctrace 12] fps 30.3  yaw=400 pitch=0 pos=8930,16979
+[dctrace 47] gl: polys=409 walls=1466 setupfail=0 vecfail=0
+[dctrace 62] mem: level=0 tick=417 hp=150 heap=8cd30000 vram=2485 KB largest=2478 KB
+[dctrace 63] ram: live=11470 KB reusable=19 KB
+[dctrace 39] txtr: 4250 uploads; 16x32 type=2 error=0000 free=2495 KB
+[dctrace 39] txtr: 4275 uploads; 16x32 type=2 error=0000 free=2491 KB
+[dctrace 39] txtr: 4300 uploads; 8x8 type=2 error=0000 free=2493 KB
+[dctrace 39] txtr: 4325 uploads; 8x8 type=2 error=0000 free=2494 KB
+[dctrace 39] txtr: 4350 uploads; 32x32 type=3 error=0000 free=2488 KB
+[dctrace 39] txtr: 4375 uploads; 16x32 type=2 error=0000 free=2490 KB
+[dctrace 39] txtr: 4400 uploads; 16x32 type=2 error=0000 free=2492 KB
+[dctrace 39] txtr: 4425 uploads; 16x32 type=2 error=0000 free=2487 KB
+[dctrace 39] txtr: 4450 uploads; 16x32 type=2 error=0000 free=2483 KB
+[dctrace 12] fps 30.3  yaw=343 pitch=0 pos=9213,16898
+[dctrace 47] gl: polys=286 walls=1205 setupfail=0 vecfail=0
+[dctrace 62] mem: level=0 tick=448 hp=150 heap=8cd30000 vram=2473 KB largest=2462 KB
+[dctrace 63] ram: live=11477 KB reusable=12 KB
+[dctrace 39] txtr: 4475 uploads; 64x32 type=2 error=0000 free=2475 KB
+[dctrace 39] txtr: 4500 uploads; 16x32 type=2 error=0000 free=2479 KB
+[dctrace 39] txtr: 4525 uploads; 16x32 type=2 error=0000 free=2479 KB
+[dctrace 39] txtr: 4550 uploads; 16x32 type=2 error=0000 free=2474 KB
+[dctrace 39] txtr: 4575 uploads; 16x32 type=2 error=0000 free=2477 KB
+[dctrace 39] txtr: 4600 uploads; 16x32 type=2 error=0000 free=2475 KB
+[dctrace 39] txtr: 4625 uploads; 8x8 type=2 error=0000 free=2473 KB
+[dctrace 39] txtr: 4650 uploads; 32x32 type=3 error=0000 free=2467 KB
+[dctrace 12] fps 30.3  yaw=56 pitch=0 pos=7951,15064
+[dctrace 47] gl: polys=330 walls=1218 setupfail=0 vecfail=0
+[dctrace 62] mem: level=0 tick=479 hp=150 heap=8cd30000 vram=2467 KB largest=2462 KB
+[dctrace 63] ram: live=11477 KB reusable=12 KB
+[dctrace 39] txtr: 4675 uploads; 16x32 type=2 error=0000 free=2477 KB
+[dctrace 39] txtr: 4700 uploads; 32x32 type=3 error=0000 free=2471 KB
+[dctrace 39] txtr: 4725 uploads; 32x32 type=3 error=0000 free=2473 KB
+[dctrace 39] txtr: 4750 uploads; 16x32 type=2 error=0000 free=2479 KB
+[dctrace 39] txtr: 4775 uploads; 32x32 type=2 error=0000 free=2477 KB
+[dctrace 12] fps 30.3  yaw=296 pitch=0 pos=10685,15341
+[dctrace 47] gl: polys=298 walls=663 setupfail=0 vecfail=0
+[dctrace 62] mem: level=0 tick=510 hp=150 heap=8cd30000 vram=2477 KB largest=2462 KB
+[dctrace 63] ram: live=11477 KB reusable=12 KB
+[dctrace 39] txtr: 4800 uploads; 16x32 type=2 error=0000 free=2478 KB
+[dctrace 39] txtr: 4825 uploads; 32x32 type=3 error=0000 free=2476 KB
+[dctrace 39] txtr: 4850 uploads; 16x32 type=2 error=0000 free=2478 KB
+[dctrace 12] fps 30.3  yaw=356 pitch=0 pos=13013,15824
+[dctrace 47] gl: polys=127 walls=922 setupfail=0 vecfail=0
+[dctrace 62] mem: level=0 tick=541 hp=150 heap=8cd31000 vram=2476 KB largest=2462 KB
+[dctrace 63] ram: live=11485 KB reusable=7 KB
+[dctrace 39] txtr: 4875 uploads; 16x32 type=2 error=0000 free=2478 KB
+[dctrace 39] txtr: 4900 uploads; 16x32 type=2 error=0000 free=2478 KB
+[dctrace 39] txtr: 4925 uploads; 16x32 type=2 error=0000 free=2478 KB
+[dctrace 39] txtr: 4950 uploads; 16x32 type=2 error=0000 free=2471 KB
+[dctrace 39] txtr: 4975 uploads; 16x32 type=2 error=0000 free=2473 KB
+[dctrace 39] txtr: 5000 uploads; 16x32 type=2 error=0000 free=2475 KB
+[dctrace 39] txtr: 5025 uploads; 16x32 type=2 error=0000 free=2477 KB
+[dctrace 39] txtr: 5050 uploads; 16x32 type=2 error=0000 free=2477 KB
+[dctrace 39] txtr: 5075 uploads; 16x32 type=2 error=0000 free=2476 KB
+[dctrace 39] txtr: 5100 uploads; 16x32 type=2 error=0000 free=2475 KB
+[dctrace 12] fps 30.3  yaw=273 pitch=0 pos=12164,15390
+[dctrace 47] gl: polys=340 walls=1257 setupfail=0 vecfail=0
+[dctrace 62] mem: level=0 tick=572 hp=150 heap=8cd31000 vram=2470 KB largest=2462 KB
+[dctrace 63] ram: live=11486 KB reusable=7 KB
+[dctrace 39] txtr: 5125 uploads; 16x32 type=2 error=0000 free=2474 KB
+[dctrace 39] txtr: 5150 uploads; 32x32 type=3 error=0000 free=2477 KB
+[dctrace 12] fps 30.3  yaw=447 pitch=0 pos=10383,11972
+[dctrace 47] gl: polys=95 walls=559 setupfail=0 vecfail=0
+[dctrace 62] mem: level=0 tick=603 hp=150 heap=8cd9e000 vram=2477 KB largest=2462 KB
+[dctrace 63] ram: live=11921 KB reusable=7 KB
+[dctrace 39] txtr: 5175 uploads; 32x32 type=3 error=0000 free=2434 KB
+[dctrace 39] txtr: 5200 uploads; 32x32 type=3 error=0000 free=2306 KB
+2026-09-06 08:52:48.888 Flycast[1762:954154] ℹ️ rend/vulkan/vulkan_context.cpp:1620 N[RENDERER]: Swap interval changed to 1
+[dctrace 12] fps 30.3  yaw=456 pitch=0 pos=12361,10982
+[dctrace 47] gl: polys=31 walls=658 setupfail=0 vecfail=0
+[dctrace 62] mem: level=0 tick=634 hp=150 heap=8cdb5000 vram=2306 KB largest=2287 KB
+[dctrace 63] ram: live=11921 KB reusable=99 KB
+[dctrace 39] txtr: 5225 uploads; 32x32 type=3 error=0000 free=2178 KB
+[dctrace 12] fps 30.3  yaw=363 pitch=0 pos=14267,9118
+[dctrace 47] gl: polys=31 walls=1514 setupfail=0 vecfail=0
+[dctrace 62] mem: level=0 tick=665 hp=150 heap=8cdb6000 vram=2178 KB largest=2155 KB
+[dctrace 63] ram: live=11926 KB reusable=99 KB
+[dctrace 39] txtr: 5250 uploads; 32x32 type=3 error=0000 free=2178 KB
+2026-09-06 08:52:50.627 Flycast[1762:954154] ℹ️ rend/vulkan/vulkan_context.cpp:1620 N[RENDERER]: Swap interval changed to 2
+[dctrace 12] fps 30.2  yaw=259 pitch=0 pos=11377,10612
+[dctrace 47] gl: polys=31 walls=713 setupfail=0 vecfail=0
+[dctrace 62] mem: level=0 tick=696 hp=150 heap=8cdb6000 vram=2135 KB largest=2111 KB
+[dctrace 63] ram: live=11926 KB reusable=99 KB
+[dctrace 39] txtr: 5275 uploads; 32x32 type=3 error=0000 free=2135 KB
+[dctrace 39] txtr: 5300 uploads; 32x32 type=3 error=0000 free=2135 KB
+[dctrace 12] fps 30.3  yaw=369 pitch=0 pos=7712,8891
+[dctrace 47] gl: polys=31 walls=1110 setupfail=0 vecfail=0
+[dctrace 62] mem: level=0 tick=727 hp=150 heap=8cdb6000 vram=2135 KB largest=2111 KB
+[dctrace 63] ram: live=11926 KB reusable=99 KB
+[dctrace 39] txtr: 5325 uploads; 32x32 type=3 error=0000 free=2135 KB
+[dctrace 12] fps 30.3  yaw=218 pitch=0 pos=8090,8117
+[dctrace 47] gl: polys=31 walls=733 setupfail=0 vecfail=0
+[dctrace 62] mem: level=0 tick=758 hp=150 heap=8cdb6000 vram=2135 KB largest=2111 KB
+[dctrace 63] ram: live=11926 KB reusable=99 KB
+[dctrace 39] txtr: 5350 uploads; 32x32 type=3 error=0000 free=2135 KB
+[dctrace 12] fps 30.2  yaw=334 pitch=0 pos=7673,9114
+[dctrace 47] gl: polys=31 walls=620 setupfail=0 vecfail=0
+[dctrace 62] mem: level=0 tick=789 hp=150 heap=8cdb6000 vram=2135 KB largest=2111 KB
+[dctrace 63] ram: live=11992 KB reusable=33 KB
+[dctrace 39] txtr: 5375 uploads; 32x32 type=3 error=0000 free=2135 KB
+[dctrace 12] fps 30.3  yaw=244 pitch=469 pos=6400,7171
+[dctrace 47] gl: polys=31 walls=751 setupfail=0 vecfail=0
+[dctrace 62] mem: level=0 tick=820 hp=150 heap=8cdbc000 vram=2135 KB largest=2111 KB
+[dctrace 63] ram: live=12040 KB reusable=9 KB
+[dctrace 39] txtr: 5400 uploads; 32x32 type=3 error=0000 free=2135 KB
+[dctrace 39] txtr: 5425 uploads; 32x32 type=3 error=0000 free=2135 KB
+[dctrace 12] fps 30.3  yaw=56 pitch=469 pos=5120,8029
+[dctrace 47] gl: polys=31 walls=131 setupfail=0 vecfail=0
+[dctrace 62] mem: level=0 tick=851 hp=150 heap=8cdbc000 vram=2135 KB largest=2111 KB
+[dctrace 63] ram: live=12040 KB reusable=9 KB
+[dctrace 39] txtr: 5450 uploads; 32x32 type=3 error=0000 free=2135 KB
+[dctrace 12] fps 30.3  yaw=403 pitch=469 pos=5354,6883
+[dctrace 47] gl: polys=31 walls=719 setupfail=0 vecfail=0
+[dctrace 62] mem: level=0 tick=882 hp=150 heap=8cdbc000 vram=2135 KB largest=2111 KB
+[dctrace 63] ram: live=12040 KB reusable=9 KB
+[dctrace 39] txtr: 5475 uploads; 32x32 type=3 error=0000 free=2135 KB
+[dctrace 12] fps 30.3  yaw=394 pitch=0 pos=5120,7324
+[dctrace 47] gl: polys=31 walls=706 setupfail=0 vecfail=0
+[dctrace 62] mem: level=0 tick=913 hp=150 heap=8cdbc000 vram=2135 KB largest=2111 KB
+[dctrace 63] ram: live=12040 KB reusable=9 KB
+[dctrace 39] txtr: 5500 uploads; 32x32 type=3 error=0000 free=2135 KB
+[dctrace 12] fps 30.3  yaw=361 pitch=0 pos=5922,5286
+[dctrace 47] gl: polys=31 walls=677 setupfail=0 vecfail=0
+[dctrace 62] mem: level=0 tick=944 hp=150 heap=8cdbc000 vram=2135 KB largest=2111 KB
+[dctrace 63] ram: live=12040 KB reusable=9 KB
+[dctrace 39] txtr: 5525 uploads; 32x32 type=3 error=0000 free=2135 KB
+[dctrace 12] fps 30.3  yaw=356 pitch=0 pos=5120,1116
+[dctrace 47] gl: polys=31 walls=421 setupfail=0 vecfail=0
+[dctrace 62] mem: level=0 tick=975 hp=150 heap=8cdf3000 vram=2135 KB largest=2111 KB
+[dctrace 63] ram: live=12258 KB reusable=11 KB
+[dctrace 39] txtr: 5550 uploads; 32x32 type=3 error=0000 free=2135 KB
+[dctrace 39] txtr: 5575 uploads; 32x32 type=3 error=0000 free=2135 KB
+[dctrace 12] fps 30.3  yaw=54 pitch=0 pos=5282,-511
+[dctrace 47] gl: polys=31 walls=345 setupfail=0 vecfail=0
+[dctrace 62] mem: level=0 tick=1006 hp=150 heap=8ce0a000 vram=2092 KB largest=2067 KB
+[dctrace 63] ram: live=12258 KB reusable=103 KB
+[dctrace 39] txtr: 5600 uploads; 32x32 type=3 error=0000 free=2092 KB
+[dctrace 12] fps 30.3  yaw=274 pitch=0 pos=5120,2304
+[dctrace 47] gl: polys=31 walls=1272 setupfail=0 vecfail=0
+[dctrace 62] mem: level=0 tick=1037 hp=150 heap=8ce0a000 vram=2092 KB largest=2067 KB
+[dctrace 63] ram: live=12258 KB reusable=103 KB
+[dctrace 39] txtr: 5625 uploads; 32x32 type=2 error=0000 free=2090 KB
+[dctrace 39] txtr: 5650 uploads; 32x32 type=3 error=0000 free=2086 KB
+[dctrace 39] txtr: 5675 uploads; 32x32 type=2 error=0000 free=2090 KB
+[dctrace 12] fps 30.3  yaw=389 pitch=478 pos=5137,2018
+[dctrace 47] gl: polys=71 walls=357 setupfail=0 vecfail=0
+[dctrace 62] mem: level=0 tick=1068 hp=150 heap=8ce0e000 vram=2086 KB largest=2067 KB
+[dctrace 63] ram: live=12362 KB reusable=15 KB
+[dctrace 39] txtr: 5700 uploads; 32x16 type=2 error=0000 free=2090 KB
+[dctrace 39] txtr: 5725 uploads; 32x32 type=3 error=0000 free=2088 KB
+[dctrace 12] fps 30.3  yaw=389 pitch=0 pos=5180,1313
+[dctrace 47] gl: polys=62 walls=322 setupfail=0 vecfail=0
+[dctrace 62] mem: level=0 tick=1099 hp=150 heap=8ce0e000 vram=2088 KB largest=2067 KB
+[dctrace 63] ram: live=12362 KB reusable=15 KB
+[dctrace 39] txtr: 5750 uploads; 32x16 type=2 error=0000 free=2090 KB
+[dctrace 39] txtr: 5775 uploads; 32x32 type=3 error=0000 free=2088 KB
+[dctrace 39] txtr: 5800 uploads; 32x16 type=2 error=0000 free=2090 KB
+[dctrace 12] fps 30.3  yaw=389 pitch=0 pos=5141,1935
+[dctrace 47] gl: polys=62 walls=310 setupfail=0 vecfail=0
+[dctrace 62] mem: level=0 tick=1130 hp=150 heap=8ce0e000 vram=2088 KB largest=2067 KB
+[dctrace 63] ram: live=12362 KB reusable=15 KB
+[dctrace 39] txtr: 5825 uploads; 32x32 type=3 error=0000 free=2088 KB
+[dctrace 39] txtr: 5850 uploads; 32x16 type=2 error=0000 free=2090 KB
+[dctrace 12] fps 30.3  yaw=389 pitch=0 pos=5153,1738
+[dctrace 47] gl: polys=62 walls=310 setupfail=0 vecfail=0
+[dctrace 62] mem: level=0 tick=1161 hp=150 heap=8ce0e000 vram=2088 KB largest=2067 KB
+[dctrace 63] ram: live=12362 KB reusable=15 KB
+[dctrace 39] txtr: 5875 uploads; 32x32 type=3 error=0000 free=2088 KB
+[dctrace 39] txtr: 5900 uploads; 32x16 type=2 error=0000 free=2090 KB
+[dctrace 39] txtr: 5925 uploads; 32x32 type=3 error=0000 free=2088 KB
+[dctrace 12] fps 30.3  yaw=389 pitch=0 pos=5153,1738
+[dctrace 47] gl: polys=62 walls=310 setupfail=0 vecfail=0
+[dctrace 62] mem: level=0 tick=1192 hp=150 heap=8ce0e000 vram=2088 KB largest=2067 KB
+[dctrace 63] ram: live=12362 KB reusable=15 KB
+[dctrace 39] txtr: 5950 uploads; 16x32 type=2 error=0000 free=2087 KB
+[dctrace 39] txtr: 5975 uploads; 32x16 type=2 error=0000 free=2086 KB
+[dctrace 39] txtr: 6000 uploads; 16x16 type=2 error=0000 free=2082 KB
+[dctrace 39] txtr: 6025 uploads; 16x16 type=2 error=0000 free=2083 KB
+[dctrace 39] txtr: 6050 uploads; 16x16 type=2 error=0000 free=2084 KB
+[dctrace 39] txtr: 6075 uploads; 16x16 type=2 error=0000 free=2081 KB
+[dctrace 12] fps 30.3  yaw=389 pitch=0 pos=5233,431
+[dctrace 47] gl: polys=164 walls=359 setupfail=0 vecfail=0
+[dctrace 62] mem: level=0 tick=1223 hp=150 heap=8ce0e000 vram=2080 KB largest=2067 KB
+[dctrace 63] ram: live=12362 KB reusable=15 KB
+[dctrace 39] txtr: 6100 uploads; 32x32 type=3 error=0000 free=2080 KB
+[dctrace 39] txtr: 6125 uploads; 32x32 type=3 error=0000 free=2080 KB
+[dctrace 12] fps 30.3  yaw=344 pitch=510 pos=4255,-2304
+[dctrace 47] gl: polys=31 walls=219 setupfail=0 vecfail=0
+[dctrace 62] mem: level=0 tick=1254 hp=150 heap=8ce0e000 vram=2080 KB largest=2067 KB
+[dctrace 63] ram: live=12362 KB reusable=15 KB
+[dctrace 39] txtr: 6150 uploads; 64x32 type=2 error=0000 free=2078 KB
+[dctrace 39] txtr: 6175 uploads; 64x32 type=2 error=0000 free=2073 KB
+[dctrace 39] txtr: 6200 uploads; 8x16 type=2 error=0000 free=2072 KB
+[dctrace 39] txtr: 6225 uploads; 8x16 type=2 error=0000 free=2075 KB
+[dctrace 39] txtr: 6250 uploads; 8x16 type=2 error=0000 free=2075 KB
+[dctrace 39] txtr: 6275 uploads; 8x16 type=2 error=0000 free=2073 KB
+[dctrace 39] txtr: 6300 uploads; 64x32 type=2 error=0000 free=2077 KB
+[dctrace 12] fps 30.3  yaw=391 pitch=469 pos=3740,-2968
+[dctrace 47] gl: polys=182 walls=550 setupfail=0 vecfail=0
+[dctrace 62] mem: level=0 tick=1285 hp=150 heap=8ce0e000 vram=2070 KB largest=2058 KB
+[dctrace 63] ram: live=12363 KB reusable=14 KB
+[dctrace 39] txtr: 6325 uploads; 8x16 type=2 error=0000 free=2072 KB
+[dctrace 39] txtr: 6350 uploads; 8x16 type=2 error=0000 free=2074 KB
+[dctrace 39] txtr: 6375 uploads; 8x16 type=2 error=0000 free=2075 KB
+[dctrace 39] txtr: 6400 uploads; 8x16 type=2 error=0000 free=2073 KB
+[dctrace 39] txtr: 6425 uploads; 32x32 type=3 error=0000 free=2071 KB
+[dctrace 39] txtr: 6450 uploads; 64x16 type=2 error=0000 free=2079 KB
+[dctrace 12] fps 30.3  yaw=447 pitch=469 pos=2524,-6611
+[dctrace 47] gl: polys=150 walls=740 setupfail=0 vecfail=0
+[dctrace 62] mem: level=0 tick=1316 hp=150 heap=8ce0e000 vram=2075 KB largest=2058 KB
+[dctrace 63] ram: live=12362 KB reusable=14 KB
+[dctrace 39] txtr: 6475 uploads; 64x16 type=2 error=0000 free=2079 KB
+[dctrace 39] txtr: 6500 uploads; 32x32 type=3 error=0000 free=2075 KB
+[dctrace 12] fps 30.3  yaw=102 pitch=469 pos=3840,-9984
+[dctrace 47] gl: polys=54 walls=524 setupfail=0 vecfail=0
+[dctrace 62] mem: level=0 tick=1347 hp=150 heap=8ce0e000 vram=2079 KB largest=2058 KB
+[dctrace 63] ram: live=12362 KB reusable=14 KB
+[dctrace 39] txtr: 6525 uploads; 64x16 type=2 error=0000 free=2079 KB
+[dctrace 39] txtr: 6550 uploads; 8x8 type=2 error=0000 free=2081 KB
+[dctrace 39] txtr: 6575 uploads; 32x32 type=3 error=0000 free=2073 KB
+[dctrace 12] fps 30.3  yaw=236 pitch=0 pos=3165,-9853
+[dctrace 47] gl: polys=71 walls=374 setupfail=0 vecfail=0
+[dctrace 62] mem: level=0 tick=1378 hp=150 heap=8ce0e000 vram=2073 KB largest=2058 KB
+[dctrace 63] ram: live=12363 KB reusable=14 KB
+[dctrace 39] txtr: 6600 uploads; 8x8 type=2 error=0000 free=2079 KB
+[dctrace 39] txtr: 6625 uploads; 64x32 type=2 error=0000 free=2074 KB
+[dctrace 39] txtr: 6650 uploads; 64x32 type=2 error=0000 free=2074 KB
+[dctrace 39] txtr: 6675 uploads; 64x32 type=2 error=0000 free=2074 KB
+[dctrace 12] fps 30.3  yaw=454 pitch=0 pos=833,-8000
+[dctrace 47] gl: polys=98 walls=289 setupfail=0 vecfail=0
+[dctrace 62] mem: level=0 tick=1409 hp=150 heap=8ce0e000 vram=2068 KB largest=2054 KB
+[dctrace 63] ram: live=12363 KB reusable=14 KB
+[dctrace 39] txtr: 6700 uploads; 32x32 type=3 error=0000 free=2067 KB
+[dctrace 39] txtr: 6725 uploads; 8x16 type=2 error=0000 free=2078 KB
+[dctrace 39] txtr: 6750 uploads; 32x32 type=3 error=0000 free=2063 KB
+[dctrace 39] txtr: 6775 uploads; 32x32 type=2 error=0000 free=2067 KB
+[dctrace 39] txtr: 6800 uploads; 8x8 type=2 error=0000 free=2067 KB
+[dctrace 39] txtr: 6825 uploads; 64x32 type=2 error=0000 free=2071 KB
+[dctrace 39] txtr: 6850 uploads; 64x32 type=2 error=0000 free=2071 KB
+[dctrace 39] txtr: 6875 uploads; 32x16 type=2 error=0000 free=2070 KB
+[dctrace 12] fps 30.3  yaw=500 pitch=0 pos=750,-6022
+[dctrace 47] gl: polys=210 walls=2003 setupfail=0 vecfail=0
+[dctrace 62] mem: level=0 tick=1440 hp=150 heap=8ce0e000 vram=2061 KB largest=2042 KB
+[dctrace 63] ram: live=12363 KB reusable=14 KB
+[dctrace 39] txtr: 6900 uploads; 64x32 type=2 error=0000 free=2064 KB
+[dctrace 39] txtr: 6925 uploads; 64x32 type=2 error=0000 free=2064 KB
+[dctrace 39] txtr: 6950 uploads; 64x32 type=2 error=0000 free=2062 KB
+[dctrace 39] txtr: 6975 uploads; 8x8 type=2 error=0000 free=2067 KB
+[dctrace 39] txtr: 7000 uploads; 32x16 type=2 error=0000 free=2070 KB
+[dctrace 39] txtr: 7025 uploads; 32x32 type=3 error=0000 free=2065 KB
+[dctrace 12] fps 30.3  yaw=455 pitch=0 pos=4902,-5262
+[dctrace 47] gl: polys=150 walls=1732 setupfail=0 vecfail=0
+[dctrace 62] mem: level=0 tick=1471 hp=150 heap=8ce0e000 vram=2063 KB largest=2042 KB
+[dctrace 63] ram: live=12363 KB reusable=14 KB
+[dctrace 39] txtr: 7050 uploads; 32x32 type=3 error=0000 free=2063 KB
+[dctrace 39] txtr: 7075 uploads; 32x32 type=3 error=0000 free=2059 KB
+[dctrace 39] txtr: 7100 uploads; 32x16 type=2 error=0000 free=2069 KB
+[dctrace 39] txtr: 7125 uploads; 8x8 type=2 error=0000 free=2063 KB
+[dctrace 39] txtr: 7150 uploads; 32x32 type=3 error=0000 free=2055 KB
+[dctrace 39] txtr: 7175 uploads; 8x8 type=2 error=0000 free=2069 KB
+[dctrace 39] txtr: 7200 uploads; 32x16 type=2 error=0000 free=2060 KB
+[dctrace 39] txtr: 7225 uploads; 32x16 type=2 error=0000 free=2060 KB
+[dctrace 39] txtr: 7250 uploads; 32x16 type=2 error=0000 free=2061 KB
+[dctrace 12] fps 30.3  yaw=304 pitch=0 pos=8100,-5138
+[dctrace 47] gl: polys=227 walls=1031 setupfail=0 vecfail=0
+[dctrace 62] mem: level=0 tick=1502 hp=150 heap=8ce0e000 vram=2057 KB largest=2030 KB
+[dctrace 63] ram: live=12363 KB reusable=14 KB
+[dctrace 39] txtr: 7275 uploads; 32x32 type=3 error=0000 free=2057 KB
+[dctrace 39] txtr: 7300 uploads; 32x32 type=2 error=0000 free=2061 KB
+[dctrace 39] txtr: 7325 uploads; 64x32 type=2 error=0000 free=2064 KB
+[dctrace 39] txtr: 7350 uploads; 64x32 type=2 error=0000 free=2060 KB
+[dctrace 39] txtr: 7375 uploads; 32x16 type=2 error=0000 free=2059 KB
+[dctrace 39] txtr: 7400 uploads; 8x8 type=2 error=0000 free=2057 KB
+[dctrace 39] txtr: 7425 uploads; 64x32 type=2 error=0000 free=2053 KB
+[dctrace 39] txtr: 7450 uploads; 64x32 type=2 error=0000 free=2058 KB
+[dctrace 39] txtr: 7475 uploads; 64x32 type=2 error=0000 free=2046 KB
+[dctrace 39] txtr: 7500 uploads; 16x8 type=2 error=0000 free=2052 KB
+[dctrace 12] fps 30.3  yaw=274 pitch=0 pos=9174,-7175
+[dctrace 47] gl: polys=236 walls=1362 setupfail=0 vecfail=0
+[dctrace 62] mem: level=0 tick=1533 hp=150 heap=8ce0e000 vram=2041 KB largest=2022 KB
+[dctrace 63] ram: live=12363 KB reusable=14 KB
+[dctrace 39] txtr: 7525 uploads; 8x8 type=2 error=0000 free=2052 KB
+[dctrace 39] txtr: 7550 uploads; 32x16 type=2 error=0000 free=2049 KB
+[dctrace 39] txtr: 7575 uploads; 32x16 type=2 error=0000 free=2049 KB
+[dctrace 39] txtr: 7600 uploads; 64x32 type=2 error=0000 free=2054 KB
+[dctrace 39] txtr: 7625 uploads; 16x32 type=2 error=0000 free=2045 KB
+[dctrace 39] txtr: 7650 uploads; 16x16 type=2 error=0000 free=2049 KB
+[dctrace 39] txtr: 7675 uploads; 16x16 type=2 error=0000 free=2044 KB
+[dctrace 39] txtr: 7700 uploads; 64x32 type=2 error=0000 free=2039 KB
+[dctrace 39] txtr: 7725 uploads; 16x16 type=2 error=0000 free=2040 KB
+[dctrace 12] fps 29.8  yaw=205 pitch=0 pos=7424,-9966
+[dctrace 47] gl: polys=223 walls=994 setupfail=0 vecfail=0
+[dctrace 62] mem: level=0 tick=1563 hp=150 heap=8ce0e000 vram=2034 KB largest=2018 KB
+[dctrace 63] ram: live=12363 KB reusable=14 KB
+[dctrace 39] txtr: 7750 uploads; 32x16 type=2 error=0000 free=2053 KB
+[dctrace 39] txtr: 7775 uploads; 32x32 type=2 error=0000 free=2051 KB
+[dctrace 39] txtr: 7800 uploads; 64x32 type=2 error=0000 free=2042 KB
+[dctrace 39] txtr: 7825 uploads; 32x32 type=3 error=0000 free=2039 KB
+[dctrace 39] txtr: 7850 uploads; 64x16 type=2 error=0000 free=2049 KB
+[dctrace 39] txtr: 7875 uploads; 8x8 type=2 error=0000 free=2046 KB
+[dctrace 12] fps 29.7  yaw=134 pitch=0 pos=4771,-8560
+[dctrace 47] gl: polys=158 walls=998 setupfail=0 vecfail=0
+[dctrace 62] mem: level=0 tick=1594 hp=150 heap=8ce0e000 vram=2044 KB largest=2018 KB
+[dctrace 63] ram: live=12363 KB reusable=14 KB
+[dctrace 39] txtr: 7900 uploads; 8x8 type=2 error=0000 free=2047 KB
+[dctrace 39] txtr: 7925 uploads; 64x32 type=2 error=0000 free=2043 KB
+[dctrace 39] txtr: 7950 uploads; 8x16 type=2 error=0000 free=2044 KB
+[dctrace 39] txtr: 7975 uploads; 8x8 type=2 error=0000 free=2042 KB
+[dctrace 39] txtr: 8000 uploads; 32x32 type=3 error=0000 free=2035 KB
+[dctrace 39] txtr: 8025 uploads; 32x16 type=2 error=0000 free=2045 KB
+[dctrace 39] txtr: 8050 uploads; 32x16 type=2 error=0000 free=2046 KB
+[dctrace 12] fps 30.3  yaw=22 pitch=0 pos=2689,-7186
+[dctrace 47] gl: polys=186 walls=1087 setupfail=0 vecfail=0
+[dctrace 62] mem: level=0 tick=1625 hp=150 heap=8ce0e000 vram=2036 KB largest=2018 KB
+[dctrace 63] ram: live=12363 KB reusable=14 KB
+[dctrace 39] txtr: 8075 uploads; 32x32 type=2 error=0000 free=2044 KB
+[dctrace 39] txtr: 8100 uploads; 64x32 type=2 error=0000 free=2039 KB
+[dctrace 39] txtr: 8125 uploads; 32x32 type=3 error=0000 free=2035 KB
+[dctrace 39] txtr: 8150 uploads; 64x32 type=2 error=0000 free=2045 KB
+[dctrace 39] txtr: 8175 uploads; 64x32 type=2 error=0000 free=2043 KB
+[dctrace 39] txtr: 8200 uploads; 16x16 type=2 error=0000 free=2047 KB
+[dctrace 12] fps 30.3  yaw=441 pitch=0 pos=4249,-5366
+[dctrace 47] gl: polys=152 walls=1534 setupfail=0 vecfail=0
+[dctrace 62] mem: level=0 tick=1656 hp=150 heap=8ce0e000 vram=2041 KB largest=2010 KB
+[dctrace 63] ram: live=12363 KB reusable=14 KB
+[dctrace 39] txtr: 8225 uploads; 64x32 type=2 error=0000 free=2043 KB
+[dctrace 39] txtr: 8250 uploads; 32x32 type=3 error=0000 free=2037 KB
+[dctrace 39] txtr: 8275 uploads; 16x16 type=2 error=0000 free=2045 KB
+[dctrace 39] txtr: 8300 uploads; 64x32 type=2 error=0000 free=2041 KB
+[dctrace 39] txtr: 8325 uploads; 32x32 type=3 error=0000 free=2039 KB
+[dctrace 12] fps 30.3  yaw=323 pitch=0 pos=7505,-5629
+[dctrace 47] gl: polys=114 walls=1048 setupfail=0 vecfail=0
+[dctrace 62] mem: level=0 tick=1687 hp=150 heap=8ce0e000 vram=2038 KB largest=2010 KB
+[dctrace 63] ram: live=12363 KB reusable=14 KB
+[dctrace 39] txtr: 8350 uploads; 64x32 type=2 error=0000 free=2036 KB
+[dctrace 39] txtr: 8375 uploads; 64x32 type=2 error=0000 free=2041 KB
+[dctrace 39] txtr: 8400 uploads; 64x32 type=2 error=0000 free=2041 KB
+[dctrace 39] txtr: 8425 uploads; 64x32 type=2 error=0000 free=2032 KB
+[dctrace 39] txtr: 8450 uploads; 32x32 type=3 error=0000 free=2030 KB
+[dctrace 39] txtr: 8475 uploads; 16x16 type=2 error=0000 free=2045 KB
+[dctrace 12] fps 30.3  yaw=403 pitch=0 pos=7292,-5488
+[dctrace 47] gl: polys=162 walls=1023 setupfail=0 vecfail=0
+[dctrace 62] mem: level=0 tick=1718 hp=150 heap=8ce0e000 vram=2039 KB largest=2010 KB
+[dctrace 63] ram: live=12363 KB reusable=14 KB
+[dctrace 39] txtr: 8500 uploads; 16x16 type=2 error=0000 free=2045 KB
+[dctrace 39] txtr: 8525 uploads; 32x32 type=3 error=0000 free=2043 KB
+[dctrace 12] fps 30.3  yaw=10 pitch=0 pos=7172,-6201
+[dctrace 47] gl: polys=33 walls=536 setupfail=0 vecfail=0
+[dctrace 62] mem: level=0 tick=1749 hp=129 heap=8ce0e000 vram=2043 KB largest=2010 KB
+[dctrace 63] ram: live=12363 KB reusable=14 KB
+[dctrace 39] txtr: 8550 uploads; 32x32 type=3 error=0000 free=2043 KB
+[dctrace 12] fps 30.3  yaw=484 pitch=0 pos=7167,-6400
+[dctrace 47] gl: polys=31 walls=509 setupfail=0 vecfail=0
+[dctrace 62] mem: level=0 tick=1780 hp=84 heap=8ce0e000 vram=2043 KB largest=2010 KB
+[dctrace 63] ram: live=12363 KB reusable=14 KB
+[dctrace 39] txtr: 8575 uploads; 32x32 type=3 error=0000 free=2043 KB
+[dctrace 12] fps 30.3  yaw=39 pitch=0 pos=10468,-8227
+[dctrace 47] gl: polys=31 walls=373 setupfail=0 vecfail=0
+[dctrace 62] mem: level=0 tick=1811 hp=84 heap=8ce0e000 vram=2043 KB largest=2010 KB
+[dctrace 63] ram: live=12363 KB reusable=14 KB
+[dctrace 39] txtr: 8600 uploads; 32x32 type=3 error=0000 free=2043 KB
+[dctrace 39] txtr: 8625 uploads; 64x32 type=2 error=0000 free=2039 KB
+[dctrace 39] txtr: 8650 uploads; 16x16 type=2 error=0000 free=2032 KB
+[dctrace 39] txtr: 8675 uploads; 16x16 type=2 error=0000 free=2045 KB
+[dctrace 12] fps 30.3  yaw=276 pitch=0 pos=10552,-7839
+[dctrace 47] gl: polys=86 walls=615 setupfail=0 vecfail=0
+[dctrace 62] mem: level=0 tick=1842 hp=84 heap=8ce0e000 vram=2042 KB largest=2010 KB
+[dctrace 63] ram: live=12363 KB reusable=14 KB
+[dctrace 39] txtr: 8700 uploads; 16x16 type=2 error=0000 free=2044 KB
+[dctrace 39] txtr: 8725 uploads; 16x16 type=2 error=0000 free=2045 KB
+[dctrace 39] txtr: 8750 uploads; 16x16 type=2 error=0000 free=2044 KB
+[dctrace 12] fps 30.3  yaw=292 pitch=0 pos=10535,-7545
+[dctrace 47] gl: polys=92 walls=1009 setupfail=0 vecfail=0
+[dctrace 62] mem: level=0 tick=1873 hp=84 heap=8ce0e000 vram=2042 KB largest=2010 KB
+[dctrace 63] ram: live=12363 KB reusable=14 KB
+[dctrace 39] txtr: 8775 uploads; 32x32 type=3 error=0000 free=2042 KB
+[dctrace 39] txtr: 8800 uploads; 32x32 type=3 error=0000 free=2043 KB
+[dctrace 39] txtr: 8825 uploads; 32x32 type=3 error=0000 free=2043 KB
+[dctrace 12] fps 30.3  yaw=426 pitch=0 pos=8462,-8558
+[dctrace 47] gl: polys=60 walls=745 setupfail=0 vecfail=0
+[dctrace 62] mem: level=0 tick=1904 hp=84 heap=8ce0e000 vram=2043 KB largest=2010 KB
+[dctrace 63] ram: live=12363 KB reusable=14 KB
+[dctrace 39] txtr: 8850 uploads; 32x32 type=3 error=0000 free=2043 KB
+[dctrace 12] fps 30.3  yaw=475 pitch=0 pos=10496,-8762
+[dctrace 47] gl: polys=31 walls=99 setupfail=0 vecfail=0
+[dctrace 62] mem: level=0 tick=1935 hp=84 heap=8ce0e000 vram=2043 KB largest=2010 KB
+[dctrace 63] ram: live=12363 KB reusable=14 KB
+[dctrace 39] txtr: 8875 uploads; 32x32 type=3 error=0000 free=2043 KB
+[dctrace 12] fps 30.3  yaw=306 pitch=0 pos=10296,-9216
+[dctrace 47] gl: polys=31 walls=76 setupfail=0 vecfail=0
+[dctrace 62] mem: level=0 tick=1966 hp=84 heap=8ce0e000 vram=2043 KB largest=2010 KB
+[dctrace 63] ram: live=12363 KB reusable=14 KB
+[dctrace 39] txtr: 8900 uploads; 16x16 type=2 error=0000 free=2045 KB
+[dctrace 39] txtr: 8925 uploads; 64x32 type=2 error=0000 free=2040 KB
+[dctrace 39] txtr: 8950 uploads; 16x16 type=2 error=0000 free=2044 KB
+[dctrace 39] txtr: 8975 uploads; 32x32 type=3 error=0000 free=2042 KB
+[dctrace 12] fps 30.3  yaw=274 pitch=0 pos=8266,-9028
+[dctrace 47] gl: polys=98 walls=1081 setupfail=0 vecfail=0
+[dctrace 62] mem: level=0 tick=1997 hp=64 heap=8ce0e000 vram=2043 KB largest=2010 KB
+[dctrace 63] ram: live=12363 KB reusable=14 KB
+[dctrace 39] txtr: 9000 uploads; 32x32 type=3 error=0000 free=2043 KB
+[dctrace 39] txtr: 9025 uploads; 32x32 type=3 error=0000 free=2043 KB
+[dctrace 12] fps 30.3  yaw=396 pitch=0 pos=6522,-10316
+[dctrace 47] gl: polys=35 walls=197 setupfail=0 vecfail=0
+[dctrace 62] mem: level=0 tick=2028 hp=64 heap=8ce0e000 vram=2043 KB largest=2010 KB
+[dctrace 63] ram: live=12363 KB reusable=14 KB
+[dctrace 39] txtr: 9050 uploads; 32x32 type=3 error=0000 free=2043 KB
+[dctrace 12] fps 30.3  yaw=362 pitch=0 pos=8789,-11008
+[dctrace 47] gl: polys=31 walls=92 setupfail=0 vecfail=0
+[dctrace 62] mem: level=0 tick=2059 hp=64 heap=8ce0e000 vram=2043 KB largest=2010 KB
+[dctrace 63] ram: live=12363 KB reusable=14 KB
+[dctrace 39] txtr: 9075 uploads; 32x32 type=3 error=0000 free=2043 KB
+[dctrace 39] txtr: 9100 uploads; 16x16 type=2 error=0000 free=2045 KB
+[dctrace 12] fps 30.3  yaw=227 pitch=0 pos=7288,-11008
+[dctrace 47] gl: polys=44 walls=396 setupfail=0 vecfail=0
+[dctrace 62] mem: level=0 tick=2090 hp=64 heap=8ce0e000 vram=2042 KB largest=2010 KB
+[dctrace 63] ram: live=12363 KB reusable=14 KB
+[dctrace 39] txtr: 9125 uploads; 16x16 type=2 error=0000 free=2044 KB
+[dctrace 39] txtr: 9150 uploads; 64x32 type=2 error=0000 free=2036 KB
+[dctrace 39] txtr: 9175 uploads; 64x32 type=2 error=0000 free=2040 KB
+[dctrace 12] fps 30.3  yaw=81 pitch=0 pos=5547,-8450
+[dctrace 47] gl: polys=95 walls=787 setupfail=0 vecfail=0
+[dctrace 62] mem: level=0 tick=2121 hp=64 heap=8ce0e000 vram=2043 KB largest=2010 KB
+[dctrace 63] ram: live=12363 KB reusable=14 KB
+[dctrace 39] txtr: 9200 uploads; 32x32 type=3 error=0000 free=2043 KB
+[dctrace 39] txtr: 9225 uploads; 64x32 type=2 error=0000 free=2037 KB
+[dctrace 12] fps 30.3  yaw=373 pitch=0 pos=6656,-6903
+[dctrace 47] gl: polys=51 walls=641 setupfail=0 vecfail=0
+[dctrace 62] mem: level=0 tick=2152 hp=64 heap=8ce0e000 vram=2031 KB largest=2010 KB
+[dctrace 63] ram: live=12363 KB reusable=14 KB
+[dctrace 39] txtr: 9250 uploads; 64x32 type=2 error=0000 free=2037 KB
+[dctrace 39] txtr: 9275 uploads; 16x16 type=2 error=0000 free=2041 KB
+[dctrace 39] txtr: 9300 uploads; 16x16 type=2 error=0000 free=2041 KB
+[dctrace 39] txtr: 9325 uploads; 64x32 type=2 error=0000 free=2037 KB
+[dctrace 12] fps 30.3  yaw=336 pitch=0 pos=6964,-9645
+[dctrace 47] gl: polys=100 walls=483 setupfail=0 vecfail=0
+[dctrace 62] mem: level=0 tick=2183 hp=64 heap=8ce0e000 vram=2043 KB largest=2010 KB
+[dctrace 63] ram: live=12363 KB reusable=14 KB
+[dctrace 39] txtr: 9350 uploads; 32x32 type=3 error=0000 free=2043 KB
+[dctrace 39] txtr: 9375 uploads; 32x32 type=3 error=0000 free=2039 KB
+[dctrace 39] txtr: 9400 uploads; 32x32 type=3 error=0000 free=2043 KB
+[dctrace 12] fps 30.3  yaw=221 pitch=0 pos=6399,-11008
+[dctrace 47] gl: polys=55 walls=570 setupfail=0 vecfail=0
+[dctrace 62] mem: level=0 tick=2214 hp=64 heap=8ce0e000 vram=2043 KB largest=2010 KB
+[dctrace 63] ram: live=12363 KB reusable=14 KB
+[dctrace 39] txtr: 9425 uploads; 16x16 type=2 error=0000 free=2044 KB
+[dctrace 39] txtr: 9450 uploads; 64x32 type=2 error=0000 free=2040 KB
+[dctrace 39] txtr: 9475 uploads; 64x32 type=2 error=0000 free=2033 KB
+[dctrace 39] txtr: 9500 uploads; 64x32 type=2 error=0000 free=2033 KB
+[dctrace 39] txtr: 9525 uploads; 64x32 type=2 error=0000 free=2033 KB
+[dctrace 39] txtr: 9550 uploads; 16x16 type=2 error=0000 free=2044 KB
+[dctrace 12] fps 30.3  yaw=97 pitch=0 pos=6400,-10450
+[dctrace 47] gl: polys=151 walls=863 setupfail=0 vecfail=0
+[dctrace 62] mem: level=0 tick=2245 hp=64 heap=8ce0e000 vram=2030 KB largest=2010 KB
+[dctrace 63] ram: live=12363 KB reusable=14 KB
+[dctrace 39] txtr: 9575 uploads; 64x32 type=2 error=0000 free=2040 KB
+[dctrace 39] txtr: 9600 uploads; 64x32 type=2 error=0000 free=2036 KB
+[dctrace 39] txtr: 9625 uploads; 64x32 type=2 error=0000 free=2032 KB
+[dctrace 39] txtr: 9650 uploads; 64x32 type=2 error=0000 free=2041 KB
+[dctrace 39] txtr: 9675 uploads; 64x32 type=2 error=0000 free=2041 KB
+[dctrace 12] fps 30.3  yaw=494 pitch=7 pos=6400,-10573
+[dctrace 47] gl: polys=133 walls=1021 setupfail=0 vecfail=0
+[dctrace 62] mem: level=0 tick=2276 hp=0 heap=8ce0e000 vram=2043 KB largest=2010 KB
+[dctrace 63] ram: live=12363 KB reusable=14 KB
+[dctrace 39] txtr: 9700 uploads; 64x32 type=2 error=0000 free=2041 KB
+[dctrace 12] fps 30.3  yaw=494 pitch=42 pos=6400,-11009
+[dctrace 47] gl: polys=31 walls=790 setupfail=0 vecfail=0
+[dctrace 62] mem: level=0 tick=2307 hp=0 heap=8ce0e000 vram=2041 KB largest=2010 KB
+[dctrace 63] ram: live=12363 KB reusable=14 KB
+[dctrace 39] txtr: 9725 uploads; 64x32 type=2 error=0000 free=2041 KB
+[dctrace 12] fps 30.3  yaw=494 pitch=42 pos=6400,-11009
+[dctrace 47] gl: polys=10 walls=744 setupfail=0 vecfail=0
+[dctrace 62] mem: level=0 tick=2338 hp=0 heap=8ce0e000 vram=2045 KB largest=2010 KB
+[dctrace 63] ram: live=12363 KB reusable=14 KB
+[dctrace 12] fps 30.3  yaw=494 pitch=42 pos=6400,-11009
+[dctrace 47] gl: polys=0 walls=744 setupfail=0 vecfail=0
+[dctrace 62] mem: level=0 tick=2369 hp=0 heap=8ce0e000 vram=2045 KB largest=2010 KB
+[dctrace 63] ram: live=12363 KB reusable=14 KB
+[dctrace 39] txtr: 9750 uploads; 64x32 type=2 error=0000 free=2041 KB
+[dctrace 12] fps 30.3  yaw=494 pitch=42 pos=6400,-11009
+[dctrace 47] gl: polys=30 walls=744 setupfail=0 vecfail=0
+[dctrace 62] mem: level=0 tick=2400 hp=0 heap=8ce0e000 vram=2041 KB largest=2014 KB
+[dctrace 63] ram: live=12363 KB reusable=14 KB
+[dctrace 39] txtr: 9775 uploads; 64x32 type=2 error=0000 free=2041 KB
+[dctrace 12] fps 30.3  yaw=494 pitch=42 pos=6400,-11009
+[dctrace 47] gl: polys=31 walls=744 setupfail=0 vecfail=0
+[dctrace 62] mem: level=0 tick=2431 hp=0 heap=8ce0e000 vram=2041 KB largest=2014 KB
+[dctrace 63] ram: live=12363 KB reusable=14 KB
+[dctrace 39] txtr: 9800 uploads; 64x32 type=2 error=0000 free=2041 KB
+[dctrace 12] fps 30.3  yaw=494 pitch=42 pos=6400,-11009
+[dctrace 47] gl: polys=31 walls=744 setupfail=0 vecfail=0
+[dctrace 62] mem: level=0 tick=2462 hp=0 heap=8ce0e000 vram=2041 KB largest=2014 KB
+[dctrace 63] ram: live=12363 KB reusable=14 KB
+[dctrace 39] txtr: 9825 uploads; 64x32 type=2 error=0000 free=2041 KB
+[dctrace 12] fps 30.3  yaw=494 pitch=42 pos=6400,-11009
+[dctrace 47] gl: polys=19 walls=744 setupfail=0 vecfail=0
+[dctrace 62] mem: level=0 tick=2493 hp=0 heap=8ce0e000 vram=2045 KB largest=2014 KB
+[dctrace 63] ram: live=12363 KB reusable=14 KB
+[dctrace 12] fps 30.3  yaw=494 pitch=42 pos=6400,-11009
+[dctrace 47] gl: polys=0 walls=744 setupfail=0 vecfail=0
+[dctrace 62] mem: level=0 tick=2524 hp=0 heap=8ce0e000 vram=2045 KB largest=2014 KB
+[dctrace 63] ram: live=12363 KB reusable=14 KB
+[dctrace 12] fps 30.3  yaw=494 pitch=42 pos=6400,-11009
+[dctrace 47] gl: polys=0 walls=744 setupfail=0 vecfail=0
+[dctrace 62] mem: level=0 tick=2555 hp=0 heap=8ce0e000 vram=2045 KB largest=2014 KB
+[dctrace 63] ram: live=12363 KB reusable=14 KB
+[dctrace 12] fps 30.3  yaw=494 pitch=42 pos=6400,-11009
+[dctrace 47] gl: polys=0 walls=744 setupfail=0 vecfail=0
+[dctrace 62] mem: level=0 tick=2586 hp=0 heap=8ce0e000 vram=2045 KB largest=2014 KB
+[dctrace 63] ram: live=12363 KB reusable=14 KB
+[dctrace 12] fps 30.3  yaw=494 pitch=42 pos=6400,-11009
+[dctrace 47] gl: polys=0 walls=744 setupfail=0 vecfail=0
+[dctrace 62] mem: level=0 tick=2617 hp=0 heap=8ce0e000 vram=2045 KB largest=2014 KB
+[dctrace 63] ram: live=12363 KB reusable=14 KB
+[dctrace 12] fps 30.3  yaw=494 pitch=42 pos=6400,-11009
+[dctrace 47] gl: polys=0 walls=744 setupfail=0 vecfail=0
+[dctrace 62] mem: level=0 tick=2648 hp=0 heap=8ce0e000 vram=2045 KB largest=2014 KB
+[dctrace 63] ram: live=12363 KB reusable=14 KB
+[dctrace 12] fps 30.3  yaw=494 pitch=42 pos=6400,-11009
+[dctrace 47] gl: polys=0 walls=744 setupfail=0 vecfail=0
+[dctrace 62] mem: level=0 tick=2679 hp=0 heap=8ce0e000 vram=2045 KB largest=2014 KB
+[dctrace 63] ram: live=12363 KB reusable=14 KB
+[dctrace 12] fps 30.3  yaw=494 pitch=42 pos=6400,-11009
+[dctrace 47] gl: polys=0 walls=744 setupfail=0 vecfail=0
+[dctrace 62] mem: level=0 tick=2710 hp=0 heap=8ce0e000 vram=2045 KB largest=2014 KB
+[dctrace 63] ram: live=12363 KB reusable=14 KB
+[dctrace 12] fps 30.3  yaw=494 pitch=42 pos=6400,-11009
+[dctrace 47] gl: polys=0 walls=744 setupfail=0 vecfail=0
+[dctrace 62] mem: level=0 tick=2741 hp=0 heap=8ce0e000 vram=2045 KB largest=2014 KB
+[dctrace 63] ram: live=12363 KB reusable=14 KB
+[dctrace 12] fps 30.3  yaw=494 pitch=42 pos=6400,-11009
+[dctrace 47] gl: polys=0 walls=744 setupfail=0 vecfail=0
+[dctrace 62] mem: level=0 tick=2772 hp=0 heap=8ce0e000 vram=2045 KB largest=2014 KB
+[dctrace 63] ram: live=12363 KB reusable=14 KB
+[dctrace 12] fps 30.3  yaw=494 pitch=42 pos=6400,-11009
+[dctrace 47] gl: polys=0 walls=744 setupfail=0 vecfail=0
+[dctrace 62] mem: level=0 tick=2803 hp=0 heap=8ce0e000 vram=2045 KB largest=2014 KB
+[dctrace 63] ram: live=12363 KB reusable=14 KB
+[dctrace 12] fps 30.3  yaw=494 pitch=42 pos=6400,-11009
+[dctrace 47] gl: polys=0 walls=744 setupfail=0 vecfail=0
+[dctrace 62] mem: level=0 tick=2834 hp=0 heap=8ce0e000 vram=2045 KB largest=2014 KB
+[dctrace 63] ram: live=12363 KB reusable=14 KB
+[dctrace 12] fps 30.3  yaw=494 pitch=42 pos=6400,-11009
+[dctrace 47] gl: polys=0 walls=744 setupfail=0 vecfail=0
+[dctrace 62] mem: level=0 tick=2865 hp=0 heap=8ce0e000 vram=2045 KB largest=2014 KB
+[dctrace 63] ram: live=12363 KB reusable=14 KB
+[dctrace 12] fps 30.3  yaw=494 pitch=42 pos=6400,-11009
+[dctrace 47] gl: polys=0 walls=744 setupfail=0 vecfail=0
+[dctrace 62] mem: level=0 tick=2896 hp=0 heap=8ce0e000 vram=2045 KB largest=2014 KB
+[dctrace 63] ram: live=12363 KB reusable=14 KB
+[dctrace 12] fps 30.3  yaw=494 pitch=42 pos=6400,-11009
+[dctrace 47] gl: polys=0 walls=744 setupfail=0 vecfail=0
+[dctrace 62] mem: level=0 tick=2927 hp=0 heap=8ce0e000 vram=2045 KB largest=2014 KB
+[dctrace 63] ram: live=12363 KB reusable=14 KB
+[dctrace 12] fps 30.3  yaw=494 pitch=42 pos=6400,-11009
+[dctrace 47] gl: polys=0 walls=744 setupfail=0 vecfail=0
+[dctrace 62] mem: level=0 tick=2958 hp=0 heap=8ce0e000 vram=2045 KB largest=2014 KB
+[dctrace 63] ram: live=12363 KB reusable=14 KB
+[dctrace 12] fps 30.3  yaw=494 pitch=42 pos=6400,-11009
+[dctrace 47] gl: polys=0 walls=744 setupfail=0 vecfail=0
+[dctrace 62] mem: level=0 tick=2989 hp=0 heap=8ce0e000 vram=2045 KB largest=2014 KB
+[dctrace 63] ram: live=12363 KB reusable=14 KB
+[dctrace 12] fps 30.3  yaw=494 pitch=42 pos=6400,-11009
+[dctrace 47] gl: polys=0 walls=744 setupfail=0 vecfail=0
+[dctrace 62] mem: level=0 tick=3020 hp=0 heap=8ce0e000 vram=2045 KB largest=2014 KB
+[dctrace 63] ram: live=12363 KB reusable=14 KB
+[dctrace 12] fps 30.3  yaw=494 pitch=42 pos=6400,-11009
+[dctrace 47] gl: polys=0 walls=744 setupfail=0 vecfail=0
+[dctrace 62] mem: level=0 tick=3051 hp=0 heap=8ce0e000 vram=2045 KB largest=2014 KB
+[dctrace 63] ram: live=12363 KB reusable=14 KB
+[dctrace 12] fps 30.3  yaw=494 pitch=42 pos=6400,-11009
+[dctrace 47] gl: polys=0 walls=744 setupfail=0 vecfail=0
+[dctrace 62] mem: level=0 tick=3082 hp=0 heap=8ce0e000 vram=2045 KB largest=2014 KB
+[dctrace 63] ram: live=12363 KB reusable=14 KB
+[dctrace 12] fps 30.3  yaw=494 pitch=42 pos=6400,-11009
+[dctrace 47] gl: polys=0 walls=744 setupfail=0 vecfail=0
+[dctrace 62] mem: level=0 tick=3113 hp=0 heap=8ce0e000 vram=2045 KB largest=2014 KB
+[dctrace 63] ram: live=12363 KB reusable=14 KB
+[dctrace 12] fps 30.3  yaw=494 pitch=42 pos=6400,-11009
+[dctrace 47] gl: polys=0 walls=744 setupfail=0 vecfail=0
+[dctrace 62] mem: level=0 tick=3144 hp=0 heap=8ce0e000 vram=2045 KB largest=2014 KB
+[dctrace 63] ram: live=12363 KB reusable=14 KB
+[dctrace 12] fps 30.3  yaw=494 pitch=42 pos=6400,-11009
+[dctrace 47] gl: polys=0 walls=744 setupfail=0 vecfail=0
+[dctrace 62] mem: level=0 tick=3175 hp=0 heap=8ce0e000 vram=2045 KB largest=2014 KB
+[dctrace 63] ram: live=12363 KB reusable=14 KB
+[dctrace 12] fps 30.3  yaw=494 pitch=42 pos=6400,-11009
+[dctrace 47] gl: polys=0 walls=744 setupfail=0 vecfail=0
+[dctrace 62] mem: level=0 tick=3206 hp=0 heap=8ce0e000 vram=2045 KB largest=2014 KB
+[dctrace 63] ram: live=12363 KB reusable=14 KB
+[dctrace 12] fps 30.3  yaw=494 pitch=42 pos=6400,-11009
+[dctrace 47] gl: polys=0 walls=744 setupfail=0 vecfail=0
+[dctrace 62] mem: level=0 tick=3237 hp=0 heap=8ce0e000 vram=2045 KB largest=2014 KB
+[dctrace 63] ram: live=12363 KB reusable=14 KB
+[dctrace 12] fps 30.3  yaw=494 pitch=42 pos=6400,-11009
+[dctrace 47] gl: polys=0 walls=744 setupfail=0 vecfail=0
+[dctrace 62] mem: level=0 tick=3268 hp=0 heap=8ce0e000 vram=2045 KB largest=2014 KB
+[dctrace 63] ram: live=12363 KB reusable=14 KB
+[dctrace 12] fps 30.3  yaw=494 pitch=42 pos=6400,-11009
+[dctrace 47] gl: polys=0 walls=744 setupfail=0 vecfail=0
+[dctrace 62] mem: level=0 tick=3299 hp=0 heap=8ce0e000 vram=2045 KB largest=2014 KB
+[dctrace 63] ram: live=12363 KB reusable=14 KB
+[dctrace 12] fps 30.3  yaw=494 pitch=42 pos=6400,-11009
+[dctrace 47] gl: polys=0 walls=744 setupfail=0 vecfail=0
+[dctrace 62] mem: level=0 tick=3330 hp=0 heap=8ce0e000 vram=2045 KB largest=2014 KB
+[dctrace 63] ram: live=12363 KB reusable=14 KB
+[dctrace 12] fps 30.3  yaw=494 pitch=42 pos=6400,-11009
+[dctrace 47] gl: polys=0 walls=744 setupfail=0 vecfail=0
+[dctrace 62] mem: level=0 tick=3361 hp=0 heap=8ce0e000 vram=2045 KB largest=2014 KB
+[dctrace 63] ram: live=12363 KB reusable=14 KB
+[dctrace 12] fps 30.3  yaw=494 pitch=42 pos=6400,-11009
+[dctrace 47] gl: polys=0 walls=744 setupfail=0 vecfail=0
+[dctrace 62] mem: level=0 tick=3392 hp=0 heap=8ce0e000 vram=2045 KB largest=2014 KB
+[dctrace 63] ram: live=12363 KB reusable=14 KB
+[dctrace 12] fps 30.3  yaw=494 pitch=42 pos=6400,-11009
+[dctrace 47] gl: polys=0 walls=744 setupfail=0 vecfail=0
+[dctrace 62] mem: level=0 tick=3423 hp=0 heap=8ce0e000 vram=2045 KB largest=2014 KB
+[dctrace 63] ram: live=12363 KB reusable=14 KB
+[dctrace 12] fps 30.3  yaw=494 pitch=42 pos=6400,-11009
+[dctrace 47] gl: polys=0 walls=744 setupfail=0 vecfail=0
+[dctrace 62] mem: level=0 tick=3454 hp=0 heap=8ce0e000 vram=2045 KB largest=2014 KB
+[dctrace 63] ram: live=12363 KB reusable=14 KB
+[dctrace 12] fps 30.3  yaw=494 pitch=42 pos=6400,-11009
+[dctrace 47] gl: polys=0 walls=744 setupfail=0 vecfail=0
+[dctrace 62] mem: level=0 tick=3485 hp=0 heap=8ce0e000 vram=2045 KB largest=2014 KB
+[dctrace 63] ram: live=12363 KB reusable=14 KB
+[dctrace 12] fps 30.3  yaw=494 pitch=42 pos=6400,-11009
+[dctrace 47] gl: polys=0 walls=744 setupfail=0 vecfail=0
+[dctrace 62] mem: level=0 tick=3516 hp=0 heap=8ce0e000 vram=2045 KB largest=2014 KB
+[dctrace 63] ram: live=12363 KB reusable=14 KB
+[dctrace 12] fps 30.3  yaw=494 pitch=42 pos=6400,-11009
+[dctrace 47] gl: polys=0 walls=744 setupfail=0 vecfail=0
+[dctrace 62] mem: level=0 tick=3547 hp=0 heap=8ce0e000 vram=2045 KB largest=2014 KB
+[dctrace 63] ram: live=12363 KB reusable=14 KB
+[dctrace 12] fps 30.3  yaw=494 pitch=42 pos=6400,-11009
+[dctrace 47] gl: polys=0 walls=744 setupfail=0 vecfail=0
+[dctrace 62] mem: level=0 tick=3578 hp=0 heap=8ce0e000 vram=2045 KB largest=2014 KB
+[dctrace 63] ram: live=12363 KB reusable=14 KB
+[dctrace 12] fps 30.2  yaw=494 pitch=42 pos=6400,-11009
+[dctrace 47] gl: polys=0 walls=744 setupfail=0 vecfail=0
+[dctrace 62] mem: level=0 tick=3609 hp=0 heap=8ce0e000 vram=2045 KB largest=2014 KB
+[dctrace 63] ram: live=12363 KB reusable=14 KB
+[dctrace 12] fps 30.3  yaw=494 pitch=42 pos=6400,-11009
+[dctrace 47] gl: polys=0 walls=744 setupfail=0 vecfail=0
+[dctrace 62] mem: level=0 tick=3640 hp=0 heap=8ce0e000 vram=2045 KB largest=2014 KB
+[dctrace 63] ram: live=12363 KB reusable=14 KB
+[dctrace 12] fps 30.3  yaw=494 pitch=42 pos=6400,-11009
+[dctrace 47] gl: polys=0 walls=744 setupfail=0 vecfail=0
+[dctrace 62] mem: level=0 tick=3671 hp=0 heap=8ce0e000 vram=2045 KB largest=2014 KB
+[dctrace 63] ram: live=12363 KB reusable=14 KB
+[dctrace 12] fps 30.3  yaw=494 pitch=42 pos=6400,-11009
+[dctrace 47] gl: polys=0 walls=744 setupfail=0 vecfail=0
+[dctrace 62] mem: level=0 tick=3702 hp=0 heap=8ce0e000 vram=2045 KB largest=2014 KB
+[dctrace 63] ram: live=12363 KB reusable=14 KB
+[dctrace 12] fps 30.3  yaw=494 pitch=42 pos=6400,-11009
+[dctrace 47] gl: polys=0 walls=744 setupfail=0 vecfail=0
+[dctrace 62] mem: level=0 tick=3733 hp=0 heap=8ce0e000 vram=2045 KB largest=2014 KB
+[dctrace 63] ram: live=12363 KB reusable=14 KB
+[dctrace 12] fps 30.3  yaw=494 pitch=42 pos=6400,-11009
+[dctrace 47] gl: polys=0 walls=744 setupfail=0 vecfail=0
+[dctrace 62] mem: level=0 tick=3764 hp=0 heap=8ce0e000 vram=2045 KB largest=2014 KB
+[dctrace 63] ram: live=12363 KB reusable=14 KB
+[dctrace 12] fps 30.3  yaw=494 pitch=42 pos=6400,-11009
+[dctrace 47] gl: polys=0 walls=744 setupfail=0 vecfail=0
+[dctrace 62] mem: level=0 tick=3795 hp=0 heap=8ce0e000 vram=2045 KB largest=2014 KB
+[dctrace 63] ram: live=12363 KB reusable=14 KB
+[dctrace 12] fps 30.3  yaw=494 pitch=42 pos=6400,-11009
+[dctrace 47] gl: polys=0 walls=744 setupfail=0 vecfail=0
+[dctrace 62] mem: level=0 tick=3826 hp=0 heap=8ce0e000 vram=2045 KB largest=2014 KB
+[dctrace 63] ram: live=12363 KB reusable=14 KB
+[dctrace 12] fps 30.3  yaw=494 pitch=42 pos=6400,-11009
+[dctrace 47] gl: polys=0 walls=744 setupfail=0 vecfail=0
+[dctrace 62] mem: level=0 tick=3857 hp=0 heap=8ce0e000 vram=2045 KB largest=2014 KB
+[dctrace 63] ram: live=12363 KB reusable=14 KB
+[dctrace 12] fps 30.3  yaw=494 pitch=42 pos=6400,-11009
+[dctrace 47] gl: polys=0 walls=744 setupfail=0 vecfail=0
+[dctrace 62] mem: level=0 tick=3888 hp=0 heap=8ce0e000 vram=2045 KB largest=2014 KB
+[dctrace 63] ram: live=12363 KB reusable=14 KB
+[dctrace 12] fps 30.3  yaw=494 pitch=42 pos=6400,-11009
+[dctrace 47] gl: polys=0 walls=744 setupfail=0 vecfail=0
+[dctrace 62] mem: level=0 tick=3919 hp=0 heap=8ce0e000 vram=2045 KB largest=2014 KB
+[dctrace 63] ram: live=12363 KB reusable=14 KB
+[dctrace 12] fps 30.3  yaw=494 pitch=42 pos=6400,-11009
+[dctrace 47] gl: polys=0 walls=744 setupfail=0 vecfail=0
+[dctrace 62] mem: level=0 tick=3950 hp=0 heap=8ce0e000 vram=2045 KB largest=2014 KB
+[dctrace 63] ram: live=12363 KB reusable=14 KB
+[dctrace 12] fps 30.3  yaw=494 pitch=42 pos=6400,-11009
+[dctrace 47] gl: polys=0 walls=744 setupfail=0 vecfail=0
+[dctrace 62] mem: level=0 tick=3981 hp=0 heap=8ce0e000 vram=2045 KB largest=2014 KB
+[dctrace 63] ram: live=12363 KB reusable=14 KB
+[dctrace 12] fps 30.3  yaw=494 pitch=42 pos=6400,-11009
+[dctrace 47] gl: polys=0 walls=744 setupfail=0 vecfail=0
+[dctrace 62] mem: level=0 tick=4012 hp=0 heap=8ce0e000 vram=2045 KB largest=2014 KB
+[dctrace 63] ram: live=12363 KB reusable=14 KB
+[dctrace 59] sound: 32 evictions, holding 1325 KB of 3072 KB
+[dctrace 57] load: map wad 33 ms
+[dctrace 33] mode: 640x480x16 already set, not re-initialising
+[dctrace 65] load: free 0 ms | 0 colls 0 ms | models 0 ms | colorenv 189 ms
+[dctrace 66]   parse: hdr 78 | alloc 0 | clut 18 | high 2 | low 12 | bitmaps 160 ms
+[dctrace 67]   bitmaps: 567 rle (33342 rows, 1492 KB) | 87 raw (1145 KB)
+[dctrace 54] load: collections 209 ms
+[dctrace 60] load: heap top after collections 0x8ce0e000 (14392 KB in use)
+[dctrace 55] load: monster sounds 9 ms
+[dctrace 56] load: game sounds 0 ms
+[dctrace 40] heap: StartRun entry     2740 KB
+[dctrace 37] txtr[0]: res=0 fmt=8056 far=2701
+[dctrace 38] txtr[1]: res=0 fmt=8056 far=2601
+[dctrace 39] txtr[2]: res=0 fmt=8056 far=2600
+[dctrace 39] txtr[3]: res=0 fmt=8056 far=2600
+[dctrace 41] heap: after StartTextures 2740 KB
+[dctrace 42] heap: after screen font  2740 KB
+[dctrace 43] heap: after map fonts    2740 KB
+[dctrace 44] heap: after HUD fonts    2740 KB
+[dctrace 45] heap: StartRun done      2740 KB
+[dctrace 12] fps 9.7  yaw=278 pitch=0 pos=9020,18983
+[dctrace 47] gl: polys=0 walls=240 setupfail=0 vecfail=0
+[dctrace 62] mem: level=0 tick=15 hp=150 heap=8ce67000 vram=4188 KB largest=4188 KB
+[dctrace 63] ram: live=11308 KB reusable=1425 KB
+[dctrace 39] txtr: 9850 uploads; 128x128 type=0 error=0000 free=2736 KB
+[dctrace 12] fps 0.5  yaw=265 pitch=0 pos=7936,17440
+[dctrace 47] gl: polys=3 walls=26 setupfail=0 vecfail=0
+[dctrace 62] mem: level=0 tick=30 hp=150 heap=8ce67000 vram=2392 KB largest=2380 KB
+[dctrace 63] ram: live=11334 KB reusable=1399 KB
+[dctrace 39] txtr: 9875 uploads; 16x16 type=3 error=0000 free=2388 KB
+[dctrace 39] txtr: 9900 uploads; 32x32 type=3 error=0000 free=2385 KB
+[dctrace 12] fps 30.9  yaw=233 pitch=0 pos=7936,17782
+[dctrace 47] gl: polys=160 walls=412 setupfail=0 vecfail=0
+[dctrace 62] mem: level=0 tick=61 hp=150 heap=8ce67000 vram=2384 KB largest=2378 KB
+[dctrace 63] ram: live=11343 KB reusable=1389 KB
+[dctrace 39] txtr: 9925 uploads; 32x32 type=3 error=0000 free=2383 KB
+[dctrace 12] fps 30.3  yaw=288 pitch=0 pos=7936,15555
+[dctrace 47] gl: polys=165 walls=864 setupfail=0 vecfail=0
+[dctrace 62] mem: level=0 tick=92 hp=150 heap=8ce67000 vram=2383 KB largest=2378 KB
+[dctrace 63] ram: live=11367 KB reusable=1365 KB
+[dctrace 39] txtr: 9950 uploads; 32x32 type=3 error=0000 free=2383 KB
+[dctrace 39] txtr: 9975 uploads; 32x32 type=3 error=0000 free=2382 KB
+[dctrace 12] fps 30.3  yaw=261 pitch=0 pos=7936,15808
+[dctrace 47] gl: polys=177 walls=415 setupfail=0 vecfail=0
+[dctrace 62] mem: level=0 tick=123 hp=150 heap=8ce67000 vram=2382 KB largest=2378 KB
+[dctrace 63] ram: live=11367 KB reusable=1365 KB
+[dctrace 39] txtr: 10000 uploads; 32x32 type=3 error=0000 free=2382 KB
+[dctrace 39] txtr: 10025 uploads; 32x32 type=3 error=0000 free=2380 KB
+[dctrace 39] txtr: 10050 uploads; 32x32 type=3 error=0000 free=2379 KB
+[dctrace 12] fps 30.3  yaw=330 pitch=0 pos=7936,15804
+[dctrace 47] gl: polys=212 walls=768 setupfail=0 vecfail=0
+[dctrace 62] mem: level=0 tick=154 hp=150 heap=8ce67000 vram=2379 KB largest=2376 KB
+[dctrace 63] ram: live=11414 KB reusable=1319 KB
+[dctrace 39] txtr: 10075 uploads; 32x32 type=3 error=0000 free=2380 KB
+[dctrace 12] fps 30.3  yaw=288 pitch=0 pos=7936,15107
+[dctrace 47] gl: polys=130 walls=301 setupfail=0 vecfail=0
+[dctrace 62] mem: level=0 tick=185 hp=150 heap=8ce67000 vram=2380 KB largest=2376 KB
+[dctrace 63] ram: live=11414 KB reusable=1319 KB
+[dctrace 39] txtr: 10100 uploads; 16x16 type=2 error=0000 free=2381 KB
+[dctrace 12] fps 30.3  yaw=168 pitch=0 pos=7936,16040
+[dctrace 47] gl: polys=172 walls=344 setupfail=0 vecfail=0
+[dctrace 62] mem: level=0 tick=216 hp=150 heap=8ce67000 vram=2380 KB largest=2376 KB
+[dctrace 63] ram: live=11438 KB reusable=1295 KB
+[dctrace 39] txtr: 10125 uploads; 32x32 type=3 error=0000 free=2380 KB
+[dctrace 39] txtr: 10150 uploads; 16x16 type=2 error=0000 free=2381 KB
+[dctrace 12] fps 30.3  yaw=311 pitch=0 pos=7936,18283
+[dctrace 47] gl: polys=172 walls=588 setupfail=0 vecfail=0
+[dctrace 62] mem: level=0 tick=247 hp=150 heap=8ce67000 vram=2379 KB largest=2376 KB
+[dctrace 63] ram: live=11438 KB reusable=1295 KB
+[dctrace 39] txtr: 10175 uploads; 32x8 type=2 error=0000 free=2381 KB
+[dctrace 39] txtr: 10200 uploads; 64x16 type=2 error=0000 free=2374 KB
+[dctrace 39] txtr: 10225 uploads; 16x32 type=2 error=0000 free=2330 KB
+[dctrace 39] txtr: 10250 uploads; 64x32 type=2 error=0000 free=2320 KB
+[dctrace 12] fps 30.3  yaw=356 pitch=0 pos=7984,17314
+[dctrace 47] gl: polys=214 walls=1077 setupfail=0 vecfail=0
+[dctrace 62] mem: level=0 tick=278 hp=150 heap=8ce67000 vram=2319 KB largest=2310 KB
+[dctrace 63] ram: live=11464 KB reusable=1269 KB
+[dctrace 39] txtr: 10275 uploads; 16x32 type=2 error=0000 free=2321 KB
+[dctrace 39] txtr: 10300 uploads; 32x32 type=3 error=0000 free=2320 KB
+[dctrace 12] fps 30.3  yaw=348 pitch=0 pos=7936,17531
+[dctrace 47] gl: polys=163 walls=1162 setupfail=0 vecfail=0
+[dctrace 62] mem: level=0 tick=309 hp=150 heap=8ce67000 vram=2305 KB largest=2302 KB
+[dctrace 63] ram: live=11498 KB reusable=1234 KB
+[dctrace 39] txtr: 10325 uploads; 16x32 type=2 error=0000 free=2260 KB
+[dctrace 39] txtr: 10350 uploads; 16x32 type=2 error=0000 free=2258 KB
+[dctrace 39] txtr: 10375 uploads; 16x32 type=2 error=0000 free=2248 KB
+[dctrace 39] txtr: 10400 uploads; 8x8 type=3 error=0000 free=2239 KB
+[dctrace 39] txtr: 10425 uploads; 16x32 type=2 error=0000 free=2244 KB
+[dctrace 39] txtr: 10450 uploads; 64x16 type=2 error=0000 free=2237 KB
+[dctrace 39] txtr: 10475 uploads; 16x32 type=2 error=0000 free=2231 KB
+[dctrace 39] txtr: 10500 uploads; 64x32 type=3 error=0000 free=2222 KB
+[dctrace 39] txtr: 10525 uploads; 64x16 type=2 error=0000 free=2189 KB
+[dctrace 39] txtr: 10550 uploads; 32x32 type=3 error=0000 free=2190 KB
+[dctrace 12] fps 29.3  yaw=349 pitch=0 pos=8845,17448
+[dctrace 47] gl: polys=332 walls=1353 setupfail=0 vecfail=0
+[dctrace 62] mem: level=0 tick=340 hp=150 heap=8ce67000 vram=2187 KB largest=2162 KB
+[dctrace 63] ram: live=11499 KB reusable=1234 KB
+[dctrace 39] txtr: 10575 uploads; 64x16 type=2 error=0000 free=2190 KB
+[dctrace 39] txtr: 10600 uploads; 16x32 type=2 error=0000 free=2190 KB
+[dctrace 39] txtr: 10625 uploads; 32x32 type=3 error=0000 free=2184 KB
+[dctrace 39] txtr: 10650 uploads; 64x16 type=2 error=0000 free=2189 KB
+[dctrace 12] fps 30.3  yaw=285 pitch=0 pos=11972,17479
+[dctrace 47] gl: polys=256 walls=1073 setupfail=0 vecfail=0
+[dctrace 62] mem: level=0 tick=371 hp=150 heap=8ce67000 vram=2183 KB largest=2175 KB
+[dctrace 63] ram: live=11499 KB reusable=1234 KB
+[dctrace 39] txtr: 10675 uploads; 16x32 type=2 error=0000 free=2188 KB
+[dctrace 39] txtr: 10700 uploads; 16x32 type=2 error=0000 free=2187 KB
+[dctrace 39] txtr: 10725 uploads; 64x16 type=2 error=0000 free=2184 KB
+[dctrace 39] txtr: 10750 uploads; 64x16 type=2 error=0000 free=2181 KB
+[dctrace 39] txtr: 10775 uploads; 16x32 type=2 error=0000 free=2184 KB
+[dctrace 39] txtr: 10800 uploads; 32x32 type=3 error=0000 free=2174 KB
+[dctrace 39] txtr: 10825 uploads; 16x32 type=2 error=0000 free=2184 KB
+[dctrace 39] txtr: 10850 uploads; 64x16 type=2 error=0000 free=2182 KB
+[dctrace 39] txtr: 10875 uploads; 16x32 type=2 error=0000 free=2179 KB
+[dctrace 12] fps 30.3  yaw=289 pitch=0 pos=13568,18244
+[dctrace 47] gl: polys=365 walls=1563 setupfail=0 vecfail=0
+[dctrace 62] mem: level=0 tick=402 hp=150 heap=8ce67000 vram=2173 KB largest=2166 KB
+[dctrace 63] ram: live=11499 KB reusable=1234 KB
+[dctrace 39] txtr: 10900 uploads; 64x16 type=2 error=0000 free=2179 KB
+[dctrace 39] txtr: 10925 uploads; 16x32 type=2 error=0000 free=2177 KB
+[dctrace 39] txtr: 10950 uploads; 16x32 type=2 error=0000 free=2177 KB
+[dctrace 39] txtr: 10975 uploads; 16x32 type=2 error=0000 free=2175 KB
+[dctrace 39] txtr: 11000 uploads; 16x32 type=2 error=0000 free=2182 KB
+[dctrace 39] txtr: 11025 uploads; 16x32 type=2 error=0000 free=2176 KB
+[dctrace 39] txtr: 11050 uploads; 16x32 type=2 error=0000 free=2182 KB
+[dctrace 39] txtr: 11075 uploads; 16x32 type=2 error=0000 free=2183 KB
+[dctrace 39] txtr: 11100 uploads; 32x32 type=3 error=0000 free=2176 KB
+[dctrace 12] fps 30.3  yaw=315 pitch=0 pos=13569,18636
+[dctrace 47] gl: polys=384 walls=1850 setupfail=0 vecfail=0
+[dctrace 62] mem: level=0 tick=433 hp=150 heap=8ce67000 vram=2176 KB largest=2166 KB
+[dctrace 63] ram: live=11499 KB reusable=1234 KB
+[dctrace 39] txtr: 11125 uploads; 16x32 type=2 error=0000 free=2180 KB
+[dctrace 39] txtr: 11150 uploads; 64x16 type=2 error=0000 free=2183 KB
+[dctrace 39] txtr: 11175 uploads; 16x32 type=2 error=0000 free=2177 KB
+[dctrace 39] txtr: 11200 uploads; 16x32 type=2 error=0000 free=2178 KB
+[dctrace 39] txtr: 11225 uploads; 16x32 type=2 error=0000 free=2179 KB
+[dctrace 39] txtr: 11250 uploads; 32x32 type=3 error=0000 free=2176 KB
+[dctrace 39] txtr: 11275 uploads; 16x32 type=2 error=0000 free=2178 KB
+[dctrace 39] txtr: 11300 uploads; 16x32 type=2 error=0000 free=2181 KB
+[dctrace 12] fps 30.3  yaw=349 pitch=0 pos=13239,18634
+[dctrace 47] gl: polys=344 walls=1974 setupfail=0 vecfail=0
+[dctrace 62] mem: level=0 tick=464 hp=150 heap=8ce67000 vram=2178 KB largest=2166 KB
+[dctrace 63] ram: live=11499 KB reusable=1234 KB
+[dctrace 39] txtr: 11325 uploads; 16x32 type=2 error=0000 free=2182 KB
+[dctrace 39] txtr: 11350 uploads; 8x8 type=3 error=0000 free=2176 KB
+[dctrace 39] txtr: 11375 uploads; 16x32 type=2 error=0000 free=2181 KB
+[dctrace 39] txtr: 11400 uploads; 16x32 type=2 error=0000 free=2184 KB
+[dctrace 39] txtr: 11425 uploads; 32x32 type=3 error=0000 free=2183 KB
+[dctrace 12] fps 30.3  yaw=189 pitch=0 pos=13568,16859
+[dctrace 47] gl: polys=264 walls=1150 setupfail=0 vecfail=0
+[dctrace 62] mem: level=0 tick=495 hp=150 heap=8ce67000 vram=2183 KB largest=2166 KB
+[dctrace 63] ram: live=11499 KB reusable=1234 KB
+[dctrace 39] txtr: 11450 uploads; 16x8 type=3 error=0000 free=2183 KB
+[dctrace 39] txtr: 11475 uploads; 32x8 type=2 error=0000 free=2185 KB
+[dctrace 12] fps 30.3  yaw=180 pitch=0 pos=13526,16896
+[dctrace 47] gl: polys=149 walls=415 setupfail=0 vecfail=0
+[dctrace 62] mem: level=0 tick=526 hp=150 heap=8ce67000 vram=2183 KB largest=2166 KB
+[dctrace 63] ram: live=11499 KB reusable=1234 KB
+[dctrace 39] txtr: 11500 uploads; 32x32 type=3 error=0000 free=2183 KB
+[dctrace 12] fps 30.3  yaw=171 pitch=0 pos=13295,15841
+[dctrace 47] gl: polys=155 walls=670 setupfail=0 vecfail=0
+[dctrace 62] mem: level=0 tick=557 hp=150 heap=8ce67000 vram=2183 KB largest=2166 KB
+[dctrace 63] ram: live=11499 KB reusable=1234 KB
+[dctrace 39] txtr: 11525 uploads; 32x32 type=3 error=0000 free=2183 KB
+[dctrace 39] txtr: 11550 uploads; 32x32 type=3 error=0000 free=2182 KB
+[dctrace 12] fps 30.3  yaw=171 pitch=0 pos=13568,15057
+[dctrace 47] gl: polys=189 walls=925 setupfail=0 vecfail=0
+[dctrace 62] mem: level=0 tick=588 hp=150 heap=8ce67000 vram=2178 KB largest=2166 KB
+[dctrace 63] ram: live=11499 KB reusable=1234 KB
+[dctrace 39] txtr: 11575 uploads; 64x16 type=2 error=0000 free=2183 KB
+[dctrace 39] txtr: 11600 uploads; 16x32 type=2 error=0000 free=2182 KB
+[dctrace 39] txtr: 11625 uploads; 32x32 type=3 error=0000 free=2180 KB
+[dctrace 12] fps 30.3  yaw=164 pitch=0 pos=12539,16190
+[dctrace 47] gl: polys=242 walls=902 setupfail=0 vecfail=0
+[dctrace 62] mem: level=0 tick=619 hp=150 heap=8ce67000 vram=2181 KB largest=2166 KB
+[dctrace 63] ram: live=11499 KB reusable=1234 KB
+[dctrace 39] txtr: 11650 uploads; 32x32 type=3 error=0000 free=2183 KB
+[dctrace 39] txtr: 11675 uploads; 32x8 type=2 error=0000 free=2185 KB
+[dctrace 39] txtr: 11700 uploads; 8x8 type=2 error=0000 free=2185 KB
+[dctrace 12] fps 30.3  yaw=165 pitch=0 pos=12779,15385
+[dctrace 47] gl: polys=173 walls=487 setupfail=0 vecfail=0
+[dctrace 62] mem: level=0 tick=650 hp=150 heap=8ce67000 vram=2180 KB largest=2166 KB
+[dctrace 63] ram: live=11499 KB reusable=1234 KB
+[dctrace 39] txtr: 11725 uploads; 64x32 type=3 error=0000 free=2180 KB
+[dctrace 39] txtr: 11750 uploads; 64x32 type=3 error=0000 free=2181 KB
+[dctrace 39] txtr: 11775 uploads; 32x8 type=2 error=0000 free=2185 KB
+[dctrace 12] fps 30.3  yaw=221 pitch=0 pos=12695,16094
+[dctrace 47] gl: polys=217 walls=712 setupfail=0 vecfail=0
+[dctrace 62] mem: level=0 tick=681 hp=150 heap=8ce67000 vram=2167 KB largest=2150 KB
+[dctrace 63] ram: live=11499 KB reusable=1234 KB
+[dctrace 39] txtr: 11800 uploads; 16x32 type=2 error=0000 free=2176 KB
+[dctrace 39] txtr: 11825 uploads; 64x32 type=3 error=0000 free=2168 KB
+[dctrace 39] txtr: 11850 uploads; 64x32 type=3 error=0000 free=2165 KB
+[dctrace 12] fps 30.3  yaw=166 pitch=0 pos=12376,15475
+[dctrace 47] gl: polys=190 walls=609 setupfail=0 vecfail=0
+[dctrace 62] mem: level=0 tick=712 hp=150 heap=8ce67000 vram=2164 KB largest=2150 KB
+[dctrace 63] ram: live=11511 KB reusable=1222 KB
+[dctrace 39] txtr: 11875 uploads; 64x32 type=3 error=0000 free=2164 KB
+[dctrace 39] txtr: 11900 uploads; 32x32 type=3 error=0000 free=2166 KB
+[dctrace 39] txtr: 11925 uploads; 8x16 type=2 error=0000 free=2169 KB
+[dctrace 12] fps 30.3  yaw=194 pitch=0 pos=12423,15285
+[dctrace 47] gl: polys=214 walls=687 setupfail=0 vecfail=0
+[dctrace 62] mem: level=0 tick=743 hp=150 heap=8ce67000 vram=2164 KB largest=2150 KB
+[dctrace 63] ram: live=11511 KB reusable=1222 KB
+[dctrace 39] txtr: 11950 uploads; 16x32 type=2 error=0000 free=2168 KB
+[dctrace 39] txtr: 11975 uploads; 16x16 type=2 error=0000 free=2169 KB
+[dctrace 39] txtr: 12000 uploads; 64x32 type=3 error=0000 free=2162 KB
+[dctrace 39] txtr: 12025 uploads; 16x32 type=2 error=0000 free=2168 KB
+[dctrace 39] txtr: 12050 uploads; 64x32 type=3 error=0000 free=2164 KB
+[dctrace 12] fps 30.3  yaw=150 pitch=0 pos=12149,14972
+[dctrace 47] gl: polys=296 walls=798 setupfail=0 vecfail=0
+[dctrace 62] mem: level=0 tick=774 hp=150 heap=8ce67000 vram=2164 KB largest=2150 KB
+[dctrace 63] ram: live=11947 KB reusable=786 KB
+[dctrace 39] txtr: 12075 uploads; 32x8 type=2 error=0000 free=2169 KB
+[dctrace 39] txtr: 12100 uploads; 64x32 type=3 error=0000 free=2164 KB
+[dctrace 39] txtr: 12125 uploads; 32x8 type=2 error=0000 free=2169 KB
+[dctrace 12] fps 30.3  yaw=175 pitch=0 pos=12302,14635
+[dctrace 47] gl: polys=284 walls=792 setupfail=0 vecfail=0
+[dctrace 62] mem: level=0 tick=805 hp=150 heap=8ce67000 vram=2164 KB largest=2150 KB
+[dctrace 63] ram: live=11947 KB reusable=786 KB
+[dctrace 39] txtr: 12150 uploads; 16x32 type=2 error=0000 free=2168 KB
+[dctrace 39] txtr: 12175 uploads; 16x32 type=2 error=0000 free=2168 KB
+[dctrace 39] txtr: 12200 uploads; 32x32 type=3 error=0000 free=2164 KB
+[dctrace 39] txtr: 12225 uploads; 16x32 type=2 error=0000 free=2168 KB
+[dctrace 39] txtr: 12250 uploads; 16x32 type=2 error=0000 free=2167 KB
+[dctrace 39] txtr: 12275 uploads; 16x32 type=2 error=0000 free=2166 KB
+[dctrace 12] fps 30.3  yaw=200 pitch=0 pos=13044,15000
+[dctrace 47] gl: polys=309 walls=1043 setupfail=0 vecfail=0
+[dctrace 62] mem: level=0 tick=836 hp=150 heap=8ce67000 vram=2162 KB largest=2150 KB
+[dctrace 63] ram: live=11947 KB reusable=786 KB
+[dctrace 39] txtr: 12300 uploads; 16x32 type=2 error=0000 free=2168 KB
+[dctrace 12] fps 30.3  yaw=169 pitch=0 pos=10765,17638
+[dctrace 47] gl: polys=186 walls=578 setupfail=0 vecfail=0
+[dctrace 62] mem: level=0 tick=867 hp=150 heap=8ce67000 vram=2167 KB largest=2150 KB
+[dctrace 63] ram: live=11947 KB reusable=786 KB
+[dctrace 39] txtr: 12325 uploads; 32x32 type=3 error=0000 free=2167 KB
+[dctrace 39] txtr: 12350 uploads; 16x16 type=2 error=0000 free=2169 KB
+[dctrace 12] fps 30.3  yaw=360 pitch=0 pos=7936,18451
+[dctrace 47] gl: polys=169 walls=839 setupfail=0 vecfail=0
+[dctrace 62] mem: level=0 tick=898 hp=150 heap=8ce67000 vram=2166 KB largest=2150 KB
+[dctrace 63] ram: live=11947 KB reusable=786 KB
+[dctrace 39] txtr: 12375 uploads; 32x32 type=3 error=0000 free=2164 KB
+[dctrace 39] txtr: 12400 uploads; 32x32 type=3 error=0000 free=2165 KB
+[dctrace 39] txtr: 12425 uploads; 16x32 type=2 error=0000 free=2167 KB
+[dctrace 39] txtr: 12450 uploads; 16x32 type=2 error=0000 free=2166 KB
+[dctrace 12] fps 30.3  yaw=510 pitch=0 pos=8115,14963
+[dctrace 47] gl: polys=202 walls=1044 setupfail=0 vecfail=0
+[dctrace 62] mem: level=0 tick=929 hp=150 heap=8ce67000 vram=2164 KB largest=2150 KB
+[dctrace 63] ram: live=11947 KB reusable=786 KB
+[dctrace 39] txtr: 12475 uploads; 32x32 type=3 error=0000 free=2164 KB
+[dctrace 39] txtr: 12500 uploads; 16x32 type=2 error=0000 free=2168 KB
+[dctrace 39] txtr: 12525 uploads; 32x32 type=3 error=0000 free=2167 KB
+[dctrace 12] fps 30.3  yaw=163 pitch=0 pos=8577,15206
+[dctrace 47] gl: polys=232 walls=736 setupfail=0 vecfail=0
+[dctrace 62] mem: level=0 tick=960 hp=150 heap=8ce67000 vram=2167 KB largest=2150 KB
+[dctrace 63] ram: live=11947 KB reusable=786 KB
+[dctrace 39] txtr: 12550 uploads; 32x32 type=3 error=0000 free=2167 KB
+[dctrace 12] fps 30.3  yaw=113 pitch=0 pos=9351,19094
+[dctrace 47] gl: polys=129 walls=318 setupfail=0 vecfail=0
+[dctrace 62] mem: level=0 tick=991 hp=150 heap=8ce67000 vram=2167 KB largest=2150 KB
+[dctrace 63] ram: live=11947 KB reusable=786 KB
+[dctrace 39] txtr: 12575 uploads; 32x32 type=3 error=0000 free=2167 KB
+[dctrace 12] fps 30.3  yaw=94 pitch=0 pos=10886,19712
+[dctrace 47] gl: polys=36 walls=31 setupfail=0 vecfail=0
+[dctrace 62] mem: level=0 tick=1022 hp=150 heap=8ce67000 vram=2167 KB largest=2150 KB
+[dctrace 63] ram: live=11947 KB reusable=786 KB
+[dctrace 39] txtr: 12600 uploads; 32x32 type=3 error=0000 free=2167 KB
+[dctrace 12] fps 30.3  yaw=74 pitch=0 pos=13056,19712
+[dctrace 47] gl: polys=47 walls=79 setupfail=0 vecfail=0
+[dctrace 62] mem: level=0 tick=1053 hp=150 heap=8ce67000 vram=2167 KB largest=2150 KB
+[dctrace 63] ram: live=11947 KB reusable=786 KB
+[dctrace 39] txtr: 12625 uploads; 32x32 type=3 error=0000 free=2167 KB
+[dctrace 12] fps 30.3  yaw=416 pitch=0 pos=13537,18257
+[dctrace 47] gl: polys=73 walls=477 setupfail=0 vecfail=0
+[dctrace 62] mem: level=0 tick=1084 hp=150 heap=8ce67000 vram=2167 KB largest=2150 KB
+[dctrace 63] ram: live=11947 KB reusable=786 KB
+[dctrace 39] txtr: 12650 uploads; 32x32 type=3 error=0000 free=2167 KB
+[dctrace 39] txtr: 12675 uploads; 16x16 type=2 error=0000 free=2126 KB
+[dctrace 12] fps 30.3  yaw=473 pitch=0 pos=13568,16351
+[dctrace 47] gl: polys=191 walls=870 setupfail=0 vecfail=0
+[dctrace 62] mem: level=0 tick=1115 hp=150 heap=8ce67000 vram=2124 KB largest=2107 KB
+[dctrace 63] ram: live=11947 KB reusable=786 KB
+[dctrace 39] txtr: 12700 uploads; 32x32 type=3 error=0000 free=2124 KB
+[dctrace 39] txtr: 12725 uploads; 16x16 type=2 error=0000 free=2126 KB
+[dctrace 12] fps 30.3  yaw=86 pitch=0 pos=13568,15783
+[dctrace 47] gl: polys=190 walls=727 setupfail=0 vecfail=0
+[dctrace 62] mem: level=0 tick=1146 hp=150 heap=8ce67000 vram=2124 KB largest=2107 KB
+[dctrace 63] ram: live=11947 KB reusable=786 KB
+[dctrace 39] txtr: 12750 uploads; 32x32 type=3 error=0000 free=2124 KB
+[dctrace 12] fps 30.3  yaw=181 pitch=0 pos=11970,19290
+[dctrace 47] gl: polys=130 walls=318 setupfail=0 vecfail=0
+[dctrace 62] mem: level=0 tick=1177 hp=150 heap=8ce67000 vram=2124 KB largest=2107 KB
+[dctrace 63] ram: live=11947 KB reusable=786 KB
+[dctrace 39] txtr: 12775 uploads; 32x32 type=3 error=0000 free=2124 KB
+[dctrace 12] fps 30.3  yaw=241 pitch=0 pos=9161,19712
+[dctrace 47] gl: polys=69 walls=85 setupfail=0 vecfail=0
+[dctrace 62] mem: level=0 tick=1208 hp=150 heap=8ce67000 vram=2124 KB largest=2107 KB
+[dctrace 63] ram: live=11947 KB reusable=786 KB
+[dctrace 39] txtr: 12800 uploads; 32x32 type=3 error=0000 free=2124 KB
+[dctrace 12] fps 30.3  yaw=181 pitch=0 pos=8090,18992
+[dctrace 47] gl: polys=37 walls=72 setupfail=0 vecfail=0
+[dctrace 62] mem: level=0 tick=1239 hp=150 heap=8ce67000 vram=2124 KB largest=2107 KB
+[dctrace 63] ram: live=11947 KB reusable=786 KB
+[dctrace 39] txtr: 12825 uploads; 32x32 type=3 error=0000 free=2124 KB
+[dctrace 39] txtr: 12850 uploads; 32x32 type=3 error=0000 free=2124 KB
+[dctrace 12] fps 30.3  yaw=181 pitch=0 pos=8448,19634
+[dctrace 47] gl: polys=39 walls=80 setupfail=0 vecfail=0
+[dctrace 62] mem: level=0 tick=1270 hp=150 heap=8ce67000 vram=2124 KB largest=2107 KB
+[dctrace 63] ram: live=11947 KB reusable=786 KB
+[dctrace 39] txtr: 12875 uploads; 32x32 type=3 error=0000 free=2124 KB
+[dctrace 12] fps 30.3  yaw=181 pitch=0 pos=8448,19712
+[dctrace 47] gl: polys=31 walls=62 setupfail=0 vecfail=0
+[dctrace 62] mem: level=0 tick=1301 hp=150 heap=8ce67000 vram=2124 KB largest=2107 KB
+[dctrace 63] ram: live=11947 KB reusable=786 KB
+[dctrace 39] txtr: 12900 uploads; 32x32 type=3 error=0000 free=2124 KB
+[dctrace 12] fps 30.3  yaw=101 pitch=0 pos=8448,19712
+[dctrace 47] gl: polys=31 walls=43 setupfail=0 vecfail=0
+[dctrace 62] mem: level=0 tick=1332 hp=150 heap=8ce67000 vram=2124 KB largest=2107 KB
+[dctrace 63] ram: live=11947 KB reusable=786 KB
+[dctrace 39] txtr: 12925 uploads; 32x32 type=3 error=0000 free=2124 KB
+[dctrace 12] fps 30.3  yaw=52 pitch=0 pos=9078,19712
+[dctrace 47] gl: polys=53 walls=52 setupfail=0 vecfail=0
+[dctrace 62] mem: level=0 tick=1363 hp=150 heap=8ce67000 vram=2124 KB largest=2107 KB
+[dctrace 63] ram: live=11947 KB reusable=786 KB
+[dctrace 39] txtr: 12950 uploads; 32x32 type=3 error=0000 free=2124 KB
+[dctrace 39] txtr: 12975 uploads; 32x32 type=3 error=0000 free=2124 KB
+[dctrace 12] fps 30.3  yaw=54 pitch=0 pos=9925,19712
+[dctrace 47] gl: polys=93 walls=193 setupfail=0 vecfail=0
+[dctrace 62] mem: level=0 tick=1394 hp=150 heap=8ce67000 vram=2124 KB largest=2107 KB
+[dctrace 63] ram: live=11947 KB reusable=786 KB
+[dctrace 39] txtr: 13000 uploads; 32x32 type=3 error=0000 free=2124 KB
+[dctrace 12] fps 30.3  yaw=174 pitch=0 pos=10781,19712
+[dctrace 47] gl: polys=38 walls=37 setupfail=0 vecfail=0
+[dctrace 62] mem: level=0 tick=1425 hp=150 heap=8ce67000 vram=2124 KB largest=2107 KB
+[dctrace 63] ram: live=11947 KB reusable=786 KB
+[dctrace 39] txtr: 13025 uploads; 32x32 type=3 error=0000 free=2124 KB
+[dctrace 12] fps 30.3  yaw=174 pitch=0 pos=10781,19712
+[dctrace 47] gl: polys=31 walls=31 setupfail=0 vecfail=0
+[dctrace 62] mem: level=0 tick=1456 hp=150 heap=8ce67000 vram=2124 KB largest=2107 KB
+[dctrace 63] ram: live=11947 KB reusable=786 KB
+[dctrace 39] txtr: 13050 uploads; 32x32 type=3 error=0000 free=2124 KB
+[dctrace 12] fps 30.3  yaw=174 pitch=0 pos=10781,19712
+[dctrace 47] gl: polys=31 walls=31 setupfail=0 vecfail=0
+[dctrace 62] mem: level=0 tick=1487 hp=150 heap=8ce67000 vram=2124 KB largest=2107 KB
+[dctrace 63] ram: live=11947 KB reusable=786 KB
+[dctrace 39] txtr: 13075 uploads; 32x32 type=3 error=0000 free=2124 KB
+[dctrace 39] txtr: 13100 uploads; 32x32 type=3 error=0000 free=2124 KB
+[dctrace 12] fps 30.3  yaw=176 pitch=0 pos=10781,19712
+[dctrace 47] gl: polys=31 walls=31 setupfail=0 vecfail=0
+[dctrace 62] mem: level=0 tick=1518 hp=150 heap=8ce67000 vram=2124 KB largest=2107 KB
+[dctrace 63] ram: live=11947 KB reusable=786 KB
+[dctrace 39] txtr: 13125 uploads; 32x32 type=3 error=0000 free=2124 KB
+[dctrace 12] fps 30.3  yaw=288 pitch=0 pos=10035,19430
+[dctrace 47] gl: polys=110 walls=682 setupfail=0 vecfail=0
+[dctrace 62] mem: level=0 tick=1549 hp=150 heap=8ce67000 vram=2124 KB largest=2107 KB
+[dctrace 63] ram: live=11947 KB reusable=786 KB
+[dctrace 39] txtr: 13150 uploads; 32x32 type=3 error=0000 free=2124 KB
+[dctrace 39] txtr: 13175 uploads; 16x16 type=2 error=0000 free=2126 KB
+[dctrace 12] fps 30.3  yaw=293 pitch=0 pos=7936,17720
+[dctrace 47] gl: polys=178 walls=897 setupfail=0 vecfail=0
+[dctrace 62] mem: level=0 tick=1580 hp=150 heap=8ce67000 vram=2124 KB largest=2107 KB
+[dctrace 63] ram: live=11947 KB reusable=786 KB
+[dctrace 39] txtr: 13200 uploads; 64x32 type=3 error=0000 free=2122 KB
+[dctrace 39] txtr: 13225 uploads; 16x16 type=2 error=0000 free=2126 KB
+[dctrace 39] txtr: 13250 uploads; 64x32 type=3 error=0000 free=2122 KB
+[dctrace 12] fps 30.3  yaw=297 pitch=0 pos=9067,18361
+[dctrace 47] gl: polys=232 walls=882 setupfail=0 vecfail=0
+[dctrace 62] mem: level=0 tick=1611 hp=150 heap=8ce67000 vram=2122 KB largest=2107 KB
+[dctrace 63] ram: live=11947 KB reusable=786 KB
+[dctrace 39] txtr: 13275 uploads; 32x32 type=3 error=0000 free=2124 KB
+[dctrace 12] fps 30.3  yaw=288 pitch=0 pos=9325,18116
+[dctrace 47] gl: polys=203 walls=871 setupfail=0 vecfail=0
+[dctrace 62] mem: level=0 tick=1642 hp=150 heap=8ce67000 vram=2122 KB largest=2107 KB
+[dctrace 63] ram: live=11947 KB reusable=786 KB
+[dctrace 39] txtr: 13300 uploads; 32x32 type=3 error=0000 free=2124 KB
+[dctrace 39] txtr: 13325 uploads; 64x32 type=3 error=0000 free=2122 KB
+[dctrace 12] fps 30.3  yaw=133 pitch=0 pos=8777,17040
+[dctrace 47] gl: polys=180 walls=793 setupfail=0 vecfail=0
+[dctrace 62] mem: level=0 tick=1673 hp=150 heap=8ce67000 vram=2122 KB largest=2107 KB
+[dctrace 63] ram: live=11947 KB reusable=786 KB
+[dctrace 39] txtr: 13350 uploads; 64x32 type=3 error=0000 free=2122 KB
+[dctrace 39] txtr: 13375 uploads; 32x32 type=3 error=0000 free=2124 KB
+[dctrace 12] fps 30.3  yaw=83 pitch=0 pos=10699,18875
+[dctrace 47] gl: polys=123 walls=332 setupfail=0 vecfail=0
+[dctrace 62] mem: level=0 tick=1704 hp=150 heap=8ce67000 vram=2124 KB largest=2107 KB
+[dctrace 63] ram: live=11947 KB reusable=786 KB
+[dctrace 39] txtr: 13400 uploads; 64x32 type=3 error=0000 free=2122 KB
+[dctrace 39] txtr: 13425 uploads; 64x32 type=3 error=0000 free=2122 KB
+[dctrace 12] fps 30.3  yaw=98 pitch=0 pos=11320,19001
+[dctrace 47] gl: polys=65 walls=51 setupfail=0 vecfail=0
+[dctrace 62] mem: level=0 tick=1735 hp=150 heap=8ce67000 vram=2122 KB largest=2107 KB
+[dctrace 63] ram: live=11947 KB reusable=786 KB
+[dctrace 39] txtr: 13450 uploads; 32x32 type=3 error=0000 free=2124 KB
+[dctrace 12] fps 30.3  yaw=197 pitch=0 pos=11632,17198
+[dctrace 47] gl: polys=152 walls=305 setupfail=0 vecfail=0
+[dctrace 62] mem: level=0 tick=1766 hp=150 heap=8ce67000 vram=2124 KB largest=2107 KB
+[dctrace 63] ram: live=11947 KB reusable=786 KB
+[dctrace 39] txtr: 13475 uploads; 16x32 type=2 error=0000 free=2124 KB
+[dctrace 39] txtr: 13500 uploads; 32x32 type=3 error=0000 free=2122 KB
+[dctrace 39] txtr: 13525 uploads; 16x32 type=2 error=0000 free=2125 KB
+[dctrace 12] fps 30.3  yaw=263 pitch=0 pos=12499,16850
+[dctrace 47] gl: polys=233 walls=865 setupfail=0 vecfail=0
+[dctrace 62] mem: level=0 tick=1797 hp=150 heap=8ce67000 vram=2122 KB largest=2107 KB
+[dctrace 63] ram: live=11947 KB reusable=786 KB
+[dctrace 39] txtr: 13550 uploads; 16x32 type=2 error=0000 free=2124 KB
+[dctrace 39] txtr: 13575 uploads; 32x32 type=3 error=0000 free=2122 KB
+[dctrace 39] txtr: 13600 uploads; 8x8 type=3 error=0000 free=2124 KB
+[dctrace 12] fps 30.3  yaw=92 pitch=0 pos=11995,15505
+[dctrace 47] gl: polys=240 walls=752 setupfail=0 vecfail=0
+[dctrace 62] mem: level=0 tick=1828 hp=150 heap=8ce67000 vram=2122 KB largest=2107 KB
+[dctrace 63] ram: live=11947 KB reusable=786 KB
+[dctrace 39] txtr: 13625 uploads; 32x32 type=3 error=0000 free=2124 KB
+[dctrace 39] txtr: 13650 uploads; 64x32 type=3 error=0000 free=2122 KB
+[dctrace 12] fps 30.3  yaw=455 pitch=0 pos=11238,16907
+[dctrace 47] gl: polys=204 walls=1041 setupfail=0 vecfail=0
+[dctrace 62] mem: level=0 tick=1859 hp=150 heap=8ce67000 vram=2122 KB largest=2107 KB
+[dctrace 63] ram: live=11947 KB reusable=786 KB
+[dctrace 39] txtr: 13675 uploads; 64x32 type=3 error=0000 free=2122 KB
+[dctrace 39] txtr: 13700 uploads; 64x32 type=3 error=0000 free=2122 KB
+[dctrace 12] fps 30.3  yaw=475 pitch=0 pos=11308,16888
+[dctrace 47] gl: polys=198 walls=975 setupfail=0 vecfail=0
+[dctrace 62] mem: level=0 tick=1890 hp=150 heap=8ce67000 vram=2122 KB largest=2107 KB
+[dctrace 63] ram: live=11947 KB reusable=786 KB
+[dctrace 39] txtr: 13725 uploads; 16x16 type=2 error=0000 free=2126 KB
+[dctrace 39] txtr: 13750 uploads; 64x32 type=3 error=0000 free=2122 KB
+[dctrace 12] fps 30.3  yaw=163 pitch=0 pos=10173,16965
+[dctrace 47] gl: polys=198 walls=753 setupfail=0 vecfail=0
+[dctrace 62] mem: level=0 tick=1921 hp=150 heap=8ce67000 vram=2122 KB largest=2107 KB
+[dctrace 63] ram: live=11947 KB reusable=786 KB
+[dctrace 39] txtr: 13775 uploads; 32x32 type=3 error=0000 free=2124 KB
+[dctrace 12] fps 30.3  yaw=172 pitch=0 pos=8448,19712
+[dctrace 47] gl: polys=95 walls=244 setupfail=0 vecfail=0
+[dctrace 62] mem: level=0 tick=1952 hp=150 heap=8ce67000 vram=2124 KB largest=2107 KB
+[dctrace 63] ram: live=11947 KB reusable=786 KB
+[dctrace 39] txtr: 13800 uploads; 32x32 type=3 error=0000 free=2124 KB
+[dctrace 12] fps 30.3  yaw=37 pitch=0 pos=9468,19712
+[dctrace 47] gl: polys=73 walls=178 setupfail=0 vecfail=0
+[dctrace 62] mem: level=0 tick=1983 hp=150 heap=8ce67000 vram=2124 KB largest=2107 KB
+[dctrace 63] ram: live=11947 KB reusable=786 KB
+[dctrace 39] txtr: 13825 uploads; 32x32 type=3 error=0000 free=2124 KB
+[dctrace 39] txtr: 13850 uploads; 32x32 type=3 error=0000 free=2124 KB
+[dctrace 12] fps 30.3  yaw=469 pitch=0 pos=13014,19712
+[dctrace 47] gl: polys=101 walls=511 setupfail=0 vecfail=0
+[dctrace 62] mem: level=0 tick=2014 hp=150 heap=8ce67000 vram=2124 KB largest=2107 KB
+[dctrace 63] ram: live=11947 KB reusable=786 KB
+[dctrace 39] txtr: 13875 uploads; 8x8 type=3 error=0000 free=2122 KB
+[dctrace 39] txtr: 13900 uploads; 64x32 type=3 error=0000 free=2118 KB
+[dctrace 12] fps 30.3  yaw=359 pitch=0 pos=13056,19512
+[dctrace 47] gl: polys=103 walls=748 setupfail=0 vecfail=0
+[dctrace 62] mem: level=0 tick=2045 hp=150 heap=8ce67000 vram=2117 KB largest=2107 KB
+[dctrace 63] ram: live=11947 KB reusable=786 KB
+[dctrace 39] txtr: 13925 uploads; 16x32 type=2 error=0000 free=2125 KB
+[dctrace 39] txtr: 13950 uploads; 16x32 type=2 error=0000 free=2124 KB
+[dctrace 39] txtr: 13975 uploads; 64x32 type=3 error=0000 free=2122 KB
+[dctrace 12] fps 30.3  yaw=144 pitch=0 pos=12556,16891
+[dctrace 47] gl: polys=217 walls=872 setupfail=0 vecfail=0
+[dctrace 62] mem: level=0 tick=2076 hp=150 heap=8ce67000 vram=2124 KB largest=2107 KB
+[dctrace 63] ram: live=11947 KB reusable=786 KB
+[dctrace 39] txtr: 14000 uploads; 32x32 type=3 error=0000 free=2124 KB
+[dctrace 39] txtr: 14025 uploads; 64x32 type=3 error=0000 free=2122 KB
+[dctrace 12] fps 30.2  yaw=24 pitch=0 pos=10913,17768
+[dctrace 47] gl: polys=141 walls=274 setupfail=0 vecfail=0
+[dctrace 62] mem: level=0 tick=2107 hp=150 heap=8ce67000 vram=2124 KB largest=2107 KB
+[dctrace 63] ram: live=11947 KB reusable=786 KB
+[dctrace 39] txtr: 14050 uploads; 16x8 type=3 error=0000 free=2122 KB
+[dctrace 39] txtr: 14075 uploads; 16x32 type=2 error=0000 free=2123 KB
+[dctrace 39] txtr: 14100 uploads; 16x32 type=2 error=0000 free=2123 KB
+[dctrace 39] txtr: 14125 uploads; 16x32 type=2 error=0000 free=2122 KB
+[dctrace 12] fps 30.3  yaw=391 pitch=0 pos=12143,19104
+[dctrace 47] gl: polys=185 walls=1205 setupfail=0 vecfail=0
+[dctrace 62] mem: level=0 tick=2138 hp=150 heap=8ce67000 vram=2120 KB largest=2107 KB
+[dctrace 63] ram: live=11947 KB reusable=786 KB
+[dctrace 39] txtr: 14150 uploads; 64x32 type=3 error=0000 free=2118 KB
+[dctrace 39] txtr: 14175 uploads; 16x32 type=2 error=0000 free=2121 KB
+[dctrace 39] txtr: 14200 uploads; 16x16 type=2 error=0000 free=2124 KB
+[dctrace 39] txtr: 14225 uploads; 16x32 type=2 error=0000 free=2125 KB
+[dctrace 39] txtr: 14250 uploads; 32x32 type=3 error=0000 free=2079 KB
+[dctrace 39] txtr: 14275 uploads; 8x8 type=3 error=0000 free=2075 KB
+[dctrace 39] txtr: 14300 uploads; 16x32 type=2 error=0000 free=2082 KB
+[dctrace 12] fps 30.3  yaw=265 pitch=0 pos=13162,17965
+[dctrace 47] gl: polys=315 walls=1630 setupfail=0 vecfail=0
+[dctrace 62] mem: level=0 tick=2169 hp=150 heap=8ce67000 vram=2078 KB largest=2063 KB
+[dctrace 63] ram: live=11947 KB reusable=786 KB
+[dctrace 39] txtr: 14325 uploads; 32x32 type=3 error=0000 free=2082 KB
+[dctrace 39] txtr: 14350 uploads; 16x16 type=2 error=0000 free=2083 KB
+[dctrace 12] fps 30.3  yaw=168 pitch=0 pos=12181,17130
+[dctrace 47] gl: polys=199 walls=586 setupfail=0 vecfail=0
+[dctrace 62] mem: level=0 tick=2200 hp=150 heap=8ce67000 vram=2079 KB largest=2063 KB
+[dctrace 63] ram: live=11947 KB reusable=786 KB
+[dctrace 39] txtr: 14375 uploads; 32x32 type=3 error=0000 free=2082 KB
+[dctrace 39] txtr: 14400 uploads; 16x32 type=2 error=0000 free=2081 KB
+[dctrace 12] fps 30.3  yaw=377 pitch=0 pos=11929,19410
+[dctrace 47] gl: polys=193 walls=802 setupfail=0 vecfail=0
+[dctrace 62] mem: level=0 tick=2231 hp=150 heap=8ce67000 vram=2077 KB largest=2063 KB
+[dctrace 63] ram: live=11947 KB reusable=786 KB
+[dctrace 39] txtr: 14425 uploads; 16x32 type=2 error=0000 free=2080 KB
+[dctrace 39] txtr: 14450 uploads; 16x32 type=2 error=0000 free=2079 KB
+[dctrace 39] txtr: 14475 uploads; 32x32 type=3 error=0000 free=2077 KB
+[dctrace 39] txtr: 14500 uploads; 16x32 type=2 error=0000 free=2083 KB
+[dctrace 39] txtr: 14525 uploads; 16x32 type=2 error=0000 free=2082 KB
+[dctrace 39] txtr: 14550 uploads; 16x32 type=2 error=0000 free=2082 KB
+[dctrace 39] txtr: 14575 uploads; 16x32 type=2 error=0000 free=2079 KB
+[dctrace 12] fps 30.3  yaw=338 pitch=0 pos=13519,18886
+[dctrace 47] gl: polys=301 walls=1744 setupfail=0 vecfail=0
+[dctrace 62] mem: level=0 tick=2262 hp=150 heap=8ce67000 vram=2074 KB largest=2063 KB
+[dctrace 63] ram: live=11947 KB reusable=786 KB
+[dctrace 39] txtr: 14600 uploads; 16x32 type=2 error=0000 free=2082 KB
+[dctrace 39] txtr: 14625 uploads; 16x32 type=2 error=0000 free=2083 KB
+[dctrace 39] txtr: 14650 uploads; 32x32 type=3 error=0000 free=2080 KB
+[dctrace 12] fps 30.3  yaw=138 pitch=0 pos=12192,16621
+[dctrace 47] gl: polys=221 walls=835 setupfail=0 vecfail=0
+[dctrace 62] mem: level=0 tick=2293 hp=150 heap=8ce67000 vram=2076 KB largest=2063 KB
+[dctrace 63] ram: live=11947 KB reusable=786 KB
+[dctrace 39] txtr: 14675 uploads; 32x32 type=3 error=0000 free=2076 KB
+[dctrace 12] fps 30.3  yaw=505 pitch=0 pos=13225,19180
+[dctrace 47] gl: polys=132 walls=529 setupfail=0 vecfail=0
+[dctrace 62] mem: level=0 tick=2324 hp=150 heap=8ce67000 vram=2076 KB largest=2063 KB
+[dctrace 63] ram: live=11947 KB reusable=786 KB
+[dctrace 39] txtr: 14700 uploads; 16x16 type=2 error=0000 free=2077 KB
+[dctrace 39] txtr: 14725 uploads; 16x32 type=2 error=0000 free=2075 KB
+2026-09-06 08:55:59.367 Flycast[1762:954154] ℹ️ rend/vulkan/vulkan_context.cpp:1620 N[RENDERER]: Swap interval changed to 1

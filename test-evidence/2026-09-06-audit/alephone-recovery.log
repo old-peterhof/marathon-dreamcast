@@ -1,0 +1,268 @@
+2026-09-06 08:56:02.736 Flycast[2343:958599] ℹ️ sdl/sdl.cpp:899 N[RENDERER]: Monitor refresh rate: 120 Hz (1800 x 1169)
+2026-09-06 08:56:02.736 Flycast[2343:958599] ℹ️ rend/vulkan/vulkan_context.cpp:303 N[RENDERER]: Vulkan API 1.1. Device Apple M5 Pro
+2026-09-06 08:56:02.737 Flycast[2343:958599] ℹ️ rend/vulkan/vulkan_context.cpp:456 N[RENDERER]: Device extension enabled: VK_KHR_swapchain
+2026-09-06 08:56:02.737 Flycast[2343:958599] ℹ️ rend/vulkan/vulkan_context.cpp:456 N[RENDERER]: Device extension enabled: VK_KHR_portability_subset
+2026-09-06 08:56:02.737 Flycast[2343:958599] ℹ️ rend/vulkan/vulkan_context.cpp:456 N[RENDERER]: Device extension enabled: VK_EXT_metal_objects
+2026-09-06 08:56:02.737 Flycast[2343:958599] ℹ️ rend/vulkan/vulkan_context.cpp:459 N[RENDERER]: Device extension unavailable: VK_EXT_provoking_vertex
+2026-09-06 08:56:02.737 Flycast[2343:958599] ℹ️ rend/vulkan/vulkan_context.cpp:456 N[RENDERER]: Device extension enabled: VK_KHR_buffer_device_address
+2026-09-06 08:56:02.737 Flycast[2343:958599] ℹ️ rend/vulkan/vulkan_context.cpp:552 N[RENDERER]: bufferDeviceAddressSupported 1
+2026-09-06 08:56:02.740 Flycast[2343:958599] ℹ️ rend/vulkan/vulkan_context.h:332 N[RENDERER]: Using depth format D32SfloatS8Uint tiling Optimal
+2026-09-06 08:56:02.785 Flycast[2343:958599] ℹ️ ui/gui.cpp:245 N[RENDERER]: Screen DPI is 255, size 2072 x 1122. Scaling by 2.00
+2026-09-06 08:56:02.798 Flycast[2343:958623] ℹ️ hw/mem/addrspace.cpp:425 N[VMEM]: Info: nvmem is enabled
+2026-09-06 08:56:02.802 Flycast[2343:958623] ℹ️ hw/mem/addrspace.cpp:461 N[VMEM]: BASE 0x13c620000 RAM(16 MB) 0x148620000 VRAM64(8 MB) 0x140620000 ARAM(2 MB) 0x15c620000
+2026-09-06 08:56:02.804 Flycast[2343:958623] ℹ️ hw/mem/addrspace.cpp:425 N[VMEM]: Info: nvmem is enabled
+2026-09-06 08:56:02.805 Flycast[2343:958623] ℹ️ hw/mem/addrspace.cpp:461 N[VMEM]: BASE 0x13c620000 RAM(16 MB) 0x148620000 VRAM64(8 MB) 0x140620000 ARAM(2 MB) 0x15c620000
+2026-09-06 08:56:02.805 Flycast[2343:958623] ℹ️ emulator.cpp:60 N[BOOT]: Game ID is [MARATHON2]
+2026-09-06 08:56:02.807 Flycast[2343:958623] ℹ️ emulator.cpp:617 N[BOOT]: Did not load BIOS, using reios
+2026-09-06 08:56:02.807 Flycast[2343:958623] ℹ️ emulator.cpp:60 N[BOOT]: Game ID is [MARATHON2]
+2026-09-06 08:56:02.937 Flycast[2343:958599] ℹ️ rend/vulkan/vulkan_renderer.cpp:246 N[RENDERER]: VulkanRenderer::Init
+2026-09-06 08:56:03.043 Flycast[2343:958626] ℹ️ reios/reios.cpp:639 N[REIOS]: -----------------
+2026-09-06 08:56:03.043 Flycast[2343:958626] ℹ️ reios/reios.cpp:640 N[REIOS]: REIOS: Booting up
+2026-09-06 08:56:03.043 Flycast[2343:958626] ℹ️ reios/reios.cpp:641 N[REIOS]: -----------------
+
+--
+KallistiOS v2.3.0 [dreamcast/pristine]
+  Git revision: 670ce33-dirty
+  Sun Aug 16 10:51:04 PDT 2026
+  mgibbons@MaxBook-Pro.local:/opt/toolchains/dc/kos
+  sh-elf-gcc (GCC) 15.2.0
+maple: active drivers:
+    Dreameye (Camera): Camera
+    Sound Input Peripheral: Microphone
+    PuruPuru (Vibration) Pack: JumpPack
+    VMU Driver: Clock, LCD, MemoryCard
+    Mouse Driver: Mouse
+    Keyboard Driver: Keyboard
+    Controller Driver: Controller
+    Lightgun: LightGun
+vid_set_mode: 640x480IL NTSC with 1 framebuffers.
+
+Aleph One 0.12.0
+http://source.bungie.org/
+
+Original code by Bungie Software <http://www.bungie.com/>
+Additional work by Loren Petrich, Chris Pruett, Rhys Hill et al.
+Expat XML library by James Clark
+SDL port by Christian Bauer <Christian.Bauer@uni-mainz.de>
+
+This is free software with ABSOLUTELY NO WARRANTY.
+You are welcome to redistribute it under certain conditions.
+For details, see the file COPYING.
+fs_iso9660: disc change detected
+  (joliet level 3 extensions detected)
+[dctrace 20] maple A0: Dreamcast Controller          Produced By or Under License From SEGA ENTERPRISES,LTD.     �� func=01000000
+[dctrace 21] maple A1: Visual Memory                 Produced By or Under License From SEGA ENTERPRISES,LTD.     | func=0e000000
+[dctrace 22] maple A2: Visual Memory                 Produced By or Under License From SEGA ENTERPRISES,LTD.     | func=0e000000
+vmu_profiler_start(): Launching profiler thread.
+[dctrace 16] vmu: loaded 2525 bytes from /vmu/a1
+[dctrace 16] vmu: saved 2560 bytes to /vmu/a1
+vmufs_write: padded file 'ALEPHONE.PRF' from 2688 to 3072 bytes
+dprintf: Preferences Write Error: 16 type: 0
+[dctrace 58] sound: buffer budget 3072 KB
+Dreamcast audio driver initialized: dcAICAaudio
+vid_set_mode: 640x480IL NTSC with 1 framebuffers.
+[dctrace 0] mode 0: 640x480x16 -> surf 640x480x16 px=0xa5000000 flags=80000021
+[dctrace 32] gl: requested=1 obtained=0
+[dctrace 61] ui: reserved overlay 0x8c22dc40 px=0x8c254710
+[dctrace 13] controller: found, polling
+[dctrace 1] autostart mode 6
+[dctrace 25] plate: plate-main.bmp loaded 640x480
+[dctrace 19] input_device=1 sens=30/30
+[dctrace 2] autostart: replay TestFilm
+[dctrace 57] load: map wad 33 ms
+vid_set_mode: 640x480IL NTSC with 1 framebuffers.
+
+Welcome to GLdc! Git revision: 1.1-698-ga1cd
+
+[dctrace 1] mode 1: 640x480x16 -> surf 640x480x16 px=0x0 flags=80000022
+[dctrace 32] gl: requested=1 obtained=1
+[dctrace 31] gl: PowerVR2 CLX2 100mHz / 1.2 (partial) - GLdc 1.1
+GL_VENDOR: KallistiOS / Kazade
+GL_RENDERER: PowerVR2 CLX2 100mHz
+GL_VERSION: 1.2 (partial) - GLdc 1.1
+[dctrace 65] load: free 0 ms | 11 colls 286 ms | models 0 ms | colorenv 197 ms
+[dctrace 66]   parse: hdr 92 | alloc 0 | clut 17 | high 1 | low 12 | bitmaps 164 ms
+[dctrace 67]   bitmaps: 547 rle (33218 rows, 1615 KB) | 87 raw (1145 KB)
+[dctrace 54] load: collections 503 ms
+[dctrace 60] load: heap top after collections 0x8cad2000 (11080 KB in use)
+[dctrace 55] load: monster sounds 12 ms
+[dctrace 56] load: game sounds 0 ms
+[dctrace 33] mode: 640x480x16 already set, not re-initialising
+[dctrace 40] heap: StartRun entry     0 KB
+[dctrace 37] txtr[0]: res=0 fmt=8056 far=2701
+[dctrace 38] txtr[1]: res=0 fmt=8056 far=2601
+[dctrace 39] txtr[2]: res=0 fmt=8056 far=2600
+[dctrace 39] txtr[3]: res=0 fmt=8056 far=2600
+[dctrace 41] heap: after StartTextures 0 KB
+[dctrace 42] heap: after screen font  0 KB
+[dctrace 43] heap: after map fonts    44 KB
+[dctrace 44] heap: after HUD fonts    236 KB
+[dctrace 45] heap: StartRun done      236 KB
+[dctrace 3] autostart: returned, state=8
+[dctrace 4] render_view wp=0x8cd22588 640x320 bpp=16 pitch=1280
+[dctrace 36] heap: at first render    1780 KB
+[dctrace 39] upload-test: injected failure
+[dctrace 39] txtr: 1 uploads; 128x128 type=0 error=0000 free=4529 KB
+[dctrace 39] upload-test: failed texture recovered
+[dctrace 6] frame 0: 0/12800 nonzero, first=0000
+[dctrace 53] vq: 4048 entries, 126 KB index
+[dctrace 53] vq: 1 compressed sprite uploads
+[dctrace 7] frame 1: 0/12800 nonzero, first=0000
+[dctrace 31] gl: glDisable(0x3000) is not a PowerVR capability; dropped
+[dctrace 12] fps 1.4  yaw=320 pitch=0 pos=27648,20448
+[dctrace 47] gl: polys=1 walls=92 setupfail=0 vecfail=0
+[dctrace 62] mem: level=20 tick=31 hp=150 heap=8cdc2000 vram=3839 KB largest=3828 KB
+[dctrace 63] ram: live=12046 KB reusable=27 KB
+[dctrace 8] frame 2: 0/12800 nonzero, first=0000
+[dctrace 39] txtr: 25 uploads; 128x128 type=0 error=0000 free=3795 KB
+[dctrace 12] fps 29.2  yaw=180 pitch=0 pos=27648,20448
+[dctrace 47] gl: polys=26 walls=1339 setupfail=0 vecfail=0
+[dctrace 62] mem: level=20 tick=63 hp=150 heap=8cdda000 vram=3659 KB largest=3647 KB
+[dctrace 63] ram: live=12046 KB reusable=123 KB
+2026-09-06 08:56:29.361 Flycast[2343:958599] ℹ️ rend/vulkan/vulkan_context.cpp:1620 N[RENDERER]: Swap interval changed to 2
+[dctrace 12] fps 30.3  yaw=226 pitch=0 pos=26294,22731
+[dctrace 47] gl: polys=31 walls=1255 setupfail=0 vecfail=0
+[dctrace 62] mem: level=20 tick=94 hp=150 heap=8cdda000 vram=3659 KB largest=3647 KB
+[dctrace 63] ram: live=12046 KB reusable=123 KB
+[dctrace 12] fps 29.3  yaw=370 pitch=0 pos=25344,24065
+[dctrace 47] gl: polys=31 walls=923 setupfail=0 vecfail=0
+[dctrace 62] mem: level=20 tick=125 hp=150 heap=8cdfd000 vram=3519 KB largest=3503 KB
+[dctrace 63] ram: live=12192 KB reusable=117 KB
+2026-09-06 08:56:30.862 Flycast[2343:958599] ℹ️ rend/vulkan/vulkan_context.cpp:1620 N[RENDERER]: Swap interval changed to 1
+2026-09-06 08:56:31.288 Flycast[2343:958599] ℹ️ rend/vulkan/vulkan_context.cpp:1620 N[RENDERER]: Swap interval changed to 2
+[dctrace 12] fps 31.2  yaw=408 pitch=0 pos=28160,23552
+[dctrace 47] gl: polys=32 walls=1199 setupfail=0 vecfail=0
+[dctrace 62] mem: level=20 tick=157 hp=150 heap=8cdfd000 vram=3519 KB largest=3503 KB
+[dctrace 63] ram: live=12192 KB reusable=117 KB
+[dctrace 12] fps 30.3  yaw=51 pitch=0 pos=27188,22271
+[dctrace 47] gl: polys=31 walls=585 setupfail=0 vecfail=0
+[dctrace 62] mem: level=20 tick=188 hp=150 heap=8cdfd000 vram=3519 KB largest=3503 KB
+[dctrace 63] ram: live=12192 KB reusable=117 KB
+[dctrace 12] fps 30.3  yaw=154 pitch=0 pos=27748,22031
+[dctrace 47] gl: polys=31 walls=335 setupfail=0 vecfail=0
+[dctrace 62] mem: level=20 tick=219 hp=150 heap=8cdfd000 vram=3519 KB largest=3503 KB
+[dctrace 63] ram: live=12192 KB reusable=117 KB
+[dctrace 12] fps 30.3  yaw=261 pitch=0 pos=24293,22574
+[dctrace 47] gl: polys=31 walls=1110 setupfail=0 vecfail=0
+[dctrace 62] mem: level=20 tick=250 hp=150 heap=8cdff000 vram=3519 KB largest=3503 KB
+[dctrace 63] ram: live=12296 KB reusable=21 KB
+[dctrace 12] fps 30.3  yaw=270 pitch=0 pos=20362,22307
+[dctrace 47] gl: polys=31 walls=612 setupfail=0 vecfail=0
+[dctrace 62] mem: level=20 tick=281 hp=150 heap=8ce08000 vram=3519 KB largest=3503 KB
+[dctrace 63] ram: live=12330 KB reusable=23 KB
+[dctrace 12] fps 30.3  yaw=174 pitch=0 pos=18432,22272
+[dctrace 47] gl: polys=31 walls=143 setupfail=0 vecfail=0
+[dctrace 62] mem: level=20 tick=312 hp=150 heap=8ce21000 vram=3519 KB largest=3503 KB
+[dctrace 63] ram: live=12432 KB reusable=21 KB
+[dctrace 12] fps 30.2  yaw=492 pitch=0 pos=18451,22268
+[dctrace 47] gl: polys=31 walls=1876 setupfail=0 vecfail=0
+[dctrace 62] mem: level=20 tick=343 hp=150 heap=8ce39000 vram=3476 KB largest=3459 KB
+[dctrace 63] ram: live=12432 KB reusable=117 KB
+[dctrace 12] fps 30.3  yaw=492 pitch=0 pos=18451,22268
+[dctrace 47] gl: polys=31 walls=3422 setupfail=0 vecfail=0
+[dctrace 62] mem: level=20 tick=374 hp=150 heap=8ce39000 vram=3476 KB largest=3459 KB
+[dctrace 63] ram: live=12432 KB reusable=117 KB
+[dctrace 12] fps 30.3  yaw=492 pitch=0 pos=18451,22268
+[dctrace 47] gl: polys=31 walls=3686 setupfail=0 vecfail=0
+[dctrace 62] mem: level=20 tick=405 hp=150 heap=8ce39000 vram=3476 KB largest=3459 KB
+[dctrace 63] ram: live=12440 KB reusable=109 KB
+[dctrace 12] fps 30.3  yaw=492 pitch=0 pos=18451,22268
+[dctrace 47] gl: polys=31 walls=3727 setupfail=0 vecfail=0
+[dctrace 62] mem: level=20 tick=436 hp=150 heap=8ce39000 vram=3476 KB largest=3459 KB
+[dctrace 63] ram: live=12440 KB reusable=109 KB
+[dctrace 12] fps 30.3  yaw=407 pitch=0 pos=18451,22268
+[dctrace 47] gl: polys=31 walls=3772 setupfail=0 vecfail=0
+[dctrace 62] mem: level=20 tick=467 hp=150 heap=8ce39000 vram=3476 KB largest=3459 KB
+[dctrace 63] ram: live=12440 KB reusable=109 KB
+[dctrace 12] fps 30.2  yaw=272 pitch=0 pos=18451,22268
+[dctrace 47] gl: polys=31 walls=491 setupfail=0 vecfail=0
+[dctrace 62] mem: level=20 tick=498 hp=150 heap=8ce41000 vram=3433 KB largest=3415 KB
+[dctrace 63] ram: live=12464 KB reusable=116 KB
+[dctrace 12] fps 30.3  yaw=347 pitch=0 pos=16639,22053
+[dctrace 47] gl: polys=31 walls=375 setupfail=0 vecfail=0
+[dctrace 62] mem: level=20 tick=529 hp=150 heap=8ce41000 vram=3391 KB largest=3371 KB
+[dctrace 63] ram: live=12464 KB reusable=116 KB
+2026-09-06 08:56:44.154 Flycast[2343:958599] ℹ️ rend/vulkan/vulkan_context.cpp:1620 N[RENDERER]: Swap interval changed to 1
+2026-09-06 08:56:44.335 Flycast[2343:958599] ℹ️ rend/vulkan/vulkan_context.cpp:1620 N[RENDERER]: Swap interval changed to 2
+[dctrace 12] fps 30.3  yaw=437 pitch=0 pos=16190,18688
+[dctrace 47] gl: polys=31 walls=275 setupfail=0 vecfail=0
+[dctrace 62] mem: level=20 tick=560 hp=150 heap=8ce41000 vram=3348 KB largest=3327 KB
+[dctrace 63] ram: live=12464 KB reusable=116 KB
+[dctrace 12] fps 30.3  yaw=135 pitch=0 pos=16300,20067
+[dctrace 47] gl: polys=31 walls=319 setupfail=0 vecfail=0
+[dctrace 62] mem: level=20 tick=591 hp=150 heap=8ce41000 vram=3348 KB largest=3327 KB
+[dctrace 63] ram: live=12486 KB reusable=94 KB
+[dctrace 12] fps 30.3  yaw=89 pitch=0 pos=15986,24255
+[dctrace 47] gl: polys=31 walls=433 setupfail=0 vecfail=0
+[dctrace 62] mem: level=20 tick=622 hp=150 heap=8ce41000 vram=3348 KB largest=3327 KB
+[dctrace 63] ram: live=12486 KB reusable=94 KB
+[dctrace 12] fps 30.3  yaw=80 pitch=0 pos=16384,25344
+[dctrace 47] gl: polys=31 walls=177 setupfail=0 vecfail=0
+[dctrace 62] mem: level=20 tick=653 hp=150 heap=8ce41000 vram=3348 KB largest=3327 KB
+[dctrace 63] ram: live=12510 KB reusable=70 KB
+[dctrace 12] fps 30.3  yaw=235 pitch=0 pos=16384,25344
+[dctrace 47] gl: polys=31 walls=168 setupfail=0 vecfail=0
+[dctrace 62] mem: level=20 tick=684 hp=150 heap=8ce41000 vram=3348 KB largest=3327 KB
+[dctrace 63] ram: live=12510 KB reusable=70 KB
+[dctrace 12] fps 30.3  yaw=360 pitch=0 pos=16124,22428
+[dctrace 47] gl: polys=31 walls=544 setupfail=0 vecfail=0
+[dctrace 62] mem: level=20 tick=715 hp=150 heap=8ce4d000 vram=3305 KB largest=3283 KB
+[dctrace 63] ram: live=12510 KB reusable=118 KB
+[dctrace 12] fps 30.3  yaw=345 pitch=0 pos=15907,19101
+[dctrace 47] gl: polys=31 walls=289 setupfail=0 vecfail=0
+[dctrace 62] mem: level=20 tick=746 hp=150 heap=8ce4d000 vram=3305 KB largest=3283 KB
+[dctrace 63] ram: live=12510 KB reusable=118 KB
+[dctrace 12] fps 30.3  yaw=345 pitch=0 pos=15872,19225
+[dctrace 47] gl: polys=31 walls=281 setupfail=0 vecfail=0
+[dctrace 62] mem: level=20 tick=777 hp=150 heap=8ce4d000 vram=3305 KB largest=3283 KB
+[dctrace 63] ram: live=12510 KB reusable=118 KB
+[dctrace 12] fps 30.3  yaw=341 pitch=0 pos=15872,19225
+[dctrace 47] gl: polys=31 walls=221 setupfail=0 vecfail=0
+[dctrace 62] mem: level=20 tick=808 hp=150 heap=8ce4d000 vram=3305 KB largest=3283 KB
+[dctrace 63] ram: live=12510 KB reusable=118 KB
+[dctrace 12] fps 30.3  yaw=391 pitch=0 pos=15104,17622
+[dctrace 47] gl: polys=31 walls=163 setupfail=0 vecfail=0
+[dctrace 62] mem: level=20 tick=839 hp=150 heap=8ce4d000 vram=3305 KB largest=3283 KB
+[dctrace 63] ram: live=12510 KB reusable=118 KB
+[dctrace 12] fps 27.0  yaw=143 pitch=477 pos=15104,17209
+[dctrace 47] gl: polys=28 walls=142 setupfail=0 vecfail=0
+[dctrace 62] mem: level=20 tick=872 hp=150 heap=8ce4d000 vram=3251 KB largest=3228 KB
+[dctrace 63] ram: live=12531 KB reusable=97 KB
+2026-09-06 08:56:55.440 Flycast[2343:958599] ℹ️ rend/vulkan/vulkan_context.cpp:1620 N[RENDERER]: Swap interval changed to 1
+2026-09-06 08:56:55.993 Flycast[2343:958599] ℹ️ rend/vulkan/vulkan_context.cpp:1620 N[RENDERER]: Swap interval changed to 2
+[dctrace 12] fps 30.9  yaw=117 pitch=0 pos=15105,17219
+[dctrace 47] gl: polys=31 walls=501 setupfail=0 vecfail=0
+[dctrace 62] mem: level=20 tick=903 hp=150 heap=8ce4d000 vram=3251 KB largest=3228 KB
+[dctrace 63] ram: live=12531 KB reusable=97 KB
+[dctrace 12] fps 30.3  yaw=126 pitch=0 pos=15105,17597
+[dctrace 47] gl: polys=28 walls=422 setupfail=0 vecfail=0
+[dctrace 62] mem: level=20 tick=934 hp=150 heap=8ce4d000 vram=3251 KB largest=3228 KB
+[dctrace 63] ram: live=12531 KB reusable=97 KB
+[dctrace 12] fps 30.3  yaw=126 pitch=0 pos=15105,17597
+[dctrace 47] gl: polys=31 walls=391 setupfail=0 vecfail=0
+[dctrace 62] mem: level=20 tick=965 hp=150 heap=8ce4d000 vram=3251 KB largest=3228 KB
+[dctrace 63] ram: live=12531 KB reusable=97 KB
+[dctrace 12] fps 30.3  yaw=101 pitch=0 pos=15104,20730
+[dctrace 47] gl: polys=31 walls=397 setupfail=0 vecfail=0
+[dctrace 62] mem: level=20 tick=996 hp=150 heap=8ce4d000 vram=3251 KB largest=3228 KB
+[dctrace 63] ram: live=12531 KB reusable=97 KB
+[dctrace 12] fps 30.3  yaw=448 pitch=0 pos=16384,23831
+[dctrace 47] gl: polys=31 walls=264 setupfail=0 vecfail=0
+[dctrace 62] mem: level=20 tick=1027 hp=150 heap=8ce4d000 vram=3251 KB largest=3228 KB
+[dctrace 63] ram: live=12531 KB reusable=97 KB
+[dctrace 12] fps 30.3  yaw=381 pitch=0 pos=16323,20054
+[dctrace 47] gl: polys=31 walls=509 setupfail=0 vecfail=0
+[dctrace 62] mem: level=20 tick=1058 hp=150 heap=8ce4d000 vram=3251 KB largest=3228 KB
+[dctrace 63] ram: live=12531 KB reusable=97 KB
+[dctrace 12] fps 30.3  yaw=441 pitch=0 pos=16384,18687
+[dctrace 47] gl: polys=31 walls=310 setupfail=0 vecfail=0
+[dctrace 62] mem: level=20 tick=1089 hp=150 heap=8ce4d000 vram=3251 KB largest=3228 KB
+[dctrace 63] ram: live=12531 KB reusable=97 KB
+[dctrace 12] fps 30.3  yaw=358 pitch=0 pos=16384,18687
+[dctrace 47] gl: polys=31 walls=153 setupfail=0 vecfail=0
+[dctrace 62] mem: level=20 tick=1120 hp=150 heap=8ce4d000 vram=3251 KB largest=3228 KB
+[dctrace 63] ram: live=12531 KB reusable=97 KB
+[dctrace 12] fps 30.3  yaw=103 pitch=0 pos=15860,19832
+[dctrace 47] gl: polys=31 walls=406 setupfail=0 vecfail=0
+[dctrace 62] mem: level=20 tick=1151 hp=150 heap=8ce4d000 vram=3251 KB largest=3228 KB
+[dctrace 63] ram: live=12531 KB reusable=97 KB
