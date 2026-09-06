@@ -111,7 +111,9 @@ void dc_plate_to_screen(void)
 	SDL_Surface *video = SDL_GetVideoSurface();
 	SDL_Surface *p = load(plate_kind);
 
-	if (!video)
+	/* Under GL the video surface has no pixels; painting it would write to
+	   address zero. Callers drawing under GL paint dc_ui_target() instead. */
+	if (!video || !video->pixels)
 		return;
 
 	if (!p) {

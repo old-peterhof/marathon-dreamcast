@@ -594,7 +594,7 @@ void dc_ui_draw_surface(SDL_Surface *s, int x, int y, int w, int h)
 		glGetIntegerv(GL_FREE_CONTIGUOUS_TEXTURE_MEMORY_KOS, &Contig);
 		{
 			static int Said = 0;
-			if (Said < 4) {
+			if (Said < 4 || Err != GL_NO_ERROR) {
 				Said++;
 				dc_trace(65, "ui: upload %dx%d err=0x%x, free %d KB, contiguous %d KB, need %d KB",
 				         s->w, s->h, (unsigned)Err, (int)(Free/1024),
@@ -712,6 +712,12 @@ void dc_ui_draw_surface(SDL_Surface *s, int x, int y, int w, int h)
 	glPopMatrix();
 	glPopAttrib();
 
+	{
+		GLenum QuadErr = glGetError();
+		if (QuadErr != GL_NO_ERROR)
+			dc_trace(66, "ui: quad draw GL error 0x%x", (unsigned)QuadErr);
+	}
+
 	/* The matrices above pop properly; these do not, so put them back. */
 	if (WasCull)  glEnable(GL_CULL_FACE);  else glDisable(GL_CULL_FACE);
 	if (WasDepth) glEnable(GL_DEPTH_TEST); else glDisable(GL_DEPTH_TEST);
@@ -742,6 +748,11 @@ void dc_ui_flush(SDL_Surface *s)
 #ifdef HAVE_OPENGL
 	dc_ui_draw_surface(s, 0, 0, s->w, s->h);
 	SDL_GL_SwapBuffers();
+	/* Which VRAM address is on the display, and which is being rendered to.
+	   A UI frame that is drawn but never seen is one of these disagreeing. */
+	dc_trace(66, "ui: flush disp=%08lx rend=%08lx",
+	         (unsigned long)*(volatile uint32 *)0xa05f8050,
+	         (unsigned long)*(volatile uint32 *)0xa05f8060);
 #endif
 }
 #endif
@@ -1416,6 +1427,17 @@ void darken_world_window(void)
 
 #ifdef HAVE_OPENGL
 	if (main_surface->flags & SDL_OPENGL) {
+#ifdef DC
+		/*
+		 *	Nothing to darken. Under GLdc a frame starts empty, so this drew 50%
+		 *	black over black and swapped that in front of whatever screen came
+		 *	next -- which is how SAVE GAME from a terminal came up black while
+		 *	the pause menu, whose path never calls pause_game(), drew fine. The
+		 *	overlay screens cover the world outright, so there is no dimming to
+		 *	do here.
+		 */
+		return;
+#endif
 
 		// Save current state
 		glPushAttrib(GL_ALL_ATTRIB_BITS);

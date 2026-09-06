@@ -1,5 +1,5 @@
-GLdc 1.1.1: five bugs. Two in mipmap generation, one in glBindTexture, two in
-vertex colour and alpha.
+GLdc 1.1.1: six bugs. Two in mipmap generation, one in glBindTexture, two in
+vertex colour and alpha, one exit() on texture-memory exhaustion.
 
 GL/framebuffer.c
 
@@ -67,6 +67,17 @@ GL/platform.h
     pause scrim are exactly that. MODULATEALPHA multiplies texture alpha
     (1.0) by vertex alpha; it is what GL_MODULATE already maps to for real
     textures (texture.c).
+
+GL/texture.c (again)
+
+ 6. alloc_malloc_and_defrag() asserted when the texture pool was exhausted
+    even after a defragment, and gl_assert in a release build is exit(1).
+    Every caller already tests the result and raises GL_OUT_OF_MEMORY, and a
+    texture with no data is drawn as untextured, so the assertion turned a
+    lost texture into a dead console. Removed, along with the three
+    `gl_assert(active->data)` lines behind it: two sat in front of the same
+    recoverable test, and the one in _glAllocateSpaceForMipmaps() now returns
+    instead of memcpy'ing into NULL.
 
 Apply to both the dist/ and build/ copies of the libGL kos-port, then rebuild:
 make GL in build/libGL-1.1.1, and copy the resulting libGL.a over
@@ -257,3 +268,52 @@ inst/lib/libGL.a. See README.DC.md, 'Patched toolchain'.
          dst->mode3 |= ((GPU_TXRFMT_RGB565 | GPU_TXRFMT_NONTWIDDLED) << GPU_TA_PM3_TXRFMT_SHIFT) & GPU_TA_PM3_TXRFMT_MASK;
          /* Convert the texture address */
          txr_base = (uint32_t) DEFAULT_TEXTURE;
+--- a/GL/texture.c
++++ b/GL/texture.c
+@@ -161,7 +161,11 @@
+         ret = alloc_malloc(ALLOC_BASE, size);
+     }
+ 
+-    gl_assert(ret && "Out of PVR memory!");
++    /* No assertion here: every caller tests the result and raises
++       GL_OUT_OF_MEMORY, and a texture that failed to allocate is drawn as if
++       untextured. The assertion was exit(1) in a release build -- a game that
++       runs out of texture memory for one frame should lose a texture, not the
++       console. */
+ 
+     return ret;
+ }
+@@ -975,7 +979,8 @@
+ 
+     active->data = alloc_malloc_and_defrag(imageSize);
+ 
+-    gl_assert(active->data);  // Debug assert
++    /* No assertion: gl_assert is exit(1) in a release build; the test below
++       raises GL_OUT_OF_MEMORY instead, which is recoverable. */
+ 
+     if(!active->data) {  // Release, bail out "gracefully"
+         _glKosThrowError(GL_OUT_OF_MEMORY, __func__);
+@@ -1513,7 +1518,13 @@
+ 
+     active->data = alloc_malloc_and_defrag(bytes);
+ 
+-    gl_assert(active->data);
++    if(!active->data) {
++        /* Out of texture memory: the caller sees data == NULL and raises
++           GL_OUT_OF_MEMORY. The base level is lost with it; that is a blank
++           texture, not an exit(1). */
++        free(temp);
++        return;
++    }
+ 
+     if(temp) {
+         /* If there was existing data, then copy it where it should go */
+@@ -1905,8 +1916,6 @@
+     if(level > 0 && active->baseDataOffset == 0) {
+         _glAllocateSpaceForMipmaps(active);
+     }
+-
+-    gl_assert(active->data);
+ 
+     /* If we run out of PVR memory just return */
+     if(!active->data) {

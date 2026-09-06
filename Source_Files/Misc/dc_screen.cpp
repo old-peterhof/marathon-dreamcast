@@ -328,7 +328,19 @@ static void draw_screen(struct dc_screen *sc, bool full)
 			}
 		} else {
 			dc_plate_select(DC_PLATE_PLAIN);
-			dc_plate_to_screen();
+			if (v == SDL_GetVideoSurface()) {
+				dc_plate_to_screen();
+			} else if (!dc_plate_region(v, NULL, 0, 0)) {
+				/*
+				 *	Under GL the target is the off-screen overlay, and the
+				 *	plate has to be painted into it. dc_plate_to_screen()
+				 *	paints the video surface, whose pixel pointer is NULL
+				 *	under GL: 600 KB written to address zero, and an overlay
+				 *	with no background. That was SAVE GAME from a terminal --
+				 *	black in Flycast, a crash on the console.
+				 */
+				SDL_FillRect(v, NULL, SDL_MapRGB(v->format, 0x05, 0x08, 0x0a));
+			}
 		}
 	}
 
@@ -509,7 +521,15 @@ int dc_screen_run(struct dc_screen *sc)
 	was_ingame = dc_input_ingame();
 	dc_input_set_ingame(0);
 
-	partial_ok = !sc->explain;
+	/*
+	 *	Under GL the target is an off-screen overlay and dc_ui_flush uploads the
+	 *	whole surface and composites it over a back buffer nothing has cleared,
+	 *	so a panel-only repaint puts a frame on screen with nothing behind the
+	 *	rows: SAVE GAME went black the moment the cursor moved. (The pause menu
+	 *	never showed it because its explainer forces full repaints.) A full
+	 *	repaint costs the same upload, so partial buys nothing there anyway.
+	 */
+	partial_ok = !sc->explain && dc_ui_target() == SDL_GetVideoSurface();
 
 	while (!done) {
 		SDL_Event e;

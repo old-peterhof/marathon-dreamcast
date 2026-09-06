@@ -36,7 +36,7 @@ way.
 ### Patched toolchain
 
 **This port's libGL is patched.** `tools/patches/gldc-1.1.1-fixes.patch` fixes
-five bugs in GLdc 1.1.1. Two are in mipmap generation, both in
+six bugs in GLdc 1.1.1. Two are in mipmap generation, both in
 `GL/framebuffer.c`:
 
 - `_glCalculateAverageTexel()` read the texture format from the wrong bits of the
@@ -65,6 +65,10 @@ looked right under GL:
   Modulate mode (`GL/platform.h`), and the PowerVR's Modulate takes alpha from
   the texture, not the vertex. Every translucent untextured quad drew opaque.
   Modulate-alpha is what GL_MODULATE already maps to for real textures.
+
+The sixth: running out of texture memory was `exit(1)` inside the driver's
+allocator (`GL/texture.c`), even though every caller handles a failed allocation
+as GL_OUT_OF_MEMORY and draws the texture as blank. It now does that.
 
 The patch header says how to apply and rebuild. Rebuilding needs
 `source /opt/toolchains/dc/kos/environ.sh` first; without it kos-cc fails with
