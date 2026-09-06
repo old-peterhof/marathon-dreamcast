@@ -82,6 +82,9 @@ Apr 27, 2001 (Loren Petrich):
 */
 
 #include "cseries.h"
+#ifdef DC
+#include "dc_rumble.h"
+#endif
 #include "map.h"
 #include "player.h"
 #include "monsters.h"
@@ -695,6 +698,12 @@ void damage_player(
 	
 	if (damage_type!=_damage_absorbed)
 	{
+#ifdef DC
+		if (player_index == local_player_index && damage_amount > 0 &&
+		    !PLAYER_IS_DEAD(player) && player->suit_energy > 0 &&
+		    damage_type != _damage_oxygen_drain)
+			dc_rumble_hit();
+#endif
 		/* record damage taken */
 		if (aggressor_index!=NONE)
 		{
@@ -2707,4 +2716,3 @@ XML_ElementParser *Player_GetParser()
 
 	return &PlayerParser;
 }
-

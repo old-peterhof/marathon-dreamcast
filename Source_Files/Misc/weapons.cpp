@@ -77,6 +77,9 @@ Feb 1, 2001 (Loren Petrich):
 #include "projectiles.h"
 #include "player.h"
 #include "weapons.h"
+#ifdef DC
+#include "dc_rumble.h"
+#endif
 #include "mysound.h"
 #include "interface.h"
 #include "items.h"
@@ -1814,6 +1817,12 @@ static void fire_weapon(
 		}
 			
 		/* Spawn the projectile. I can't update the shots_hit until it actually hits the */
+#ifdef DC
+		if (player_index == local_player_index && rounds_to_fire > 0 &&
+		    definition->weapon_class != _melee_class &&
+		    trigger_definition->projectile_type != _projectile_ball_dropped)
+			dc_rumble_shot(player_weapons->current_weapon == _weapon_missile_launcher);
+#endif
 		/* target, which comes in update */
 		calculate_weapon_origin_and_vector(player_index, which_trigger, 
 			&origin, &_vector, &origin_polygon, delta_theta);

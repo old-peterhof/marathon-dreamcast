@@ -51,6 +51,7 @@
 #include <SDL/SDL_dreamcast.h>
 #include <dc/maple.h>
 #include <dc/maple/controller.h>
+#include "dc_rumble.h"
 
 /* Internal to SDL, but a global symbol in libSDL.a. Declared here because
    SDL_events_c.h is not installed with the library headers. */
@@ -388,6 +389,7 @@ void dc_input_init_video(void)
 
 void dc_input_set_ingame(int yes)
 {
+	dc_rumble_set_ingame(yes);
 	if (in_game == (yes != 0))
 		return;
 
@@ -475,6 +477,7 @@ void dc_input_poll(void)
 		return;
 
 	busy = 1;
+	dc_rumble_poll();
 	dc_input_poll_body();
 	busy = 0;
 }
