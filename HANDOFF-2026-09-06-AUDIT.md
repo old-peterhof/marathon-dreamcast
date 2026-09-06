@@ -297,3 +297,9 @@ synchronised at the end of the session.
 - Queue item 3 (static quality) stands where the audit left it: quarter-size
   noise, now without the frame-boundary waits. Item 4's save/load round trip is
   done; films, heap and map were covered overnight. Hardware remains untested.
+- **Saves now stay on the card until chosen.** With the restore working, boot
+  decompressed every save into the ramdisk and kept it: 430 KB live for two
+  saves on level 21 (heap top 0x8cf06000 at the reload). The boot scan reads
+  headers only and `dc_vmu_restore_slot()` restores one save on demand,
+  dropping other slots' copies. Live heap after a Continue load: 11,741 KB
+  (was 12,472). The b79 images were rebuilt from this commit.
