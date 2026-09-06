@@ -84,6 +84,7 @@ GL_FORCE_INC = -include dc_gl_compat.h
 
 GL_OBJS = dc/dc_glu.o $(MV)/Model3D.o $(MV)/StudioLoader.o $(MV)/WavefrontLoader.o \
           $(MV)/ModelRenderer.o \
+          dc/dc_vq_sprites.o \
           $(MI)/OGL_Textures.o $(MI)/OGL_Faders.o \
           $(MI)/HUDRenderer_OGL.o $(MI)/OverheadMap_OGL.o
 endif
@@ -296,6 +297,16 @@ DISC     = disc
 GAMEDATA = data/game
 DISCNAME = Marathon 2
 
+ifdef GL
+PVRTEX      ?= $(KOS_BASE)/utils/pvrtex/pvrtex
+VQPACK       = $(GAMEDATA)/VQSprites.dat
+VQ_DISC_DEP  = $(VQPACK)
+
+$(VQPACK): $(GAMEDATA)/Shapes tools/build-vq-sprites.py $(wildcard disc-AlephOne/MML/*.mml)
+	python3 tools/build-vq-sprites.py --shapes $(GAMEDATA)/Shapes \
+		--mml disc-AlephOne/MML --pvrtex $(PVRTEX) --output $@
+endif
+
 # Fixed disc serial. mkdcdisc otherwise derives one from a hash of the boot
 # binary, so every build gets a different serial -- and Flycast keys its
 # emulated VMU on that, handing each build a blank memory card. Saved games and
@@ -311,12 +322,15 @@ $(GAMEDATA)/Map:
 # disc/AlephOne is the tree the game reads as /cd/AlephOne. Two sources: the
 # MML, Fonts and Themes from BERO's port (the SDL interface needs them), and the
 # four retail data files fetched by tools/fetch-data.sh.
-$(DISC)/.stamp: $(GAMEDATA)/Map
+$(DISC)/.stamp: $(GAMEDATA)/Map $(VQ_DISC_DEP)
 	rm -rf $(DISC)
 	mkdir -p $(DISC)/AlephOne
 	cp -R disc-AlephOne/. $(DISC)/AlephOne/
 	cp $(GAMEDATA)/Map $(GAMEDATA)/Shapes $(GAMEDATA)/Sounds $(GAMEDATA)/Images \
 		$(DISC)/AlephOne/
+ifdef GL
+	cp $(VQPACK) $(DISC)/AlephOne/
+endif
 	touch $@
 
 

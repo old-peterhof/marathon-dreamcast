@@ -704,6 +704,10 @@ bool OGL_SetWindow(Rect &ScreenBounds, Rect &ViewBounds, bool UseBackBuffer)
 bool OGL_StartMain()
 {
 	if (!OGL_IsActive()) return false;
+
+#ifdef DC
+	OGL_TextureFrameStart();
+#endif
 	
 	// One-sidedness necessary for correct rendering
 	glEnable(GL_CULL_FACE);	

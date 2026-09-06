@@ -426,11 +426,17 @@ static void initialize_application(void)
 		for (int k = 0; k < OGL_NUMBER_OF_TEXTURE_TYPES; k++) {
 			if (k == OGL_Txtr_Wall)
 				OGLData.TxtrConfigList[k].FarFilter = 3;
+			else if (k == OGL_Txtr_Inhabitant || k == OGL_Txtr_WeaponsInHand) {
+				OGLData.TxtrConfigList[k].NearFilter = 0;
+				OGLData.TxtrConfigList[k].FarFilter = 0;
+			}
 			else
 				OGLData.TxtrConfigList[k].FarFilter = 1;
 			OGLData.TxtrConfigList[k].ColorFormat = 1;
 
-			// Everything is halved until the VRAM to pay for more exists.
+			// Full-size crisp sprites are paid for by the prebuilt native VQ
+			// pack and the bounded texture-residency cache. Environment art
+			// remains halved for this controlled first pass.
 			//
 			// b73 raised sprites and the weapon to full resolution. It
 			// renders correctly and it fits at level start, but it costs
@@ -441,9 +447,10 @@ static void initialize_application(void)
 			// fail an upload loudly -- it returns with texture->data NULL
 			// and the PVR is handed a null pointer.
 			//
-			// Fix B (paletted walls) is what buys the room back. Raise this
-			// again after it lands, and re-soak before shipping a disc.
-			OGLData.TxtrConfigList[k].Resolution = 1;
+			// That build had neither VQ nor eviction, and also predated the
+			// font-atlas work that reclaimed about 670 KB of baseline VRAM.
+			OGLData.TxtrConfigList[k].Resolution =
+				(k == OGL_Txtr_Inhabitant || k == OGL_Txtr_WeaponsInHand) ? 0 : 1;
 		}
 
 		OGLData.Flags &= ~OGL_Flag_3D_Models;

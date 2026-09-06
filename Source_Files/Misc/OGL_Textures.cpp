@@ -80,6 +80,8 @@ June 14, 2001 (Loren Petrich):
 #ifdef DC
 // For the GL_*_TEXTURE_MEMORY_KOS queries used in PlaceTexture.
 #include <GL/glkos.h>
+#include "dc_vq_sprites.h"
+extern "C" int pvr_wait_ready(void);
 #endif
 
 #include "OGL_Setup.h"
@@ -214,6 +216,79 @@ void TextureState::Reset()
 // Will distinguish by texture type as well as by collection;
 // this is because different rendering modes deserve different treatment.
 static CollBitmapTextureState* TextureStateSets[OGL_NUMBER_OF_TEXTURE_TYPES][MAXIMUM_COLLECTIONS];
+
+#ifdef DC
+/*
+ * Keep a deliberate reserve rather than waiting for GLdc allocation failure.
+ * A full-resolution raw fallback with a glow map can require hundreds of KiB
+ * in one frame. Eviction happens only before that frame starts and only after
+ * pvr_wait_ready(), because queued GLdc vertices contain direct VRAM texture
+ * addresses and glDeleteTextures releases the allocation immediately.
+ */
+static unsigned DC_TextureFrame = 1;
+static const GLint DC_VRAM_LOW_WATER = 1024 * 1024;
+static const GLint DC_VRAM_HIGH_WATER = 1536 * 1024;
+
+void OGL_TextureFrameStart()
+{
+	++DC_TextureFrame;
+	if (!DC_TextureFrame) DC_TextureFrame = 1;
+
+	GLint FreeVRAM = 0;
+	glGetIntegerv(GL_FREE_TEXTURE_MEMORY_KOS, &FreeVRAM);
+	if (FreeVRAM >= DC_VRAM_LOW_WATER)
+		return;
+
+	/* This is the uncommon slow path; do not serialize every frame. */
+	dc_trace(53, "vram lru: low-water at %d KB; waiting for PVR",
+	         (int)(FreeVRAM/1024));
+	if (pvr_wait_ready() < 0)
+	{
+		/* Never free storage that a scene may still be sampling. */
+		dc_trace(53, "vram lru: PVR wait timed out; eviction deferred");
+		return;
+	}
+	const GLint Before = FreeVRAM;
+	unsigned Evicted = 0;
+
+	while (FreeVRAM < DC_VRAM_HIGH_WATER)
+	{
+		TextureState *Oldest = NULL;
+		unsigned OldestAge = 0;
+
+		for (int it=0; it<OGL_NUMBER_OF_TEXTURE_TYPES; ++it)
+			for (int ic=0; ic<MAXIMUM_COLLECTIONS; ++ic)
+			{
+				/* HUD art is small, used outside the world pass, and pinned. */
+				if (ic == _collection_interface) continue;
+				if (!is_collection_present(ic)) continue;
+				CollBitmapTextureState *Set = TextureStateSets[it][ic];
+				if (!Set) continue;
+				const int Count = get_number_of_collection_bitmaps(ic);
+				for (int ib=0; ib<Count; ++ib)
+					for (int is=0; is<NUMBER_OF_OPENGL_BITMAP_SETS; ++is)
+					{
+						TextureState& State = Set[ib].CTStates[is];
+						if (!State.IsUsed) continue;
+						const unsigned Age = DC_TextureFrame - State.LastUsedFrame;
+						/* Last frame may still be referenced by GLdc/PVR. */
+						if (Age <= 1 || Age <= OldestAge) continue;
+						Oldest = &State;
+						OldestAge = Age;
+					}
+			}
+
+		if (!Oldest)
+			break;
+		Oldest->Reset();
+		++Evicted;
+		glGetIntegerv(GL_FREE_TEXTURE_MEMORY_KOS, &FreeVRAM);
+	}
+
+	dc_trace(53, "vram lru: evicted %u, %d -> %d KB free",
+	         Evicted, (int)(Before/1024), (int)(FreeVRAM/1024));
+}
+#endif
 
 
 // Initialize the texture accounting
@@ -432,6 +507,9 @@ bool TextureManager::Setup()
 	// If "Use()" is true, then load, otherwise, assume the texture is loaded and skip
 	TxtrStatePtr = &CBTS.CTStates[CTable];
 	TextureState &CTState = *TxtrStatePtr;
+#ifdef DC
+	CTState.LastUsedFrame = DC_TextureFrame;
+#endif
 	if (!CTState.IsUsed)
 	{
 		// Initial sprite scale/offset
@@ -440,8 +518,24 @@ bool TextureManager::Setup()
 		
 		// Try to load a substitute texture, and if that fails,
 		// get the geometry from the shapes bitmap.
-		if (!LoadSubstituteTexture())
+		const bool UsedSubstitute = LoadSubstituteTexture();
+		if (!UsedSubstitute)
 			if (!SetupTextureGeometry()) return false;
+
+#ifdef DC
+		/*
+		 * The offline pack contains stock, crisp object/scenery pixels only.
+		 * Dynamic infravision/silhouette tables, MML alpha effects and
+		 * substitute art must continue through the ordinary RGBA path.
+		 * A missing pack key is harmless: PlaceTexture falls back to Buffer.
+		 */
+		UseVQPack = !UsedSubstitute &&
+			(TextureType == OGL_Txtr_Inhabitant ||
+			 TextureType == OGL_Txtr_WeaponsInHand) &&
+			Collection != _collection_interface &&
+			CTable >= 0 && CTable < MAXIMUM_CLUTS_PER_COLLECTION &&
+			TxtrOptsPtr->OpacityType == OGL_OpacType_Crisp;
+#endif
 				
 		// Store sprite scale/offset
 		CBTS.U_Scale = U_Scale;
@@ -477,6 +571,23 @@ bool TextureManager::Setup()
 #endif
 		LoadedWidth = MAX(TxtrWidth >> TxtrRes, 1);
 		LoadedHeight = MAX(TxtrHeight >> TxtrRes, 1);
+
+#ifdef DC
+		/*
+		 * Do not allocate a full RGBA staging image merely to discard it after
+		 * uploading the pre-encoded VQ payload.  Require every texture this
+		 * state needs up front; an absent normal or glow entry keeps both on the
+		 * ordinary path.  PlaceTexture still builds the buffer lazily if a later
+		 * disc read or compressed upload fails.
+		 */
+		if (UseVQPack)
+			UseVQPack =
+				dc_vq_sprite_available(Collection, CTable, Bitmap, false,
+				                       LoadedWidth, LoadedHeight) &&
+				(!IsGlowing ||
+				 dc_vq_sprite_available(Collection, CTable, Bitmap, true,
+				                        LoadedWidth, LoadedHeight));
+#endif
 		
 		// If not, then load the expected textures.
 		//
@@ -487,10 +598,18 @@ bool TextureManager::Setup()
 		// allocation of the whole level load: a 1024x512 landscape needed 2MB
 		// for the full-size image plus another 512KB for the reduced one, and
 		// on a 16MB machine that was the difference between fitting and not.
-		if (!NormalBuffer)
+		if (!NormalBuffer
+#ifdef DC
+		    && !UseVQPack
+#endif
+		   )
 			NormalBuffer = GetOGLTexture(NormalColorTable);
 		
-		if (IsGlowing && !GlowBuffer)
+		if (IsGlowing && !GlowBuffer
+#ifdef DC
+		    && !UseVQPack
+#endif
+		   )
 			GlowBuffer = GetOGLTexture(GlowColorTable);
 		
 		// Kludge for making top and bottom look flat
@@ -1226,10 +1345,30 @@ uint32 *TextureManager::Shrink(uint32 *Buffer)
 
 // This places a texture into the OpenGL software and gives it the right
 // mapping attributes
-void TextureManager::PlaceTexture(uint32 *Buffer)
+void TextureManager::PlaceTexture(uint32 *Buffer, bool Glowing)
 {
 
 	TxtrTypeInfoData& TxtrTypeInfo = TxtrTypeInfoList[TextureType];
+
+#ifdef DC
+	/*
+	 * These blobs are already ARGB4444, VQ-compressed and twiddled for the
+	 * PowerVR. GLdc copies them directly into its texture pool. Dimensions are
+	 * checked by the loader, so a stale pack or a half-resolution configuration
+	 * automatically takes the existing upload path below.
+	 */
+	if (UseVQPack && dc_vq_sprite_upload(Collection, CTable, Bitmap, Glowing,
+	                                    LoadedWidth, LoadedHeight))
+		goto texture_uploaded;
+
+	/* A failed pack read/upload remains recoverable through the old path. */
+	if (!Buffer)
+	{
+		Buffer = GetOGLTexture(Glowing ? GlowColorTable : NormalColorTable);
+		if (Glowing) GlowBuffer = Buffer;
+		else NormalBuffer = Buffer;
+	}
+#endif
 
 	// Load the texture
 	switch(TxtrTypeInfo.FarFilter)
@@ -1321,6 +1460,10 @@ void TextureManager::PlaceTexture(uint32 *Buffer)
 		// Shouldn't happen
 		assert(false);
 	}
+
+#ifdef DC
+texture_uploaded:
+#endif
 	
 	// Set texture-mapping features
 	glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
@@ -1363,8 +1506,12 @@ void TextureManager::RenderNormal()
 	
 	if (TxtrStatePtr->UseNormal())
 	{
+#ifdef DC
+		assert(NormalBuffer || UseVQPack);
+#else
 		assert(NormalBuffer);
-		PlaceTexture(NormalBuffer);
+#endif
+		PlaceTexture(NormalBuffer, false);
 	}
 }
 
@@ -1373,8 +1520,12 @@ void TextureManager::RenderGlowing()
 {
 	if (TxtrStatePtr->UseGlowing())
 	{
+#ifdef DC
+		assert(GlowBuffer || UseVQPack);
+#else
 		assert(GlowBuffer);
-		PlaceTexture(GlowBuffer);
+#endif
+		PlaceTexture(GlowBuffer, true);
 	}
 }
 
@@ -1394,6 +1545,9 @@ TextureManager::TextureManager()
 	
 	TxtrStatePtr = 0;
 	TxtrOptsPtr = 0;
+#ifdef DC
+	UseVQPack = false;
+#endif
 	
 	// Marathon default
 	Landscape_AspRatExp = 1;

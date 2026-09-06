@@ -163,6 +163,13 @@ void OGL_SetDefaults(OGL_ConfigureData& Data)
 		// EXPERIMENT: mipmapped walls only.
 		if (k == OGL_Txtr_Wall)
 			TxtrData.FarFilter = 3;	// GL_LINEAR_MIPMAP_NEAREST
+		else if (k == OGL_Txtr_Inhabitant || k == OGL_Txtr_WeaponsInHand)
+		{
+			// Match the software renderer's crisp sprites. VQ preserves their
+			// dimensions; smoothing them only throws that detail away again.
+			TxtrData.NearFilter = 0;	// GL_NEAREST
+			TxtrData.FarFilter = 0;	// GL_NEAREST, no mipmap chain
+		}
 		else
 			TxtrData.FarFilter = 1;	// GL_LINEAR, no mipmap chain
 		TxtrData.ColorFormat = 1;		// 16-bit color
@@ -176,11 +183,10 @@ void OGL_SetDefaults(OGL_ConfigureData& Data)
 		// The weapon in hand is the most-looked-at art in the game and is a
 		// handful of frames.
 		//
-		// So: environment halved, everything the player looks at full.
-		// Halved until Fix B frees the VRAM to pay for more; see the note
-		// in shell_sdl.cpp, which forces this every boot and would override
-		// any change made here anyway.
-		TxtrData.Resolution = 1;		// 1/2
+		// So: environment halved, everything the player looks at full. The
+		// Dreamcast VQ pack and bounded residency cache pay the VRAM cost.
+		TxtrData.Resolution =
+			(k == OGL_Txtr_Inhabitant || k == OGL_Txtr_WeaponsInHand) ? 0 : 1;
 #else
 		TxtrData.Resolution = 0;		// 1x
 		TxtrData.ColorFormat = 0;		// 32-bit color
@@ -1465,4 +1471,3 @@ XML_ElementParser *OpenGL_GetParser()
 	
 	return &OpenGL_Parser;
 }
-

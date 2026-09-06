@@ -19,6 +19,11 @@ void OGL_StartTextures();
 // Done with the texture accounting
 void OGL_StopTextures();
 
+#ifdef DC
+// Advance texture residency and evict old entries before a new world frame.
+void OGL_TextureFrameStart();
+#endif
+
 
 // State of an individual texture set:
 struct TextureState
@@ -34,8 +39,16 @@ struct TextureState
 	bool IsUsed;						// Is the texture set being used?
 	bool IsGlowing;						// Does the texture have a glow map?
 	bool IDsInUse[NUMBER_OF_TEXTURES];	// Which ID's are being used?
+#ifdef DC
+	unsigned LastUsedFrame;				// For the bounded PVR residency cache
+#endif
 	
-	TextureState() {IsUsed = IsGlowing = IDsInUse[Normal] = IDsInUse[Glowing] = false;}
+	TextureState() {
+		IsUsed = IsGlowing = IDsInUse[Normal] = IDsInUse[Glowing] = false;
+#ifdef DC
+		LastUsedFrame = 0;
+#endif
+	}
 	~TextureState() {if (IsUsed) glDeleteTextures(NUMBER_OF_TEXTURES,IDs);}
 	
 	// Allocate some textures and indicate whether an allocation had happened.
@@ -123,6 +136,11 @@ class TextureManager
 	
 	// Pointer to texture-options object
 	OGL_TextureOptions *TxtrOptsPtr;
+
+#ifdef DC
+	// True when the stock sprite has a prebuilt PowerVR VQ candidate.
+	bool UseVQPack;
+#endif
 		
 	// Private methods
 	
@@ -147,7 +165,7 @@ class TextureManager
 	uint32 *Shrink(uint32 *Buffer);
 	
 	// This si for placing a texture in OpenGL
-	void PlaceTexture(uint32 *Buffer);
+	void PlaceTexture(uint32 *Buffer, bool Glowing);
 	
 public:
 
