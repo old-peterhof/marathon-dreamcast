@@ -410,6 +410,16 @@ the same nibble truncation GLdc applies, and the upload passes it through
 untouched (`GL_BGRA`, `GL_UNSIGNED_SHORT_4_4_4_4_REV`). Half the temporary, same
 texels.
 
+**Teleport static is a texture rebuilt every frame.** The software renderer's
+noise has no GL equivalent, so the sprite's texture is refilled with random
+opaque texels inside its outline and re-uploaded in place each frame. That
+costs texels, so the static texture is sized by a budget (`STATIC_TEXEL_BUDGET`,
+4096): sprites up to 64x64 keep full size, larger ones halve until they fit,
+down to a quarter. Measured with `STATICTEST=1` (every sprite static, a worst
+case no level produces): a fixed quarter ran 28-30 fps but looked like blocks,
+fixed half 12-30, the budget 16-29 and looks like static. Eight monsters
+teleporting together is about the fixed-quarter load.
+
 Also: per-bitmap texture state is allocated per (texture type, collection) the
 first time that pairing is used, rather than four copies of every collection at
 level start (488 KB on the first level).

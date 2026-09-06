@@ -19,7 +19,8 @@ static void request(unsigned power, unsigned milliseconds)
     uint64_t now;
     {
         static unsigned requests;
-        if (++requests <= 4)
+        /* the first few of any kind, and every heavy one (the missile branch is rare) */
+        if (++requests <= 4 || power >= 7)
             dc_trace(64, "rumble: request power=%u ms=%u ingame=%d", power, milliseconds, in_game);
     }
     if (!in_game) return;
