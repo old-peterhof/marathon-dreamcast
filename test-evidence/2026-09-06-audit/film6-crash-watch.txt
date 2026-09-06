@@ -1,0 +1,25 @@
+b82 film 6 (We're Everywhere) third level start, software watch on the map FILE's _seek (build with dc_watch_check, not committed):
+76:[dctrace 69] watch: armed 0x8c3d9384 = 8c14b9e0
+77:[dctrace 69] watch: armed 0x8c3d93f4 = 8c14b9e0
+84:[dctrace 69] watch: armed 0x8c3d93f4 = 8c14b9e0
+85:[dctrace 69] watch: armed 0x8c476554 = 8c14b9e0
+86:[dctrace 69] watch: armed 0x8c476554 = 8c14b9e0
+87:[dctrace 69] watch: armed 0x8c3d9384 = 8c14b9e0
+88:[dctrace 69] watch: armed 0x8c476554 = 8c14b9e0
+89:[dctrace 57] load: map wad 28 ms
+117:[dctrace 45] heap: StartRun done      128 KB
+118:[dctrace 53] vram: 4572 KB free at StartRun done
+533:[dctrace 69] watch: armed 0x8c476554 = 8c14b9e0
+534:[dctrace 57] load: map wad 3 ms
+553:[dctrace 45] heap: StartRun done      2408 KB
+554:[dctrace 53] vram: 3692 KB free at StartRun done
+1025:[dctrace 69] watch: armed 0x8c476554 = 8c14b9e0
+1026:[dctrace 57] load: map wad 3 ms
+1027:[dctrace 69] watch: 0x8c476554 changed 8c14b9e0 -> 8cc90b58 at after map wad
+1028:Unhandled exception: PC 8cc90b58, code 1, evt 0180
+1029: R0-R7: fffffa00 8c47656c 8cc90b58 00001000 8c1fa2f8 00000708 00000000 00000000
+1030: R8-R15: 8c47652c 0000000b 8c47656c 8c1fa2f8 00001de0 00000040 00001de0 8cfffaa4
+1031: SR 40000001 PR 8c14b5da
+
+bisect (same film, 330 s each): b82 again=crash tick 3463; old eviction=crash; no font release=no crash; no span reads=no crash (layout-dependent victim)
+crash stack (addr2line): _sflush_r <- fclose <- SDL stdio_close <- OpenedFile::Close <- close_wad_file <- load_level_from_map <- goto_level <- new_game <- revert_game <- idle_game_state

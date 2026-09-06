@@ -336,6 +336,12 @@ synchronised at the end of the session.
   textures, still waits for both PVR calls. `OGL_ResetTextures` also gained
   the NULL check the lazily allocated state sets needed (a NULL read on this
   machine lands in the BIOS ROM rather than trapping).
+- **Open: a reproducible heap corruption** surfaced by the b82 soak of film 6
+  (third level start). Two hours of diagnosis narrowed it to a stale or double
+  free somewhere before the level's map read, not to any of today's changes
+  (reverting them only moves the victim). Full notes, repro and the tools tried
+  are item 0 under "Open" in HANDOFF-2026-09-06.md. b82 is still the
+  functional best; b81 passed that film by layout luck, not by being clean.
 - **Saves now stay on the card until chosen.** With the restore working, boot
   decompressed every save into the ramdisk and kept it: 430 KB live for two
   saves on level 21 (heap top 0x8cf06000 at the reload). The boot scan reads

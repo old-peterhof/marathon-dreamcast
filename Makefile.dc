@@ -183,6 +183,16 @@ SRCS = \
 # syscalls.c duplicates newlib symbols modern KOS already provides, and fs_mem.c
 # reimplements what is now fs_ramdisk. dc/dc_compat.c supplies the two pieces
 # that are actually still missing -- fs_mem_init() and access().
+# HEAPCHECK=1: diagnostic build; wraps the allocator to report frees of
+# pointers it never handed out (double or stale frees) with the caller's
+# address. Caveat: KOS_CFLAGS carry -flto, and calls resolved inside an LTO
+# unit bypass --wrap, so KOS, GLdc and (with LTO on) our own code report
+# false positives; compiling ours with -fno-lto trips the FindComplements
+# assertion in OGL_Render.cpp at first draw. See HANDOFF-2026-09-06.md, Open.
+ifdef HEAPCHECK
+HEAPCHECK_OBJS = dc/dc_heapcheck.o
+HEAPCHECK_LDFLAGS = -Wl,--wrap=malloc,--wrap=free,--wrap=calloc,--wrap=realloc,--wrap=memalign,--wrap=_malloc_r,--wrap=_free_r,--wrap=_calloc_r,--wrap=_realloc_r,--wrap=_memalign_r,--wrap=posix_memalign,--wrap=aligned_alloc
+endif
 DC_OBJS = dc/dc_fade.o dc/dc_compat.o dc/dc_input.o dc/dc_rumble.o dc/dc_vmu.o dc/dc_profiler.o \
           dc/dc_maple.o dc/dc_blit.o dc/dc_wad.o dc/vendor/sh4zam_src/shz_mem_sh4.o \
           dc/vendor/vmu_profiler.o
@@ -234,8 +244,8 @@ dc/build_id.h: BUILD_NUMBER BUILD_NAME
 
 $(MI)/shell.o: dc/build_id.h
 
-$(TARGET): $(OBJS)
-	$(KOS_CCPLUS) $(KOS_LDFLAGS) $(OPTFLAGS) $(OBJS) -o $@ $(LIBS)
+$(TARGET): $(OBJS) $(HEAPCHECK_OBJS)
+	$(KOS_CCPLUS) $(KOS_LDFLAGS) $(OPTFLAGS) $(OBJS) $(HEAPCHECK_OBJS) $(HEAPCHECK_LDFLAGS) -o $@ $(LIBS)
 
 %.o: %.cpp
 	$(KOS_CCPLUS) $(CXXFLAGS) -c $< -o $@
