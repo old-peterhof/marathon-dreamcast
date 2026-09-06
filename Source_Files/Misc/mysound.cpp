@@ -446,6 +446,11 @@ struct sound_behavior_definition *get_sound_behavior_definition(
 #if defined(mac)
 #include "sound_macintosh.cpp"
 #elif defined(SDL)
+#ifdef DC
+extern "C" void *dc_read_file_span(const char *path, unsigned long offset, unsigned long length);
+static char dc_sound_path[256];
+static long dc_sound_fork = 0;
+#endif
 #include "sound_sdl.cpp"
 #endif
 
@@ -476,6 +481,11 @@ bool open_sound_file(FileSpecifier& File)
 	// if (!(sound_definitions && _sm_globals)) return false;
 	
 	if (!File.Open(SoundFile)) return false;
+#ifdef DC
+	strncpy(dc_sound_path, File.GetPath(), sizeof(dc_sound_path) - 1);
+	SoundFile.SetPosition(0);
+	dc_sound_fork = SDL_RWtell(SoundFile.GetRWops());
+#endif
 	
 	// Read the header:
 	

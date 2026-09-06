@@ -213,6 +213,13 @@ static struct bitmap_definition *get_bitmap_definition(short collection_index, s
 #ifdef mac
 #include "shapes_macintosh.cpp"
 #elif defined(SDL)
+#ifdef DC
+// Where the Shapes file is and where its data fork starts, so load_collection
+// can read a collection with one transfer (see dc_read_file_span).
+extern "C" void *dc_read_file_span(const char *path, unsigned long offset, unsigned long length);
+static char dc_shapes_path[256];
+static long dc_shapes_fork = 0;
+#endif
 #include "shapes_sdl.cpp"
 #endif
 
@@ -239,6 +246,11 @@ void open_shapes_file(FileSpecifier& File)
 {
 	if (File.Open(ShapesFile))
 	{
+#ifdef DC
+		strncpy(dc_shapes_path, File.GetPath(), sizeof(dc_shapes_path) - 1);
+		ShapesFile.SetPosition(0);
+		dc_shapes_fork = SDL_RWtell(ShapesFile.GetRWops());
+#endif
 		// Load the collection headers;
 		// need a buffer for the packed data
 		int Size = MAXIMUM_COLLECTIONS*SIZEOF_collection_header;

@@ -17,7 +17,10 @@
 
 #include <stdio.h>
 #include <stdint.h>
+#include <string.h>
+#include <fcntl.h>
 #include <malloc.h>
+#include <kos/fs.h>
 #include <unistd.h>
 #include <stdarg.h>
 #include <sys/stat.h>
@@ -164,6 +167,75 @@ unsigned dc_heap_top(void)
 void dc_heap_trace(int slot, const char *where)
 {
 	dc_trace(slot, "heap: %-18s %u KB", where, dc_heap_used() / 1024);
+}
+
+/*
+ *	dc_read_file_span -- the bytes at [offset, offset+length) of a file on the
+ *	disc, in one GD-ROM transfer.
+ *
+ *	KOS's ISO9660 driver has two read paths. A request that starts on a sector
+ *	boundary, lands in a 32-byte-aligned buffer and asks for at least 32 bytes
+ *	goes out as one DMA stream. Anything else is served a sector at a time
+ *	through a 16-block cache, one GD-ROM command per sector. stdio reads through
+ *	its 1 KB buffer at whatever offset the parser is at, so every collection and
+ *	every sound was taking the second path: 1352 sectors and 25.9 seconds for
+ *	the first level's shapes, 13.7 more for its monster sounds, and the count
+ *	of SDL calls made no difference because the driver was already coalescing
+ *	them -- into single sectors.
+ *
+ *	This rounds the start down and the end up to sectors, reads once into a
+ *	32-byte-aligned buffer, and slides the wanted bytes to the front. The result
+ *	is freed with free(). The descriptor is kept open between calls to the same
+ *	path so a directory lookup is not paid per sound.
+ */
+void *dc_read_file_span(const char *path, unsigned long offset, unsigned long length)
+{
+	static file_t fd = FILEHND_INVALID;
+	static char open_path[256];
+
+	if (fd == FILEHND_INVALID || strcmp(open_path, path) != 0)
+	{
+		if (fd != FILEHND_INVALID)
+			fs_close(fd);
+		fd = fs_open(path, O_RDONLY);
+		if (fd == FILEHND_INVALID)
+			return NULL;
+		strncpy(open_path, path, sizeof(open_path) - 1);
+		open_path[sizeof(open_path) - 1] = 0;
+	}
+
+	const unsigned long start = offset & ~2047UL;
+	const unsigned long skip = offset - start;
+	const unsigned long span = ((offset + length + 2047UL) & ~2047UL) - start;
+	uint8_t *buf = memalign(32, span);
+	if (!buf)
+		return NULL;
+
+	if (fs_seek(fd, (off_t)start, SEEK_SET) != (off_t)start)
+	{
+		free(buf);
+		fs_close(fd);
+		fd = FILEHND_INVALID;
+		return NULL;
+	}
+
+	unsigned long got = 0;
+	while (got < span)
+	{
+		/* The last sector of a file may be short; the driver stops at EOF. */
+		ssize_t n = fs_read(fd, buf + got, span - got);
+		if (n <= 0)
+			break;
+		got += (unsigned long)n;
+	}
+	if (got < skip + length)
+	{
+		free(buf);
+		return NULL;
+	}
+	if (skip)
+		memmove(buf, buf + skip, length);
+	return buf;
 }
 
 /*

@@ -561,6 +561,14 @@ static byte *read_sound_from_file(short sound_index, int32 &size)
 	if (SoundFile.IsOpen()) {
 		size = (_sm_parameters->flags&_more_sounds_flag) ? definition->total_length : definition->single_length;
 
+#ifdef DC
+		// One sector-aligned transfer instead of a sector per GD-ROM command;
+		// see dc_read_file_span. The result is free()d like the malloc below.
+		data = (uint8 *)dc_read_file_span(dc_sound_path, dc_sound_fork + definition->group_offset, size);
+		if (data)
+			_sm_globals->loaded_sounds_size += size;
+		else
+#endif
 		if ((data = (uint8 *)malloc(size)) != NULL) {
 			if (!SoundFile.SetPosition(definition->group_offset)) {
 				free(data);
