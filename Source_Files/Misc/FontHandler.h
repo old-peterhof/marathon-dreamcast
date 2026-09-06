@@ -92,6 +92,10 @@ struct FontSpecifier
 	// Reset the OpenGL fonts; its arg indicates whether this is for starting an OpenGL session
 	// (this is to avoid texture and display-list memory leaks and other such things)
 	void OGL_Reset(bool IsStarting);
+#ifdef DC
+	// Delete the atlas texture without rebuilding it; for OGL_StopRun.
+	void OGL_Release();
+#endif
 	
 	// Renders a C-style string in OpenGL.
 	// assumes screen coordinates and that the left baseline point is at (0,0).

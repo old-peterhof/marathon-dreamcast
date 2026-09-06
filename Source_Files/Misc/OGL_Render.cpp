@@ -369,6 +369,12 @@ extern void OGL_ResetMapFonts(bool IsStarting);
 // Function for resetting HUD fonts when starting up an OpenGL rendering context;
 // defined in game_window.cpp
 extern void OGL_ResetHUDFonts(bool IsStarting);
+#ifdef DC
+#include <GL/glkos.h>
+extern void OGL_ReleaseMapFonts();
+extern void OGL_ReleaseHUDTextures();
+extern "C" void dc_trace(int slot, const char *fmt, ...);
+#endif
 
 // Function for setting up the rendering of a 3D model: scaling, clipping, etc.;
 // returns whether or not the model could be rendered
@@ -585,6 +591,11 @@ bool OGL_StartRun()
 	SetupShaders();
 #ifdef DC
 	dc_heap_trace(45, "StartRun done");
+	{
+		GLint Free = 0;
+		glGetIntegerv(GL_FREE_TEXTURE_MEMORY_KOS, &Free);
+		dc_trace(53, "vram: %d KB free at StartRun done", (int)(Free/1024));
+	}
 #endif
 	
 	// Success!
@@ -605,7 +616,21 @@ bool OGL_StopRun()
 {
 	if (!OGL_IsActive()) return false;
 	
+#ifdef DC
+	// The fonts and HUD art are not in the texture accounting below, and the
+	// GL context outlives a level restart here. See FontSpecifier::OGL_Release.
+	GetOnScreenFont().OGL_Release();
+	OGL_ReleaseMapFonts();
+	OGL_ReleaseHUDTextures();
+#endif
 	OGL_StopTextures();
+#ifdef DC
+	{
+		GLint Free = 0;
+		glGetIntegerv(GL_FREE_TEXTURE_MEMORY_KOS, &Free);
+		dc_trace(53, "vram: %d KB free after StopRun", (int)(Free/1024));
+	}
+#endif
 	
 #ifdef mac
 	aglDestroyContext(RenderContext);

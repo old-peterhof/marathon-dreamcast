@@ -183,6 +183,21 @@ void OGL_ResetHUDFonts(bool IsStarting)
 	}
 }
 
+#ifdef DC
+// Called from OGL_StopRun; see FontSpecifier::OGL_Release.
+void OGL_ReleaseHUDTextures()
+{
+	get_interface_font(_interface_font).OGL_Release();
+	get_interface_font(_interface_item_count_font).OGL_Release();
+	get_interface_font(_weapon_name_font).OGL_Release();
+	get_interface_font(_player_name_font).OGL_Release();
+	if (hud_pict_loaded) {
+		glDeleteTextures(NUM_TEX, txtr_id);
+		hud_pict_loaded = false;
+	}
+}
+#endif
+
 
 /*
  *  Update motion sensor

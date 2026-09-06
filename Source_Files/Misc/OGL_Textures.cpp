@@ -211,14 +211,23 @@ static CollBitmapTextureState* TextureStateSets[OGL_NUMBER_OF_TEXTURE_TYPES][MAX
  * A full-resolution raw fallback with a glow map can require hundreds of KiB
  * in one frame, and a full sky is 1 MB that has to be contiguous.
  *
- * Deleting or moving a texture is only safe while nothing refers to its
- * address. GLdc holds a frame's polygons in RAM, texture addresses included,
- * until glKosSwapBuffers submits them; the PVR then samples those textures
- * while it renders. So this runs at the start of a frame, when the RAM lists
- * are empty, and waits for the PVR: pvr_wait_ready() returns as soon as the
- * last scene has *started* rendering (KOS clears ta_busy at that moment), so
- * pvr_wait_render_done() is the call that means the hardware is idle. Both
- * are cheap when nothing is pending and this path is rare.
+ * Freeing a texture is safe once nothing can refer to its address. GLdc holds
+ * a frame's polygons in RAM, texture addresses included, until glKosSwapBuffers
+ * submits them; the PVR may still be rendering the scene before that one (KOS
+ * double-buffers the lists). At the start of frame N the RAM lists are empty,
+ * scene N-1 is submitted and scene N-2 may be rendering, so a texture last
+ * bound in frame N-3 or earlier is referenced by neither: it can be freed
+ * without waiting. That is the whole eviction path, and it runs at whatever
+ * rate uploads need it.
+ *
+ * Moving textures is different: compaction relocates what the PVR is sampling.
+ * It only runs when an upload was actually deferred for want of a contiguous
+ * block, after pvr_wait_ready() and pvr_wait_render_done() (the first returns
+ * once the last scene has *started* rendering; the second means idle). If the
+ * pool still has no block that size, the request backs off for half a second
+ * rather than waiting on the PVR every frame: in some levels the largest free
+ * block never exceeds ~900 KB whatever is evicted, and doing this per frame
+ * was 4-8 fps.
  *
  * GLdc's own defrag, the one it runs when an allocation fails mid-frame, has
  * neither guarantee: it updates texture objects but not the addresses already
@@ -227,7 +236,9 @@ static CollBitmapTextureState* TextureStateSets[OGL_NUMBER_OF_TEXTURE_TYPES][MAX
 static unsigned DC_TextureFrame = 1;
 static const GLint DC_VRAM_LOW_WATER = 1024 * 1024;
 static const GLint DC_VRAM_HIGH_WATER = 1536 * 1024;
+static const unsigned DC_COMPACTION_BACKOFF_FRAMES = 15;
 static GLint DC_RequestedTextureBytes = 0;
+static unsigned DC_NextCompactionFrame = 0;
 
 // GLdc's allocation fallback compacts immediately, even with polygons queued.
 // Refuse that path; retry after the frame-boundary eviction/compaction instead.
@@ -249,23 +260,16 @@ void OGL_TextureFrameStart()
 	glGetIntegerv(GL_FREE_TEXTURE_MEMORY_KOS, &FreeVRAM);
 	GLint Contiguous = 0;
 	glGetIntegerv(GL_FREE_CONTIGUOUS_TEXTURE_MEMORY_KOS, &Contiguous);
+	if (DC_RequestedTextureBytes && Contiguous >= DC_RequestedTextureBytes)
+		DC_RequestedTextureBytes = 0;
+
 	const GLint Required = MAX(DC_VRAM_LOW_WATER, DC_RequestedTextureBytes);
 	const GLint Target = MAX(DC_VRAM_HIGH_WATER, Required);
-	if (FreeVRAM >= Required && Contiguous >= Required)
-	{
-		DC_RequestedTextureBytes = 0;
+	const bool NeedCompaction = DC_RequestedTextureBytes &&
+	                            DC_TextureFrame >= DC_NextCompactionFrame;
+	if (FreeVRAM >= Required && !NeedCompaction)
 		return;
-	}
 
-	/* This is the uncommon slow path; do not serialize every frame. */
-	dc_trace(53, "vram lru: free=%d KB largest=%d KB; waiting for PVR",
-	         (int)(FreeVRAM/1024), (int)(Contiguous/1024));
-	if (pvr_wait_ready() < 0 || pvr_wait_render_done() < 0)
-	{
-		/* Never free or move storage that a render may still be sampling. */
-		dc_trace(53, "vram lru: PVR wait timed out; eviction deferred");
-		return;
-	}
 	const GLint Before = FreeVRAM;
 	unsigned Evicted = 0;
 
@@ -289,8 +293,8 @@ void OGL_TextureFrameStart()
 						TextureState& State = Set[ib].CTStates[is];
 						if (!State.IsUsed) continue;
 						const unsigned Age = DC_TextureFrame - State.LastUsedFrame;
-						/* What was just drawn is about to be drawn again. */
-						if (Age <= 1 || Age <= OldestAge) continue;
+						/* Bound in the last two frames: possibly still being rendered. */
+						if (Age <= 2 || Age <= OldestAge) continue;
 						Oldest = &State;
 						OldestAge = Age;
 					}
@@ -303,15 +307,31 @@ void OGL_TextureFrameStart()
 		glGetIntegerv(GL_FREE_TEXTURE_MEMORY_KOS, &FreeVRAM);
 	}
 
-	// Compact while the lists are empty and the PVR is idle (see above).
+	bool Compacted = false;
 	glGetIntegerv(GL_FREE_CONTIGUOUS_TEXTURE_MEMORY_KOS, &Contiguous);
-	if (Contiguous < Required) {
-		glDefragmentTextureMemory_KOS();
-		glGetIntegerv(GL_FREE_CONTIGUOUS_TEXTURE_MEMORY_KOS, &Contiguous);
+	if (NeedCompaction && Contiguous < DC_RequestedTextureBytes)
+	{
+		dc_trace(53, "vram lru: need %d KB contiguous, have %d KB; waiting for PVR",
+		         (int)(DC_RequestedTextureBytes/1024), (int)(Contiguous/1024));
+		if (pvr_wait_ready() < 0 || pvr_wait_render_done() < 0)
+		{
+			/* Never move storage that a render may still be sampling. */
+			dc_trace(53, "vram lru: PVR wait timed out; compaction deferred");
+		}
+		else
+		{
+			glDefragmentTextureMemory_KOS();
+			glGetIntegerv(GL_FREE_CONTIGUOUS_TEXTURE_MEMORY_KOS, &Contiguous);
+			Compacted = true;
+		}
+		if (Contiguous < DC_RequestedTextureBytes)
+			DC_NextCompactionFrame = DC_TextureFrame + DC_COMPACTION_BACKOFF_FRAMES;
 	}
-	if (Contiguous >= Required) DC_RequestedTextureBytes = 0;
-	dc_trace(53, "vram lru: evicted %u, %d -> %d KB free, largest=%d KB",
-	         Evicted, (int)(Before/1024), (int)(FreeVRAM/1024), (int)(Contiguous/1024));
+	if (Contiguous >= DC_RequestedTextureBytes) DC_RequestedTextureBytes = 0;
+	if (Evicted || Compacted)
+		dc_trace(53, "vram lru: evicted %u%s, %d -> %d KB free, largest=%d KB",
+		         Evicted, Compacted ? ", compacted" : "",
+		         (int)(Before/1024), (int)(FreeVRAM/1024), (int)(Contiguous/1024));
 }
 #endif
 
@@ -1691,6 +1711,10 @@ void OGL_ResetTextures()
 				CollectionPresent ? get_number_of_collection_bitmaps(ic) : 0;
 			
 			CollBitmapTextureState *CBTSSet = TextureStateSets[it][ic];
+#ifdef DC
+			// Sets are allocated on first use here; an unused one is NULL.
+			if (!CBTSSet) continue;
+#endif
 			for (int ib=0; ib<NumberOfBitmaps; ib++)
 			{
 				TextureState *TSSet = CBTSSet[ib].CTStates;

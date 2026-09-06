@@ -598,6 +598,34 @@ void FontSpecifier::OGL_Reset(bool IsStarting)
 // assumes screen coordinates and that the left baseline point is at (0,0).
 // Alters the modelview matrix so that the next characters will be drawn at the proper place.
 // One can surround it with glPushMatrix() and glPopMatrix() to remember the original.
+#ifdef DC
+/*
+ *	OGL_StartRun runs at every level start, restarts after death included, and
+ *	its OGL_Reset(true) deliberately does not delete the previous atlas: it
+ *	assumes a new GL context has just discarded everything. On the Dreamcast the
+ *	context survives a restart (the video mode is already set), so every level
+ *	start leaked the atlases: 384 KB of video RAM per death, measured, until the
+ *	pool ran dry mid-level. OGL_StopRun releases them here instead, while GLdc's
+ *	bookkeeping still matches the textures; on a real mode change SDL re-runs
+ *	glKosInit afterwards and the deletion was merely early.
+ */
+void FontSpecifier::OGL_Release()
+{
+	if (TxtrID)
+	{
+		glDeleteTextures(1,&TxtrID);
+		TxtrID = 0;
+	}
+	if (OGL_Texture)
+	{
+		delete[]OGL_Texture;
+		OGL_Texture = NULL;
+	}
+	DCBuildFailed = false;
+}
+#endif
+
+
 void FontSpecifier::OGL_Render(const char *Text)
 {
 	// Bug out if no texture to render

@@ -362,6 +362,20 @@ void OGL_ResetMapFonts(bool IsStarting)
 #endif
 }
 
+#ifdef DC
+// Called from OGL_StopRun; see FontSpecifier::OGL_Release.
+void OGL_ReleaseMapFonts()
+{
+	for (int i=0; i<NUMBER_OF_ANNOTATION_DEFINITIONS; i++)
+	{
+		annotation_definition& NoteDef = OvhdMap_ConfigData.annotation_definitions[i];
+		for (int j=0; j<NUMBER_OF_ANNOTATION_SIZES; j++)
+			NoteDef.Fonts[j].OGL_Release();
+	}
+	OvhdMap_ConfigData.map_name_data.Font.OGL_Release();
+}
+#endif
+
 void ResetOverheadMap()
 {
 	// Default: nothing (mapping is cumulative)
