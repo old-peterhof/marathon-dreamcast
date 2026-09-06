@@ -389,19 +389,34 @@ would not have been smaller. A missing or stale pack falls back to the ordinary
 path too.
 
 **Textures are evicted.** `OGL_TextureFrameStart()` runs at the top of each
-world frame. When free VRAM or the largest free block drops under 1 MB it
-deletes the least recently drawn textures until 1.5 MB is free, skipping the
-interface collection and anything drawn in the previous frame, then compacts
-the pool if the largest block is still under 1 MB. A full sky is exactly 1 MB and
-has to be contiguous, which is why the block size is checked and not just the
-total. Deleting or moving a texture is only safe while nothing holds its address:
-GLdc keeps a frame's polygons in RAM, texture addresses included, until the swap,
-and the PVR samples them while rendering. So this waits for `pvr_wait_ready()`
-*and* `pvr_wait_render_done()` first. The first returns as soon as the last
-scene has started rendering, not when it has finished; the second is the one that
-means the hardware is idle. GLdc's own defragmenter, which it runs when an
-allocation fails mid-frame, has neither guarantee, which is what the reserve is
-for.
+world frame. When free VRAM drops under 1 MB it deletes the least recently
+drawn textures until 1.5 MB is free, skipping the interface collection and
+anything drawn in the last two frames. That is safe without waiting: GLdc keeps
+a frame's polygons in RAM, texture addresses included, until the swap, and KOS
+double-buffers the lists, so at the top of frame N scene N-1 is submitted and
+N-2 may still be rendering; a texture last bound in N-3 or earlier is in
+neither. Moving textures is different. Compaction runs only when an upload was
+actually deferred for want of a contiguous block (a full sky is exactly 1 MB
+and has to be contiguous), and only after `pvr_wait_ready()` *and*
+`pvr_wait_render_done()`: the first returns as soon as the last scene has
+started rendering, the second is the one that means the hardware is idle. If
+the pool still has no block that size the request backs off for half a second.
+An earlier version demanded a 1 MB contiguous block every frame and waited on
+the PVR each time; in some levels the largest free block never exceeds about
+900 KB whatever is evicted, and that pass ran every frame at 4-8 fps. GLdc's
+own defragmenter, which it runs when an allocation fails mid-frame, has neither
+guarantee, which is what the reserve is for.
+
+**Fonts and HUD art are released at StopRun.** `OGL_StartRun` runs at every
+level start, restarts after death included, and rebuilds the font atlases with
+`OGL_Reset(true)`, which deliberately does not delete the previous ones: it
+assumes a new GL context has just discarded everything. Here the context
+survives a restart, so every death leaked 384 KB of video RAM until the pool
+ran dry mid-level and every upload was deferred. `OGL_StopRun` now releases the
+screen, map and HUD fonts and the HUD pictures while GLdc's bookkeeping still
+matches; on a real mode change SDL re-runs `glKosInit` afterwards and the
+deletion was merely early. Slot 53 prints free VRAM after every StopRun and
+StartRun, which is how to see it hold steady.
 
 **Skies are staged as 16-bit.** A 1024x512 landscape expanded to RGBA needs a
 2 MB temporary on a machine that has about that much heap left after a level

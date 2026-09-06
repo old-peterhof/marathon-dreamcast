@@ -52,3 +52,4 @@ to the engine clamp, and the VMU Profiler. Git history has the detail.
 | b79 | rumble | f1d4787 | Rumble on shots/hits/missile; texture upload readiness and allocation guard; static sprites re-uploaded in place; saved games restored after the Maple scan so CONTINUE GAME is offered |
 | b80 | static | 5280287 | Teleport static sized by a 4096-texel budget: small sprites full size, large ones a quarter |
 | b81 | vqspan | 5540eb5 | Sprite frames read from the VQ pack in one aligned transfer; the first seconds of a level no longer stall |
+| b82 | vram | 0200e8c | Font atlases released per level (384 KB VRAM leak per restart); eviction no longer waits on the PVR or chases a contiguous block |

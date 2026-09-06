@@ -323,6 +323,19 @@ synchronised at the end of the session.
   GD-ROM command per sector per new sprite frame; `5540eb5` routes it through
   `dc_read_file_span()`. Film 2: 21 sub-10 fps seconds of 279 before, 7 of 284
   after, all of them the load second. Build b81 "vqspan".
+- **Two VRAM defects found by the same soaks** (`0200e8c`, build b82): a
+  384 KB video RAM leak per level restart (font atlases rebuilt at StartRun
+  with `OGL_Reset(true)`, which assumes a fresh GL context; ours survives a
+  restart), and an eviction pass that demanded a 1 MB contiguous block every
+  frame and waited on the PVR each time, in levels where the largest free
+  block never exceeds ~900 KB. Both are described in README.DC.md under "The
+  PowerVR is not a GL card". The eviction rewrite changes the safety argument
+  the audit reviewed: freeing no longer waits, on the grounds that a texture
+  unused for three frames is in neither the RAM list (empty at frame start)
+  nor either scene the PVR can still be rendering; compaction, which moves
+  textures, still waits for both PVR calls. `OGL_ResetTextures` also gained
+  the NULL check the lazily allocated state sets needed (a NULL read on this
+  machine lands in the BIOS ROM rather than trapping).
 - **Saves now stay on the card until chosen.** With the restore working, boot
   decompressed every save into the ramdisk and kept it: 430 KB live for two
   saves on level 21 (heap top 0x8cf06000 at the reload). The boot scan reads
