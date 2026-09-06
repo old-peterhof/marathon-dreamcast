@@ -303,3 +303,7 @@ synchronised at the end of the session.
   headers only and `dc_vmu_restore_slot()` restores one save on demand,
   dropping other slots' copies. Live heap after a Continue load: 11,741 KB
   (was 12,472). The b79 images were rebuilt from this commit.
+- **Heap on the final b79** (`/tmp/alephone-b79-l21d.log`, level 21): heap top
+  0x8cdc4000 after the first load and 0x8ceba000 after the death reload, the
+  same as b78 with the sound flush. The morning's extra 430 KB was entirely the
+  boot-time save copies.
