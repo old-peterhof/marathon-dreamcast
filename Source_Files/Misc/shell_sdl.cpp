@@ -173,10 +173,6 @@ int main(int argc, char **argv)
 {
 #ifdef DC
 	fs_mem_init();
-
-	// Pull any saved games off the memory card and into the ramdisk before the
-	// game looks at saved_games_dir, so they simply appear in the load dialog.
-	dc_vmu_load_saves("/ram", "/cd/AlephOne/Map");
 #endif
 	// Print banner (don't bother if this doesn't appear when started from a GUI)
 	printf(
@@ -277,6 +273,14 @@ static void initialize_application(void)
 		dc_trace(19, "maple: bus scan incomplete after 1500ms, continuing");
 
 	dc_input_dump_maple();
+
+	// Pull any saved games off the memory card and into the ramdisk before the
+	// game looks at saved_games_dir, so they simply appear in the load dialog.
+	// This has to come after the bus scan above: the card is not in /vmu until
+	// the scan has attached it, and for as long as this ran at the top of main()
+	// it found nothing, so CONTINUE GAME was never offered after a power cycle
+	// even with saves on the card.
+	dc_vmu_load_saves("/ram", "/cd/AlephOne/Map");
 	dc_profiler_start();
 #endif
 

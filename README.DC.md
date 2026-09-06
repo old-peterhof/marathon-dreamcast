@@ -146,6 +146,15 @@ into a bounded field (`MAXIMUM_ABSOLUTE_YAW`), so the turn rate saturates near
 67°/sec however large a value is fed in. The sliders' useful work is *reducing*
 sensitivity for finer aim.
 
+**Rumble.** A vibration pack in the controller's expansion slot gets a short
+light pulse for each shot and each hit taken, and a longer, stronger one when
+the missile launcher fires. `dc/dc_rumble.c` never waits on the Maple bus: the
+game only records what it wants and the per-frame pad poll sends it, retries a
+busy bus next frame, and stops the pack when the pulse is over or gameplay
+ends. No pack fitted is a no-op. The strengths and durations at the top of that
+file are the tuning knobs; they have been checked in Flycast, not felt on a
+console.
+
 ## Saves
 
 Preferences are mirrored to a VMU. The game writes them to the KOS ramdisk —

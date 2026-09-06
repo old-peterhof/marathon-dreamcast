@@ -49,3 +49,4 @@ to the engine clamp, and the VMU Profiler. Git history has the detail.
 | b35 | prefs-version | 730c268 | Reset stale DC settings; hi-res can no longer stick off |
 | b77 | gl-memory | c3d8fda | Sky depth, terminals, HUD, pause menu; sound cache capped; 2-table shading |
 | b78 | residency | 392978c | Full-resolution textures throughout: VQ-packed sprites, VRAM eviction + compaction at frame start, real skies staged as 16-bit, per-type texture state on demand; VMU save call passed 3 of 7 arguments |
+| b79 | rumble | f1d4787 | Rumble on shots/hits/missile; texture upload readiness and allocation guard; static sprites re-uploaded in place; saved games restored after the Maple scan so CONTINUE GAME is offered |
