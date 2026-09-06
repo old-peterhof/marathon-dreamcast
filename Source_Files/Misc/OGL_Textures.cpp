@@ -91,6 +91,13 @@ extern "C" int pvr_wait_render_done(void);
 #include "OGL_Textures.h"
 
 #ifdef DC
+// Largest static texture rebuilt per frame (64x64 or 128x32); see PlaceTexture.
+#ifndef STATIC_TEXEL_BUDGET
+#define STATIC_TEXEL_BUDGET 4096
+#endif
+#endif
+
+#ifdef DC
 extern "C" void dc_trace(int slot, const char *fmt, ...);
 extern "C" unsigned dc_heap_used(void);
 #endif
@@ -625,12 +632,13 @@ bool TextureManager::Setup()
 		
 		// Display size: may be shrunk
 #ifdef DC
-		// Static is rebuilt every frame, and noise needs no detail: a quarter
-		// of the texels is a sixteenth of the work, and chunkier, like the
-		// software renderer's. The PowerVR's smallest texture is 8x8.
+		// Static is rebuilt every frame, so its cost is bounded by texel
+		// count, not by a fixed shrink: small sprites keep their resolution,
+		// large ones drop to a quarter. The PowerVR's smallest texture is 8x8.
 		int TxtrRes = TxtrTypeInfo.Resolution;
 		if (StaticNoise)
-			for (TxtrRes = 2; TxtrRes > 0 && ((TxtrWidth >> TxtrRes) < 8 || (TxtrHeight >> TxtrRes) < 8); TxtrRes--) {}
+			for (TxtrRes = 0; TxtrRes < 2 && (TxtrWidth >> (TxtrRes+1)) >= 8 && (TxtrHeight >> (TxtrRes+1)) >= 8
+			     && (TxtrWidth >> TxtrRes) * (TxtrHeight >> TxtrRes) > STATIC_TEXEL_BUDGET; TxtrRes++) {}
 #else
 		const int TxtrRes = TxtrTypeInfo.Resolution;
 #endif

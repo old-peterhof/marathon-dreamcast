@@ -294,9 +294,28 @@ synchronised at the end of the session.
 - **Build b79 "rumble"** built from `b84a263`: `alephone-b79-rumble.cdi`
   (padded, marker-free, verify-image clean) and `alephone-b79-rumble-play.cdi`,
   in both trees. b78 images are untouched as the rollback candidate.
-- Queue item 3 (static quality) stands where the audit left it: quarter-size
-  noise, now without the frame-boundary waits. Item 4's save/load round trip is
-  done; films, heap and map were covered overnight. Hardware remains untested.
+- **Queue item 3 (static quality) measured and settled.** STATICTEST on
+  Waterloo (every sprite static, an artificial worst case), fps over the first
+  eight seconds:
+
+  | Static texture size | fps | Look |
+  |---|---|---|
+  | quarter, fixed shift | 28-30 | large blocks on near sprites |
+  | half, fixed shift | 12-30 | close to the software renderer |
+  | half, 16-bit staging | 12-30 | same; the staging format is not the cost |
+  | texel budget 8192 | 8-23 | many small sprites go full size |
+  | **texel budget 4096 (kept)** | 16-29 | real static |
+
+  The cost is the per-frame rebuild and upload, so it is now bounded per
+  sprite by texel count (`STATIC_TEXEL_BUDGET` in `OGL_Textures.cpp`) rather
+  than by a fixed shrink: sprites up to 64x64 keep full size, up to 128x64
+  half, larger ones a quarter, 8x8 minimum. The largest monster sprite costs
+  at most twice its quarter-size cost; eight monsters teleporting together is
+  about the all-static quarter load that ran 28-30. The 16-bit staging path
+  was reverted as it bought nothing measurable. Screenshots: `test-evidence/
+  2026-09-06-audit/static-{quarter,half,budget4k}.png`.
+- Item 4's save/load round trip is done; films, heap and map were covered
+  overnight. Hardware remains untested.
 - **Saves now stay on the card until chosen.** With the restore working, boot
   decompressed every save into the ramdisk and kept it: 430 KB live for two
   saves on level 21 (heap top 0x8cf06000 at the reload). The boot scan reads
