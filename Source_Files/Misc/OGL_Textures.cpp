@@ -525,6 +525,16 @@ bool TextureManager::Setup()
 	TextureState &CTState = *TxtrStatePtr;
 #ifdef DC
 	CTState.LastUsedFrame = DC_TextureFrame;
+	/*
+	 *	Static -- a teleporting object, the compiler's shot landing -- is a
+	 *	texture whose opaque texels are noise, rebuilt every frame so the noise
+	 *	moves (see StoreSourceRow). The PowerVR has no logic ops or stipple, so
+	 *	the desktop renderer's flicker has to live in the texels. The previous
+	 *	frame's texture is deleted here while that frame may still be sampling
+	 *	it; a frame of the wrong noise in a noise sprite is not visible.
+	 */
+	StaticNoise = (TransferMode == _static_transfer);
+	if (StaticNoise) CTState.Reset();
 #endif
 	if (!CTState.IsUsed)
 	{
@@ -580,7 +590,16 @@ bool TextureManager::Setup()
 		}
 		
 		// Display size: may be shrunk
+#ifdef DC
+		// Static is rebuilt every frame, and noise needs no detail: a quarter
+		// of the texels is a sixteenth of the work, and chunkier, like the
+		// software renderer's. The PowerVR's smallest texture is 8x8.
+		int TxtrRes = TxtrTypeInfo.Resolution;
+		if (StaticNoise)
+			for (TxtrRes = 2; TxtrRes > 0 && ((TxtrWidth >> TxtrRes) < 8 || (TxtrHeight >> TxtrRes) < 8); TxtrRes--) {}
+#else
 		const int TxtrRes = TxtrTypeInfo.Resolution;
+#endif
 		LoadedWidth = MAX(TxtrWidth >> TxtrRes, 1);
 		LoadedHeight = MAX(TxtrHeight >> TxtrRes, 1);
 
@@ -1119,14 +1138,37 @@ static void FlushAccumRow(uint32 *Buffer, int LoadedW, int Row,
 
 
 // One source row, either copied straight across or folded into the accumulator.
+#ifdef DC
+/*
+ *	One texel of static. The generator's high half decides whether this texel
+ *	shows noise or the dark silhouette -- the rule the stipple version used, so
+ *	a teleport dissolves at the same rate -- and its low bits are the colour.
+ *	Alpha is the top byte: RGBA bytes in memory, little-endian.
+ */
+static inline uint32 StaticTexel(int Density)
+{
+	static uint32 s = 0x9E3779B9u;
+	s ^= s << 13; s ^= s >> 17; s ^= s << 5;
+	return ((s >> 16) >= (uint32)Density) ? (0xFF000000u | (s & 0x00FFFFFFu)) : 0xFF000000u;
+}
+#endif
+
 static void StoreSourceRow(uint32 *Buffer, uint32 *Acc, int& AccRow,
 	int LoadedW, int LoadedH, int XShift, int YShift,
 	unsigned BlockPixels, bool Reduce,
 	int oy, int ox, int Count, const byte *Src, const uint32 *ColorTable,
-	bool Packed)
+	bool Packed, int StaticDensity)
 {
 	if (!Reduce)
 	{
+#ifdef DC
+		if (StaticDensity >= 0) {
+			uint32 *Dest = Buffer + (size_t)oy*LoadedW + ox;
+			for (int w=0; w<Count; ++w)
+				*(Dest++) = (ColorTable[*(Src++)] & 0xFF000000u) ? StaticTexel(StaticDensity) : 0;
+			return;
+		}
+#endif
 		if (Packed) {
 			uint16 *Dest = (uint16 *)Buffer + (size_t)oy*LoadedW + ox;
 			for (int w=0; w<Count; ++w) {
@@ -1146,6 +1188,20 @@ static void StoreSourceRow(uint32 *Buffer, uint32 *Acc, int& AccRow,
 	int dy = oy >> YShift;
 	if (dy >= LoadedH) dy = LoadedH - 1;
 	
+#ifdef DC
+	if (StaticDensity >= 0) {
+		// Noise is not averaged: one source texel per destination texel
+		// decides whether it is part of the shape at all.
+		if (oy & ((1 << YShift) - 1)) return;
+		uint32 *Row = Buffer + (size_t)dy*LoadedW;
+		for (int w=0; w<Count; w += (1 << XShift)) {
+			int dx = (ox + w) >> XShift;
+			if (dx >= LoadedW) dx = LoadedW - 1;
+			Row[dx] = (ColorTable[Src[w]] & 0xFF000000u) ? StaticTexel(StaticDensity) : 0;
+		}
+		return;
+	}
+#endif
 	if (dy != AccRow)
 	{
 		if (AccRow >= 0)
@@ -1190,6 +1246,9 @@ uint32 *TextureManager::GetOGLTexture(uint32 *ColorTable)
 	// A stock full-size sky needs no RGBA staging image. Preserve every texel
 	// in the same 16-bit representation the PVR would receive from GLdc.
 	Packed = PackedLandscape = !Reduce && TextureType == OGL_Txtr_Landscape;
+	const int StaticDensity = StaticNoise ? (int)(uint16)TransferData : -1;
+#else
+	const int StaticDensity = -1;
 #endif
 	const unsigned BlockPixels = (1u << XShift) << YShift;
 	
@@ -1269,7 +1328,7 @@ uint32 *TextureManager::GetOGLTexture(uint32 *ColorTable)
 			
 			StoreSourceRow(Buffer,Acc,AccRow,LoadedW,LoadedH,XShift,YShift,
 				BlockPixels,Reduce,OGLHeightOffset+h,OGLWidthOffset,Width,
-				OrigStrip,ColorTable,Packed);
+				OrigStrip,ColorTable,Packed,StaticDensity);
 			horig++;
 		}
 	}
@@ -1295,7 +1354,7 @@ uint32 *TextureManager::GetOGLTexture(uint32 *ColorTable)
 			byte *OrigStrip = Texture->row_addresses[horig] + OrigWidthOffset;
 			StoreSourceRow(Buffer,Acc,AccRow,LoadedW,LoadedH,XShift,YShift,
 				BlockPixels,Reduce,OGLHeightOffset+h,OGLWidthOffset,Width,
-				OrigStrip,ColorTable,Packed);
+				OrigStrip,ColorTable,Packed,StaticDensity);
 			horig++;
 		}
 	}
@@ -1528,6 +1587,7 @@ TextureManager::TextureManager()
 #ifdef DC
 	UseVQPack = false;
 	PackedLandscape = false;
+	StaticNoise = false;
 #endif
 	
 	// Marathon default

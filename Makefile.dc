@@ -373,6 +373,10 @@ replay-test: $(TARGET) $(DISC)/.stamp
 	cp "$(FILM)" disc-replay/AlephOne/TestFilm
 	echo replay > disc-replay/AlephOne/AUTOSTART
 	echo on > disc-replay/AlephOne/DEBUG
+	rm -f disc-replay/AlephOne/FADETEST disc-replay/AlephOne/STATICTEST disc-replay/AlephOne/SAVETEST
+	test -z "$(FADETEST)" || echo on > disc-replay/AlephOne/FADETEST
+	test -z "$(STATICTEST)" || echo on > disc-replay/AlephOne/STATICTEST
+	test -z "$(SAVETEST)" || echo on > disc-replay/AlephOne/SAVETEST
 	$(MKDCDISC) -e $(TARGET) -d disc-replay/AlephOne -o alephone-$(BUILD_TAG)-replay$(REPLAY_SUFFIX).cdi \
 		-s $(DISCSERIAL) -n "$(DISCNAME) $(BUILD_TAG)" -a "$(DISCAUTH)" -N
 

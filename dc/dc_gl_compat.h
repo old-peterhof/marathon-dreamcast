@@ -198,7 +198,58 @@ static inline void glPopAttrib(void)
 {
 }
 
-/* ---- 4. clip planes: model path only, see the note above --------------- */
+/* ---- 4. capabilities GLdc does not have -------------------------------- */
+
+/*
+ *	GLdc's glEnable/glDisable raise GL_INVALID_VALUE for a capability they do
+ *	not know, and Aleph One asks for a few every frame (logic ops, stipple,
+ *	clip planes). The error then sits in glGetError until somebody else reads
+ *	it and blames their own call. Known capabilities pass straight through; the
+ *	rest are dropped, and each is named once over serial.
+ */
+static inline int dc_gl_cap_known(GLenum cap)
+{
+	switch (cap) {
+	case GL_ALPHA_TEST: case GL_BLEND: case GL_COLOR_MATERIAL: case GL_CULL_FACE:
+	case GL_DEPTH_TEST: case GL_FOG: case GL_LIGHTING: case GL_NORMALIZE:
+	case GL_SCISSOR_TEST: case GL_TEXTURE_2D:
+	case GL_POLYGON_OFFSET_FILL: case GL_POLYGON_OFFSET_LINE: case GL_POLYGON_OFFSET_POINT:
+		return 1;
+	default:
+		return cap >= GL_LIGHT0 && cap <= GL_LIGHT7;
+	}
+}
+
+static inline void dc_gl_cap_unknown(GLenum cap, const char *what)
+{
+	static GLenum seen[8];
+	static int n = 0;
+	int i;
+
+	for (i = 0; i < n; i++)
+		if (seen[i] == cap)
+			return;
+	if (n < 8)
+		seen[n++] = cap;
+	dc_trace(31, "gl: %s(0x%04x) is not a PowerVR capability; dropped", what, (unsigned)cap);
+}
+
+static inline void dc_glEnable(GLenum cap)
+{
+	if (dc_gl_cap_known(cap)) glEnable(cap);
+	else dc_gl_cap_unknown(cap, "glEnable");
+}
+
+static inline void dc_glDisable(GLenum cap)
+{
+	if (dc_gl_cap_known(cap)) glDisable(cap);
+	else dc_gl_cap_unknown(cap, "glDisable");
+}
+
+#define glEnable(cap)	dc_glEnable(cap)
+#define glDisable(cap)	dc_glDisable(cap)
+
+/* ---- 5. clip planes: model path only, see the note above --------------- */
 
 static inline void glClipPlane(GLenum plane, const GLdouble *equation)
 {

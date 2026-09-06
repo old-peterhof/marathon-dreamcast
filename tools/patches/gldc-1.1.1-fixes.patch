@@ -1,4 +1,5 @@
-GLdc 1.1.1: three bugs. Two in mipmap generation, one in glBindTexture.
+GLdc 1.1.1: five bugs. Two in mipmap generation, one in glBindTexture, two in
+vertex colour and alpha.
 
 GL/framebuffer.c
 
@@ -41,6 +42,31 @@ GL/texture.c
       Out of memory. Requested sbrk_base 8d009000, was 8cfd4000, diff 217088
       GL ERROR: GL_INVALID_VALUE when calling _glTexImage2DValidate
       Assertion failed at GL/texture.c:751
+
+GL/attributes.c
+
+ 4. glDrawArrays with no colour array enabled filled every vertex white.
+    calcReadDiffuseFunc() returned _fillWhiteARGB for the disabled case, so
+    the generic path ignored glColor* entirely; only the fast path (3-float
+    positions, 2-float UVs) and immediate mode read _glCurrentColor(). Aleph
+    One's sprites and walls use GL_DOUBLE positions and its fader quad uses
+    2-float positions, so none of them hit the fast path: sprites and unsplit
+    walls drew unlit, and every screen fade -- red for damage, green for a
+    pickup -- drew as an opaque white quad because the tint colour and its
+    alpha never reached the vertices. The disabled case now fills from the
+    current colour, which is what the spec says and what the other two paths
+    already did.
+
+GL/platform.h
+
+ 5. Untextured polygons could not blend. CompilePolyHeader() simulates "no
+    texture" with an 8x8 opaque white texture, and set the texture
+    environment to GPU_TXRENV_MODULATE -- the PowerVR mode whose output
+    alpha is the *texture's* alpha, so vertex alpha was discarded and every
+    untextured translucent quad drew opaque. Aleph One's screen fades and the
+    pause scrim are exactly that. MODULATEALPHA multiplies texture alpha
+    (1.0) by vertex alpha; it is what GL_MODULATE already maps to for real
+    textures (texture.c).
 
 Apply to both the dist/ and build/ copies of the libGL kos-port, then rebuild:
 make GL in build/libGL-1.1.1, and copy the resulting libGL.a over
@@ -169,3 +195,65 @@ inst/lib/libGL.a. See README.DC.md, 'Patched toolchain'.
          _glInitializeTextureObject(txr, texture);
      }
  
+--- a/GL/attributes.c
++++ b/GL/attributes.c
+@@ -6,6 +6,7 @@
+ #include <limits.h>
+ 
+ #include "private.h"
++#include "state.h"
+ #include "platform.h"
+ 
+ AttribPointerList ATTRIB_LIST;
+@@ -174,6 +175,23 @@
+     o[1] = 1.0f;
+     o[2] = 1.0f;
+     o[3] = 1.0f;
++}
++
++/* With no colour array enabled, OpenGL says every vertex takes the current
++   colour -- what glColor* last set. This is what the immediate-mode and
++   fast paths already do (draw_fastpath.inc reads _glCurrentColor()); the
++   generic path filled white instead, so any glDrawArrays whose vertex format
++   missed the fast path -- GL_DOUBLE positions, 2-component positions -- drew
++   unlit and ignored the alpha of a blended overlay. _glCurrentColor() is
++   stored in A,R,G,B order, the same order this output uses. */
++static void _fillCurrentColourARGB(const GLubyte* __restrict__ input, GLubyte* __restrict__ output) {
++    _GL_UNUSED(input);
++    const float* c = _glCurrentColor();
++    float* o = (float*) output;
++    o[0] = c[0];
++    o[1] = c[1];
++    o[2] = c[2];
++    o[3] = c[3];
+ }
+ 
+ static void _readColour4ubARGB(const GLubyte* input, GLubyte* output) {
+@@ -317,8 +335,8 @@
+ 
+ static ReadAttributeFunc calcReadDiffuseFunc(void) {
+     if((ATTRIB_LIST.enabled & COLOR_ENABLED_FLAG) != COLOR_ENABLED_FLAG) {
+-        /* Just fill the whole thing white if the attribute is disabled */
+-        return _fillWhiteARGB;
++        /* No array: every vertex takes the current colour */
++        return _fillCurrentColourARGB;
+     }
+ 
+     switch(ATTRIB_LIST.colour.type) {
+--- a/GL/platform.h
++++ b/GL/platform.h
+@@ -453,7 +453,13 @@
+         }
+         dst->mode2 |= (DimensionFlag(8) << GPU_TA_PM2_USIZE_SHIFT) & GPU_TA_PM2_USIZE_MASK;
+         dst->mode2 |= (DimensionFlag(8) << GPU_TA_PM2_VSIZE_SHIFT) & GPU_TA_PM2_VSIZE_MASK;
+-        dst->mode2 |= (GPU_TXRENV_MODULATE << GPU_TA_PM2_TXRENV_SHIFT) & GPU_TA_PM2_TXRENV_MASK;
++        /* MODULATEALPHA, not MODULATE: the PowerVR's plain Modulate mode takes
++           alpha from the texture alone, and this stand-in texture is opaque
++           white, so an untextured polygon could never blend -- its vertex
++           alpha was discarded. Modulate-alpha multiplies texture alpha (1.0)
++           by vertex alpha, which is what an untextured GL polygon means.
++           Textured polygons already use MODULATEALPHA for GL_MODULATE. */
++        dst->mode2 |= (GPU_TXRENV_MODULATEALPHA << GPU_TA_PM2_TXRENV_SHIFT) & GPU_TA_PM2_TXRENV_MASK;
+         dst->mode3 |= ((GPU_TXRFMT_RGB565 | GPU_TXRFMT_NONTWIDDLED) << GPU_TA_PM3_TXRFMT_SHIFT) & GPU_TA_PM3_TXRFMT_MASK;
+         /* Convert the texture address */
+         txr_base = (uint32_t) DEFAULT_TEXTURE;

@@ -141,6 +141,7 @@ class TextureManager
 	// True when the stock sprite has a prebuilt PowerVR VQ candidate.
 	bool UseVQPack;
 	bool PackedLandscape;
+	bool StaticNoise;		// Texels are noise, rebuilt every frame (teleport static)
 #endif
 		
 	// Private methods

@@ -1012,6 +1012,26 @@ void render_screen(short ticks_elapsed)
 				dc_memory_trace();
 			}
 #endif
+#ifdef DC
+			/*
+			 *	FADETEST on the disc: start a different fade each second so the
+			 *	fader path can be looked at on demand instead of waiting to be
+			 *	shot. Emulator-only, like the other markers.
+			 */
+			{
+				static int fade_test = -1;
+				if (fade_test < 0)
+					fade_test = (access("/cd/AlephOne/FADETEST", F_OK) == 0);
+				if (fade_test) {
+					static const short types[] = { _fade_red, _fade_bonus, _fade_bright,
+					                               _fade_static, _fade_negative, _fade_big_white };
+					static unsigned n = 0;
+					const short type = types[n++ % (sizeof(types)/sizeof(types[0]))];
+					dc_trace(64, "fadetest: type %d", (int)type);
+					start_fade(type);
+				}
+			}
+#endif
 			dc_frames = 0;
 			dc_last = now;
 		}

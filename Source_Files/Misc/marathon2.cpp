@@ -64,6 +64,24 @@ Aug 10, 2000 (Loren Petrich):
 #include "script_parser.h"
 
 #include <limits.h>
+#ifdef DC
+#include <unistd.h>
+extern "C" void dc_trace(int slot, const char *fmt, ...);
+/*
+ *	SAVETEST on the disc: at tick 200, call save_game() from inside the tick,
+ *	which is where a pattern buffer calls it (devices.cpp). Emulator only.
+ */
+static void dc_savetest_tick(void)
+{
+	static int test = -1;
+	if (test < 0) test = (access("/cd/AlephOne/SAVETEST", F_OK) == 0);
+	if (test && dynamic_world->tick_count == 200) {
+		dc_trace(64, "savetest: save_game() from the tick");
+		const bool ok = save_game();
+		dc_trace(64, "savetest: save_game() returned %d", (int)ok);
+	}
+}
+#endif
 
 #ifdef DC
 extern "C" unsigned dc_heap_top(void);	/* dc/dc_compat.c */
@@ -163,6 +181,9 @@ short update_world(
 		update_platforms();
 		
 		update_control_panels(); // don't put after update_players
+#ifdef DC
+		dc_savetest_tick();
+#endif
 		update_players();
 		move_projectiles();
 		move_monsters();

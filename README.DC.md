@@ -35,8 +35,9 @@ way.
 
 ### Patched toolchain
 
-**This port's libGL is patched.** `tools/patches/gldc-1.1.1-mipmap-fixes.patch`
-fixes two bugs in GLdc 1.1.1's mipmap generation, both in `GL/framebuffer.c`:
+**This port's libGL is patched.** `tools/patches/gldc-1.1.1-fixes.patch` fixes
+five bugs in GLdc 1.1.1. Two are in mipmap generation, both in
+`GL/framebuffer.c`:
 
 - `_glCalculateAverageTexel()` read the texture format from the wrong bits of the
   PVR format word. Bit 26 is the twiddle flag, not part of the three-bit format
@@ -48,11 +49,30 @@ fixes two bugs in GLdc 1.1.1's mipmap generation, both in `GL/framebuffer.c`:
   testing on, walls that vanished or blacked out at distance.
 
 They interact — fixing only the first routes ARGB4444 into the branch the second
-one breaks — so the patch carries both. Its header says how to apply and rebuild;
-the reasoning and the before/after tables are in `HANDOFF-2026-09-02.md`.
+one breaks — so the patch carries both. The reasoning and the before/after tables
+are in `HANDOFF-2026-09-02.md`.
 
-A build against an unpatched libGL will link and run, but mipmapped textures will
-not look the same, so it is not comparable to the builds recorded in `BUILDS.md`
+The third is `glBindTexture()` asserting inside the driver when the heap is
+exhausted. The last two are why fades, the pause scrim and sprite lighting never
+looked right under GL:
+
+- `glDrawArrays` with no colour array enabled filled every vertex white
+  (`GL/attributes.c`). Only the fast path, which needs 3-float positions, and
+  immediate mode read the current colour. Aleph One's sprites and walls use
+  GL_DOUBLE positions and the fader quad 2-float ones, so `glColor*` was ignored
+  for all of them.
+- An untextured polygon is drawn with a hidden 8x8 white texture in plain
+  Modulate mode (`GL/platform.h`), and the PowerVR's Modulate takes alpha from
+  the texture, not the vertex. Every translucent untextured quad drew opaque.
+  Modulate-alpha is what GL_MODULATE already maps to for real textures.
+
+The patch header says how to apply and rebuild. Rebuilding needs
+`source /opt/toolchains/dc/kos/environ.sh` first; without it kos-cc fails with
+`exec: --: invalid option`.
+
+A build against an unpatched libGL will link and run, but mipmapped textures,
+fades and sprite lighting will not look the same, so it is not comparable to the
+builds recorded in `BUILDS.md`
 — the same caveat as the `KOS_CFLAGS` one in `CLAUDE.md`.
 
 ### Targets

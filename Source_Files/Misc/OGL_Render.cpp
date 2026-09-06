@@ -92,6 +92,9 @@ Dec 17, 2000 (Loren Petrich):
 #include <string.h>
 #include <stdlib.h>
 #include <math.h>
+#ifdef DC
+#include <unistd.h>
+#endif
 
 #include "cseries.h"
 
@@ -1966,6 +1969,17 @@ bool OGL_RenderWall(polygon_definition& RenderPolygon, bool IsVertical)
 // Returns true if OpenGL is active; if not, then false.
 bool OGL_RenderSprite(rectangle_definition& RenderRectangle)
 {
+#ifdef DC
+	/* STATICTEST on the disc: everything teleports, forever. Emulator only. */
+	{
+		static int test = -1;
+		if (test < 0) test = (access("/cd/AlephOne/STATICTEST", F_OK) == 0);
+		if (test) {
+			RenderRectangle.transfer_mode = _static_transfer;
+			RenderRectangle.transfer_data = (uint16)(dynamic_world->tick_count * 600);
+		}
+	}
+#endif
 	if (!OGL_IsActive()) return false;
 		
 	// Set up the texture manager with the input manager
@@ -2121,25 +2135,27 @@ bool OGL_RenderSprite(rectangle_definition& RenderRectangle)
 	TMgr.RenderNormal();	// Always do this, of course
 	if (RenderRectangle.transfer_mode == _static_transfer)
 	{
+#ifdef DC
+		// The noise is in the texture (TextureManager::StaticNoise). Draw it
+		// once, unlit, with the alpha the lighting pass chose.
+		glColor4f(1,1,1,Color[3]);
+		{ extern int dc_gl_polys; dc_gl_polys++; }
+		glDrawArrays(GL_POLYGON,0,4);
+#else
 		SetupStaticMode(RenderRectangle);
 		if (UseFlatStatic)
 		{
-			#ifdef DC
-				{ extern int dc_gl_polys; dc_gl_polys++; }
-			#endif
 			glDrawArrays(GL_POLYGON,0,4);
 		} else {
 			// Do multitextured stippling to create the static effect
 			for (int k=0; k<4; k++)
 			{
 				StaticModeIndivSetup(k);
-				#ifdef DC
-					{ extern int dc_gl_polys; dc_gl_polys++; }
-				#endif
 				glDrawArrays(GL_POLYGON,0,4);
 			}
 		}
 		TeardownStaticMode();
+#endif
 	}
 	else
 	{
