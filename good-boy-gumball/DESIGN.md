@@ -152,6 +152,12 @@ The black cat is real and his name is Beans.
 
 Allusion, never statement. That is the register, and it is given.
 
+Also given:
+
+- **Beans is not outright a villain.**
+- **He is definitely not nice.**
+- **He and Gumball come to terms by the end of the game.**
+
 ## 6. Carrots
 
 Carrots are Gumball's power-ups and his health. He loved them.
@@ -567,6 +573,18 @@ The one thing Gumball wanted more than anything (section 4a: he always wanted to
 be near family) is the exact thing Beans now has. Beans does not have to threaten
 him or lie to him. He only has to mention that everybody is doing fine.
 
+### He means it
+
+Section 5: not a villain, but definitely not nice.
+
+The distinction is that he has no plan and wants nothing from Gumball. He is not
+working toward anything and there is nothing to thwart. But every jab is
+deliberate. He is not a misunderstood cat who is accidentally hurtful, and any
+writing that makes him gentle or oblivious is wrong.
+
+**He is petty.** That is a smaller word than villain and a truer one, and it is
+far more of a cat.
+
 ### The rule that keeps him fair
 
 > **Beans is right about every fact and wrong about what they mean.**
@@ -593,12 +611,26 @@ Same shape, opposite directions, and they are the two things the player is
 holding at once for most of the game. Neither one has to be explained.
 
 ### His resolution is harder than forgiveness
-Section 5: they eventually tolerated each other.
+Section 5: they eventually tolerated each other, and they come to terms by the
+end of the game.
 
-If Beans's whole function is that he took the place, then tolerance at the end
-means Gumball accepting that the place was taken and sitting down next to him
-anyway. That is a heavier thing than being forgiven, it is what actually happened
-between them, and it is the reason there is no cat boss and no cat redemption.
+If Beans's whole function is that he took the place, then coming to terms means
+Gumball accepting that the place was taken and sitting down next to him anyway.
+That is a heavier thing than being forgiven, it is what actually happened between
+them, and it is the reason there is no cat boss and no cat redemption.
+
+### PROPOSED: how they come to terms, with no dialogue
+
+The field fills up with family, one per reunion (section 8d).
+
+**Beans is the fifth one to turn up.** Uninvited, after the fourth reunion,
+sitting a little apart from everybody. Nobody calls him over and nobody makes him
+leave. He is simply in the picture.
+
+That is coming to terms, it uses a mechanic that already exists, it needs no
+lines, and it does not soften him. He does not apologise and he is not forgiven.
+He is just allowed to stay, which is what tolerating somebody actually looks
+like.
 
 ## 9. The three-level shape
 
