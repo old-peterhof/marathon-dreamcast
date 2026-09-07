@@ -193,7 +193,7 @@ ifdef HEAPCHECK
 HEAPCHECK_OBJS = dc/dc_heapcheck.o
 HEAPCHECK_LDFLAGS = -Wl,--wrap=malloc,--wrap=free,--wrap=calloc,--wrap=realloc,--wrap=memalign,--wrap=_malloc_r,--wrap=_free_r,--wrap=_calloc_r,--wrap=_realloc_r,--wrap=_memalign_r,--wrap=posix_memalign,--wrap=aligned_alloc
 endif
-DC_OBJS = dc/dc_fade.o dc/dc_compat.o dc/dc_input.o dc/dc_rumble.o dc/dc_vmu.o dc/dc_profiler.o \
+DC_OBJS = dc/dc_fade.o dc/dc_compat.o dc/dc_input.o dc/dc_rumble.o dc/dc_vmu.o dc/dc_profiler.o dc/dc_vmu_hud.o \
           dc/dc_maple.o dc/dc_blit.o dc/dc_wad.o dc/vendor/sh4zam_src/shz_mem_sh4.o \
           dc/vendor/vmu_profiler.o
 

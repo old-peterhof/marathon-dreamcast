@@ -13,6 +13,8 @@ static int in_game;
 static unsigned wanted_power, wanted_ms, sent_power, generation, sent_generation;
 static uint64_t deadline;
 static int active_port = -1, active_unit = -1;
+static unsigned status_bits;
+unsigned dc_rumble_status(void) { return status_bits; }
 
 static void request(unsigned power, unsigned milliseconds)
 {
@@ -95,12 +97,14 @@ void dc_rumble_poll(void)
         sent_power = 0;
         sent_generation = generation - 1;
     }
-    if (!pack) { wanted_power = 0; return; }
+    if (!pack) { wanted_power = 0; status_bits &= ~1u; return; }
+    status_bits |= 1u;
     /* Only a request that has been sent can expire. */
     if (!in_game || (sent_generation == generation && now >= deadline)) wanted_power = 0;
     if (wanted_power == sent_power &&
         (!wanted_power || sent_generation == generation)) return;
-    if (send_effect(pack, wanted_power) != MAPLE_EOK) return;
+    if (send_effect(pack, wanted_power) != MAPLE_EOK) { status_bits |= 4u; return; }
+    status_bits = (status_bits & ~4u) | 2u;
     if (wanted_power && sent_generation != generation) deadline = now + wanted_ms;
     sent_power = wanted_power;
     sent_generation = generation;

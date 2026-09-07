@@ -254,8 +254,11 @@ int vmu_profiler_stop(void)
 
 	profiler_->done = true;
 
-	bool join_value = true;
-	if (thd_join(profiler_->thread, (void **)&join_value) < 0) {
+	/* Local fix: thd_join stores a pointer, and this was a one-byte bool on
+	   the stack; the write clobbered the return address and the game jumped
+	   to 0x8c000000 the first time the profiler was stopped. */
+	void *join_value = (void *)1;
+	if (thd_join(profiler_->thread, &join_value) < 0) {
 		fprintf(stderr, "\tFailed to join thread!\n");
 		return false;
 	}

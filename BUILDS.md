@@ -55,3 +55,4 @@ to the engine clamp, and the VMU Profiler. Git history has the detail.
 | b82 | vram | 0200e8c | Font atlases released per level (384 KB VRAM leak per restart); eviction no longer waits on the PVR or chases a contiguous block |
 | b83 | sky | 99d72c4 | First console feedback: sky texture pinned and never drawn unless resident (was VRAM garbage on hardware); rumble continuous, stronger, deadline from acceptance |
 | b84 | weapons | 80544fb | Rumble per weapon and trigger (table in weapons.cpp), fusion charge hold, hits scaled by damage |
+| b85 | vmuhud | 9f0b4c3 | VMU screen as a second HUD: weapon, spares, fps, magazine, shield, oxygen, rumble indicator; profiler stop stack smash fixed |

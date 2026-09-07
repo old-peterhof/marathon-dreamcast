@@ -680,6 +680,13 @@ static const struct dc_rumble_spec dc_weapon_rumble_table[MAXIMUM_NUMBER_OF_WEAP
 	{ {0, 0},   {0, 0}   },	/* ball */
 	{ {3, 55},  {3, 55}  },	/* SMG */
 };
+/* For the VMU screen: which item is this trigger's ammunition (NONE if none). */
+short dc_weapon_ammunition_item(short weapon_type, short which_trigger)
+{
+	if (weapon_type < 0 || weapon_type >= MAXIMUM_NUMBER_OF_WEAPONS) return NONE;
+	if (which_trigger < 0 || which_trigger >= NUMBER_OF_TRIGGERS) return NONE;
+	return weapon_definitions[weapon_type].weapons_by_trigger[which_trigger].ammunition_type;
+}
 static void dc_weapon_rumble(short weapon_type, short which_trigger)
 {
 	if (weapon_type < 0 || weapon_type >= MAXIMUM_NUMBER_OF_WEAPONS) return;

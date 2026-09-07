@@ -29,6 +29,8 @@
 #include <dc/video.h>
 #include <dc/biosfont.h>
 #include <arch/timer.h>
+#include <dc/maple.h>
+#include <dc/maple/vmu.h>
 
 /*
  *	dc_trace -- draw a line of text straight into video RAM.
@@ -248,6 +250,16 @@ void *dc_read_file_span(const char *path, unsigned long offset, unsigned long le
 	if (skip)
 		memmove(buf, buf + skip, length);
 	return buf;
+}
+
+int dc_trace_on(void) { return dc_trace_enabled(); }
+
+/* Send a 48x32 1-bit frame to the first VMU screen; see dc_vmu_hud.cpp. */
+int dc_vmu_lcd_send(const void *bitmap)
+{
+	maple_device_t *vmu = maple_enum_type(0, MAPLE_FUNC_LCD);
+	if (!vmu) return -2;
+	return vmu_draw_lcd(vmu, bitmap) == MAPLE_EOK ? 0 : -1;
 }
 
 /* Milliseconds since boot, for C++98 callers that cannot include KOS's timer.h. */

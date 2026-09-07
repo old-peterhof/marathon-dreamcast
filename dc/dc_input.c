@@ -387,9 +387,13 @@ void dc_input_init_video(void)
 	SDL_DC_ShowAskHz(SDL_FALSE);
 }
 
+void dc_vmu_hud_set_ingame(int yes);
+void dc_vmu_hud_poll(void);
+
 void dc_input_set_ingame(int yes)
 {
 	dc_rumble_set_ingame(yes);
+	dc_vmu_hud_set_ingame(yes);
 	if (in_game == (yes != 0))
 		return;
 
@@ -478,6 +482,7 @@ void dc_input_poll(void)
 
 	busy = 1;
 	dc_rumble_poll();
+	dc_vmu_hud_poll();
 	dc_input_poll_body();
 	busy = 0;
 }
