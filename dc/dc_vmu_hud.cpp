@@ -1,7 +1,7 @@
 /*
  *	dc_vmu_hud.cpp -- the VMU screen as a second HUD.
  *
- *	48x32, one bit. Top line: weapon name, spare magazines, framerate. Middle:
+ *	48x32, one bit. Top line: weapon name and spare magazines. Middle:
  *	the magazine as a grid of bullets (one per round, the way the panel draws
  *	it) or an energy bar, one per trigger when two weapons are up. Bottom: the
  *	shield and oxygen bars with tick marks, the way the 1995 panel had them.
@@ -10,8 +10,8 @@
  *	in a byte's high bit (see vmu_xbm_to_bitmap in KOS), which is how a VMU
  *	reads when it sits in a controller. plot() hides that. Frames go out at
  *	most every four game frames and only when something changed; a busy Maple
- *	bus (MAPLE_EAGAIN) is retried next frame. The framerate profiler owns the
- *	screen outside play and is stopped while this runs.
+ *	bus (MAPLE_EAGAIN) is retried next frame. Outside play the screen shows a
+ *	title card.
  */
 #ifdef DC
 #include <string.h>
@@ -26,8 +26,6 @@
 
 extern "C" void dc_trace(int slot, const char *fmt, ...);
 extern "C" int dc_trace_on(void);
-extern "C" void dc_profiler_stop(void);
-extern "C" void dc_profiler_start(void);
 extern "C" unsigned long dc_ms(void);
 extern "C" int dc_vmu_lcd_send(const void *bitmap);	/* dc_compat.c: 0 sent, -1 bus busy, -2 no VMU */
 extern "C" unsigned dc_rumble_status(void);
@@ -41,8 +39,6 @@ uint8_t Sent[W * H / 8];
 bool Pending = false;
 bool Fresh = false;
 bool InGame = false;
-unsigned Frames = 0, Fps = 0;
-unsigned long FpsSince = 0;
 
 inline void plot(int x, int y)
 {
@@ -153,7 +149,7 @@ void compose()
 	player_data *player = get_player_data(local_player_index);
 	if (!player) return;
 
-	// Header: weapon, spare magazines, framerate
+	// Header: weapon, spare magazines
 	short weapon = get_player_desired_weapon(local_player_index);
 	const char *name = (weapon >= 0 && weapon < MAXIMUM_NUMBER_OF_WEAPONS) ? WeaponNames[weapon] : "";
 	text(0, 0, name);
@@ -166,11 +162,6 @@ void compose()
 			s[0] = 'x'; if (n >= 10) { s[1] = '0' + n / 10; s[2] = '0' + n % 10; s[3] = 0; } else { s[1] = '0' + n; s[2] = 0; }
 			text(25, 0, s);
 		}
-	}
-	{
-		char f[4]; unsigned v = Fps > 99 ? 99 : Fps;
-		f[0] = v >= 10 ? '0' + v / 10 : ' '; f[1] = '0' + v % 10; f[2] = 0;
-		text(W - 7, 0, f);
 	}
 	hline(0, W - 1, 6);
 	// Rumble pack, at the right end of the rule: outline = pack seen, solid =
@@ -208,6 +199,16 @@ void compose()
 	bar(27, 'O', player->suit_oxygen, PLAYER_MAXIMUM_SUIT_OXYGEN);
 }
 
+// Between levels and in the menus.
+void compose_idle()
+{
+	memset(Frame, 0, sizeof Frame);
+	text(8, 6, "MARATHON");
+	hline(4, W - 5, 13);
+	text(6, 16, "DREAMCAST");
+	box(0, 0, W - 1, H - 1);
+}
+
 void dump()
 {
 	// The screen as text, for a debug log: what the VMU shows, seen upright.
@@ -230,20 +231,16 @@ extern "C" void dc_vmu_hud_set_ingame(int yes)
 {
 	if (InGame == (yes != 0)) return;
 	InGame = yes != 0;
-	if (InGame) { dc_profiler_stop(); Fresh = true; memset(Sent, 0xff, sizeof Sent); }
-	else dc_profiler_start();
+	memset(Sent, 0xff, sizeof Sent);
+	if (InGame) Fresh = true;
+	else { compose_idle(); Pending = true; }
 }
-
-extern "C" void dc_vmu_hud_frame(void) { ++Frames; }	/* once per presented frame, from screen_sdl */
 
 extern "C" void dc_vmu_hud_poll(void)
 {
 	static unsigned tick = 0;
-	if (!InGame) return;
 	unsigned long now = dc_ms();
-	if (!FpsSince) FpsSince = now;
-	if (now - FpsSince >= 1000) { Fps = (Frames * 1000u) / (unsigned)(now - FpsSince); Frames = 0; FpsSince = now; }
-	if ((++tick & 3) == 0 || Fresh)
+	if (InGame && ((++tick & 3) == 0 || Fresh))
 	{
 		Fresh = false;
 		compose();

@@ -180,20 +180,21 @@ Flycast never refuses, which is why it felt fine there. No pack fitted is a
 no-op.
 
 **The VMU screen is a second HUD.** In play, `dc/dc_vmu_hud.cpp` draws the
-48x32 screen: weapon name, spare magazines and the framerate on the top line
-(the framerate you asked to see on the VMU stays there), then the magazine as
-one bullet per round in the panel's own rows and columns, or an energy bar
-with quarter ticks for the beam weapons, one panel per trigger when two
-weapons are up, then the shield and oxygen bars with tick marks at the thirds
-where the panel changes colour and a hatched second layer past 1x shields.
-Frames go out through `dc_vmu_lcd_send()` in `dc_compat.c` at most every four
-game frames and only when something changed; a busy Maple bus is retried next
-frame. The raw LCD buffer is the image rotated 180 degrees with the leftmost
-pixel in a byte's high bit, the KOS icon convention, which is how a VMU reads
-in a controller. Outside play the framerate profiler owns the screen as
-before; it is stopped on entering the world (its stop routine had a stack
-smash, fixed in `dc/vendor/vmu_profiler.c`, because nothing had ever stopped
-it). Under `DEBUG` slot 71 prints the screen as text every two seconds.
+48x32 screen: weapon name and spare magazines on the top line, then the
+magazine as one bullet per round in the panel's own rows and columns, or an
+energy bar with quarter ticks for the beam weapons, one panel per trigger when
+two weapons are up, then the shield and oxygen bars with tick marks at the
+thirds where the panel changes colour and a hatched second layer past 1x
+shields. The right end of the rule under the top line reports the rumble pack
+(outline: seen; solid: a command queued; notch: last send refused). Outside
+play it shows a title card. Frames go out through `dc_vmu_lcd_send()` in
+`dc_compat.c` at most every four game frames and only when something changed;
+a busy Maple bus is retried next frame. The raw LCD buffer is the image
+rotated 180 degrees with the leftmost pixel in a byte's high bit, the KOS icon
+convention, which is how a VMU reads in a controller. Under `DEBUG` slot 71
+prints the screen as text every two seconds. The framerate readout and the
+profiler thread that drew it are gone (b87): the game holds 30 fps and the
+number had no further use.
 
 ## Saves
 

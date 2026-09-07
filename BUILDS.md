@@ -57,3 +57,4 @@ to the engine clamp, and the VMU Profiler. Git history has the detail.
 | b84 | weapons | 80544fb | Rumble per weapon and trigger (table in weapons.cpp), fusion charge hold, hits scaled by damage |
 | b85 | vmuhud | 9f0b4c3 | VMU screen as a second HUD: weapon, spares, fps, magazine, shield, oxygen, rumble indicator; profiler stop stack smash fixed |
 | b86 | sky-hud | 82ed68d | Sky stored untwiddled (GLdc's twiddle loop byte-writes VRAM); HUD ammo art draws; text keeps its own blend; rumble drops requests the bus refused; VMU fps counts frames |
+| b87 | vmu-card | 54cb71f | VMU: framerate and profiler removed; title card outside play |

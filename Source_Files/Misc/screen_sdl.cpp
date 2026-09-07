@@ -298,8 +298,6 @@ extern "C" void dc_heap_trace(int slot, const char *where);
 extern "C" unsigned dc_heap_top(void);
 extern "C" void dc_memory_trace(void);
 extern "C" void dc_pvr_trace(int slot, const char *where);
-extern "C" void dc_profiler_frame(void);
-extern "C" void dc_vmu_hud_frame(void);
 // The row copy lives in dc/dc_blit.c, compiled as C: sh4zam's headers need C++11
 // and asm string forms this file cannot use under -std=gnu++98.
 extern "C" void dc_blit_rows(void *dst, const void *src, int bytes, int rows,
@@ -1186,8 +1184,6 @@ static void update_screen(SDL_Rect &source, SDL_Rect &destination, bool hi_rez)
 			SDL_BlitSurface(world_pixels, NULL, main_surface, &destination);
 
 		// One rendered frame: tell the VMU Profiler so it can average a rate.
-		dc_profiler_frame();
-		dc_vmu_hud_frame();
 #else
 		SDL_BlitSurface(world_pixels, NULL, main_surface, &destination);
 #endif

@@ -163,7 +163,6 @@ extern int fs_mem_init(void);
 void dc_trace(int slot, const char *fmt, ...);
 void dc_input_init_video(void);		// suppress SDL's 60Hz prompt; see dc_input.c
 int  dc_maple_wait_scan_bounded(unsigned int timeout_ms);	// see dc_maple.c
-void dc_profiler_start(void);		// VMU Profiler, gated on a PROFILE marker
 void dc_input_dump_maple(void);		// lists the maple bus once, DEBUG builds only
 void dc_build_stamp(const char *tag);	// draws the build tag on the menu
 #endif
@@ -281,7 +280,6 @@ static void initialize_application(void)
 	// it found nothing, so CONTINUE GAME was never offered after a power cycle
 	// even with saves on the card.
 	dc_vmu_load_saves("/ram", "/cd/AlephOne/Map");
-	dc_profiler_start();
 #endif
 
 #ifdef HAVE_SDL_NET
