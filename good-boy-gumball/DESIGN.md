@@ -67,6 +67,9 @@ One section per family member, filled in from the author only.
 - He played chase around the downstairs when they had a toy or a snack he
   wanted. Usually carrots or bread.
 - He eagerly waited for the Boy and the Girl to come home from school.
+- They went to the beach in Benicia and played around in the water.
+- They went on walks.
+- He chased the Boy around the house.
 
 ### the Girl
 
@@ -79,6 +82,9 @@ One section per family member, filled in from the author only.
 - He played chase around the downstairs when they had a toy or a snack he
   wanted. Usually carrots or bread.
 - He eagerly waited for the Boy and the Girl to come home from school.
+- They went on walks.
+- He hung out in her room while she listened to music, or drilled, or made
+  movies.
 
 ### the Mother
 
@@ -408,6 +414,47 @@ The field is wild because it has been a long time. **OPEN:** whether it also
 recovers as it fills, or whether it stays overgrown and only the company changes.
 The second is more restrained and probably better, but it is the author's call.
 
+## 8e. The four worlds separated themselves
+
+With the Boy's beach and the Girl's room recorded, all four have distinct
+settings and none of them is a guess. The split came out of the author's material
+rather than a designer's plan:
+
+| | Outdoors | Indoors |
+|---|---|---|
+| **Loud** | **the Boy** — the beach at Benicia, the water, chase around the house, walks | **the Girl** — her room, music, movies, walks |
+| **Quiet** | **the Father** — the office, the desert, the car, the kitchen floor | **the Mother** — the couch, her shows, the fur trimming |
+
+The Boy is water and the Father is desert. They are the two outdoor worlds and
+they are opposites, which makes them the natural first and last.
+
+The "same house twice" problem noted in section 8c is gone.
+
+### Benicia
+A real place, and the art should look like it rather than like a stock beach. It
+sits on the Carquinez Strait, so the reference is bay and marsh and low hills, not
+surf and palm trees. **The author should correct any of this that is wrong.**
+
+### Water on DMG
+Good news technically. Animated background tiles, a handful of frames, cheap in
+both VRAM and CPU, and water reads better on a 4-shade screen than almost
+anything else available. It is also the maximum possible contrast with the
+desert, which costs nothing to exploit since they are different worlds in
+different banks.
+
+### The Girl's world has a soundtrack in it
+She listened to music in her room and made movies there. On a four-channel chip
+that is a hook nobody has to invent: hers is the world where music is a thing
+inside the level rather than a score over it.
+
+What that becomes is **OPEN**. It is noted because the author put a stereo and a
+camera in a bedroom, and those are both machines that make the world different.
+
+### What the kids share, and what they do not
+Walks and chase and the squeaking toys and waiting after school belong to both
+the Boy and the Girl. What separates them is water and a bedroom. Build the
+shared material into whichever world it suits and do not spend it twice.
+
 ## 9. The three-level shape
 
 A template so each world reads the same way and anticipation does the work.
@@ -591,9 +638,11 @@ Everything after is a proven shape in different art.
 
 Waiting on the author.
 
-1. **More material for the Boy**, per section 8c. He and the Girl currently
-   share almost everything, which risks worlds one and two feeling like the same
-   house twice.
+1. ~~More material for the Boy.~~ **Answered.** The beach at Benicia and the
+   water give him a world of his own. See section 8e.
+1z. **What "or drilled" means** in the Girl's room. Recorded verbatim and not
+   interpreted. Drill team, an instrument, a power drill and making things, or
+   something else entirely.
 1a. **Is the car a level, or the thing that connects the Father's three?**
 1b. **Whether WAITING is ever acknowledged out loud.** It is now GIVEN as
    character (section 4a). The open part is only whether the game names it or
