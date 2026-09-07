@@ -16,6 +16,10 @@
 
 // From screen_sdl.cpp
 extern short interface_bit_depth;
+#ifdef DC
+extern SDL_Surface *dc_ui_target(void);
+extern void dc_ui_flush(SDL_Surface *s);
+#endif
 
 // From screen_drawing_sdl.cpp
 extern bool draw_clip_rect_active;
@@ -714,7 +718,12 @@ static void draw_picture(LoadedResource &rsrc)
 	SDL_Surface *s = picture_to_surface(rsrc);
 	if (s == NULL)
 		return;
+#ifdef DC
+	SDL_Surface *video = dc_ui_target();
+	if (!video) { SDL_FreeSurface(s); return; }
+#else
 	SDL_Surface *video = SDL_GetVideoSurface();
+#endif
 
 	// Default source rectangle
 	SDL_Rect src_rect = {0, 0, s->w, s->h};
@@ -744,10 +753,14 @@ static void draw_picture(LoadedResource &rsrc)
 	SDL_FreeSurface(s);
 
 	// Update display and free picture surface
+#ifdef DC
+	dc_ui_flush(video);
+#else
 	SDL_UpdateRects(video, 1, &dst_rect);
 #ifdef HAVE_OPENGL
 	if (video->flags & SDL_OPENGL)
 		SDL_GL_SwapBuffers();
+#endif
 #endif
 }
 
@@ -830,11 +843,18 @@ void scroll_full_screen_pict_resource_from_scenario(int pict_resource_number, bo
 			// Blit part of picture
 			src_rect.x = scroll_horizontal ? delta : 0;
 			src_rect.y = scroll_vertical ? delta : 0;
+#ifdef DC
+			SDL_Surface *video = dc_ui_target();
+			if (!video) break;
+			SDL_BlitSurface(s, &src_rect, video, &dst_rect);
+			dc_ui_flush(video);
+#else
 			SDL_BlitSurface(s, &src_rect, SDL_GetVideoSurface(), &dst_rect);
 			SDL_UpdateRects(SDL_GetVideoSurface(), 1, &dst_rect);
 #ifdef HAVE_OPENGL
 			if (SDL_GetVideoSurface()->flags & SDL_OPENGL)
 				SDL_GL_SwapBuffers();
+#endif
 #endif
 
 			// Give system time

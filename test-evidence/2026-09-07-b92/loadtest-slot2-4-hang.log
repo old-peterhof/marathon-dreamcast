@@ -1,0 +1,300 @@
+2026-09-07 08:48:01.510 Flycast[52172:2128772] [92msdl/sdl.cpp:899 N[RENDERER]: Monitor refresh rate: 120 Hz (1800 x 1169)[0m
+2026-09-07 08:48:01.510 Flycast[52172:2128772] [92mrend/vulkan/vulkan_context.cpp:303 N[RENDERER]: Vulkan API 1.1. Device Apple M5 Pro[0m
+2026-09-07 08:48:01.511 Flycast[52172:2128772] [92mrend/vulkan/vulkan_context.cpp:456 N[RENDERER]: Device extension enabled: VK_KHR_swapchain[0m
+2026-09-07 08:48:01.511 Flycast[52172:2128772] [92mrend/vulkan/vulkan_context.cpp:456 N[RENDERER]: Device extension enabled: VK_KHR_portability_subset[0m
+2026-09-07 08:48:01.511 Flycast[52172:2128772] [92mrend/vulkan/vulkan_context.cpp:456 N[RENDERER]: Device extension enabled: VK_EXT_metal_objects[0m
+2026-09-07 08:48:01.511 Flycast[52172:2128772] [92mrend/vulkan/vulkan_context.cpp:459 N[RENDERER]: Device extension unavailable: VK_EXT_provoking_vertex[0m
+2026-09-07 08:48:01.511 Flycast[52172:2128772] [92mrend/vulkan/vulkan_context.cpp:456 N[RENDERER]: Device extension enabled: VK_KHR_buffer_device_address[0m
+2026-09-07 08:48:01.511 Flycast[52172:2128772] [92mrend/vulkan/vulkan_context.cpp:552 N[RENDERER]: bufferDeviceAddressSupported 1[0m
+2026-09-07 08:48:01.515 Flycast[52172:2128772] [92mrend/vulkan/vulkan_context.h:332 N[RENDERER]: Using depth format D32SfloatS8Uint tiling Optimal[0m
+2026-09-07 08:48:01.567 Flycast[52172:2128772] [92mui/gui.cpp:245 N[RENDERER]: Screen DPI is 255, size 2072 x 1122. Scaling by 2.00[0m
+2026-09-07 08:48:01.730 Flycast[52172:2128772] [92mrend/vulkan/vulkan_renderer.cpp:246 N[RENDERER]: VulkanRenderer::Init[0m
+2026-09-07 08:48:01.730 Flycast[52172:2128880] [92moslib/oslib.cpp:568 N[COMMON]: Uploading minidump /tmp/45925F4D-37FC-4723-8F78-5C59691F3AEA.dmp[0m
+2026-09-07 08:48:01.748 Flycast[52172:2128890] [92mhw/mem/addrspace.cpp:425 N[VMEM]: Info: nvmem is enabled[0m
+2026-09-07 08:48:01.751 Flycast[52172:2128890] [92mhw/mem/addrspace.cpp:461 N[VMEM]: BASE 0x140620000 RAM(16 MB) 0x14c620000 VRAM64(8 MB) 0x144620000 ARAM(2 MB) 0x160620000[0m
+2026-09-07 08:48:01.754 Flycast[52172:2128890] [92mhw/mem/addrspace.cpp:425 N[VMEM]: Info: nvmem is enabled[0m
+2026-09-07 08:48:01.755 Flycast[52172:2128890] [92mhw/mem/addrspace.cpp:461 N[VMEM]: BASE 0x140620000 RAM(16 MB) 0x14c620000 VRAM64(8 MB) 0x144620000 ARAM(2 MB) 0x160620000[0m
+2026-09-07 08:48:01.756 Flycast[52172:2128890] [92memulator.cpp:60 N[BOOT]: Game ID is [MARATHON2][0m
+2026-09-07 08:48:01.757 Flycast[52172:2128890] [92memulator.cpp:617 N[BOOT]: Did not load BIOS, using reios[0m
+2026-09-07 08:48:01.757 Flycast[52172:2128890] [92memulator.cpp:60 N[BOOT]: Game ID is [MARATHON2][0m
+2026-09-07 08:48:01.830 Flycast[52172:2128893] [92mreios/reios.cpp:639 N[REIOS]: -----------------[0m
+2026-09-07 08:48:01.830 Flycast[52172:2128893] [92mreios/reios.cpp:640 N[REIOS]: REIOS: Booting up[0m
+2026-09-07 08:48:01.830 Flycast[52172:2128893] [92mreios/reios.cpp:641 N[REIOS]: -----------------[0m
+2026-09-07 08:48:02.007 Flycast[52172:2129004] [92mhw/mem/addrspace.cpp:425 N[VMEM]: Info: nvmem is enabled[0m
+2026-09-07 08:48:02.008 Flycast[52172:2129004] [92mhw/mem/addrspace.cpp:461 N[VMEM]: BASE 0x140620000 RAM(16 MB) 0x14c620000 VRAM64(8 MB) 0x144620000 ARAM(2 MB) 0x160620000[0m
+2026-09-07 08:48:02.009 Flycast[52172:2129004] [92memulator.cpp:60 N[BOOT]: Game ID is [MARATHON2][0m
+2026-09-07 08:48:02.010 Flycast[52172:2129004] [92memulator.cpp:617 N[BOOT]: Did not load BIOS, using reios[0m
+2026-09-07 08:48:02.010 Flycast[52172:2129004] [92memulator.cpp:60 N[BOOT]: Game ID is [MARATHON2][0m
+2026-09-07 08:48:02.022 Flycast[52172:2129005] [92mreios/reios.cpp:639 N[REIOS]: -----------------[0m
+2026-09-07 08:48:02.022 Flycast[52172:2129005] [92mreios/reios.cpp:640 N[REIOS]: REIOS: Booting up[0m
+2026-09-07 08:48:02.022 Flycast[52172:2129005] [92mreios/reios.cpp:641 N[REIOS]: -----------------[0m
+
+--
+KallistiOS v2.3.0 [dreamcast/pristine]
+  Git revision: 670ce33-dirty
+  Sun Aug 16 10:51:04 PDT 2026
+  mgibbons@MaxBook-Pro.local:/opt/toolchains/dc/kos
+  sh-elf-gcc (GCC) 15.2.0
+maple: active drivers:
+    Dreameye (Camera): Camera
+    Sound Input Peripheral: Microphone
+    PuruPuru (Vibration) Pack: JumpPack
+    VMU Driver: Clock, LCD, MemoryCard
+    Mouse Driver: Mouse
+    Keyboard Driver: Keyboard
+    Controller Driver: Controller
+    Lightgun: LightGun
+vid_set_mode: 640x480IL NTSC with 1 framebuffers.
+
+Aleph One 0.12.0
+http://source.bungie.org/
+
+Original code by Bungie Software <http://www.bungie.com/>
+Additional work by Loren Petrich, Chris Pruett, Rhys Hill et al.
+Expat XML library by James Clark
+SDL port by Christian Bauer <Christian.Bauer@uni-mainz.de>
+
+This is free software with ABSOLUTELY NO WARRANTY.
+You are welcome to redistribute it under certain conditions.
+For details, see the file COPYING.
+fs_iso9660: disc change detected
+  (joliet level 3 extensions detected)
+[dctrace 20] maple A0: Dreamcast Controller          Produced By or Under License From SEGA ENTERPRISES,LTD.     ®ô func=01000000
+[dctrace 21] maple A1: Visual Memory                 Produced By or Under License From SEGA ENTERPRISES,LTD.     | func=0e000000
+[dctrace 22] maple A2: Puru Puru Pack                Produced By or Under License From SEGA ENTERPRISES,LTD.     È func=00010000
+[dctrace 17] vmu: 2 saved game(s) on the card, 2 in slots
+[dctrace 16] vmu: loaded 2525 bytes from /vmu/a1
+[dctrace 16] vmu: saved 2560 bytes to /vmu/a1
+vmufs_write: padded file 'ALEPHONE.PRF' from 2688 to 3072 bytes
+[dctrace 58] sound: buffer budget 3072 KB
+Dreamcast audio driver initialized: dcAICAaudio
+vid_set_mode: 640x480IL NTSC with 1 framebuffers.
+[dctrace 0] mode 0: 640x480x16 -> surf 640x480x16 px=0xa5000000 flags=80000021
+[dctrace 32] gl: requested=1 obtained=0
+[dctrace 61] ui: reserved overlay 0x8c22ff40 px=0x8c256ad8
+[dctrace 64] rumble: pack found (port 0 unit 2)
+[dctrace 13] controller: found, polling
+[dctrace 1] autostart mode 3
+[dctrace 25] plate: plate-main.bmp loaded 640x480
+[dctrace 19] input_device=1 sens=30/30
+[dctrace 2] autostart: selecting iLoadGame
+[dctrace 74] mark C1
+[dctrace 74] mark C2
+[dctrace 17] vmu: restored slot 2 from /vmu/a1
+[dctrace 74] mark C3
+[dctrace 74] mark C4
+[dctrace 74] mark L1
+[dctrace 57] load: map wad 3 ms
+[dctrace 74] mark L2
+[dctrace 23] load: /ram/Slot 2 -> load_level_from_map=1 err=0
+[dctrace 74] mark L3
+[dctrace 74] mark L4
+[dctrace 24] load: parent_checksum=2d71ccb4 found=1
+[dctrace 74] mark L5
+vid_set_mode: 640x480IL NTSC with 1 framebuffers.
+
+Welcome to GLdc! Git revision: 1.1-698-ga1cd
+
+[dctrace 74] mark S2
+[dctrace 1] mode 1: 640x480x16 -> surf 640x480x16 px=0x0 flags=80000022
+[dctrace 32] gl: requested=1 obtained=1
+[dctrace 31] gl: PowerVR2 CLX2 100mHz / 1.2 (partial) - GLdc 1.1
+GL_VENDOR: KallistiOS / Kazade
+GL_RENDERER: PowerVR2 CLX2 100mHz
+GL_VERSION: 1.2 (partial) - GLdc 1.1
+[dctrace 65] load: free 0 ms | 11 colls 279 ms | models 0 ms | colorenv 189 ms
+[dctrace 66]   parse: hdr 79 | alloc 1 | clut 15 | high 4 | low 14 | bitmaps 166 ms
+[dctrace 67]   bitmaps: 567 rle (33342 rows, 1492 KB) | 87 raw (1145 KB)
+[dctrace 54] load: collections 488 ms
+[dctrace 60] load: heap top after collections 0x8cb0a000 (11304 KB in use)
+[dctrace 55] load: monster sounds 9 ms
+[dctrace 56] load: game sounds 0 ms
+[dctrace 74] mark L6
+[dctrace 74] mark C5
+[dctrace 74] mark S1
+[dctrace 33] mode: 640x480x16 already set, not re-initialising
+[dctrace 40] heap: StartRun entry     0 KB
+[dctrace 37] txtr[0]: res=0 fmt=8056 far=2701
+[dctrace 38] txtr[1]: res=0 fmt=8056 far=2601
+[dctrace 39] txtr[2]: res=0 fmt=8056 far=2600
+[dctrace 39] txtr[3]: res=0 fmt=8056 far=2600
+[dctrace 41] heap: after StartTextures 0 KB
+[dctrace 42] heap: after screen font  0 KB
+[dctrace 43] heap: after map fonts    44 KB
+[dctrace 44] heap: after HUD fonts    236 KB
+[dctrace 45] heap: StartRun done      236 KB
+[dctrace 74] mark S3
+[dctrace 53] vram: 4572 KB free at StartRun done
+[dctrace 74] mark S4
+[dctrace 74] mark S5
+[dctrace 3] autostart: returned, state=8
+[dctrace 4] render_view wp=0x8cd061e8 640x320 bpp=16 pitch=1280
+[dctrace 36] heap: at first render    1848 KB
+[dctrace 39] txtr: 1 uploads; 1024x512 type=1 error=0000 free=3548 KB
+[dctrace 53] vq: 4048 entries, 126 KB index
+[dctrace 53] vq: 1 compressed sprite uploads, 0 ms reading
+[dctrace 39] txtr: 25 uploads; 64x128 type=2 error=0000 free=3005 KB
+[dctrace 6] frame 0: 0/12800 nonzero, first=0000
+[dctrace 71] vmu|###.###.###.###.###.............................|
+[dctrace 71] vmu|#....#..#....#..#...............................|
+[dctrace 71] vmu|###..#..###..#..###.............................|
+[dctrace 71] vmu|#....#....#..#....#.............................|
+[dctrace 71] vmu|#...###.###..#..###.............................|
+[dctrace 71] vmu|...........................................#####|
+[dctrace 71] vmu|############################################...#|
+[dctrace 71] vmu|...........................................#####|
+[dctrace 71] vmu|................................................|
+[dctrace 71] vmu|................................................|
+[dctrace 71] vmu|................................................|
+[dctrace 71] vmu|................................................|
+[dctrace 71] vmu|................................................|
+[dctrace 71] vmu|................................................|
+[dctrace 71] vmu|................................................|
+[dctrace 71] vmu|................................................|
+[dctrace 71] vmu|................................................|
+[dctrace 71] vmu|................................................|
+[dctrace 71] vmu|................................................|
+[dctrace 71] vmu|................................................|
+[dctrace 71] vmu|................................................|
+[dctrace 71] vmu|###..###########################################|
+[dctrace 71] vmu|#....##############.#############.##############|
+[dctrace 71] vmu|###..###########################################|
+[dctrace 71] vmu|..#..##############.#############.##############|
+[dctrace 71] vmu|###..###########################################|
+[dctrace 71] vmu|................................................|
+[dctrace 71] vmu|###..###########################################|
+[dctrace 71] vmu|#.#..##############.#############.##############|
+[dctrace 71] vmu|#.#..###########################################|
+[dctrace 71] vmu|#.#..##############.#############.##############|
+[dctrace 71] vmu|###..###########################################|
+[dctrace 12] fps 1.5  yaw=381 pitch=0 pos=11091,19517
+[dctrace 47] gl: polys=26 walls=70 setupfail=0 vecfail=0
+[dctrace 62] mem: level=0 tick=230 hp=150 heap=8cd7b000 vram=2722 KB largest=2710 KB
+[dctrace 63] ram: live=11684 KB reusable=87 KB
+[dctrace 7] frame 1: 0/12800 nonzero, first=0000
+[dctrace 31] gl: glEnable(0x3000) is not a PowerVR capability; dropped
+[dctrace 31] gl: clip plane 0 requested -- a model is being drawn
+[dctrace 8] frame 2: 0/12800 nonzero, first=0000
+[dctrace 39] txtr: 50 uploads; 32x32 type=2 error=0000 free=2638 KB
+[dctrace 53] vq: 25 compressed sprite uploads, 1 ms reading
+[dctrace 12] fps 29.9  yaw=381 pitch=0 pos=11091,19517
+[dctrace 47] gl: polys=801 walls=2100 setupfail=0 vecfail=0
+[dctrace 62] mem: level=0 tick=261 hp=150 heap=8cd7b000 vram=2541 KB largest=2536 KB
+[dctrace 63] ram: live=11732 KB reusable=39 KB
+[dctrace 39] txtr: 75 uploads; 64x128 type=2 error=0000 free=2525 KB
+2026-09-07 08:48:30.826 Flycast[52172:2128772] [92mrend/vulkan/vulkan_context.cpp:1620 N[RENDERER]: Swap interval changed to 2[0m
+[dctrace 12] fps 30.3  yaw=381 pitch=0 pos=11091,19517
+[dctrace 47] gl: polys=794 walls=2170 setupfail=0 vecfail=0
+[dctrace 62] mem: level=0 tick=292 hp=150 heap=8cd7b000 vram=2423 KB largest=2418 KB
+[dctrace 63] ram: live=11732 KB reusable=39 KB
+[dctrace 53] vq: 50 compressed sprite uploads, 1 ms reading
+[dctrace 39] txtr: 100 uploads; 32x32 type=2 error=0000 free=2351 KB
+[dctrace 12] fps 30.3  yaw=381 pitch=0 pos=11091,19517
+[dctrace 47] gl: polys=777 walls=2170 setupfail=0 vecfail=0
+[dctrace 62] mem: level=0 tick=323 hp=150 heap=8cd7b000 vram=2323 KB largest=2318 KB
+[dctrace 63] ram: live=11732 KB reusable=38 KB
+[dctrace 12] fps 30.3  yaw=381 pitch=0 pos=11091,19517
+[dctrace 47] gl: polys=816 walls=2170 setupfail=0 vecfail=0
+[dctrace 62] mem: level=0 tick=354 hp=150 heap=8cd7b000 vram=2205 KB largest=2200 KB
+[dctrace 63] ram: live=11733 KB reusable=38 KB
+[dctrace 39] txtr: 125 uploads; 256x64 type=2 error=0000 free=2163 KB
+[dctrace 53] vq: 75 compressed sprite uploads, 3 ms reading
+[dctrace 12] fps 30.3  yaw=381 pitch=0 pos=11091,19517
+[dctrace 47] gl: polys=796 walls=2170 setupfail=0 vecfail=0
+[dctrace 62] mem: level=0 tick=385 hp=150 heap=8cd7b000 vram=2047 KB largest=2041 KB
+[dctrace 63] ram: live=11733 KB reusable=38 KB
+[dctrace 12] fps 30.3  yaw=381 pitch=0 pos=11091,19517
+[dctrace 47] gl: polys=775 walls=2170 setupfail=0 vecfail=0
+[dctrace 62] mem: level=0 tick=416 hp=150 heap=8cd7b000 vram=2041 KB largest=2034 KB
+[dctrace 63] ram: live=11733 KB reusable=38 KB
+[dctrace 39] txtr: 150 uploads; 128x32 type=2 error=0000 free=2033 KB
+[dctrace 12] fps 30.3  yaw=381 pitch=0 pos=11091,19517
+[dctrace 47] gl: polys=766 walls=2170 setupfail=0 vecfail=0
+[dctrace 62] mem: level=0 tick=447 hp=150 heap=8cd83000 vram=2033 KB largest=2026 KB
+[dctrace 63] ram: live=11767 KB reusable=36 KB
+[dctrace 12] fps 30.3  yaw=381 pitch=0 pos=11091,19517
+[dctrace 47] gl: polys=744 walls=2170 setupfail=0 vecfail=0
+[dctrace 62] mem: level=0 tick=478 hp=150 heap=8cd83000 vram=2033 KB largest=2026 KB
+[dctrace 63] ram: live=11767 KB reusable=36 KB
+[dctrace 12] fps 30.3  yaw=381 pitch=0 pos=11091,19517
+[dctrace 47] gl: polys=744 walls=2170 setupfail=0 vecfail=0
+[dctrace 62] mem: level=0 tick=509 hp=150 heap=8cd83000 vram=2033 KB largest=2026 KB
+[dctrace 63] ram: live=11767 KB reusable=36 KB
+[dctrace 53] vram: 3746 KB free after StopRun
+[dctrace 33] mode: retaining GL for menu
+[dctrace 59] sound: 32 evictions, holding 715 KB of 3072 KB
+[dctrace 65] ui: upload 640x480 err=0x0, free 3146 KB, contiguous 2710 KB, need 600 KB
+[dctrace 75] reloadtest: menu after session 0
+[dctrace 71] vmu|################################################|
+[dctrace 71] vmu|#..............................................#|
+[dctrace 71] vmu|#..............................................#|
+[dctrace 71] vmu|#..............................................#|
+[dctrace 71] vmu|#..............................................#|
+[dctrace 71] vmu|#..............................................#|
+[dctrace 71] vmu|#.......#.#.###.###.###.###.#.#.###.##.........#|
+[dctrace 71] vmu|#.......###.#.#.#.#.#.#..#..#.#.#.#.#.#........#|
+[dctrace 71] vmu|#.......###.###.##..###..#..###.#.#.#.#........#|
+[dctrace 71] vmu|#.......#.#.#.#.#.#.#.#..#..#.#.#.#.#.#........#|
+[dctrace 71] vmu|#.......#.#.#.#.#.#.#.#..#..#.#.###.#.#........#|
+[dctrace 71] vmu|#..............................................#|
+[dctrace 71] vmu|#..............................................#|
+[dctrace 71] vmu|#...########################################...#|
+[dctrace 71] vmu|#..............................................#|
+[dctrace 71] vmu|#..............................................#|
+[dctrace 71] vmu|#.....##..###.###.###.#.#.###.###.###.###......#|
+[dctrace 71] vmu|#.....#.#.#.#.#...#.#.###.#...#.#.#....#.......#|
+[dctrace 71] vmu|#.....#.#.##..###.###.###.#...###.###..#.......#|
+[dctrace 71] vmu|#.....#.#.#.#.#...#.#.#.#.#...#.#...#..#.......#|
+[dctrace 71] vmu|#.....##..#.#.###.#.#.#.#.###.#.#.###..#.......#|
+[dctrace 71] vmu|#..............................................#|
+[dctrace 71] vmu|#..............................................#|
+[dctrace 71] vmu|#..............................................#|
+[dctrace 71] vmu|#..............................................#|
+[dctrace 71] vmu|#..............................................#|
+[dctrace 71] vmu|#..............................................#|
+[dctrace 71] vmu|#..............................................#|
+[dctrace 71] vmu|#..............................................#|
+[dctrace 71] vmu|#..............................................#|
+[dctrace 71] vmu|#..............................................#|
+[dctrace 71] vmu|################################################|
+[dctrace 75] reloadtest: cycle 1 slot 1
+[dctrace 17] vmu: restored slot 1 from /vmu/a1
+[dctrace 74] mark C4
+[dctrace 74] mark L1
+[dctrace 57] load: map wad 3 ms
+[dctrace 74] mark L2
+[dctrace 23] load: /ram/Slot 1 -> load_level_from_map=1 err=0
+[dctrace 74] mark L3
+[dctrace 74] mark L4
+[dctrace 24] load: parent_checksum=2d71ccb4 found=1
+[dctrace 74] mark L5
+[dctrace 33] mode: 640x480x16 already set, not re-initialising
+[dctrace 65] load: free 0 ms | 11 colls 279 ms | models 0 ms | colorenv 189 ms
+[dctrace 66]   parse: hdr 157 | alloc 1 | clut 34 | high 6 | low 26 | bitmaps 334 ms
+[dctrace 67]   bitmaps: 1134 rle (66684 rows, 2984 KB) | 174 raw (2291 KB)
+[dctrace 54] load: collections 488 ms
+[dctrace 60] load: heap top after collections 0x8cd83000 (13836 KB in use)
+[dctrace 55] load: monster sounds 9 ms
+[dctrace 56] load: game sounds 0 ms
+[dctrace 74] mark L6
+[dctrace 74] mark C5
+[dctrace 74] mark S1
+[dctrace 33] mode: 640x480x16 already set, not re-initialising
+[dctrace 40] heap: StartRun entry     1944 KB
+[dctrace 37] txtr[0]: res=0 fmt=8056 far=2701
+[dctrace 38] txtr[1]: res=0 fmt=8056 far=2601
+[dctrace 39] txtr[2]: res=0 fmt=8056 far=2600
+[dctrace 39] txtr[3]: res=0 fmt=8056 far=2600
+[dctrace 41] heap: after StartTextures 1944 KB
+[dctrace 42] heap: after screen font  1944 KB
+[dctrace 43] heap: after map fonts    1944 KB
+[dctrace 44] heap: after HUD fonts    1944 KB
+[dctrace 45] heap: StartRun done      1944 KB
+[dctrace 74] mark S3
+[dctrace 53] vram: 2762 KB free at StartRun done
+[dctrace 74] mark S4
+[dctrace 74] mark S5
+[dctrace 12] fps 3.2  yaw=381 pitch=0 pos=11091,19517
+[dctrace 47] gl: polys=456 walls=1330 setupfail=0 vecfail=0
+[dctrace 62] mem: level=0 tick=215 hp=150 heap=8cd83000 vram=2762 KB largest=2710 KB
+[dctrace 63] ram: live=2725580 KB reusable=1480527 KB

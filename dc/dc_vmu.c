@@ -30,6 +30,7 @@
  */
 
 #include <stdio.h>
+#include <errno.h>
 #include <stdint.h>
 #include <string.h>
 #include <stdlib.h>
@@ -622,6 +623,7 @@ static int restore_slot_file(const char *unit, int card_slot, const char *ram_na
 	hdr_len = save_hdr_get(hdr, &raw_len, &stored_len, &flags, &level, &info);
 	if (!hdr_len || raw_len == 0 || stored_len == 0 ||
 	    stored_len > 256 * 1024 || raw_len > 4 * 1024 * 1024 ||
+	    (!(flags & SAVE_FLAG_ZLIB) && stored_len != raw_len) ||
 	    fseek(in, hdr_len, SEEK_SET) != 0) {
 		fclose(in);
 		return 0;
@@ -668,7 +670,11 @@ static int restore_slot_file(const char *unit, int card_slot, const char *ram_na
 	out = fopen(dst, "wb");
 	if (out) {
 		ok = fwrite(raw, 1, raw_len, out) == raw_len;
-		fclose(out);
+		if (fclose(out) != 0)
+			ok = 0;
+		/* Never let the next attempt mistake a truncated restore for a cache hit. */
+		if (!ok)
+			remove(dst);
 	}
 	free(raw);
 	return ok;
@@ -686,7 +692,10 @@ int dc_vmu_restore_slot(int slot)
 		if (i == slot - 1 || !slots[i].used)
 			continue;
 		snprintf(path, sizeof path, "%s/%s", saves_ram_dir, slots[i].ram_name);
-		remove(path);
+		if (remove(path) != 0 && errno != ENOENT) {
+			dc_trace(17, "vmu: cannot release %s (errno %d)", path, errno);
+			return 0;
+		}
 	}
 
 	/* Already in the ramdisk -- just saved, or loaded a moment ago. */

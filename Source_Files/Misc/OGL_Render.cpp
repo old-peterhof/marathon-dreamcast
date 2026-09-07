@@ -379,6 +379,8 @@ extern void OGL_ResetHUDFonts(bool IsStarting);
 extern void OGL_ReleaseMapFonts();
 extern void OGL_ReleaseHUDTextures();
 extern "C" void dc_trace(int slot, const char *fmt, ...);
+extern "C" int pvr_wait_ready(void);
+extern "C" int pvr_wait_render_done(void);
 #endif
 
 // Function for setting up the rendering of a 3D model: scaling, clipping, etc.;
@@ -625,6 +627,10 @@ bool OGL_StopRun()
 #ifdef DC
 	// The fonts and HUD art are not in the texture accounting below, and the
 	// GL context outlives a level restart here. See FontSpecifier::OGL_Release.
+	// The last submitted frame may still be sampling these textures. GLdc's
+	// glFinish is a no-op; synchronize once at teardown, not per texture.
+	pvr_wait_ready();
+	pvr_wait_render_done();
 	GetOnScreenFont().OGL_Release();
 	OGL_ReleaseMapFonts();
 	OGL_ReleaseHUDTextures();

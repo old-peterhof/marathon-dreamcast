@@ -46,6 +46,8 @@
 #include "dc_screen.h"
 
 extern "C" void dc_trace(int slot, const char *fmt, ...);
+extern SDL_Surface *dc_ui_target(void);
+extern void dc_ui_flush(SDL_Surface *s);
 
 /*
  *	The five items, in the order the D-pad walks them.
@@ -196,7 +198,7 @@ static void newest_save_note(char *level, size_t llen, char *where, size_t wlen)
  */
 void dc_main_menu_draw(short selected)
 {
-	SDL_Surface *video = SDL_GetVideoSurface();
+	SDL_Surface *video = dc_ui_target();
 	const sdl_font_info *item_font, *label_font;
 	uint16 item_style, label_style;
 	char level[64], where[40];
@@ -211,7 +213,10 @@ void dc_main_menu_draw(short selected)
 		return;
 
 	dc_plate_select(DC_PLATE_MAIN);
-	dc_plate_to_screen();
+	if (video == SDL_GetVideoSurface())
+		dc_plate_to_screen();
+	else if (!dc_plate_region(video, NULL, 0, 0))
+		SDL_FillRect(video, NULL, SDL_MapRGB(video->format, 0x05, 0x08, 0x0a));
 
 	item_font  = get_dialog_font(ITEM_FONT, item_style);
 	/* The theme's small face; LABEL_FONT is 16, the same as a menu row. */
@@ -291,7 +296,7 @@ void dc_main_menu_draw(short selected)
 	dc_ui_hints(video, MENU_HINT_Y, hints, 2, "b" DC_BUILD_NUM,
 	            label_font, label_style);
 
-	SDL_UpdateRect(video, 0, 0, 0, 0);
+	dc_ui_flush(video);
 }
 
 /*

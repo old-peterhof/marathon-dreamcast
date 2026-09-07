@@ -223,6 +223,7 @@ bool OpenedFile::Read(long Count, void *Buffer)
 {
 	if (f == NULL)
 		return false;
+	if (Count < 0) { err = EINVAL; return false; }
 
 	err = 0;
 #ifdef DC
@@ -234,17 +235,21 @@ bool OpenedFile::Read(long Count, void *Buffer)
 	 */
 	if (Count >= 2048 && dc_path[0]) {
 		long pos = SDL_RWtell(f);
+		if (pos < 0 || Count > LONG_MAX - pos) { err = EIO; return false; }
 		void *span = dc_read_file_span(dc_path, (unsigned long)pos, (unsigned long)Count);
 		if (span) {
 			memcpy(Buffer, span, (size_t)Count);
 			free(span);
-			SDL_RWseek(f, pos + Count, SEEK_SET);
-			return true;
+			if (SDL_RWseek(f, pos + Count, SEEK_SET) != pos + Count)
+				err = EIO;
+			return err == 0;
 		}
 	}
 #endif
+	// EOF is a short read without errno. Never report unfilled wad data as valid.
+	errno = 0;
 	if (SDL_RWread(f, Buffer, 1, Count) != Count)
-		err = errno;
+		err = errno ? errno : EIO;
 	return err == 0;
 }
 
@@ -252,10 +257,12 @@ bool OpenedFile::Write(long Count, void *Buffer)
 {
 	if (f == NULL)
 		return false;
+	if (Count < 0) { err = EINVAL; return false; }
 
 	err = 0;
+	errno = 0;
 	if (SDL_RWwrite(f, Buffer, 1, Count) != Count)
-		err = errno;
+		err = errno ? errno : EIO;
 	return err == 0;
 }
 
@@ -412,7 +419,8 @@ bool FileSpecifier::Open(OpenedFile &OFile, bool Writable)
 	}
 #ifdef DC
 	OFile.dc_path[0] = 0;
-	if (!Writable) {
+	// A cached /ram descriptor prevents KOS from unlinking or rewriting saves.
+	if (!Writable && strncmp(GetPath(), "/cd/", 4) == 0) {
 		strncpy(OFile.dc_path, GetPath(), sizeof(OFile.dc_path) - 1);
 		OFile.dc_path[sizeof(OFile.dc_path) - 1] = 0;
 	}

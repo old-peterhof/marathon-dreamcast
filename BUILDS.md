@@ -62,3 +62,4 @@ to the engine clamp, and the VMU Profiler. Git history has the detail.
 | b89 | menu-return | deadfa8 | PowerVR re-initialised when a level starts after the menu (quit then load crashed); no film recording on DC |
 | b90 | onceload | aa93521 | save loads scan for the map file once (the second scan corrupted the heap on the third session); SLOT test marker |
 | b91 | vmumark | 2e2f5f4 | VMU shows a two-letter stage code through Continue/load/start (hardware freeze hunt); Load Save still to add to the pause menu |
+| b92 | reload | 7d8f490 | Codex, uncommitted at hand-back: menus stay in GL after the first level (no PowerVR shutdown, dc_pvr_reinit deleted), span cache limited to /cd/, stricter file reads, VMU restore hardening, emulator reload harness (DEBUG + SLOT "n count"). Unverified: its own run failed restoring slot 2; a slot-2-then-slot-1 load test hung with a corrupt heap on session 2 (test-evidence/2026-09-07-b92) |

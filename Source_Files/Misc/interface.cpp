@@ -96,7 +96,11 @@ extern TP2PerfGlobals perf_globals;
 #ifdef DC
 #include "dc_mainmenu.h"
 #include "dc_slots.h"
+#include "dc_vmu.h"
+#include <unistd.h>
 extern "C" int dc_autostart_running(void);
+extern "C" void dc_trace(int slot, const char *fmt, ...);
+static void dc_reload_test(void);
 #endif
 
 // LP addition: getting OpenGL rendering stuff
@@ -656,6 +660,9 @@ void idle_game_state(
 		update_interface_fades();
 	}
 
+#ifdef DC
+	dc_reload_test();
+#endif
 	return;
 }
 
@@ -1067,9 +1074,13 @@ bool enabled_item(
 void paint_window_black(
 	void)
 {
+#ifdef DC
+	clear_screen();
+#else
 	_set_port_to_screen_window();
 	_erase_screen(_black_color);
 	_restore_port();
+#endif
 
 	return;
 }
@@ -1617,6 +1628,74 @@ static void finish_game(
 	
 	if(return_to_main_menu) display_main_menu();
 }
+
+#ifdef DC
+// Emulator-only regression: loadtest SLOT='1 6'. A second SLOT integer opts
+// into bounded quit/load cycles; neither SLOT nor DEBUG ships on hardware.
+// Uses existing saves read-only. It deliberately alternates cached/uncached
+// slots and New Game, leaving each session running for ten seconds.
+static void dc_reload_test(void)
+{
+	static int remaining = -1, cycle = 0;
+	static bool at_menu = false;
+	static uint32 deadline = 0;
+	if (remaining < 0) {
+		remaining = 0;
+		if (access("/cd/AlephOne/DEBUG", F_OK) == 0) {
+			FILE *f = fopen("/cd/AlephOne/SLOT", "r");
+			int slot, count;
+			if (f) {
+				if (fscanf(f, "%d %d", &slot, &count) == 2 && count > 0 && count <= 12)
+					remaining = count;
+				fclose(f);
+			}
+		}
+	}
+	if (!remaining) return;
+	uint32 now = machine_tick_count();
+	if (!at_menu) {
+		if (game_state.state != _game_in_progress) return;
+		if (!deadline) deadline = now + 10 * MACHINE_TICKS_PER_SECOND;
+		if ((int32)(now - deadline) < 0) return;
+		if (remaining == 1 && cycle) {
+			dc_trace(75, "reloadtest: PASS %d transitions, final session ran 10s", cycle);
+			remaining = 0;
+			return;
+		}
+		pause_game();
+		finish_game(true);
+		at_menu = true;
+		deadline = machine_tick_count() + 2 * MACHINE_TICKS_PER_SECOND;
+		dc_trace(75, "reloadtest: menu after session %d", cycle);
+		return;
+	}
+	if ((int32)(now - deadline) < 0) return;
+	++cycle;
+	if (cycle % 3 == 0) {
+		dc_trace(75, "reloadtest: cycle %d New Game", cycle);
+		begin_game(_single_player, false);
+	} else {
+		int slot = (cycle % 4 < 2) ? 1 : 2;
+		char path[32];
+		snprintf(path, sizeof path, "/ram/Slot %d", slot);
+		FileSpecifier file = path;
+		dc_trace(75, "reloadtest: cycle %d slot %d", cycle, slot);
+		if (!dc_vmu_restore_slot(slot) || !load_and_start_game(file)) {
+			dc_trace(75, "reloadtest: FAIL restoring slot %d", slot);
+			remaining = 0;
+			return;
+		}
+	}
+	if (game_state.state != _game_in_progress) {
+		dc_trace(75, "reloadtest: FAIL starting cycle %d", cycle);
+		remaining = 0;
+		return;
+	}
+	--remaining;
+	at_menu = false;
+	deadline = 0;
+}
+#endif
 
 static void handle_network_game(
 	bool gatherer)

@@ -121,8 +121,10 @@ static uint8_t *read_level_entry(const char *map_path, int level, long *len)
 	int count, app_size, dir_base, step;
 
 	f = fopen(map_path, "rb");
-	if (!f)
+	if (!f) {
+		dc_trace(76, "unfold: cannot open %s", map_path);
 		return NULL;
+	}
 
 	if (fseek(f, 0, SEEK_END) != 0) {
 		fclose(f);
@@ -132,6 +134,7 @@ static uint8_t *read_level_entry(const char *map_path, int level, long *len)
 
 	base = wad_base(f, file_len);
 	if (base < 0) {
+		dc_trace(76, "unfold: invalid map header, file length %ld", file_len);
 		fclose(f);
 		return NULL;
 	}
@@ -148,6 +151,7 @@ static uint8_t *read_level_entry(const char *map_path, int level, long *len)
 	step     = dir_base + app_size;
 
 	if (level < 0 || level >= count || step < 8) {
+		dc_trace(76, "unfold: level=%d count=%d directory step=%d", level, count, step);
 		fclose(f);
 		return NULL;
 	}
@@ -163,6 +167,7 @@ static uint8_t *read_level_entry(const char *map_path, int level, long *len)
 	length = (long)be32(ent + 4);
 
 	if (start < 0 || length <= 0 || base + start + length > file_len) {
+		dc_trace(76, "unfold: invalid entry start=%ld length=%ld file=%ld", start, length, file_len);
 		fclose(f);
 		return NULL;
 	}
@@ -172,8 +177,10 @@ static uint8_t *read_level_entry(const char *map_path, int level, long *len)
 	/* One aligned transfer; this is a save mid-level, and the level entry is
 	   hundreds of KB that stdio would fetch a sector per command. */
 	buf = dc_read_file_span(map_path, (unsigned long)(base + start), (unsigned long)length);
-	if (!buf)
+	if (!buf) {
+		dc_trace(76, "unfold: span failed %s offset=%ld length=%ld", map_path, base + start, length);
 		return NULL;
+	}
 
 	*len = length;
 	return buf;
@@ -235,8 +242,10 @@ int dc_wad_xor_level(uint8_t *save, long save_len,
 	long p;
 	int folded = 0, guard = 0;
 
-	if (!save || save_len <= WH_SIZE || !map_path)
+	if (!save || save_len <= WH_SIZE || !map_path) {
+		dc_trace(76, "unfold: invalid save length=%ld", save_len);
 		return -1;
+	}
 
 	lvl = read_level_entry(map_path, level, &lvl_len);
 	if (!lvl)

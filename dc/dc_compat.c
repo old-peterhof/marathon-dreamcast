@@ -17,6 +17,7 @@
 
 #include <stdio.h>
 #include <stdint.h>
+#include <limits.h>
 #include <string.h>
 #include <fcntl.h>
 #include <malloc.h>
@@ -194,6 +195,10 @@ void dc_heap_trace(int slot, const char *where)
  */
 void *dc_read_file_span(const char *path, unsigned long offset, unsigned long length)
 {
+	/* Cached descriptors must only refer to immutable disc files. */
+	if (!path || strncmp(path, "/cd/", 4) != 0 || !length ||
+	    length > ULONG_MAX - offset || offset + length > ULONG_MAX - 2047UL)
+		return NULL;
 	/* Sounds and sprite frames interleave during play: keep a few files open. */
 	enum { kOpenFiles = 4 };
 	static file_t fds[kOpenFiles] = { FILEHND_INVALID, FILEHND_INVALID, FILEHND_INVALID, FILEHND_INVALID };
@@ -263,35 +268,6 @@ void dc_heap_probe(const char *where)
 	int bad = m.uordblks < 0 || m.uordblks > 20*1024*1024 || m.fordblks < 0 || m.fordblks > 20*1024*1024;
 	if (bad && !bad_reported) { bad_reported = 1; dc_trace(73, "heap: CORRUPT at %s (live=%d free=%d)", where, m.uordblks, m.fordblks); }
 	else if (!bad) dc_trace(73, "heap: ok at %s live=%d KB", where, m.uordblks/1024);
-}
-
-/*
- *	Bring the PowerVR back after a trip through the menus.
- *
- *	Leaving a level sets the plain 640x480 mode, and SDL's Dreamcast driver
- *	calls pvr_shutdown() for that. Entering the next level sets the GL mode
- *	again and the driver calls glKosInit() -- which GLdc ignores the second
- *	time (its _initialized flag), so nothing calls pvr_init() and the first
- *	pvr_wait_ready() of the new level dies on "pvr_state.valid". That was the
- *	black screen and crash on loading a saved game, or starting a new one,
- *	after quitting to the main menu. This is GLdc's own pvr_init call with
- *	GLdc's own parameters (GL/platforms/sh4.c: InitGPU), nothing else: GLdc's
- *	texture and vertex bookkeeping is left exactly as it was, which is why a
- *	full glKosShutdown/glKosInit is not used (it re-creates its buffers
- *	without freeing the old ones). pvr_init() returns -1 when the PVR is
- *	already up, which is the first level after boot.
- */
-int dc_pvr_reinit(void)
-{
-	pvr_init_params_t params = {
-		{ PVR_BINSIZE_32, PVR_BINSIZE_0, PVR_BINSIZE_32, PVR_BINSIZE_0, PVR_BINSIZE_32 },
-		2560 * 256,	/* vertex buffer, as GLdc */
-		0,		/* no DMA */
-		0,		/* no FSAA */
-		1,		/* translucent autosort off, as GLdc */
-		2		/* OPB overflow bins, as GLdc */
-	};
-	return pvr_init(&params);
 }
 
 /* Send a 48x32 1-bit frame to the first VMU screen; see dc_vmu_hud.cpp. */

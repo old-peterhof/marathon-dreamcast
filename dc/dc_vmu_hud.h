@@ -3,12 +3,14 @@
  *
  *	DC_MARK("xx") draws a two-letter stage code on the VMU. It is the
  *	hardware's stand-in for a serial cable: whatever code is showing when the
- *	console freezes names the stage that never finished. Codes in use:
+ *	console freezes is the last marker successfully sent, not a device ACK.
+ *	Most markers follow the named operation: investigate the NEXT operation.
+ *	A busy bus can leave an older code visible. Codes in use:
  *	  C1..C3  Continue Game: newest slot, disc marker, VMU restore
  *	  C4..C5  load_and_start_game: after the fade, after the load
  *	  L1..L6  load_game_from_file: set_map_file, level from map, parent
  *	          checksum, use_map_file, RunLevelScript, entering_map
- *	  S1..S5  start_game: entry, video mode + PowerVR back, OGL_StartRun done,
+ *	  S1..S5  start_game: entry, initial GL video mode, OGL_StartRun done,
  *	          enter_screen done, draw_interface done
  */
 #ifndef DC_VMU_HUD_H

@@ -57,10 +57,6 @@
 
 
 // Global variables
-#ifdef DC
-static unsigned dc_gl_generation = 0;	// GL mode sets so far; the second and later need dc_pvr_reinit
-extern "C" int dc_pvr_reinit(void);
-#endif
 static SDL_Surface *main_surface;	// Main (display) surface
 
 // Rendering buffer for the main view, the overhead map, and the terminals.
@@ -284,13 +280,12 @@ void enter_screen(void)
 
 void exit_screen(void)
 {
-	// Return to 640x480 without OpenGL
-	in_game = false;
-	change_screen_mode(640, 480, bit_depth, true);
-
 #ifdef HAVE_OPENGL
 	OGL_StopRun();
 #endif
+	// Release level textures while the renderer is still alive.
+	in_game = false;
+	change_screen_mode(640, 480, bit_depth, true);
 }
 
 
@@ -367,6 +362,16 @@ static bool dc_copy_to_screen(SDL_Surface *src, const SDL_Rect *src_rect,
 
 static void change_screen_mode(int width, int height, int depth, bool nogl)
 {
+#if defined(DC) && defined(HAVE_OPENGL)
+	// Once GL starts, menus use the same overlay as pause/terminals. SDL's
+	// mode switch shuts down PVR, clears VRAM and resets its allocator while
+	// GLdc retains live texture objects and its old pool. Avoid that lifecycle.
+	if (nogl && main_surface && (main_surface->flags & SDL_OPENGL) &&
+	    screen_mode.acceleration == _opengl_acceleration) {
+		dc_trace(33, "mode: retaining GL for menu");
+		return;
+	}
+#endif
 	uint32 flags = (screen_mode.fullscreen ? SDL_FULLSCREEN : 0);
 #ifdef HAVE_OPENGL
 	// The original idea was to only enable OpenGL for the in-game display, but
@@ -422,12 +427,7 @@ static void change_screen_mode(int width, int height, int depth, bool nogl)
 		exit(1);
 	}
 #ifdef DC
-	// Every GL mode set after the first follows a pvr_shutdown() that SDL did
-	// on the way to the menus, and GLdc's second glKosInit() is a no-op; bring
-	// the PowerVR itself back. See dc_pvr_reinit in dc_compat.c.
 	if (main_surface->flags & SDL_OPENGL) {
-		if (dc_gl_generation++ > 0)
-			dc_trace(33, "pvr: re-initialised for GL re-entry (%d)", dc_pvr_reinit());
 		DC_MARK("S2");
 	}
 	// Report every mode change; the in-game switch is the one under suspicion.
@@ -577,8 +577,7 @@ void dc_ui_draw_surface(SDL_Surface *s, int x, int y, int w, int h)
 	if (s == NULL || s->pixels == NULL)
 		return;
 
-	/* GLdc's texture objects outlive the menus (only the PowerVR is shut down
-	   and brought back; see dc_pvr_reinit), so this id stays valid. */
+	/* The GL/PVR context now survives menus as well as pauses. */
 	if (UITexture == 0) {
 		glGenTextures(1, &UITexture);
 		glBindTexture(GL_TEXTURE_2D, UITexture);
@@ -1567,6 +1566,14 @@ void DrawHUD(SDL_Rect &dest_rect)
 
 void clear_screen(void)
 {
+#if defined(DC) && defined(HAVE_OPENGL)
+	if (main_surface && (main_surface->flags & SDL_OPENGL)) {
+		glClearColor(0, 0, 0, 1);
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+		SDL_GL_SwapBuffers();
+		return;
+	}
+#endif
 	SDL_FillRect(main_surface, NULL, SDL_MapRGB(main_surface->format, 0, 0, 0));
 	SDL_UpdateRect(main_surface, 0, 0, 0, 0);
 #ifdef HAVE_OPENGL
