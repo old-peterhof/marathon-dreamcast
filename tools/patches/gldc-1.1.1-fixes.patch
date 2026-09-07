@@ -1,4 +1,4 @@
-GLdc 1.1.1: six bugs. Two in mipmap generation, one in glBindTexture, two in
+GLdc 1.1.1: seven bugs. Two in mipmap generation, one in glBindTexture, two in
 vertex colour and alpha, one exit() on texture-memory exhaustion.
 
 GL/framebuffer.c
@@ -78,6 +78,21 @@ GL/texture.c (again)
     `gl_assert(active->data)` lines behind it: two sat in front of the same
     recoverable test, and the one in _glAllocateSpaceForMipmaps() now returns
     instead of memcpy'ing into NULL.
+
+GL/matrix.c, containers/stack.c
+
+ 7. The modelview matrix stack could underflow, and then a heap chunk was
+    smashed. The stacks are heap-allocated (init_stack -> memalign) with a base
+    matrix pushed at init. glPopMatrix called stack_pop unconditionally, so a
+    render path that popped more than it pushed drove size to 0. stack->size is
+    unsigned, so the next glLoadIdentity -> stack_replace computed
+    (size - 1) * element_size = (unsigned)-1 * 64, which wraps to a write 64
+    bytes *before* the stack buffer -- overwriting the previous chunk's boundary
+    tag with the identity matrix, whose first word is 1.0f (0x3f800000). The
+    allocator then looped forever the next time it walked that region (the next
+    saved-game load's screen fade), which is the hardware "Loading C3" freeze.
+    glPopMatrix now keeps the base matrix (GL_STACK_UNDERFLOW is a no-op per the
+    spec); stack_replace guards size==0 as belt-and-braces.
 
 Apply to both the dist/ and build/ copies of the libGL kos-port, then rebuild:
 make GL in build/libGL-1.1.1, and copy the resulting libGL.a over
@@ -317,3 +332,34 @@ inst/lib/libGL.a. See README.DC.md, 'Patched toolchain'.
  
      /* If we run out of PVR memory just return */
      if(!active->data) {
+
++++ b/GL/matrix.c	2026-09-07 11:09:35
++++ b/GL/matrix.c	2026-09-07 11:09:50
+@@ -162,7 +162,14 @@
+ }
+ 
+ void APIENTRY glPopMatrix() {
+-    stack_pop(MATRIX_CUR);
++    /* GLdc fix (Marathon DC): never remove the base matrix. GL semantics make
++       popping a one-deep stack a GL_STACK_UNDERFLOW that changes nothing; the
++       stack keeps its base. Without this, an over-pop drove size to 0 and the
++       next glLoadIdentity -> stack_replace wrote (size-1) unsigned-wrapped,
++       64 bytes before the heap-allocated stack buffer, smashing the previous
++       chunk with the identity matrix's leading 1.0f. */
++    if (MATRIX_CUR->size > 1)
++        stack_pop(MATRIX_CUR);
+     OnMatrixChanged();
+ }
+ 
++++ b/containers/stack.c	2026-09-07 11:09:35
++++ b/containers/stack.c	2026-09-07 11:09:50
+@@ -24,6 +24,9 @@
+ }
+ 
+ void* stack_replace(Stack* stack, const void* element) {
++    /* GLdc fix (Marathon DC): never write below the buffer. size==0 makes
++       (size-1) wrap on this unsigned type; guard it. See glPopMatrix. */
++    if(stack->size == 0) return 0;
+     memcpy(stack->data + ((stack->size - 1) * stack->element_size), element, stack->element_size);
+     return stack_top(stack);
+ }

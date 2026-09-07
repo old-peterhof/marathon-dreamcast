@@ -36,7 +36,7 @@ way.
 ### Patched toolchain
 
 **This port's libGL is patched.** `tools/patches/gldc-1.1.1-fixes.patch` fixes
-six bugs in GLdc 1.1.1. Two are in mipmap generation, both in
+seven bugs in GLdc 1.1.1. Two are in mipmap generation, both in
 `GL/framebuffer.c`:
 
 - `_glCalculateAverageTexel()` read the texture format from the wrong bits of the
@@ -109,6 +109,20 @@ so the script renames them. `Plugins/`, `Scripts/` and `Physics Models/` are
 deliberately skipped: they target Aleph One 1.x and an MML dialect 0.12.0 cannot
 parse.
 
+
+The seventh (7 September) is the one behind the hardware freeze on loading a
+saved game after quitting to the menu (the VMU showed `Loading C3`). GLdc's
+matrix stacks are heap buffers with a base matrix pushed at init, but
+`glPopMatrix` popped unconditionally, so a render path that over-popped drove
+the stack size to 0. `size` is unsigned, so the next `glLoadIdentity`
+(`stack_replace`) wrote `(size-1)*64` = 64 bytes *before* the buffer, dropping
+the identity matrix's leading `1.0f` (`0x3f800000`) onto the previous chunk's
+header. The allocator then span forever the next time it walked that region --
+the saved game's screen fade -- which is the freeze. The fix keeps the base
+matrix (a one-deep pop is `GL_STACK_UNDERFLOW`, a no-op per the spec) and
+guards `stack_replace` against an empty stack. Found by walking the whole
+dlmalloc arena each frame and bisecting the render pipeline down to
+`OGL_SetView`'s first `glLoadIdentity`.
 ## Controls
 
 The analog stick drives aim rather than movement, because Marathon's aiming
