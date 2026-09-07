@@ -127,9 +127,19 @@ is love that already knew.
 
 Any writing that softens him is wrong.
 
-## 5. The black cat
+## 5. Beans
 
-An enigmatic black cat sows doubts in Gumball's mind along the way.
+The black cat is real and his name is Beans.
+
+- The Girl and the Father were out on a walk with Gumball when they heard tiny
+  mews from the bushes.
+- A scrawny black cat came out.
+- He followed them home and the family adopted him.
+- Gumball and Beans did not always get along.
+- Gumball could be pretty grumpy to the cat.
+- **They eventually tolerated each other.**
+
+In the game, an enigmatic black cat sows doubts in Gumball's mind along the way.
 
 ## 6. Carrots
 
@@ -279,11 +289,11 @@ This is good for the design, because BITE can then be the core verb of the whole
 game rather than one world's gimmick, and the player is holding his temperament
 in their hands for twelve levels.
 
-### It also gives the black cat real material
-The cat sows doubt (section 5) and, per the mechanics below, works best saying
-true things. Section 4a is a supply of true things that are genuinely unkind.
-The design notes this and writes none of them. **The cat's dialogue is the
-author's.**
+### It also gives Beans real material
+Beans sows doubt (section 5) and works best saying only true things. Section 4a
+is a supply of true things that are genuinely unkind, and section 8f explains why
+Beans is the one entitled to say them. The design notes this and writes none of
+them. **Beans's dialogue is the author's.**
 
 ## 8c. What the family material gives us
 
@@ -467,6 +477,61 @@ None of that needed inventing; it is what the author described.
 Walks and chase and the squeaking toys and waiting after school belong to both
 the Boy and the Girl. What separates them is water and a bedroom. Build the
 shared material into whichever world it suits and do not spend it twice.
+
+## 8f. What Beans gives us
+
+Reading only section 5, without adding to it.
+
+### Beans is the only one Gumball was not good to
+
+Every human in this game loved him and is waiting to say so. Section 4a says he
+was grumpy, snapped, and was not always kind, but every relationship in section 4
+is warm. Beans is where the grumpiness actually landed.
+
+That is why he can make Gumball doubt himself, and it costs the design nothing to
+arrange. He is not lying, he is not sinister, and he does not need a motive
+invented for him. He is the one member of the household with a genuine
+grievance, and the only one who was on the receiving end of who Gumball
+sometimes was.
+
+The earlier rule that the cat should only ever say true things now has a reason
+behind it instead of being a stylistic choice.
+
+### His ending is already written
+
+> They eventually tolerated each other.
+
+Not love, not forgiveness, not defeat. **Tolerance.** That is the author's own
+account of how it actually resolved, and it is a better final beat than any of
+the alternatives:
+
+- He is never fought. There is no cat boss.
+- He is never redeemed, hugged, or adopted into the reunion.
+- He is never driven off or beaten.
+- At the end, they are simply near each other and neither one leaves.
+
+The four human reunions are hugs. The fifth thing is two animals sitting a
+comfortable distance apart, and the game does not comment on it.
+
+### The bushes
+
+He came out of the bushes on a walk. Walks appear in the Boy's material, the
+Girl's material, and Beans's own origin. If the design wants a consistent place
+for the cat to first appear, the author already supplied one. **OPEN.**
+
+### One guard
+
+Gumball was grumpy to Beans. The game should decide deliberately whether the
+player is ever allowed to point BITE or GROWL at him, because either answer says
+something:
+
+- **Not allowed.** The verb simply does not fire. Clean, and the game never lets
+  you be cruel.
+- **Allowed.** It works, and it is the only genuinely bad thing the player can
+  choose to do.
+
+**OPEN, and the author's call.** The design has no opinion it is entitled to
+here.
 
 ## 9. The three-level shape
 
@@ -664,7 +729,10 @@ Waiting on the author.
    one who got both. Confirm or overrule.
 3. **The opening.** He wakes in the field with the fresh-turned soil. How much of
    that is playable, and what he does first.
-4. **The cat.** What it says, and what happens to it.
+4. **What Beans says.** His role and his resolution are now given (section 5,
+   section 8f). The dialogue is not.
+4a. **Whether BITE or GROWL can be aimed at Beans**, per section 8f.
+4b. **Where Beans first appears.** The bushes on a walk are available.
 5. **The ending.** After the fourth reunion.
 6. **The eating tension.** Whether carrots-as-health against eating-as-sin gets
    leaned on or left alone.
