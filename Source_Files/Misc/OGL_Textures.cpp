@@ -279,6 +279,11 @@ void OGL_TextureFrameStart()
 		unsigned OldestAge = 0;
 
 		for (int it=0; it<OGL_NUMBER_OF_TEXTURE_TYPES; ++it)
+		{
+			/* The sky is 1 MB that must be contiguous. Once it is in, it stays
+			   for the level: re-uploading it into a fragmented pool fails, and
+			   a sky drawn from an empty texture is VRAM garbage on hardware. */
+			if (it == OGL_Txtr_Landscape) continue;
 			for (int ic=0; ic<MAXIMUM_COLLECTIONS; ++ic)
 			{
 				/* HUD art is small, used outside the world pass, and pinned. */
@@ -299,6 +304,7 @@ void OGL_TextureFrameStart()
 						OldestAge = Age;
 					}
 			}
+		}
 
 		if (!Oldest)
 			break;
@@ -1630,8 +1636,21 @@ texture_uploaded:
 
 // What to render:
 
+#ifdef DC
+/*
+ * A texture whose upload was deferred (no VRAM block large enough this frame)
+ * has a GL texture object with no storage behind it. Drawing with it bound
+ * hands the PowerVR texture address 0: the frame buffer, tiled across the
+ * polygon. Flycast paints something harmless there, the console does not --
+ * it showed as a sky made of tight repeating rectangles. So a polygon whose
+ * texture is not resident is drawn untextured for that frame, and texturing
+ * is re-enabled on the next resident one.
+ */
+static bool DC_TexturingSuspended = false;
+#endif
+
 // Always call this one and call it first; safe to allocate texture ID's in it
-void TextureManager::RenderNormal()
+bool TextureManager::RenderNormal()
 {
 	TxtrStatePtr->Allocate();
 	
@@ -1644,10 +1663,24 @@ void TextureManager::RenderNormal()
 #endif
 		TxtrStatePtr->IDsInUse[TextureState::Normal] = PlaceTexture(NormalBuffer, false);
 	}
+#ifdef DC
+	if (!TxtrStatePtr->IDsInUse[TextureState::Normal])
+	{
+		glDisable(GL_TEXTURE_2D);
+		DC_TexturingSuspended = true;
+		return false;
+	}
+	if (DC_TexturingSuspended)
+	{
+		glEnable(GL_TEXTURE_2D);
+		DC_TexturingSuspended = false;
+	}
+#endif
+	return true;
 }
 
 // Call this one after RenderNormal()
-void TextureManager::RenderGlowing()
+bool TextureManager::RenderGlowing()
 {
 	if (TxtrStatePtr->UseGlowing())
 	{
@@ -1658,6 +1691,11 @@ void TextureManager::RenderGlowing()
 #endif
 		TxtrStatePtr->IDsInUse[TextureState::Glowing] = PlaceTexture(GlowBuffer, true);
 	}
+#ifdef DC
+	return TxtrStatePtr->IDsInUse[TextureState::Glowing];
+#else
+	return true;
+#endif
 }
 
 

@@ -210,9 +210,9 @@ public:
 	// What to render:
 	
 	// Always call this one and call it first; safe to allocate texture ID's in it
-	void RenderNormal();
+	bool RenderNormal();		// false: texture not resident (DC: drawn untextured)
 	// Call this one after RenderNormal()
-	void RenderGlowing();
+	bool RenderGlowing();		// false: glow texture not resident, skip the pass
 	
 	TextureManager();
 	~TextureManager();

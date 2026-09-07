@@ -146,14 +146,18 @@ into a bounded field (`MAXIMUM_ABSOLUTE_YAW`), so the turn rate saturates near
 67°/sec however large a value is fed in. The sliders' useful work is *reducing*
 sensitivity for finer aim.
 
-**Rumble.** A vibration pack in the controller's expansion slot gets a short
-light pulse for each shot and each hit taken, and a longer, stronger one when
-the missile launcher fires. `dc/dc_rumble.c` never waits on the Maple bus: the
-game only records what it wants and the per-frame pad poll sends it, retries a
-busy bus next frame, and stops the pack when the pulse is over or gameplay
-ends. No pack fitted is a no-op. The strengths and durations at the top of that
-file are the tuning knobs; they have been checked in Flycast, not felt on a
-console.
+**Rumble.** A vibration pack in the controller's expansion slot gets a pulse
+for each shot (power 4, 90 ms) and each hit taken (6, 120 ms), and a longer,
+stronger one when the missile launcher fires (7, 250 ms). `dc/dc_rumble.c`
+never waits on the Maple bus: the game only records what it wants and the
+per-frame pad poll sends it, retries a busy bus next frame, and stops the pack
+when the pulse is over or gameplay ends. The effect is sent continuous and
+stopped explicitly: the first console test (b82) felt nothing with a one-shot
+effect at power 2 and `inc=1`, and with a deadline measured from the request
+rather than from the pack accepting the command, a 70 ms pulse could expire
+during the frame or two the bus refuses the first send. Flycast never refuses,
+which is why it felt fine there. No pack fitted is a no-op. The strengths and
+durations at the top of that file are the tuning knobs.
 
 ## Saves
 
@@ -390,8 +394,21 @@ path too.
 
 **Textures are evicted.** `OGL_TextureFrameStart()` runs at the top of each
 world frame. When free VRAM drops under 1 MB it deletes the least recently
-drawn textures until 1.5 MB is free, skipping the interface collection and
-anything drawn in the last two frames. That is safe without waiting: GLdc keeps
+drawn textures until 1.5 MB is free, skipping the interface collection, the
+landscape and anything drawn in the last two frames. The landscape is pinned
+because it is the one texture that needs a 1 MB contiguous block: evicted
+while the player was indoors, its re-upload into a fragmented pool was
+deferred frame after frame (45 times in one film run), and see the next
+paragraph for what a deferred texture looked like on the console.
+
+**A texture that is not resident is never drawn.** A deferred upload leaves a
+GL texture object with no storage. Binding it hands the PowerVR texture
+address 0, which is the frame buffer, so the polygon shows the screen itself
+tiled across it; Flycast paints something harmless there, the console does
+not. The first hardware run showed the sky as tight green repeating rectangles
+for exactly this reason. `RenderNormal()` now reports whether the texture is
+resident: a wall or sprite without one draws untextured for that frame, a glow
+pass without one is skipped, and the sky is left to the clear colour. That is safe without waiting: GLdc keeps
 a frame's polygons in RAM, texture addresses included, until the swap, and KOS
 double-buffers the lists, so at the top of frame N scene N-1 is submitted and
 N-2 may still be rendering; a texture last bound in N-3 or earlier is in

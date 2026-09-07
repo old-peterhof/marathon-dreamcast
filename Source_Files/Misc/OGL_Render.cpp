@@ -1760,11 +1760,13 @@ static bool RenderAsRealWall(polygon_definition& RenderPolygon, bool IsVertical)
 		TMgr.RenderGlowing(false);
 #endif
 
-		TMgr.RenderGlowing();
+		if (TMgr.RenderGlowing())
+		{
 		#ifdef DC
 			{ extern int dc_gl_polys; dc_gl_polys++; }
 		#endif
-		glDrawArrays(GL_POLYGON,0,NumVertices);
+			glDrawArrays(GL_POLYGON,0,NumVertices);
+		}
 	}
 	
 	return true;
@@ -1910,7 +1912,13 @@ static bool RenderAsLandscape(polygon_definition& RenderPolygon)
 	
 	// Painting a texture...
 	glEnable(GL_TEXTURE_2D);
+#ifdef DC
+	// No sky texture this frame (upload deferred): leave the backdrop to the
+	// clear colour rather than draw a white or garbage sky.
+	if (!TMgr.RenderNormal()) return false;
+#else
 	TMgr.RenderNormal();
+#endif
 	
 	// Go!
 	#ifdef DC
@@ -2222,11 +2230,13 @@ bool OGL_RenderSprite(rectangle_definition& RenderRectangle)
 			glEnable(GL_BLEND);
 			glDisable(GL_ALPHA_TEST);
 			
-			TMgr.RenderGlowing();
+			if (TMgr.RenderGlowing())
+			{
 			#ifdef DC
 				{ extern int dc_gl_polys; dc_gl_polys++; }
 			#endif
-			glDrawArrays(GL_POLYGON,0,4);
+				glDrawArrays(GL_POLYGON,0,4);
+			}
 		}
 	}
 

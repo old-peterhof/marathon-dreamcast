@@ -10,7 +10,7 @@
 #endif
 extern void dc_trace(int slot, const char *fmt, ...);
 static int in_game;
-static unsigned wanted_power, sent_power, generation, sent_generation;
+static unsigned wanted_power, wanted_ms, sent_power, generation, sent_generation;
 static uint64_t deadline;
 static int active_port = -1, active_unit = -1;
 
@@ -27,11 +27,16 @@ static void request(unsigned power, unsigned milliseconds)
     now = timer_ms_gettime64();
     if (now < deadline && wanted_power > power) return;
     wanted_power = power;
+    wanted_ms = milliseconds;
+    /* Provisional; restarted when the pack actually accepts the command. On
+       the console the first send can come back MAPLE_EAGAIN for a frame or
+       two, and a 70 ms request measured from here expired before it was ever
+       sent. Flycast never refuses, which is why the emulator felt it. */
     deadline = now + milliseconds;
     ++generation;
 }
-void dc_rumble_shot(int missile) { request(missile ? 7 : 2, missile ? 220 : 70); }
-void dc_rumble_hit(void) { request(2, 90); }
+void dc_rumble_shot(int missile) { request(missile ? 7 : 4, missile ? 250 : 90); }
+void dc_rumble_hit(void) { request(6, 120); }
 
 static int send_effect(maple_device_t *pack, unsigned power)
 {
@@ -41,8 +46,9 @@ static int send_effect(maple_device_t *pack, unsigned power)
     effect.fpow = effect.bpow = power;
     effect.freq = 32;
     effect.inc = 1;
-    /* Non-continuous as a hardware fallback if the game stalls. Explicit
-     * deadline stop as well. Decay flags differ between accessory vendors. */
+    /* Continuous, stopped explicitly at the deadline (power 0). The one-shot
+     * form with inc=1 at power 2 was not felt on a real pack at all. */
+    effect.cont = power ? 1 : 0;
     return purupuru_rumble(pack, &effect);
 }
 void dc_rumble_poll(void)
@@ -76,10 +82,12 @@ void dc_rumble_poll(void)
         sent_generation = generation - 1;
     }
     if (!pack) { wanted_power = 0; return; }
-    if (!in_game || now >= deadline) wanted_power = 0;
+    /* Only a request that has been sent can expire. */
+    if (!in_game || (sent_generation == generation && now >= deadline)) wanted_power = 0;
     if (wanted_power == sent_power &&
         (!wanted_power || sent_generation == generation)) return;
     if (send_effect(pack, wanted_power) != MAPLE_EOK) return;
+    if (wanted_power && sent_generation != generation) deadline = now + wanted_ms;
     sent_power = wanted_power;
     sent_generation = generation;
     {
