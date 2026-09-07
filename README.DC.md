@@ -146,18 +146,38 @@ into a bounded field (`MAXIMUM_ABSOLUTE_YAW`), so the turn rate saturates near
 67°/sec however large a value is fed in. The sliders' useful work is *reducing*
 sensitivity for finer aim.
 
-**Rumble.** A vibration pack in the controller's expansion slot gets a pulse
-for each shot (power 4, 90 ms) and each hit taken (6, 120 ms), and a longer,
-stronger one when the missile launcher fires (7, 250 ms). `dc/dc_rumble.c`
-never waits on the Maple bus: the game only records what it wants and the
-per-frame pad poll sends it, retries a busy bus next frame, and stops the pack
-when the pulse is over or gameplay ends. The effect is sent continuous and
-stopped explicitly: the first console test (b82) felt nothing with a one-shot
-effect at power 2 and `inc=1`, and with a deadline measured from the request
-rather than from the pack accepting the command, a 70 ms pulse could expire
-during the frame or two the bus refuses the first send. Flycast never refuses,
-which is why it felt fine there. No pack fitted is a no-op. The strengths and
-durations at the top of that file are the tuning knobs.
+**Rumble.** A vibration pack in the controller's expansion slot pulses once
+per round the player fires, so a held trigger repeats at the weapon's own
+cadence and full auto is a buzz. Strength (1-7) and length per weapon and
+trigger live in a table in `weapons.cpp` (`dc_weapon_rumble_table`), scaled
+from each trigger's recoil value in `weapon_definitions.h`:
+
+| Weapon | Primary | Secondary |
+|---|---|---|
+| Pistol | 4, 80 ms | same |
+| Fusion pistol | 3, 70 ms bolt | 7, 200 ms charged shot |
+| Assault rifle | 3, 60 ms per round | 6, 170 ms grenade |
+| Missile launcher | 7, 250 ms | |
+| Flamethrower | 2, 60 ms per burst | |
+| Alien gun | 4, 90 ms | same |
+| Shotgun | 6, 140 ms | same |
+| SMG | 3, 55 ms per round | same |
+
+Charging the fusion pistol holds a rumble that builds from 2 to 4 with the
+charge, sits at 4 while charged, and climbs to 5 then 6 in the last seconds
+before it overloads; the overload itself, like every hit taken, comes through
+the damage hook: 5 for a graze, 7 for 30 damage or more, 100-160 ms by amount.
+Fists and the ball are silent.
+
+`dc/dc_rumble.c` never waits on the Maple bus: the game only records what it
+wants and the per-frame pad poll sends it, retries a busy bus next frame, and
+stops the pack when the pulse is over or gameplay ends. The effect is sent
+continuous and stopped explicitly: the first console test (b82) felt nothing
+with a one-shot effect at power 2 and `inc=1`, and with a deadline measured
+from the request rather than from the pack accepting the command, a 70 ms
+pulse could expire during the frame or two the bus refuses the first send.
+Flycast never refuses, which is why it felt fine there. No pack fitted is a
+no-op.
 
 ## Saves
 

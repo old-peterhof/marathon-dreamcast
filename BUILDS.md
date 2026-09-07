@@ -54,3 +54,4 @@ to the engine clamp, and the VMU Profiler. Git history has the detail.
 | b81 | vqspan | 5540eb5 | Sprite frames read from the VQ pack in one aligned transfer; the first seconds of a level no longer stall |
 | b82 | vram | 0200e8c | Font atlases released per level (384 KB VRAM leak per restart); eviction no longer waits on the PVR or chases a contiguous block |
 | b83 | sky | 99d72c4 | First console feedback: sky texture pinned and never drawn unless resident (was VRAM garbage on hardware); rumble continuous, stronger, deadline from acceptance |
+| b84 | weapons | 80544fb | Rumble per weapon and trigger (table in weapons.cpp), fusion charge hold, hits scaled by damage |

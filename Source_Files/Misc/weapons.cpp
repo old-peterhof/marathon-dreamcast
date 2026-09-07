@@ -655,6 +655,69 @@ void process_new_item_for_reloading(
 #define WEAPON_SHORTED_SOUND NONE
 
 /* Update the given player's weapons */
+#ifdef DC
+/*
+ *	Rumble per weapon and trigger: strength 1-7 and length in ms, one pulse
+ *	per round spawned. Scaled from each trigger's recoil_magnitude in
+ *	weapon_definitions.h (pistol 10, fusion 5/20, rifle 5, grenade 40,
+ *	rocket 100, flamer 2, alien gun 5, shotgun 25, SMG 5). Automatic weapons
+ *	fire a round every tick or two, so their small pulses run together into a
+ *	buzz; the flamethrower is the faintest of them. The fusion pistol's
+ *	charge is handled in update_player_weapons, and its overload goes through
+ *	the damage hook like any other hit. These numbers are the tuning knobs.
+ */
+struct dc_rumble_spec { unsigned char power, ms; };
+static const struct dc_rumble_spec dc_weapon_rumble_table[MAXIMUM_NUMBER_OF_WEAPONS][NUMBER_OF_TRIGGERS] =
+{
+	{ {0, 0},   {0, 0}   },	/* fist */
+	{ {4, 80},  {4, 80}  },	/* pistol (either hand) */
+	{ {3, 70},  {7, 200} },	/* fusion: bolt, charged shot */
+	{ {3, 60},  {6, 170} },	/* assault rifle: bullet, grenade */
+	{ {7, 250}, {0, 0}   },	/* missile launcher */
+	{ {2, 60},  {0, 0}   },	/* flamethrower */
+	{ {4, 90},  {4, 90}  },	/* alien shotgun */
+	{ {6, 140}, {6, 140} },	/* shotgun (either hand) */
+	{ {0, 0},   {0, 0}   },	/* ball */
+	{ {3, 55},  {3, 55}  },	/* SMG */
+};
+static void dc_weapon_rumble(short weapon_type, short which_trigger)
+{
+	if (weapon_type < 0 || weapon_type >= MAXIMUM_NUMBER_OF_WEAPONS) return;
+	if (which_trigger < 0 || which_trigger >= NUMBER_OF_TRIGGERS) return;
+	const struct dc_rumble_spec& spec = dc_weapon_rumble_table[weapon_type][which_trigger];
+	dc_rumble_pulse(spec.power, spec.ms);
+}
+
+/* The fusion pistol charging: a hold that builds while the charge builds,
+   then sits at 4 while charged and climbs as the overload nears (the game
+   flutters the weapon sprite the same way). Rolling requests, so it stops on
+   its own when the state does. */
+static void dc_charge_rumble(short player_index)
+{
+	struct weapon_data *weapon= get_player_current_weapon(player_index);
+	struct weapon_definition *definition= get_current_weapon_definition(player_index);
+	for (short t= 0; t<NUMBER_OF_TRIGGERS; ++t)
+	{
+		struct trigger_data *trigger= &weapon->triggers[t];
+		struct trigger_definition *tdef= &definition->weapons_by_trigger[t];
+		if (trigger->state == _weapon_charging && tdef->charging_ticks > 0)
+		{
+			/* phase counts down from charging_ticks to 0 */
+			int done= tdef->charging_ticks - trigger->phase;
+			dc_rumble_charge(2 + (unsigned)((2*done)/tdef->charging_ticks));	/* 2..4 */
+		}
+		else if (trigger->state == _weapon_charged && (definition->flags & _weapon_overloads))
+		{
+			/* phase counts down from CHARGED_WEAPON_OVERLOAD to the explosion */
+			unsigned power= 4;
+			if (trigger->phase < 10*TICKS_PER_SECOND) power= 5;
+			if (trigger->phase < 3*TICKS_PER_SECOND) power= 6;
+			dc_rumble_charge(power);
+		}
+	}
+}
+#endif
+
 void update_player_weapons(
 	short player_index, 
 	uint32 action_flags)
@@ -668,6 +731,10 @@ void update_player_weapons(
 		struct weapon_definition *definition= get_current_weapon_definition(player_index);
 		short which_trigger, trigger_count, first_trigger;
 		bool triggers_down[NUMBER_OF_TRIGGERS];
+
+#ifdef DC
+		if (player_index == local_player_index) dc_charge_rumble(player_index);
+#endif
 
 		/* Did they want to raise a second weapon? */
 		test_raise_double_weapon(player_index, &action_flags);
@@ -1818,10 +1885,10 @@ static void fire_weapon(
 			
 		/* Spawn the projectile. I can't update the shots_hit until it actually hits the */
 #ifdef DC
-		if (player_index == local_player_index && rounds_to_fire > 0 &&
-		    definition->weapon_class != _melee_class &&
-		    trigger_definition->projectile_type != _projectile_ball_dropped)
-			dc_rumble_shot(player_weapons->current_weapon == _weapon_missile_launcher);
+		/* One pulse per round spawned, so a held trigger repeats at the
+		   weapon's own cadence and full auto is a buzz. See dc_weapon_rumble. */
+		if (player_index == local_player_index && rounds_to_fire > 0)
+			dc_weapon_rumble(player_weapons->current_weapon, which_trigger);
 #endif
 		/* target, which comes in update */
 		calculate_weapon_origin_and_vector(player_index, which_trigger, 

@@ -702,7 +702,7 @@ void damage_player(
 		if (player_index == local_player_index && damage_amount > 0 &&
 		    !PLAYER_IS_DEAD(player) && player->suit_energy > 0 &&
 		    damage_type != _damage_oxygen_drain)
-			dc_rumble_hit();
+			dc_rumble_hit((unsigned)damage_amount);
 #endif
 		/* record damage taken */
 		if (aggressor_index!=NONE)

@@ -35,8 +35,22 @@ static void request(unsigned power, unsigned milliseconds)
     deadline = now + milliseconds;
     ++generation;
 }
-void dc_rumble_shot(int missile) { request(missile ? 7 : 4, missile ? 250 : 90); }
-void dc_rumble_hit(void) { request(6, 120); }
+void dc_rumble_pulse(unsigned power, unsigned milliseconds)
+{
+    if (power > 7) power = 7;
+    if (power) request(power, milliseconds);
+}
+void dc_rumble_hit(unsigned damage)
+{
+    /* a graze is a tap, a rocket to the face is not */
+    request(damage >= 30 ? 7 : 5, 100 + (damage > 60 ? 60 : damage));
+}
+void dc_rumble_charge(unsigned power)
+{
+    /* renewed every tick while charging; stops by itself when the ticks stop */
+    if (power > 7) power = 7;
+    if (power) request(power, 100);
+}
 
 static int send_effect(maple_device_t *pack, unsigned power)
 {
