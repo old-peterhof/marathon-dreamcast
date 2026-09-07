@@ -162,6 +162,15 @@ void OGL_DrawHUD(Rect &dest, short time_elapsed)
 		glPopMatrix();
 
 		glPopAttrib();
+#ifdef DC
+		// GLdc has no attribute stack, so glPopAttrib restores nothing. The
+		// shapes above leave GL_ONE/GL_ZERO set; the world renderer sets its
+		// factors once at OGL_StartRun and only toggles GL_BLEND after that,
+		// so every blended sprite in the next frame drew its transparent
+		// texels as solid black on the console (b86). Put the factors back.
+		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+		glDisable(GL_BLEND);
+#endif
 	}
 }
 

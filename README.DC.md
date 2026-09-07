@@ -170,31 +170,16 @@ the damage hook: 5 for a graze, 7 for 30 damage or more, 100-160 ms by amount.
 Fists and the ball are silent.
 
 `dc/dc_rumble.c` never waits on the Maple bus: the game only records what it
-wants and the per-frame pad poll sends it, retries a busy bus next frame, and
-stops the pack when the pulse is over or gameplay ends. The effect is sent
-continuous and stopped explicitly: the first console test (b82) felt nothing
-with a one-shot effect at power 2 and `inc=1`, and with a deadline measured
-from the request rather than from the pack accepting the command, a 70 ms
-pulse could expire during the frame or two the bus refuses the first send.
-Flycast never refuses, which is why it felt fine there. No pack fitted is a
+wants and the per-frame pad poll sends it, retries a busy bus next frame,
+drops a request the bus refused for longer than it would have lasted, and
+stops the pack when the pulse is over or gameplay ends. The packet has the
+shape of KOS's own "Basic Thud" example: forward power only, frequency 26,
+one period, stopped explicitly with the all-zero packet. Two earlier packets
+(one-shot at power 2, then continuous at 4-7, both with forward and backward
+power set) were accepted by a real pack and moved nothing; the VMU screen's
+indicator confirmed the commands were queued, which is what told us the packet
+itself was the problem. Flycast vibrates for anything. No pack fitted is a
 no-op.
-
-**The VMU screen is a second HUD.** In play, `dc/dc_vmu_hud.cpp` draws the
-48x32 screen: weapon name and spare magazines on the top line, then the
-magazine as one bullet per round in the panel's own rows and columns, or an
-energy bar with quarter ticks for the beam weapons, one panel per trigger when
-two weapons are up, then the shield and oxygen bars with tick marks at the
-thirds where the panel changes colour and a hatched second layer past 1x
-shields. The right end of the rule under the top line reports the rumble pack
-(outline: seen; solid: a command queued; notch: last send refused). Outside
-play it shows a title card. Frames go out through `dc_vmu_lcd_send()` in
-`dc_compat.c` at most every four game frames and only when something changed;
-a busy Maple bus is retried next frame. The raw LCD buffer is the image
-rotated 180 degrees with the leftmost pixel in a byte's high bit, the KOS icon
-convention, which is how a VMU reads in a controller. Under `DEBUG` slot 71
-prints the screen as text every two seconds. The framerate readout and the
-profiler thread that drew it are gone (b87): the game holds 30 fps and the
-number had no further use.
 
 ## Saves
 

@@ -60,12 +60,17 @@ static int send_effect(maple_device_t *pack, unsigned power)
     purupuru_effect_t effect;
     effect.raw = 0;
     effect.motor = 1;
-    effect.fpow = effect.bpow = power;
-    effect.freq = 32;
+    /* The shape of KOS's own "Basic Thud" (examples/dreamcast/rumble): forward
+     * power only, backward 0, frequency 26, one period. The two earlier
+     * packets set fpow AND bpow, one one-shot at power 2 and one continuous
+     * at 4-7; the console accepted both and moved for neither. Forward and
+     * backward together is not a pattern any known example uses. The stop at
+     * the deadline is the all-zero packet with motor 1, as the example's. */
+    effect.fpow = power;
+    effect.bpow = 0;
+    effect.freq = 26;
     effect.inc = 1;
-    /* Continuous, stopped explicitly at the deadline (power 0). The one-shot
-     * form with inc=1 at power 2 was not felt on a real pack at all. */
-    effect.cont = power ? 1 : 0;
+    effect.cont = 0;
     return purupuru_rumble(pack, &effect);
 }
 void dc_rumble_poll(void)

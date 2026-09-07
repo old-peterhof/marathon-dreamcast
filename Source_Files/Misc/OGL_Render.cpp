@@ -731,6 +731,11 @@ bool OGL_SetWindow(Rect &ScreenBounds, Rect &ViewBounds, bool UseBackBuffer)
 
 bool OGL_StartMain()
 {
+#ifdef DC
+	// Belt and braces for the same reason: the blend factors the world pass
+	// assumes, reasserted every frame whatever the HUD or a menu left behind.
+	glBlendFunc(GL_SRC_ALPHA,GL_ONE_MINUS_SRC_ALPHA);
+#endif
 	if (!OGL_IsActive()) return false;
 
 #ifdef DC
