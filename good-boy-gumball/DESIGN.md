@@ -638,79 +638,6 @@ lines, and it does not soften him. He does not apologise and he is not forgiven.
 He is just allowed to stay, which is what tolerating somebody actually looks
 like.
 
-## 8h. Bad Dog Gumball
-
-The author's final boss (section 7a). It is the only boss that cannot be a
-household object, and the only one that should be alive.
-
-### Why it is the right ending
-The game's whole tension is his fear that he was bad. Four people have already
-told him otherwise by the time this happens, and he still has to face it, because
-being told you were good does not dissolve the belief that you were not. The
-family can give him the words. They cannot do this part for him.
-
-### PROPOSED: he is not a monster version
-
-Same dog. Same tiles. No size increase, no red eyes, no distortion, no shadow
-palette.
-
-**He wears the world-1 idle.** Tail down, ears flat, head low, exactly as Gumball
-looked before anybody had said anything to him (section 11). The player has
-watched their own sprite lift over four worlds and is now looking at the old one
-across an arena.
-
-Nothing about him is exaggerated. He bit two people and stole food and growled at
-the cat, all of which is true, none of which needs inflating. The horror is that
-he is accurate.
-
-This also costs nothing. The sprite, the idle, and the animation set all already
-exist.
-
-### PROPOSED: the carrot bar
-
-He is the only boss in the game with a health bar, because he is the only boss
-that is Gumball.
-
-His bar is a row of carrots exactly like the player's. **His is four shorter.**
-The player has eight from four reunions (section 12); he has the four you started
-with.
-
-You do not out-fight him. You outlast him, and the margin is precisely what the
-family gave you. The player reads that off the HUD in about one second and nobody
-says a word about it.
-
-It also means the carrot system pays off structurally instead of just being a
-health bar with a theme.
-
-### PROPOSED: the ritual, backwards
-
-The reunion (section 10) has run four times and the player knows it by heart:
-walk to them unprompted, the shy-away, the hand, the hug, the sniff.
-
-On the fifth it inverts. **Bad Dog Gumball does the shy-away**, and the player is
-the one who has to walk over. Same beats, same timing, no prompt, no arrow. If
-the player stands still, he waits.
-
-The game spent four worlds teaching the player how to be approached. This is
-where it asks them to do it.
-
-### Cost
-The cheapest boss in the project. Existing sprite, existing animations, existing
-movement code, one extra HUD bar. A mirror AI on DMG can be a short delayed
-replay of the player's own input buffer, which is a few dozen bytes of ring
-buffer and no new art at all.
-
-### Guard
-"Fight your dark self" is one of the most common final bosses in games. What
-keeps this one from being that is the refusal to make him cool. He is not a
-shadow, not a demon, not a rival. He is a grumpy dog with his ears flat, and the
-player has already been him.
-
-### OPEN
-- Whether this happens in the field, or somewhere else.
-- What, if anything, is said.
-- Whether Beans is present for it.
-
 ## 9. The three-level shape
 
 A template so each world reads the same way and anticipation does the work.
@@ -783,8 +710,9 @@ did, and the bosses could be what Gumball was afraid of.** Real dog fears, made
 out of each world's material, rather than invented monsters. That keeps the whole
 game inside a dog's actual experience.
 
-**OPEN: the four world bosses.** The final boss is given (Bad Dog Gumball,
-sections 7a and 8h); the four that gate the reunions are not.
+**OPEN: all five bosses.** Bad Dog Gumball is given as the final boss (section
+7a) and how he works is the author's. The four that gate the reunions are not
+decided.
 
 ### Boss constraints regardless of what they are
 - Three phases, one hit per phase. The reward is the reunion, not the challenge.
