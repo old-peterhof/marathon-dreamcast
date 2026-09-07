@@ -508,6 +508,13 @@ where a physical drive seeks and Flycast does not.
 
 ## Working on this code
 
+**One working tree.** `~/Desktop/GPT Misc/MarathonDC` is where everything
+happens: edits, builds, images, pushes to the fork. The older checkout at
+`~/Desktop/Marathon DC/port/AlephOne-0.12.0` is an archive with the same
+history (see its `ARCHIVE-README.md`); it is only ever fast-forwarded, never
+edited, and images are no longer copied into it. Until 6 September both were
+kept in step by hand, which doubled 15 GB of disc images for no gain.
+
 Two traps worth knowing before you start.
 
 `grep` on the development machine was `ugrep`, which silently skips files it
