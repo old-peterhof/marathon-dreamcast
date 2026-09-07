@@ -1362,7 +1362,7 @@ static void handle_game_key(const SDL_Event &event)
  *	Difficulty is deliberately not here. It belongs to the run and is chosen when
  *	the run starts -- Max's call on UI-HANDOFF open question 3.
  */
-enum { pmResume = 1, pmSave, pmPrefs, pmQuit };
+enum { pmResume = 1, pmSave, pmLoad, pmPrefs, pmQuit };
 
 static void dc_pause_menu(void)
 {
@@ -1371,7 +1371,7 @@ static void dc_pause_menu(void)
 		{ "START", "RESUME", false },
 		{ "+",     "MOVE",   false }
 	};
-	struct dc_row rows[4];
+	struct dc_row rows[5];
 	struct dc_screen sc;
 	char elapsed[24], level[72];
 	const char *state[4];
@@ -1381,9 +1381,10 @@ static void dc_pause_menu(void)
 
 	rows[0].label = "RESUME";        rows[0].kind = DC_ROW_ACTION; rows[0].id = pmResume;
 	rows[1].label = "SAVE GAME";     rows[1].kind = DC_ROW_ACTION; rows[1].id = pmSave;
-	rows[2].label = "PREFERENCES";   rows[2].kind = DC_ROW_ACTION; rows[2].id = pmPrefs;
-	rows[3].label = "QUIT TO MAIN MENU";
-	rows[3].kind = DC_ROW_ACTION;    rows[3].id = pmQuit;
+	rows[2].label = "LOAD GAME";     rows[2].kind = DC_ROW_ACTION; rows[2].id = pmLoad;
+	rows[3].label = "PREFERENCES";   rows[3].kind = DC_ROW_ACTION; rows[3].id = pmPrefs;
+	rows[4].label = "QUIT TO MAIN MENU";
+	rows[4].kind = DC_ROW_ACTION;    rows[4].id = pmQuit;
 
 	{
 		unsigned int secs = (unsigned int)dynamic_world->tick_count / 30;
@@ -1407,7 +1408,7 @@ static void dc_pause_menu(void)
 	sc.panel_w   = 340;
 	sc.row_h     = DC_UI_ROW_H;
 	sc.rows      = rows;
-	sc.nrows     = 4;
+	sc.nrows     = 5;
 	sc.hints     = hints;
 	sc.nhints    = 3;
 	sc.over_game = true;
@@ -1431,6 +1432,17 @@ static void dc_pause_menu(void)
 			save_game();
 			validate_world_window();
 			continue;			/* back to the pause menu, still paused */
+
+		case pmLoad:
+			/*
+			 *	Recover an earlier save after dying, not only the newest one.
+			 *	dc_load_from_pause leaves the current game first (a mid-game
+			 *	load would otherwise trip start_game's controller assert), then
+			 *	opens the picker. Either way the old world is gone, so this
+			 *	always leaves the pause menu.
+			 */
+			dc_load_from_pause();
+			break;
 
 		case pmPrefs:
 			do_preferences();

@@ -256,7 +256,7 @@ int dc_choose_save_slot(void)
  *	ever opens the newest save. Without a load here the other three slots would
  *	be a history the player could see and never reach.
  */
-void dc_manage_saves(void)
+bool dc_manage_saves(void)
 {
 	static const dc_ui_hint hints[] = {
 		{ "A", "LOAD",   true },
@@ -291,7 +291,7 @@ void dc_manage_saves(void)
 		chosen = dc_screen_run(&sc);
 
 		if (chosen == DC_SCREEN_BACK)
-			return;
+			return false;
 
 		if (chosen & DC_SCREEN_X) {
 			char q[96];
@@ -337,9 +337,44 @@ void dc_manage_saves(void)
 				continue;
 			}
 
-			return;		/* the game is running now */
+			return true;	/* the game is running now */
 		}
 	}
+}
+
+/*
+ *	QUIT TO MAIN MENU confirmation, drawn over the dimmed game with the DC UI.
+ *	Replaces quit_without_saving()'s SDL dialog, which draws to the raw video
+ *	surface and so renders black under GL. Returns true to quit.
+ */
+bool dc_confirm_quit(void)
+{
+	static const dc_ui_hint hints[] = {
+		{ "A", "CHOOSE", true },
+		{ "B", "BACK",   true }
+	};
+	struct dc_row rows[2];
+	struct dc_screen sc;
+
+	memset(rows, 0, sizeof rows);
+	memset(&sc, 0, sizeof sc);
+
+	rows[0].label = "KEEP PLAYING";      rows[0].kind = DC_ROW_ACTION; rows[0].id = 1;
+	rows[1].label = "QUIT TO MAIN MENU"; rows[1].kind = DC_ROW_ACTION; rows[1].id = 2;
+
+	sc.title     = "QUIT";
+	sc.kicker    = "UNSAVED PROGRESS IS LOST";
+	sc.cap       = "END THE GAME IN PROGRESS?";
+	sc.panel_y   = 190;
+	sc.panel_w   = 560;
+	sc.row_h     = DC_UI_ROW_H;
+	sc.rows      = rows;
+	sc.nrows     = 2;
+	sc.hints     = hints;
+	sc.nhints    = 2;
+	sc.over_game = true;
+
+	return (dc_screen_run(&sc) & ~DC_SCREEN_X) == 2;
 }
 
 /*

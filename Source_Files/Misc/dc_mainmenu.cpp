@@ -196,6 +196,28 @@ static void newest_save_note(char *level, size_t llen, char *where, size_t wlen)
  *	decoded a 640x480 PICT; here it is one blit from a surface already in the
  *	display's own format, so the simple thing is also the fast thing.
  */
+/*
+ *	Trim a right-aligned status string so it cannot cross into the menu panel.
+ *	The note sits in the right column; a long level name would otherwise be
+ *	drawn far enough left to sit on top of the menu items. Chop and add an
+ *	ellipsis until it fits the budget.
+ */
+static void fit_note(char *s, size_t cap, int budget,
+                     const sdl_font_info *font, uint16 style)
+{
+	if (dc_ui_tracked_width(s, font, style, DC_UI_TRACK_LABEL) <= budget)
+		return;
+	for (int n = (int)strlen(s) - 1; n > 0; n--) {
+		char t[128];
+		snprintf(t, sizeof t, "%.*s...", n, s);
+		if (dc_ui_tracked_width(t, font, style, DC_UI_TRACK_LABEL) <= budget) {
+			snprintf(s, cap, "%s", t);
+			return;
+		}
+	}
+	snprintf(s, cap, "...");
+}
+
 void dc_main_menu_draw(short selected)
 {
 	SDL_Surface *video = dc_ui_target();
@@ -250,6 +272,12 @@ void dc_main_menu_draw(short selected)
 	 *	reads as a caption rather than as another menu the player could move to.
 	 */
 	newest_save_note(level, sizeof level, where, sizeof where);
+	{
+		/* Right column runs from the panel's right edge to the safe area. */
+		const int note_budget = DC_UI_SAFE_R - (MENU_PANEL_X + MENU_PANEL_W) - 16;
+		fit_note(level, sizeof level, note_budget, label_font, label_style);
+		fit_note(where, sizeof where, note_budget, label_font, label_style);
+	}
 
 	{
 		int y = MENU_STATE_Y;

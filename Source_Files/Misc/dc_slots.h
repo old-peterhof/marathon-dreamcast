@@ -12,7 +12,9 @@ int dc_choose_save_slot(void);
 
 /* MANAGE SAVES: A loads, X deletes. Returns once a game is running or the
    player backs out. */
-void dc_manage_saves(void);
+bool dc_manage_saves(void);
+bool dc_confirm_quit(void);
+void dc_load_from_pause(void);
 
 /* Continue Game. False if there is nothing to continue. */
 bool dc_continue_newest_game(void);

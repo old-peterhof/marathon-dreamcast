@@ -806,9 +806,16 @@ void do_menu_item_command(
 									really_wants_to_quit= true;
 								} else {
 									pause_game();
+#ifdef DC
+									/* dc_confirm_quit draws over the dimmed game
+									   with the DC UI; quit_without_saving's SDL
+									   dialog renders black under GL. */
+									really_wants_to_quit= dc_confirm_quit();
+#else
 									show_cursor();
 									really_wants_to_quit= quit_without_saving();
 									hide_cursor();
+#endif
 									resume_game();
 								}
 								break;
@@ -1628,6 +1635,22 @@ static void finish_game(
 	
 	if(return_to_main_menu) display_main_menu();
 }
+
+#ifdef DC
+/*
+ *	LOAD GAME from the pause menu. A game is running and its keyboard controller
+ *	is live, so a straight load_and_start_game would trip start_game's
+ *	controller-state assertion. finish_game(true) leaves the current game the
+ *	same way quitting does -- clears the controller, stops the renderer, returns
+ *	to the main menu -- and then the picked save starts exactly as it would from
+ *	the menu. Backing out of the picker simply lands on the main menu.
+ */
+void dc_load_from_pause(void)
+{
+	finish_game(true);
+	dc_manage_saves();
+}
+#endif
 
 #ifdef DC
 // Emulator-only regression: loadtest SLOT='1 6'. A second SLOT integer opts
