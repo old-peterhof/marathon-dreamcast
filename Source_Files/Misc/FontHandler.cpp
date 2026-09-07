@@ -642,6 +642,9 @@ void FontSpecifier::OGL_Render(const char *Text)
 	glEnable(GL_TEXTURE_2D);
 	glDisable(GL_CULL_FACE);
 	glEnable(GL_BLEND);
+#ifdef DC
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);	// HUD fills leave GL_ONE/GL_ZERO set
+#endif
 	glDisable(GL_ALPHA_TEST);
 
 	glBindTexture(GL_TEXTURE_2D,TxtrID);

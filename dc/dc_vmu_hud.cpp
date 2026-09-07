@@ -174,7 +174,7 @@ void compose()
 	}
 	hline(0, W - 1, 6);
 	// Rumble pack, at the right end of the rule: outline = pack seen, solid =
-	// a command was accepted, a notch = the last send was refused. The console
+	// a command was queued by KOS, a notch = the last send was refused. The console
 	// has no serial log; this is how "did rumble work" gets answered.
 	{
 		unsigned st = dc_rumble_status();
@@ -234,11 +234,12 @@ extern "C" void dc_vmu_hud_set_ingame(int yes)
 	else dc_profiler_start();
 }
 
+extern "C" void dc_vmu_hud_frame(void) { ++Frames; }	/* once per presented frame, from screen_sdl */
+
 extern "C" void dc_vmu_hud_poll(void)
 {
 	static unsigned tick = 0;
 	if (!InGame) return;
-	++Frames;
 	unsigned long now = dc_ms();
 	if (!FpsSince) FpsSince = now;
 	if (now - FpsSince >= 1000) { Fps = (Frames * 1000u) / (unsigned)(now - FpsSince); Frames = 0; FpsSince = now; }

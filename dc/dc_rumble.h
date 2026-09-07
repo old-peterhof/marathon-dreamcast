@@ -10,7 +10,7 @@ void dc_rumble_pulse(unsigned power, unsigned milliseconds);
 void dc_rumble_hit(unsigned damage);
 /* Rolling hold for a weapon that is charging: call every tick it is. */
 void dc_rumble_charge(unsigned power);
-/* Diagnostic bits for the VMU screen: 1 pack found, 2 a command was accepted, 4 last send refused (EAGAIN). */
+/* Diagnostic bits for the VMU screen: 1 pack found, 2 a command was queued by KOS (not a device reply), 4 last send refused (EAGAIN). */
 unsigned dc_rumble_status(void);
 void dc_rumble_poll(void);
 void dc_rumble_set_ingame(int enabled);

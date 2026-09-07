@@ -11,7 +11,7 @@
 extern void dc_trace(int slot, const char *fmt, ...);
 static int in_game;
 static unsigned wanted_power, wanted_ms, sent_power, generation, sent_generation;
-static uint64_t deadline;
+static uint64_t deadline, requested_at;
 static int active_port = -1, active_unit = -1;
 static unsigned status_bits;
 unsigned dc_rumble_status(void) { return status_bits; }
@@ -30,6 +30,7 @@ static void request(unsigned power, unsigned milliseconds)
     if (now < deadline && wanted_power > power) return;
     wanted_power = power;
     wanted_ms = milliseconds;
+    requested_at = now;
     /* Provisional; restarted when the pack actually accepts the command. On
        the console the first send can come back MAPLE_EAGAIN for a frame or
        two, and a 70 ms request measured from here expired before it was ever
@@ -99,8 +100,13 @@ void dc_rumble_poll(void)
     }
     if (!pack) { wanted_power = 0; status_bits &= ~1u; return; }
     status_bits |= 1u;
-    /* Only a request that has been sent can expire. */
+    /* A sent request expires at its deadline; one the bus kept refusing for
+       longer than it would have lasted is dropped rather than fired late. */
     if (!in_game || (sent_generation == generation && now >= deadline)) wanted_power = 0;
+    if (wanted_power && sent_generation != generation && now - requested_at > wanted_ms) {
+        wanted_power = 0;
+        sent_generation = generation;
+    }
     if (wanted_power == sent_power &&
         (!wanted_power || sent_generation == generation)) return;
     if (send_effect(pack, wanted_power) != MAPLE_EOK) { status_bits |= 4u; return; }

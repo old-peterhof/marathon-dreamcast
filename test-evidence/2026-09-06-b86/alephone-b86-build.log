@@ -1,0 +1,116 @@
+/opt/toolchains/dc/sh-elf/bin/sh-elf-g++  -O3 -flto=auto -ffat-lto-objects -fno-PIC -fno-PIE -fomit-frame-pointer -fbuiltin -ffast-math -ffp-contract=fast -m4-single -ml -mfsrra -mfsca -ffunction-sections -fdata-sections -matomic-model=soft-gusa -ftls-model=local-exec -D__DREAMCAST__  -isystem /opt/toolchains/dc/kos/include -isystem /opt/toolchains/dc/kos/kernel/arch/dreamcast/include -isystem /opt/toolchains/dc/kos/addons/include/ -isystem /opt/toolchains/dc/kos/../kos-ports/include -D_arch_dreamcast=1 -D_arch_sub_pristine=1 -Wall -g -I/opt/toolchains/dc/kos/../kos-ports/include/SDL -Idc -Idc/vendor -ISource_Files/CSeries -ISource_Files/Expat -ISource_Files/Misc -ISource_Files/Network -ISource_Files/Pfhortran -ISource_Files/ModelView -DSDL -DHAVE_UNISTD_H -DPACKAGE='"AlephOne"' -DVERSION='"0.12.0"' -DDC -DHAVE_OPENGL -fno-strict-aliasing -fpermissive -Wno-write-strings -Wno-narrowing -O3 -ffast-math -flto -MMD -MP -std=gnu++98 -fno-rtti -fno-exceptions -include dc_gl_compat.h -c Source_Files/Misc/OGL_Textures.cpp -o Source_Files/Misc/OGL_Textures.o
+/opt/toolchains/dc/sh-elf/bin/sh-elf-g++  -O3 -flto=auto -ffat-lto-objects -fno-PIC -fno-PIE -fomit-frame-pointer -fbuiltin -ffast-math -ffp-contract=fast -m4-single -ml -mfsrra -mfsca -ffunction-sections -fdata-sections -matomic-model=soft-gusa -ftls-model=local-exec -D__DREAMCAST__  -isystem /opt/toolchains/dc/kos/include -isystem /opt/toolchains/dc/kos/kernel/arch/dreamcast/include -isystem /opt/toolchains/dc/kos/addons/include/ -isystem /opt/toolchains/dc/kos/../kos-ports/include -D_arch_dreamcast=1 -D_arch_sub_pristine=1 -Wall -g -I/opt/toolchains/dc/kos/../kos-ports/include/SDL -Idc -Idc/vendor -ISource_Files/CSeries -ISource_Files/Expat -ISource_Files/Misc -ISource_Files/Network -ISource_Files/Pfhortran -ISource_Files/ModelView -DSDL -DHAVE_UNISTD_H -DPACKAGE='"AlephOne"' -DVERSION='"0.12.0"' -DDC -DHAVE_OPENGL -fno-strict-aliasing -fpermissive -Wno-write-strings -Wno-narrowing -O3 -ffast-math -flto -MMD -MP -std=gnu++98 -fno-rtti -fno-exceptions -include dc_gl_compat.h -c Source_Files/Misc/dc_mainmenu.cpp -o Source_Files/Misc/dc_mainmenu.o
+/opt/toolchains/dc/sh-elf/bin/sh-elf-g++  -O3 -flto=auto -ffat-lto-objects -fno-PIC -fno-PIE -fomit-frame-pointer -fbuiltin -ffast-math -ffp-contract=fast -m4-single -ml -mfsrra -mfsca -ffunction-sections -fdata-sections -matomic-model=soft-gusa -ftls-model=local-exec -D__DREAMCAST__  -isystem /opt/toolchains/dc/kos/include -isystem /opt/toolchains/dc/kos/kernel/arch/dreamcast/include -isystem /opt/toolchains/dc/kos/addons/include/ -isystem /opt/toolchains/dc/kos/../kos-ports/include -D_arch_dreamcast=1 -D_arch_sub_pristine=1 -Wall -g -I/opt/toolchains/dc/kos/../kos-ports/include/SDL -Idc -Idc/vendor -ISource_Files/CSeries -ISource_Files/Expat -ISource_Files/Misc -ISource_Files/Network -ISource_Files/Pfhortran -ISource_Files/ModelView -DSDL -DHAVE_UNISTD_H -DPACKAGE='"AlephOne"' -DVERSION='"0.12.0"' -DDC -DHAVE_OPENGL -fno-strict-aliasing -fpermissive -Wno-write-strings -Wno-narrowing -O3 -ffast-math -flto -MMD -MP -std=gnu++98 -fno-rtti -fno-exceptions -include dc_gl_compat.h -c Source_Files/Misc/dc_screen.cpp -o Source_Files/Misc/dc_screen.o
+/opt/toolchains/dc/sh-elf/bin/sh-elf-g++  -O3 -flto=auto -ffat-lto-objects -fno-PIC -fno-PIE -fomit-frame-pointer -fbuiltin -ffast-math -ffp-contract=fast -m4-single -ml -mfsrra -mfsca -ffunction-sections -fdata-sections -matomic-model=soft-gusa -ftls-model=local-exec -D__DREAMCAST__  -isystem /opt/toolchains/dc/kos/include -isystem /opt/toolchains/dc/kos/kernel/arch/dreamcast/include -isystem /opt/toolchains/dc/kos/addons/include/ -isystem /opt/toolchains/dc/kos/../kos-ports/include -D_arch_dreamcast=1 -D_arch_sub_pristine=1 -Wall -g -I/opt/toolchains/dc/kos/../kos-ports/include/SDL -Idc -Idc/vendor -ISource_Files/CSeries -ISource_Files/Expat -ISource_Files/Misc -ISource_Files/Network -ISource_Files/Pfhortran -ISource_Files/ModelView -DSDL -DHAVE_UNISTD_H -DPACKAGE='"AlephOne"' -DVERSION='"0.12.0"' -DDC -DHAVE_OPENGL -fno-strict-aliasing -fpermissive -Wno-write-strings -Wno-narrowing -O3 -ffast-math -flto -MMD -MP -std=gnu++98 -fno-rtti -fno-exceptions -include dc_gl_compat.h -c Source_Files/Misc/shell.cpp -o Source_Files/Misc/shell.o
+/opt/toolchains/dc/sh-elf/bin/sh-elf-gcc  -O3 -flto=auto -ffat-lto-objects -fno-PIC -fno-PIE -fomit-frame-pointer -fbuiltin -ffast-math -ffp-contract=fast -m4-single -ml -mfsrra -mfsca -ffunction-sections -fdata-sections -matomic-model=soft-gusa -ftls-model=local-exec -D__DREAMCAST__  -isystem /opt/toolchains/dc/kos/include -isystem /opt/toolchains/dc/kos/kernel/arch/dreamcast/include -isystem /opt/toolchains/dc/kos/addons/include/ -isystem /opt/toolchains/dc/kos/../kos-ports/include -D_arch_dreamcast=1 -D_arch_sub_pristine=1 -Wall -g -I/opt/toolchains/dc/kos/../kos-ports/include/SDL -Idc -Idc/vendor -ISource_Files/CSeries -ISource_Files/Expat -ISource_Files/Misc -ISource_Files/Network -ISource_Files/Pfhortran -ISource_Files/ModelView -DSDL -DHAVE_UNISTD_H -DPACKAGE='"AlephOne"' -DVERSION='"0.12.0"' -DDC -DHAVE_OPENGL -fno-strict-aliasing -fpermissive -Wno-write-strings -Wno-narrowing -O3 -ffast-math -flto -MMD -MP -c dc/dc_profiler.c -o dc/dc_profiler.o
+dc/dc_profiler.c: In function ‘dc_line_vitals’:
+dc/dc_profiler.c:110:62: warning: ‘snprintf’ output may be truncated before the last format character [-Wformat-truncation=]
+  110 |         snprintf(m->sstorage, sizeof m->sstorage, "\nHP%d A%d", hp, air);
+      |                                                              ^
+dc/dc_profiler.c:110:9: note: ‘snprintf’ output between 8 and 27 bytes into a destination of size 16
+  110 |         snprintf(m->sstorage, sizeof m->sstorage, "\nHP%d A%d", hp, air);
+      |         ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+In file included from Source_Files/Misc/dc_screen.cpp:30:
+Source_Files/Misc/sdl_fonts.h: In constructor ‘sdl_font_info::sdl_font_info()’:
+Source_Files/Misc/sdl_fonts.h:43:13: warning: ‘sdl_font_info::ref_count’ will be initialized after [-Wreorder]
+   43 |         int ref_count;
+      |             ^~~~~~~~~
+Source_Files/Misc/sdl_fonts.h:31:15: warning:   ‘uint8 sdl_font_info::first_character’ [-Wreorder]
+   31 |         uint8 first_character, last_character;
+      |               ^~~~~~~~~~~~~~~
+Source_Files/Misc/sdl_fonts.h:23:9: warning:   when initialized here [-Wreorder]
+   23 |         sdl_font_info() : ref_count(0), first_character(0), last_character(0),
+      |         ^~~~~~~~~~~~~
+In file included from Source_Files/Misc/dc_mainmenu.cpp:25:
+Source_Files/Misc/sdl_fonts.h: In constructor ‘sdl_font_info::sdl_font_info()’:
+Source_Files/Misc/sdl_fonts.h:43:13: warning: ‘sdl_font_info::ref_count’ will be initialized after [-Wreorder]
+   43 |         int ref_count;
+      |             ^~~~~~~~~
+Source_Files/Misc/sdl_fonts.h:31:15: warning:   ‘uint8 sdl_font_info::first_character’ [-Wreorder]
+   31 |         uint8 first_character, last_character;
+      |               ^~~~~~~~~~~~~~~
+Source_Files/Misc/sdl_fonts.h:23:9: warning:   when initialized here [-Wreorder]
+   23 |         sdl_font_info() : ref_count(0), first_character(0), last_character(0),
+      |         ^~~~~~~~~~~~~
+In file included from Source_Files/Misc/FontHandler.h:25,
+                 from Source_Files/Misc/ViewControl.h:27,
+                 from Source_Files/Misc/render.h:27,
+                 from Source_Files/Misc/OGL_Textures.cpp:77:
+Source_Files/Misc/sdl_fonts.h: In constructor ‘sdl_font_info::sdl_font_info()’:
+Source_Files/Misc/sdl_fonts.h:43:13: warning: ‘sdl_font_info::ref_count’ will be initialized after [-Wreorder]
+   43 |         int ref_count;
+      |             ^~~~~~~~~
+Source_Files/Misc/sdl_fonts.h:31:15: warning:   ‘uint8 sdl_font_info::first_character’ [-Wreorder]
+   31 |         uint8 first_character, last_character;
+      |               ^~~~~~~~~~~~~~~
+Source_Files/Misc/sdl_fonts.h:23:9: warning:   when initialized here [-Wreorder]
+   23 |         sdl_font_info() : ref_count(0), first_character(0), last_character(0),
+      |         ^~~~~~~~~~~~~
+Source_Files/Misc/FontHandler.h: In member function ‘int FontSpecifier::CharWidth(char) const’:
+Source_Files/Misc/FontHandler.h:89:53: warning: array subscript has type ‘char’ [-Wchar-subscripts]
+   89 |         int CharWidth(char c) const { return Widths[c]; }
+      |                                                     ^
+Source_Files/Misc/dc_mainmenu.cpp: At global scope:
+Source_Files/Misc/dc_mainmenu.cpp:140:13: warning: ‘void newest_save_note(char*, size_t)’ defined but not used [-Wunused-function]
+  140 | static void newest_save_note(char *out, size_t len)
+      |             ^~~~~~~~~~~~~~~~
+In file included from Source_Files/Misc/FontHandler.h:25,
+                 from Source_Files/Misc/ViewControl.h:27,
+                 from Source_Files/Misc/render.h:27,
+                 from Source_Files/Misc/shell.cpp:10:
+Source_Files/Misc/sdl_fonts.h: In constructor ‘sdl_font_info::sdl_font_info()’:
+Source_Files/Misc/sdl_fonts.h:43:13: warning: ‘sdl_font_info::ref_count’ will be initialized after [-Wreorder]
+   43 |         int ref_count;
+      |             ^~~~~~~~~
+Source_Files/Misc/sdl_fonts.h:31:15: warning:   ‘uint8 sdl_font_info::first_character’ [-Wreorder]
+   31 |         uint8 first_character, last_character;
+      |               ^~~~~~~~~~~~~~~
+Source_Files/Misc/sdl_fonts.h:23:9: warning:   when initialized here [-Wreorder]
+   23 |         sdl_font_info() : ref_count(0), first_character(0), last_character(0),
+      |         ^~~~~~~~~~~~~
+Source_Files/Misc/FontHandler.h: In member function ‘int FontSpecifier::CharWidth(char) const’:
+Source_Files/Misc/FontHandler.h:89:53: warning: array subscript has type ‘char’ [-Wchar-subscripts]
+   89 |         int CharWidth(char c) const { return Widths[c]; }
+      |                                                     ^
+In file included from Source_Files/Misc/shell.cpp:54:
+Source_Files/Misc/shell_sdl.cpp: In function ‘void alert_user(short int, short int, short int, OSErr)’:
+Source_Files/Misc/shell_sdl.cpp:556:34: warning: comparison of integer expressions of different signedness: ‘int’ and ‘size_t’ {aka ‘unsigned int’} [-Wsign-compare]
+  556 |                         while (i < strlen(t) && width < MAX_ALERT_WIDTH) {
+      |                                ~~^~~~~~~~~~~
+Source_Files/Misc/shell_sdl.cpp:562:31: warning: comparison of integer expressions of different signedness: ‘int’ and ‘size_t’ {aka ‘unsigned int’} [-Wsign-compare]
+  562 |                         if (i != strlen(t))
+      |                             ~~^~~~~~~~~~~~
+Source_Files/Misc/shell_sdl.cpp:565:31: warning: comparison of integer expressions of different signedness: ‘int’ and ‘size_t’ {aka ‘unsigned int’} [-Wsign-compare]
+  565 |                         if (i != strlen(t))
+      |                             ~~^~~~~~~~~~~~
+Source_Files/Misc/OGL_Textures.cpp: At global scope:
+Source_Files/Misc/OGL_Textures.cpp:488:13: warning: ‘void MakeAverage(int, unsigned int*)’ defined but not used [-Wunused-function]
+  488 | static void MakeAverage(int Length, GLuint *Buffer)
+      |             ^~~~~~~~~~~
+/opt/toolchains/dc/sh-elf/bin/sh-elf-g++  -O3 -flto=auto -ffat-lto-objects -fno-PIC -fno-PIE -fomit-frame-pointer -fbuiltin -ffast-math -ffp-contract=fast -m4-single -ml -mfsrra -mfsca -ffunction-sections -fdata-sections -matomic-model=soft-gusa -ftls-model=local-exec -D__DREAMCAST__  -isystem /opt/toolchains/dc/kos/include -isystem /opt/toolchains/dc/kos/kernel/arch/dreamcast/include -isystem /opt/toolchains/dc/kos/addons/include/ -isystem /opt/toolchains/dc/kos/../kos-ports/include -D_arch_dreamcast=1 -D_arch_sub_pristine=1 -Wall -g  -m4-single -ml -Wl,--gc-sections -T/opt/toolchains/dc/kos/utils/ldscripts/shlelf.xc -nostdlib -L/opt/toolchains/dc/kos/lib/dreamcast -L/opt/toolchains/dc/kos/addons/lib/dreamcast -L/opt/toolchains/dc/kos/../kos-ports/lib -O3 -ffast-math -flto Source_Files/CSeries/byte_swapping.o Source_Files/CSeries/csalerts_sdl.o Source_Files/CSeries/cscluts_sdl.o Source_Files/CSeries/csmisc_sdl.o Source_Files/CSeries/csstrings_sdl.o Source_Files/Expat/hashtable.o Source_Files/Expat/xmlparse.o Source_Files/Expat/xmlrole.o Source_Files/Expat/xmltok.o Source_Files/Misc/AnimatedTextures.o Source_Files/Misc/ChaseCam.o Source_Files/Misc/ColorParser.o Source_Files/Misc/Crosshairs_SDL.o Source_Files/Misc/DamageParser.o Source_Files/Misc/FileHandler_SDL.o Source_Files/Misc/FontHandler.o Source_Files/Misc/ImageLoader_SDL.o Source_Files/Misc/OGL_Render.o Source_Files/Misc/OGL_Setup.o Source_Files/Misc/OverheadMap_SDL.o Source_Files/Misc/OverheadMapRenderer.o Source_Files/Misc/PlayerName.o Source_Files/Misc/RenderPlaceObjs.o Source_Files/Misc/RenderRasterize.o Source_Files/Misc/RenderSortPoly.o Source_Files/Misc/RenderVisTree.o Source_Files/Misc/ShapesParser.o Source_Files/Misc/TextStrings.o Source_Files/Misc/ViewControl.o Source_Files/Misc/XML_Configure.o Source_Files/Misc/XML_DataBlock.o Source_Files/Misc/XML_ElementParser.o Source_Files/Misc/XML_LevelScript.o Source_Files/Misc/XML_MakeRoot.o Source_Files/Misc/XML_Loader_SDL.o Source_Files/Misc/computer_interface.o Source_Files/Misc/crc.o Source_Files/Misc/devices.o Source_Files/Misc/dynamic_limits.o Source_Files/Misc/effects.o Source_Files/Misc/fades.o Source_Files/Misc/find_files_sdl.o Source_Files/Misc/flood_map.o Source_Files/Misc/game_errors.o Source_Files/Misc/game_wad.o Source_Files/Misc/game_window.o Source_Files/Misc/game_window_sdl.o Source_Files/Misc/images.o Source_Files/Misc/import_definitions.o Source_Files/Misc/interface.o Source_Files/Misc/interface_sdl.o Source_Files/Misc/items.o Source_Files/Misc/lightsource.o Source_Files/Misc/map.o Source_Files/Misc/map_constructors.o Source_Files/Misc/marathon2.o Source_Files/Misc/media.o Source_Files/Misc/monsters.o Source_Files/Misc/motion_sensor.o Source_Files/Misc/mouse_sdl.o Source_Files/Misc/mysound.o Source_Files/Misc/overhead_map.o Source_Files/Misc/pathfinding.o Source_Files/Misc/physics.o Source_Files/Misc/placement.o Source_Files/Misc/platforms.o Source_Files/Misc/player.o Source_Files/Misc/preferences.o Source_Files/Misc/preprocess_map_sdl.o Source_Files/Misc/projectiles.o Source_Files/Misc/render.o Source_Files/Misc/resource_manager.o Source_Files/Misc/scenery.o Source_Files/Misc/scottish_textures.o Source_Files/Misc/screen_drawing.o Source_Files/Misc/screen_sdl.o Source_Files/Misc/dc_plate.o Source_Files/Misc/dc_slots.o Source_Files/Misc/dc_mainmenu.o Source_Files/Misc/dc_explain.o Source_Files/Misc/dc_padconfig.o Source_Files/Misc/dc_ui.o Source_Files/Misc/dc_screen.o Source_Files/Misc/dc_prefs.o Source_Files/Misc/sdl_dialogs.o Source_Files/Misc/sdl_fonts.o Source_Files/Misc/sdl_widgets.o Source_Files/Misc/shapes.o Source_Files/Misc/shell.o Source_Files/Misc/textures.o Source_Files/Misc/vbl.o Source_Files/Misc/vbl_sdl.o Source_Files/Misc/wad.o Source_Files/Misc/wad_sdl.o Source_Files/Misc/wad_prefs.o Source_Files/Misc/weapons.o Source_Files/Misc/world.o Source_Files/Misc/shell_misc.o Source_Files/Misc/HUDRenderer.o Source_Files/Misc/HUDRenderer_SW.o Source_Files/Network/network_dummy.o Source_Files/Network/network_games.o Source_Files/Pfhortran/script_instructions.o Source_Files/Pfhortran/script_parser.o Source_Files/Pfhortran/scripting.o dc/dc_fade.o dc/dc_compat.o dc/dc_input.o dc/dc_rumble.o dc/dc_vmu.o dc/dc_profiler.o dc/dc_vmu_hud.o dc/dc_maple.o dc/dc_blit.o dc/dc_wad.o dc/vendor/sh4zam_src/shz_mem_sh4.o dc/vendor/vmu_profiler.o dc/dc_glu.o Source_Files/ModelView/Model3D.o Source_Files/ModelView/StudioLoader.o Source_Files/ModelView/WavefrontLoader.o Source_Files/ModelView/ModelRenderer.o dc/dc_vq_sprites.o Source_Files/Misc/OGL_Textures.o Source_Files/Misc/OGL_Faders.o Source_Files/Misc/HUDRenderer_OGL.o Source_Files/Misc/OverheadMap_OGL.o   -o alephone.elf -lSDL -lGL -lz -lstdc++ -lsupc++ -Wl,--start-group -lkallisti -lm -lc -lgcc -Wl,--end-group
+In function ‘load_lights’,
+    inlined from ‘process_map_wad’ at Source_Files/Misc/game_wad.cpp:1458:15,
+    inlined from ‘load_level_from_map’ at Source_Files/Misc/game_wad.cpp:345:22:
+Source_Files/Misc/game_wad.cpp:985:53: warning: argument 1 value ‘4294967295’ exceeds maximum object size 2147483647 [-Walloc-size-larger-than=]
+  985 |                 OldLights = new old_light_data[count];
+      |                                                     ^
+/opt/toolchains/dc/sh-elf/sh-elf/include/c++/15.2.0/new: In function ‘load_level_from_map’:
+/opt/toolchains/dc/sh-elf/sh-elf/include/c++/15.2.0/new:140:26: note: in a call to allocation function ‘operator new []’ declared here
+  140 | _GLIBCXX_NODISCARD void* operator new[](std::size_t)
+      |                          ^
+rm -f disc/AlephOne/AUTOSTART disc/AlephOne/PADTEST disc/AlephOne/DEBUG disc/AlephOne/PROFILE disc/AlephOne/AUTOKEY
+echo auto > disc/AlephOne/AUTOSTART
+echo on   > disc/AlephOne/DEBUG
+rm -f alephone-b86-sky-upload-play.cdi
+/opt/toolchains/dc/mkdcdisc/build/mkdcdisc -e alephone.elf -d disc/AlephOne -o alephone-b86-sky-upload-play.cdi \
+		-s MARATHON2 -n "Marathon 2 b86-sky-upload" -a "Bungie / BERO" -N
+mkdcdisc v0.0.3 - Sega Dreamcast Disc Image Generator
+Copyright (C) 2022-2026 Simulant and contributors
+
+Loading main executable...        Done.
+Scrambling 1ST_READ.BIN...        Done.
+Gathering input files...          Done.
+Building IP.BIN...                Done.
+Generating data track...          Done.
+Writing disc image...             Done.
+Wrote alephone-b86-sky-upload-play.cdi

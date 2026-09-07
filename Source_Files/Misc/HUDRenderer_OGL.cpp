@@ -245,7 +245,17 @@ void HUD_OGL_Class::DrawShape(shape_descriptor shape, screen_rectangle *dest, sc
 	glColor3f(1.0, 1.0, 1.0);
 	glEnable(GL_TEXTURE_2D);
 	glDisable(GL_BLEND);
+	#ifdef DC
+	// Keep dynamic HUD painter order on one PVR list. ONE/ZERO preserves
+	// opaque replacement, but avoids an earlier translucent fill covering us.
+	glEnable(GL_BLEND);
+	glBlendFunc(GL_ONE, GL_ZERO);
+	#endif
+	#ifdef DC
+	if (!TMgr.RenderNormal()) return;
+	#else
 	TMgr.RenderNormal();
+	#endif
 	glBegin(GL_TRIANGLE_FAN);
 		glTexCoord2f(U_Offset, V_Offset);
 		glVertex2i(x, y);
@@ -285,7 +295,15 @@ void HUD_OGL_Class::DrawShapeAtXY(shape_descriptor shape, short x, short y, bool
 		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 	} else
 		glDisable(GL_BLEND);
+	#ifdef DC
+	glEnable(GL_BLEND);
+	if (!transparency) glBlendFunc(GL_ONE, GL_ZERO);
+	#endif
+	#ifdef DC
+	if (!TMgr.RenderNormal()) return;
+	#else
 	TMgr.RenderNormal();
+	#endif
 	glBegin(GL_TRIANGLE_FAN);
 		glTexCoord2f(U_Offset, V_Offset);
 		glVertex2i(x, y);
@@ -312,6 +330,12 @@ void HUD_OGL_Class::DrawText(const char *text, screen_rectangle *dest, short fla
 	// Get font information
 	FontSpecifier &FontData = get_interface_font(font_id);
 
+#ifdef DC
+	// The shapes and fills above leave GL_ONE/GL_ZERO behind so they stay on
+	// the same PowerVR list; glyphs are alpha-keyed and need their own factors.
+	glEnable(GL_BLEND);
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+#endif
 	// Draw text
 	FontData.OGL_DrawText(text, *dest, flags);
 }
@@ -323,6 +347,10 @@ void HUD_OGL_Class::DrawText(const char *text, screen_rectangle *dest, short fla
 
 void HUD_OGL_Class::FillRect(screen_rectangle *r, short color_index)
 {
+	#ifdef DC
+	glEnable(GL_BLEND);
+	glBlendFunc(GL_ONE, GL_ZERO);
+	#endif
 	// Get color
 	const rgb_color &c = get_interface_color(color_index);
 	glColor3f(c.red / 65535.0, c.green / 65535.0, c.blue / 65535.0);
@@ -339,6 +367,10 @@ void HUD_OGL_Class::FillRect(screen_rectangle *r, short color_index)
 
 void HUD_OGL_Class::FrameRect(screen_rectangle *r, short color_index)
 {
+	#ifdef DC
+	glEnable(GL_BLEND);
+	glBlendFunc(GL_ONE, GL_ZERO);
+	#endif
 	// Get color
 	const rgb_color &c = get_interface_color(color_index);
 	glColor3f(c.red / 65535.0, c.green / 65535.0, c.blue / 65535.0);

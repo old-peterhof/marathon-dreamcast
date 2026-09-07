@@ -1554,7 +1554,10 @@ bool TextureManager::PlaceTexture(uint32 *Buffer, bool Glowing)
 #ifdef DC
 	while (glGetError() != GL_NO_ERROR) {}
 	if (PackedLandscape) {
-		glTexImage2D(GL_TEXTURE_2D, 0, GL_ARGB4444_TWID_KOS,
+		// GLdc's packed-to-twiddled path copies individual bytes into VRAM.
+		// PVR memory requires >=16-bit writes. Keep this already-packed sky
+		// linear so GLdc uses FASTCPY, retaining every texel and colour bit.
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_ARGB4444_KOS,
 		             LoadedWidth, LoadedHeight, 0, GL_BGRA,
 		             GL_UNSIGNED_SHORT_4_4_4_4_REV, Buffer);
 		goto texture_uploaded;
