@@ -107,6 +107,7 @@ The author's account of the dog himself.
 - He would paw at the back door to go out. This was often a trick, because he
   would then lead you to the fridge for a carrot.
 - **He was loyal, and he missed his family when they were away.**
+- **He always wanted to be near family.**
 
 ### The thesis
 
@@ -142,8 +143,13 @@ Carrots are Gumball's power-ups and his health. He loved them.
 ## 8. What is actually true about Gumball
 
 - He died in his sleep, at home.
+- He died alone, in the night, downstairs.
 - None of the family had a chance to say goodbye.
 - He was buried in the rain and the mud, and it was very sad.
+
+He always wanted to be near family (section 4a), and he died alone. The author
+has named that as the saddest part of it. Everything the design does is measured
+against that sentence.
 
 ---
 
@@ -361,6 +367,47 @@ Both are the author's. Put together they supply a reason, and reasons are story.
 **The design will not use this unless the author says to.** It is recorded here
 only so it is not accidentally contradicted later.
 
+## 8d. The field fills up
+
+The single most important mechanic in the game, and it comes directly from
+section 8 rather than from a designer.
+
+**He always wanted to be near family. He died alone.**
+
+The answer to that is not a line of dialogue in the finale. It is a thing the
+player can see on the screen for three quarters of the running time.
+
+### The mechanic
+- The game opens in the field. Overgrown, wild, and he is the only one in it.
+- After each reunion, that family member comes back to the field with him and
+  **stays there**.
+- Every subsequent time the player passes through, the field has one more person
+  standing in it.
+- By the fourth, the field holds the picture from the opening of his life instead
+  of the end of it.
+
+He is alone for world one. He is never alone again.
+
+### Why this and not a follower party
+Family members could trail him through levels instead. They should not. Levels
+are where the guilt lives and he should walk into them by himself. The field is
+the between-place, and filling it makes the arithmetic visible without putting
+anyone in the way of a boss.
+
+### Cost
+Cheap. The field is one map that gets four flags set on it. Each family member is
+a small static sprite with an idle animation and one line if the player walks
+over. No pathfinding, no follow logic, no collision beyond a talk trigger.
+
+On sprite budget: four standing figures plus Gumball, on a map with no enemies,
+is comfortably inside 40 sprites and 10 per scanline as long as they are 8x16 and
+not stacked vertically. Keep the field free of anything else that needs sprites.
+
+### The overgrowth
+The field is wild because it has been a long time. **OPEN:** whether it also
+recovers as it fills, or whether it stays overgrown and only the company changes.
+The second is more restrained and probably better, but it is the author's call.
+
 ## 9. The three-level shape
 
 A template so each world reads the same way and anticipation does the work.
@@ -451,6 +498,8 @@ A restraint guard, given section 7.
 - Gumball working it out and saying it aloud.
 - Gumball licking anyone. He almost never licked. The sniff is the greeting.
 - Gumball being sweetened. He growled and he snapped and that stays true.
+- Gumball alone in the dark downstairs. See the open question below before
+  building any version of the opening that goes near it.
 
 The game runs on the player knowing something the main character does not. One
 plain sentence collapses that.
@@ -564,6 +613,12 @@ Waiting on the author.
 6c. **Whether GROWL exists alongside BITE**, per section 8b.
 6d. **Whether the back-door trick becomes a puzzle mechanic**, and in whose
    world.
+6e. **Does the game ever show downstairs at night?** The proposed title screen
+   (section 11) has him asleep at home before the first input wakes him in the
+   field. Given section 8 that is either exactly right or unbearable, and it is
+   not a call this document should make. The safe alternative is that the game
+   opens in the field and never depicts home at all.
+6f. **Does the field recover as it fills**, or stay overgrown, per section 8d.
 7. **The chocolates.** Whether they appear in the game at all.
 8. **All dialogue.**
 
