@@ -349,7 +349,7 @@ disc: $(DISC)/.stamp
 # Fine under Flycast. Do NOT burn this or put it on a GDEMU -- padding is what
 # makes the image boot on real hardware.
 test: $(TARGET) $(DISC)/.stamp
-	rm -f $(DISC)/AlephOne/AUTOSTART $(DISC)/AlephOne/PADTEST $(DISC)/AlephOne/DEBUG $(DISC)/AlephOne/PROFILE $(DISC)/AlephOne/AUTOKEY
+	rm -f $(DISC)/AlephOne/AUTOSTART $(DISC)/AlephOne/PADTEST $(DISC)/AlephOne/DEBUG $(DISC)/AlephOne/PROFILE $(DISC)/AlephOne/AUTOKEY $(DISC)/AlephOne/SLOT
 	echo auto > $(DISC)/AlephOne/AUTOSTART
 	echo pad  > $(DISC)/AlephOne/PADTEST
 	echo on   > $(DISC)/AlephOne/DEBUG
@@ -362,7 +362,7 @@ test: $(TARGET) $(DISC)/.stamp
 # the synthetic stick. This is the one to use when a human is testing with a pad
 # plugged in -- `test` is for unattended runs.
 play: $(TARGET) $(DISC)/.stamp
-	rm -f $(DISC)/AlephOne/AUTOSTART $(DISC)/AlephOne/PADTEST $(DISC)/AlephOne/DEBUG $(DISC)/AlephOne/PROFILE $(DISC)/AlephOne/AUTOKEY
+	rm -f $(DISC)/AlephOne/AUTOSTART $(DISC)/AlephOne/PADTEST $(DISC)/AlephOne/DEBUG $(DISC)/AlephOne/PROFILE $(DISC)/AlephOne/AUTOKEY $(DISC)/AlephOne/SLOT
 	echo auto > $(DISC)/AlephOne/AUTOSTART
 	echo on   > $(DISC)/AlephOne/DEBUG
 	rm -f alephone-$(BUILD_TAG)-play.cdi
@@ -395,10 +395,11 @@ replay-test: $(TARGET) $(DISC)/.stamp
 # to drive by hand -- and the path that was broken: a saved game could be listed
 # and highlighted but never opened, because w_list ignored Return.
 loadtest: $(TARGET) $(DISC)/.stamp
-	rm -f $(DISC)/AlephOne/AUTOSTART $(DISC)/AlephOne/PADTEST $(DISC)/AlephOne/DEBUG $(DISC)/AlephOne/PROFILE $(DISC)/AlephOne/AUTOKEY
+	rm -f $(DISC)/AlephOne/AUTOSTART $(DISC)/AlephOne/PADTEST $(DISC)/AlephOne/DEBUG $(DISC)/AlephOne/PROFILE $(DISC)/AlephOne/AUTOKEY $(DISC)/AlephOne/SLOT
 	echo load > $(DISC)/AlephOne/AUTOSTART
 	echo on   > $(DISC)/AlephOne/DEBUG
 	echo on   > $(DISC)/AlephOne/AUTOKEY
+	rm -f $(DISC)/AlephOne/SLOT; test -z "$(SLOT)" || echo $(SLOT) > $(DISC)/AlephOne/SLOT
 	rm -f alephone-$(BUILD_TAG)-loadtest.cdi
 	$(MKDCDISC) -e $(TARGET) -d $(DISC)/AlephOne -o alephone-$(BUILD_TAG)-loadtest.cdi \
 		-s $(DISCSERIAL) -n "$(DISCNAME) $(BUILD_TAG)" -a "$(DISCAUTH)" -N
@@ -415,7 +416,7 @@ loadtest: $(TARGET) $(DISC)/.stamp
 # Named `playable` because `flycast` was already taken by the target that
 # builds `test` and launches the emulator on it.
 playable: $(TARGET) $(DISC)/.stamp
-	rm -f $(DISC)/AlephOne/AUTOSTART $(DISC)/AlephOne/PADTEST $(DISC)/AlephOne/DEBUG $(DISC)/AlephOne/PROFILE $(DISC)/AlephOne/AUTOKEY
+	rm -f $(DISC)/AlephOne/AUTOSTART $(DISC)/AlephOne/PADTEST $(DISC)/AlephOne/DEBUG $(DISC)/AlephOne/PROFILE $(DISC)/AlephOne/AUTOKEY $(DISC)/AlephOne/SLOT
 	rm -f $(DISC)/AlephOne/AUTOSTART\ [0-9]* $(DISC)/AlephOne/PADTEST\ [0-9]* \
 	      $(DISC)/AlephOne/DEBUG\ [0-9]* $(DISC)/AlephOne/PROFILE\ [0-9]* \
 	      $(DISC)/AlephOne/AUTOKEY\ [0-9]* $(DISC)/AlephOne/.DS_Store
@@ -424,7 +425,7 @@ playable: $(TARGET) $(DISC)/.stamp
 		-s $(DISCSERIAL) -n "$(DISCNAME) $(BUILD_TAG)" -a "$(DISCAUTH)" -N
 
 manual: $(TARGET) $(DISC)/.stamp
-	rm -f $(DISC)/AlephOne/AUTOSTART $(DISC)/AlephOne/PADTEST $(DISC)/AlephOne/DEBUG $(DISC)/AlephOne/PROFILE $(DISC)/AlephOne/AUTOKEY
+	rm -f $(DISC)/AlephOne/AUTOSTART $(DISC)/AlephOne/PADTEST $(DISC)/AlephOne/DEBUG $(DISC)/AlephOne/PROFILE $(DISC)/AlephOne/AUTOKEY $(DISC)/AlephOne/SLOT
 	echo on > $(DISC)/AlephOne/DEBUG
 	rm -f alephone-$(BUILD_TAG)-manual.cdi
 	$(MKDCDISC) -e $(TARGET) -d $(DISC)/AlephOne -o alephone-$(BUILD_TAG)-manual.cdi \
@@ -433,7 +434,7 @@ manual: $(TARGET) $(DISC)/.stamp
 # Hardware image: padded. Larger, but this is the one that actually boots on a
 # console or from GDEMU.
 cdi: $(TARGET) $(DISC)/.stamp
-	rm -f $(DISC)/AlephOne/AUTOSTART $(DISC)/AlephOne/PADTEST $(DISC)/AlephOne/DEBUG $(DISC)/AlephOne/PROFILE $(DISC)/AlephOne/AUTOKEY
+	rm -f $(DISC)/AlephOne/AUTOSTART $(DISC)/AlephOne/PADTEST $(DISC)/AlephOne/DEBUG $(DISC)/AlephOne/PROFILE $(DISC)/AlephOne/AUTOKEY $(DISC)/AlephOne/SLOT
 	# The staging tree lives under ~/Desktop, which iCloud syncs. Creating and
 	# deleting these one-line markers on every build races the sync, and it
 	# resolves by keeping a copy named "DEBUG 2", "AUTOSTART 3" and so on. The
@@ -451,7 +452,7 @@ cdi: $(TARGET) $(DISC)/.stamp
 # dc_trace() output is drawn on screen with bfont. For diagnosing hardware-only
 # problems where there is no serial console to read.
 cdi-debug: $(TARGET) $(DISC)/.stamp
-	rm -f $(DISC)/AlephOne/AUTOSTART $(DISC)/AlephOne/PADTEST $(DISC)/AlephOne/DEBUG $(DISC)/AlephOne/PROFILE $(DISC)/AlephOne/AUTOKEY
+	rm -f $(DISC)/AlephOne/AUTOSTART $(DISC)/AlephOne/PADTEST $(DISC)/AlephOne/DEBUG $(DISC)/AlephOne/PROFILE $(DISC)/AlephOne/AUTOKEY $(DISC)/AlephOne/SLOT
 	echo on > $(DISC)/AlephOne/DEBUG
 	rm -f alephone-$(BUILD_TAG)-debug.cdi
 	$(MKDCDISC) -e $(TARGET) -d $(DISC)/AlephOne -o alephone-$(BUILD_TAG)-debug.cdi \
@@ -462,15 +463,15 @@ cdi-debug: $(TARGET) $(DISC)/.stamp
 # a real framerate can be read off the VMU's LCD on hardware. Deliberately does
 # not set DEBUG: the bfont traces draw over the 3D view.
 cdi-profile: $(TARGET) $(DISC)/.stamp
-	rm -f $(DISC)/AlephOne/AUTOSTART $(DISC)/AlephOne/PADTEST $(DISC)/AlephOne/DEBUG $(DISC)/AlephOne/PROFILE $(DISC)/AlephOne/AUTOKEY
-	echo on > $(DISC)/AlephOne/PROFILE $(DISC)/AlephOne/AUTOKEY
+	rm -f $(DISC)/AlephOne/AUTOSTART $(DISC)/AlephOne/PADTEST $(DISC)/AlephOne/DEBUG $(DISC)/AlephOne/PROFILE $(DISC)/AlephOne/AUTOKEY $(DISC)/AlephOne/SLOT
+	echo on > $(DISC)/AlephOne/PROFILE $(DISC)/AlephOne/AUTOKEY $(DISC)/AlephOne/SLOT
 	rm -f alephone-$(BUILD_TAG)-profile.cdi
 	$(MKDCDISC) -e $(TARGET) -d $(DISC)/AlephOne -o alephone-$(BUILD_TAG)-profile.cdi \
 		-n "$(DISCNAME) $(BUILD_TAG) prof" -a "$(DISCAUTH)"
-	rm -f $(DISC)/AlephOne/PROFILE $(DISC)/AlephOne/AUTOKEY
+	rm -f $(DISC)/AlephOne/PROFILE $(DISC)/AlephOne/AUTOKEY $(DISC)/AlephOne/SLOT
 
 gdi: $(TARGET) $(DISC)/.stamp
-	rm -f $(DISC)/AlephOne/AUTOSTART $(DISC)/AlephOne/PADTEST $(DISC)/AlephOne/DEBUG $(DISC)/AlephOne/PROFILE $(DISC)/AlephOne/AUTOKEY
+	rm -f $(DISC)/AlephOne/AUTOSTART $(DISC)/AlephOne/PADTEST $(DISC)/AlephOne/DEBUG $(DISC)/AlephOne/PROFILE $(DISC)/AlephOne/AUTOKEY $(DISC)/AlephOne/SLOT
 	$(MKDCDISC) -F gdi -e $(TARGET) -d $(DISC)/AlephOne -o alephone-$(BUILD_TAG).gdi \
 		-s $(DISCSERIAL) -n "$(DISCNAME) $(BUILD_TAG)" -a "$(DISCAUTH)"
 

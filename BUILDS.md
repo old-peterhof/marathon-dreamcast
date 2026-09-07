@@ -60,3 +60,4 @@ to the engine clamp, and the VMU Profiler. Git history has the detail.
 | b87 | vmu-card | 54cb71f | VMU: framerate and profiler removed; title card outside play |
 | b88 | blend | 731ca89 | HUD no longer leaves ONE/ZERO blend factors for the world pass (sprites were black rectangles on the console); rumble packet is the KOS Basic Thud shape |
 | b89 | menu-return | deadfa8 | PowerVR re-initialised when a level starts after the menu (quit then load crashed); no film recording on DC |
+| b90 | onceload | aa93521 | save loads scan for the map file once (the second scan corrupted the heap on the third session); SLOT test marker |

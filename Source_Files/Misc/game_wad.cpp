@@ -1127,11 +1127,15 @@ bool load_game_from_file(FileSpecifier& File)
 
 		/* Find the original scenario this saved game was a part of.. */
 		parent_checksum= read_wad_file_parent_checksum(File);
+		bool map_found = use_map_file(parent_checksum);
 #ifdef DC
+		// (An earlier trace called use_map_file() a second time inside its
+		// argument list, so every save load scanned the disc and switched the
+		// map twice.)
 		dc_trace(24, "load: parent_checksum=%08x found=%d",
-		         (unsigned)parent_checksum, (int)use_map_file(parent_checksum));
+		         (unsigned)parent_checksum, (int)map_found);
 #endif
-		if(use_map_file(parent_checksum))
+		if(map_found)
 		{
 			// LP: getting the level scripting off of the map file
 			// Being careful to carry over errors so that Pfhortran errors can be ignored

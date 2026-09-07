@@ -254,6 +254,17 @@ void *dc_read_file_span(const char *path, unsigned long offset, unsigned long le
 
 int dc_trace_on(void) { return dc_trace_enabled(); }
 
+/* Heap sanity probe (diagnostic): mallinfo totals beyond the machine's RAM mean
+   the allocator's chunk chain is damaged. Reports the first place it goes bad. */
+void dc_heap_probe(const char *where)
+{
+	struct mallinfo m = mallinfo();
+	static int bad_reported = 0;
+	int bad = m.uordblks < 0 || m.uordblks > 20*1024*1024 || m.fordblks < 0 || m.fordblks > 20*1024*1024;
+	if (bad && !bad_reported) { bad_reported = 1; dc_trace(73, "heap: CORRUPT at %s (live=%d free=%d)", where, m.uordblks, m.fordblks); }
+	else if (!bad) dc_trace(73, "heap: ok at %s live=%d KB", where, m.uordblks/1024);
+}
+
 /*
  *	Bring the PowerVR back after a trip through the menus.
  *

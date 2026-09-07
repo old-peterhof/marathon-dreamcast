@@ -540,3 +540,19 @@ silently reverts your change. Kill it first.
   `Marathon2-20250829-Data.zip`
 
 Marathon is © Bungie. Aleph One is GPL-2.0; see `COPYING`.
+
+## A saved game is loaded once, not twice
+
+`load_game_from_file` used to call `use_map_file()` inside a trace's argument
+list and then again in the `if`. Every load therefore scanned the disc for the
+map file twice and ran `set_map_file` (restoration script, scenario images,
+level scripts) twice. The second pass was where the heap went bad on the third
+play session of a run (quit to the menu, Continue, quit, Continue). One call now,
+its result kept in `map_found`. Four quit-and-Continue cycles in a row run clean
+with heap probes at every stage of the load.
+
+`dc_heap_probe(where)` in `dc/dc_compat.c` is the probe used for that hunt: it
+checks `mallinfo()` totals and traces the first place they go absurd. Call it
+from any C++ file after declaring `extern "C" void dc_heap_probe(const char *);`
+at file scope right under `#include "cseries.h"`. No call sites are left in the
+tree.

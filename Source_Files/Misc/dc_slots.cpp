@@ -350,6 +350,13 @@ bool dc_continue_newest_game(void)
 	char path[128];
 	int slot = dc_vmu_newest_slot();
 
+	/* Emulator-only: a SLOT marker on the disc (loadtest SLOT=n) picks the slot
+	   instead of the newest, so a specific save can be loaded unattended. */
+	{
+		FILE *m = fopen("/cd/AlephOne/SLOT", "r");
+		if (m) { int s = 0; if (fscanf(m, "%d", &s) == 1 && s >= 1 && s <= DC_SAVE_SLOTS) slot = s; fclose(m); }
+	}
+
 	if (!slot)
 		return false;
 
