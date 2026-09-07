@@ -10,8 +10,8 @@ Gumball falls asleep at home.
 
 He wakes on a grassy field beside a patch of fresh-turned soil. The field is
 overgrown, wild, unkept. His family is not here. He remembers, in flashes, the
-things he did wrong: he bit the boy, he stole from the girl's plate, he dug up
-the mother's garden, he barked all night and would not come when the father
+things he did wrong: he bit the Boy, he stole from the Girl's plate, he dug up
+the Mother's garden, he barked all night and would not come when the Father
 called.
 
 He goes to find them. He is afraid that when he does, they will not say he was a
@@ -33,6 +33,18 @@ This is a memorial for a real dog, and the design answers to the real facts.
 - He was buried in the rain and the mud.
 
 Every rule below exists because of those three lines.
+
+**Nobody in the family has a name.** They are the Boy, the Girl, the Mother and
+the Father, because that is what they are to a dog. He never knew their names.
+Referring to them by role puts the whole game inside his head instead of
+narrating it from outside, and it lets any player's family stand in the same
+shape.
+
+The consequence is worth protecting: **Gumball is the only named character in the
+game.** His name is in the title, the family are roles, the antagonist is a black
+cat. The people who gave him that name are the ones who say it back to him at the
+end, and the Father saying it in the rain is the only time in the game a human
+speaks it aloud.
 
 **He is not running from anything, and nothing killed him.** There is no chase in
 this game that is about his death, no fall, no road, no accident. He went to
@@ -79,7 +91,7 @@ Gumball does not understand it until the end.
 
 Order runs from the child who was told the least to the adult who carried him.
 
-### World 1 — Foon (the Boy)
+### World 1 — the Boy
 **Sin:** he bit him, playing too rough.
 **Verb: BITE.** Attack and traversal both. Bite a rope and swing, bite a toy and
 carry it, bite a sheet and pull it into a bridge.
@@ -90,14 +102,14 @@ short version.
 
 | Level | Setting | Beat |
 |---|---|---|
-| 1-1 | Foon's bedroom | Learn to bite. Everything soft. |
+| 1-1 | The Boy's bedroom | Learn to bite. Everything soft. |
 | 1-2 | Hallway and stairs | Bite-swing. Cat appears. Flashback: the bite. |
 | 1-3 | The bathroom | **Boss: THE BATH.** |
 
 > "You bit me because we were playing. You were playing *with* me."
 > "They said you went away. Nobody would say where. I looked for ages."
 
-### World 2 — Loba (the Girl)
+### World 2 — the Girl
 **Sin:** he stole food off her plate.
 **Verb: CARRY (and resist).** You carry food you are not allowed to eat. A
 hunger meter climbs. Eating what you carry heals you *and* fails the objective.
@@ -115,7 +127,7 @@ out. She has never stopped being angry about a thing that was nobody's fault.
 > "I always gave you some anyway. I just liked when you sat with me."
 > "I wasn't there. I've been so angry that I wasn't there."
 
-### World 3 — Chelsea (the Mother)
+### World 3 — the Mother
 **Sin:** he dug up her garden and tracked mud through the house.
 **Verb: DIG.** Destructive and also the only way forward. Buried paths, buried
 keys, buried carrots.
@@ -134,7 +146,7 @@ saw, and she has been carrying that on her own.
 > "You looked like you were still asleep. I stood there a long time before I
 > could say anything."
 
-### World 4 — Chewie (the Father)
+### World 4 — the Father
 **Sin:** he barked all night, chewed things that mattered, and would not come
 when called.
 **Verb: BARK, and the LEASH.** Bark to call things toward you and to find your
@@ -176,7 +188,8 @@ and then anticipation does half the work.
   arena: distant mower noise, water across the tiles, a vacuum cord underfoot,
   thunder with no rain yet. Boss at the end. Reunion after.
 
-Do not let the player merely *hear* that he bit Foon. Make them press the button.
+Do not let the player merely *hear* that he bit the Boy. Make them press the
+button.
 
 ---
 
@@ -214,7 +227,7 @@ pass. It shreds the flower beds as it goes.
 up her flowers; this thing erases them. He has to dig to save what is left.
 
 Dig trenches it stalls in, dig up stones that jam the blade. Three jams. When it
-stops, the grass stays cut, and the lane it carved is the path to Chelsea.
+stops, the grass stays cut, and the lane it carved is the path to the Mother.
 
 ### 4-3 — THE STORM
 The rain starts during the level and does not stop.
@@ -228,8 +241,8 @@ The first time you bark, nothing answers. Silence, held a full two seconds. It i
 the only moment in the game where the verb fails.
 
 Then you learn to bark from the right places. The fence post, the shed, the back
-step. Each answered bark is Chewie's voice, closer than the last, and each time
-the rain gets a little quieter rather than louder.
+step. Each answered bark is the Father's voice, closer than the last, and each
+time the rain gets a little quieter rather than louder.
 
 On the third he says Gumball's name. The leash comes off. There is nothing to run
 from and no road to cross. You just walk to him through the mud, and it takes a
@@ -256,8 +269,8 @@ time. Repetition is what makes it land.
 tone.
 
 **Beat 2.** The family member is standing there doing something completely
-ordinary. Foon holding a ball. Loba holding a plate. Chelsea with a trowel.
-Chewie holding a leash with nothing on the end of it.
+ordinary. The Boy holding a ball. The Girl holding a plate. The Mother with a
+trowel. The Father holding a leash with nothing on the end of it.
 
 **Beat 3.** The player has control. No prompt, no arrow, no button hint. You have
 to walk to them yourself. Most players hesitate, and the hesitation is the
@@ -290,7 +303,7 @@ Then:
 Not until world 4. He hears "I wasn't there" and "I stood there a long time" and
 takes them as more evidence that he did something wrong. The player is ahead of
 him for the entire game. That gap is the whole engine of the thing, and it closes
-on Chewie's last line.
+on the Father's last line.
 
 ### The shy-away gets shorter every time
 World 1 it is a full second and he almost backs up. World 2 he stops. World 3 he
@@ -325,7 +338,7 @@ name yet, so that is where the cat pushes.
 
 > "They buried you in a nice spot."
 > "Nobody said goodbye to you. You know that, don't you."
-> "The boy still has the scar. I'm only saying what's true."
+> "The Boy still has the scar. I'm only saying what's true."
 > "You are looking for people who had to learn to live without you."
 > "Do you think they wanted you to find them?"
 > "Go on, then. He's just through there." *(before a boss)*
@@ -482,7 +495,8 @@ is bad, no matter how the platforming feels.
 
 ### Audio
 Four channels. Write **one** Gumball melody. Each world theme is a variation:
-Foon bright and fast, Loba playful, Chelsea slow and warm, Chewie sparse and low.
+the Boy bright and fast, the Girl playful, the Mother slow and warm, the Father
+sparse and low.
 Each "good boy" motif is four or five notes of that melody. The finale is the
 full arrangement, the first time you hear it whole.
 
