@@ -59,13 +59,32 @@ Four members. They are referred to by role, not by name.
 One section per family member, filled in from the author only.
 
 ### the Boy
-*Awaiting the author.*
+
+- Gumball would protect the Boy and the Girl when he thought roughhousing with
+  the Father had got too serious.
+- He wanted to join in. He would bark and run around with them.
+- He played with squeaking stuffed animals with the Boy and the Girl.
+- He played chase around the downstairs when they had a toy or a snack he
+  wanted. Usually carrots or bread.
+- He eagerly waited for the Boy and the Girl to come home from school.
 
 ### the Girl
-*Awaiting the author.*
+
+- Gumball would protect the Boy and the Girl when he thought roughhousing with
+  the Father had got too serious.
+- He wanted to join in. He would bark and run around with them.
+- He slept in the Girl's room some nights, or downstairs on the couch if she
+  slept there.
+- He played with squeaking stuffed animals with the Boy and the Girl.
+- He played chase around the downstairs when they had a toy or a snack he
+  wanted. Usually carrots or bread.
+- He eagerly waited for the Boy and the Girl to come home from school.
 
 ### the Mother
-*Awaiting the author.*
+
+- He would hang with the Mother while she watched shows on the couch.
+- He kept her company when the Father was away on trips.
+- She would help trim his fur when it needed it.
 
 ### the Father
 
@@ -254,6 +273,82 @@ true things. Section 4a is a supply of true things that are genuinely unkind.
 The design notes this and writes none of them. **The cat's dialogue is the
 author's.**
 
+## 8c. What the family material gives us
+
+Reading only section 4, without adding to it.
+
+### The through-line is WAITING
+
+Every family member's material contains the same behaviour:
+
+| Who | What he did |
+|---|---|
+| the Father | Sat outside his office, keeping an eye out. |
+| the Boy and the Girl | Eagerly waited for them to come home from school. |
+| the Mother | Kept her company when the Father was away on trips. |
+
+Four people, one behaviour. This dog held a position until somebody came back.
+It is the only thing every single relationship in the material has in common, and
+the author supplied it four separate times without flagging it.
+
+The game is a dog alone in a field waiting to be found. The design does not need
+to say a word about that, and probably should not, but every level should know
+it.
+
+It also means the reunion staging in section 10 is already the right shape: the
+family member stands still and waits forever. That beat now rhymes with his whole
+life instead of just being a nice idea. **OPEN, and the author's to confirm or
+kill.**
+
+### CHASE is the Boy and Girl's verb, and it runs backwards
+
+He played chase around the downstairs when they had something he wanted. In life
+he chased them. The entire game is him looking for them and not finding them.
+
+That inversion is free. It costs nothing to build and nobody has to point at it.
+
+### The Mother's world is the still one
+
+Her material has no running, no chasing, no roughhousing, no barking. She is
+sitting on a couch watching shows, and he is next to her. Then she trims his fur,
+which means holding still and being handled and tolerating it.
+
+Three of the four worlds are loud. Hers is not, and the design should protect
+that rather than inventing action for her. A quiet world in the third slot is
+also good pacing.
+
+### The squeak
+
+Squeaking stuffed animals, shared between the Boy and the Girl. On a four-channel
+chip a squeak is nearly free and instantly recognisable. It is a sound cue, a
+pickup, and a thing to carry.
+
+### Bread joins the carrots
+
+"Usually carrots or bread." Carrots have now appeared four times in the author's
+account. Bread is the first alternative and the only other named food he wanted.
+
+### The Boy's material is thin
+
+The Boy currently shares everything he has with the Girl, plus the bitten hand.
+The Girl has a room and a couch and a trash can of her own; the Father has an
+office, a desert, a car and a kitchen; the Mother has her couch and the fur
+trimming.
+
+**OPEN, and the most useful thing the author could add.** Right now the Boy's
+world would have to be built out of shared material, which will make worlds one
+and two feel like the same house twice.
+
+### One adjacency, noted and not used
+
+Section 3: he bit the Father.
+Section 4: he protected the Boy and the Girl when roughhousing with the Father
+got too serious.
+
+Both are the author's. Put together they supply a reason, and reasons are story.
+**The design will not use this unless the author says to.** It is recorded here
+only so it is not accidentally contradicted later.
+
 ## 9. The three-level shape
 
 A template so each world reads the same way and anticipation does the work.
@@ -435,10 +530,13 @@ Everything after is a proven shape in different art.
 
 Waiting on the author.
 
-1. **The world themes for the Boy, the Girl and the Mother.** The Father's is
-   given (office, desert, car). The bosses and level art follow from these and
-   nothing else should be guessed.
+1. **More material for the Boy**, per section 8c. He and the Girl currently
+   share almost everything, which risks worlds one and two feeling like the same
+   house twice.
 1a. **Is the car a level, or the thing that connects the Father's three?**
+1b. **Whether WAITING is acknowledged as the game's through-line**, per section
+   8c, or left entirely unspoken.
+1c. **Was "park and run around with them" meant as bark?** Recorded as bark.
 2. **World order.** BITE and EAT suggest the Father last, since he is the only
    one who got both. Confirm or overrule.
 3. **The opening.** He wakes in the field with the fresh-turned soil. How much of
