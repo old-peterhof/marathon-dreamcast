@@ -106,6 +106,7 @@ The author's account of the dog himself.
 - He would almost never lick.
 - He would paw at the back door to go out. This was often a trick, because he
   would then lead you to the fridge for a carrot.
+- **He was loyal, and he missed his family when they were away.**
 
 ### The thesis
 
@@ -279,7 +280,11 @@ Reading only section 4, without adding to it.
 
 ### The through-line is WAITING
 
-Every family member's material contains the same behaviour:
+**This is now GIVEN, not inferred.** The author states it directly in section 4a:
+he was loyal, and he missed his family when they were away.
+
+It was already present four separate times in the relationship material before
+being said outright:
 
 | Who | What he did |
 |---|---|
@@ -288,17 +293,24 @@ Every family member's material contains the same behaviour:
 | the Mother | Kept her company when the Father was away on trips. |
 
 Four people, one behaviour. This dog held a position until somebody came back.
-It is the only thing every single relationship in the material has in common, and
-the author supplied it four separate times without flagging it.
+It is the only thing every relationship in the material has in common.
+
+It is also the only virtue in the entire account of him. Section 4a is otherwise
+grumpy, snapped, not always kind, not the best dog. Loyal is the counterweight,
+and it is what makes the premise function: a loyal dog wakes up alone and the
+people are gone.
 
 The game is a dog alone in a field waiting to be found. The design does not need
 to say a word about that, and probably should not, but every level should know
 it.
 
 It also means the reunion staging in section 10 is already the right shape: the
-family member stands still and waits forever. That beat now rhymes with his whole
-life instead of just being a nice idea. **OPEN, and the author's to confirm or
-kill.**
+family member stands still and waits forever. That beat rhymes with his whole
+life instead of just being a nice idea.
+
+Still **OPEN**: whether the game ever acknowledges this out loud, or whether it
+stays entirely in the level design and the animation. The recommendation is that
+nobody ever says it.
 
 ### CHASE is the Boy and Girl's verb, and it runs backwards
 
@@ -534,8 +546,9 @@ Waiting on the author.
    share almost everything, which risks worlds one and two feeling like the same
    house twice.
 1a. **Is the car a level, or the thing that connects the Father's three?**
-1b. **Whether WAITING is acknowledged as the game's through-line**, per section
-   8c, or left entirely unspoken.
+1b. **Whether WAITING is ever acknowledged out loud.** It is now GIVEN as
+   character (section 4a). The open part is only whether the game names it or
+   leaves it in the level design. Recommendation: never name it.
 1c. **Was "park and run around with them" meant as bark?** Recorded as bark.
 2. **World order.** BITE and EAT suggest the Father last, since he is the only
    one who got both. Confirm or overrule.
