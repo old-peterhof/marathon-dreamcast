@@ -139,7 +139,18 @@ The black cat is real and his name is Beans.
 - Gumball could be pretty grumpy to the cat.
 - **They eventually tolerated each other.**
 
-In the game, an enigmatic black cat sows doubts in Gumball's mind along the way.
+### Since Gumball died
+
+- Beans has come out more. He is more outgoing with the family than he was.
+- The author: that is good in a sense, but it sometimes feels like Beans has
+  replaced his buddy, and is a pale substitute for him.
+
+### The author's direction for the cat in the game
+
+> "I sort of imagine the cat is kind of alluding to Gumball's death and twisting
+> a knife in it a little bit, but never outright saying it."
+
+Allusion, never statement. That is the register, and it is given.
 
 ## 6. Carrots
 
@@ -533,6 +544,62 @@ something:
 **OPEN, and the author's call.** The design has no opinion it is entitled to
 here.
 
+## 8g. How Beans talks, and the one rule that keeps him fair
+
+### The register is given
+Allusion, never statement (section 5). He circles it, he implies it, he lets
+Gumball draw the wrong conclusion and does not correct him. He never says died,
+dead, gone, or heaven. That was already on the never-show list in section 14 and
+it is now the author's instruction as well.
+
+The practical test for any line written for him: **if Gumball could hear it and
+still not understand, it is in register. If it lands as information, it is out.**
+
+### His knife is not death. It is the position being filled.
+Section 5 says Beans has come out since Gumball died and is more outgoing with
+the family now.
+
+That gives him the cruellest true thing available in the entire story, and it is
+not "you are dead." It is that somebody is on the couch. Somebody is keeping them
+company. Somebody is near them.
+
+The one thing Gumball wanted more than anything (section 4a: he always wanted to
+be near family) is the exact thing Beans now has. Beans does not have to threaten
+him or lie to him. He only has to mention that everybody is doing fine.
+
+### The rule that keeps him fair
+
+> **Beans is right about every fact and wrong about what they mean.**
+
+The family is fine. Someone is with them. Life went on. All true, all sayable,
+all devastating.
+
+The conclusion he draws from it, that Gumball was replaceable, is the only thing
+in his mouth that is false, and the game never argues with him about it. The four
+reunions do that, and they do it without ever mentioning him.
+
+This rule matters beyond the writing. Beans is a real animal who was bullied by
+the resident dog and then finally had room to be a cat. A version of this game
+where he is a villain would be a lie about him. A version where he is right would
+be a lie about Gumball. He is neither, and the rule is what holds that line.
+
+### It runs against the field mechanic on purpose
+Section 8d fills the field with family, one at a time, so the player can see
+Gumball is not alone.
+
+Beans's needle is that a house filled up too, without him in it.
+
+Same shape, opposite directions, and they are the two things the player is
+holding at once for most of the game. Neither one has to be explained.
+
+### His resolution is harder than forgiveness
+Section 5: they eventually tolerated each other.
+
+If Beans's whole function is that he took the place, then tolerance at the end
+means Gumball accepting that the place was taken and sitting down next to him
+anyway. That is a heavier thing than being forgiven, it is what actually happened
+between them, and it is the reason there is no cat boss and no cat redemption.
+
 ## 9. The three-level shape
 
 A template so each world reads the same way and anticipation does the work.
@@ -729,8 +796,8 @@ Waiting on the author.
    one who got both. Confirm or overrule.
 3. **The opening.** He wakes in the field with the fresh-turned soil. How much of
    that is playable, and what he does first.
-4. **What Beans says.** His role and his resolution are now given (section 5,
-   section 8f). The dialogue is not.
+4. **What Beans says.** His role, his register and his resolution are now given
+   (sections 5, 8f, 8g). The dialogue is not.
 4a. **Whether BITE or GROWL can be aimed at Beans**, per section 8f.
 4b. **Where Beans first appears.** The bushes on a walk are available.
 5. **The ending.** After the fourth reunion.
