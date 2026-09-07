@@ -657,6 +657,19 @@ void start_recording(
 	assert(!replay.valid);
 	replay.valid= true;
 	
+#ifdef DC
+	/*
+	 *	No film is recorded on the Dreamcast. The recorder writes a file that
+	 *	grows every tick into the KOS ramdisk (the only writable place), rewrites
+	 *	it at every level restart and flushes it on quit; nothing on a console
+	 *	can play it back. Heap-sanity probes on the quit-to-menu path twice
+	 *	found the allocator damaged right after stop_recording() and never
+	 *	before it, and the restart path (rewind_recording) touches the same
+	 *	file. With game_is_being_recorded false every recorder entry point is a
+	 *	no-op, and the memory and ramdisk it used are not spent.
+	 */
+	return;
+#endif
 	if(get_recording_filedesc(FilmFileSpec))
 		FilmFileSpec.Delete();
 

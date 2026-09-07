@@ -52,6 +52,10 @@
 
 
 // Global variables
+#ifdef DC
+static unsigned dc_gl_generation = 0;	// GL mode sets so far; the second and later need dc_pvr_reinit
+extern "C" int dc_pvr_reinit(void);
+#endif
 static SDL_Surface *main_surface;	// Main (display) surface
 
 // Rendering buffer for the main view, the overhead map, and the terminals.
@@ -413,6 +417,13 @@ static void change_screen_mode(int width, int height, int depth, bool nogl)
 		exit(1);
 	}
 #ifdef DC
+	// Every GL mode set after the first follows a pvr_shutdown() that SDL did
+	// on the way to the menus, and GLdc's second glKosInit() is a no-op; bring
+	// the PowerVR itself back. See dc_pvr_reinit in dc_compat.c.
+	if (main_surface->flags & SDL_OPENGL) {
+		if (dc_gl_generation++ > 0)
+			dc_trace(33, "pvr: re-initialised for GL re-entry (%d)", dc_pvr_reinit());
+	}
 	// Report every mode change; the in-game switch is the one under suspicion.
 	dc_trace(dc_traced_mode, "mode %d: %dx%dx%d -> surf %dx%dx%d px=%p flags=%08x",
 	         dc_traced_mode, width, height, depth,
@@ -560,6 +571,8 @@ void dc_ui_draw_surface(SDL_Surface *s, int x, int y, int w, int h)
 	if (s == NULL || s->pixels == NULL)
 		return;
 
+	/* GLdc's texture objects outlive the menus (only the PowerVR is shut down
+	   and brought back; see dc_pvr_reinit), so this id stays valid. */
 	if (UITexture == 0) {
 		glGenTextures(1, &UITexture);
 		glBindTexture(GL_TEXTURE_2D, UITexture);

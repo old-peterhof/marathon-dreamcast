@@ -181,6 +181,26 @@ indicator confirmed the commands were queued, which is what told us the packet
 itself was the problem. Flycast vibrates for anything. No pack fitted is a
 no-op.
 
+**Leaving a level and coming back.** Quitting to the main menu sets the plain
+640x480 mode, and SDL's Dreamcast driver calls `pvr_shutdown()` for that.
+Starting the next game sets the GL mode again and the driver calls
+`glKosInit()`, which GLdc ignores the second time, so nothing brought the
+PowerVR back and the first `pvr_wait_ready()` of the new level died on KOS's
+`pvr_state.valid` assertion: black screen and crash on loading a saved game,
+or starting a new one, after a quit. `dc_pvr_reinit()` in `dc_compat.c` now
+runs GLdc's own `pvr_init` call after every GL mode set but the first; GLdc's
+texture and vertex bookkeeping is left alone (a full GLdc shutdown and init
+would leak its buffers). The first session after boot never saw this, which is
+why every earlier test passed.
+
+**No film is recorded.** Single player normally records a film into the saved
+games directory, here the KOS ramdisk, growing it every tick, rewriting it at
+each level restart and flushing it on quit. Heap-sanity probes on the quit path
+twice found the allocator damaged right after `stop_recording()` and never
+before it. Nothing on a console can play the film back, so `start_recording`
+returns before opening the file and every recorder entry point is a no-op.
+Two quit-and-Continue runs since show a sane heap after the reload.
+
 ## Saves
 
 Preferences are mirrored to a VMU. The game writes them to the KOS ramdisk —

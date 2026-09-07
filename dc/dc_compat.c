@@ -254,6 +254,35 @@ void *dc_read_file_span(const char *path, unsigned long offset, unsigned long le
 
 int dc_trace_on(void) { return dc_trace_enabled(); }
 
+/*
+ *	Bring the PowerVR back after a trip through the menus.
+ *
+ *	Leaving a level sets the plain 640x480 mode, and SDL's Dreamcast driver
+ *	calls pvr_shutdown() for that. Entering the next level sets the GL mode
+ *	again and the driver calls glKosInit() -- which GLdc ignores the second
+ *	time (its _initialized flag), so nothing calls pvr_init() and the first
+ *	pvr_wait_ready() of the new level dies on "pvr_state.valid". That was the
+ *	black screen and crash on loading a saved game, or starting a new one,
+ *	after quitting to the main menu. This is GLdc's own pvr_init call with
+ *	GLdc's own parameters (GL/platforms/sh4.c: InitGPU), nothing else: GLdc's
+ *	texture and vertex bookkeeping is left exactly as it was, which is why a
+ *	full glKosShutdown/glKosInit is not used (it re-creates its buffers
+ *	without freeing the old ones). pvr_init() returns -1 when the PVR is
+ *	already up, which is the first level after boot.
+ */
+int dc_pvr_reinit(void)
+{
+	pvr_init_params_t params = {
+		{ PVR_BINSIZE_32, PVR_BINSIZE_0, PVR_BINSIZE_32, PVR_BINSIZE_0, PVR_BINSIZE_32 },
+		2560 * 256,	/* vertex buffer, as GLdc */
+		0,		/* no DMA */
+		0,		/* no FSAA */
+		1,		/* translucent autosort off, as GLdc */
+		2		/* OPB overflow bins, as GLdc */
+	};
+	return pvr_init(&params);
+}
+
 /* Send a 48x32 1-bit frame to the first VMU screen; see dc_vmu_hud.cpp. */
 int dc_vmu_lcd_send(const void *bitmap)
 {
