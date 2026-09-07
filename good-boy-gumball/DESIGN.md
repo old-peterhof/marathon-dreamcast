@@ -54,15 +54,36 @@ Four members. They are referred to by role, not by name.
 | the Mother | Ate her chocolates, which miraculously did not kill him. |
 | the Father | Bit him, and ate all his Easter cakes. |
 
-## 4. The black cat
+## 4. Who they were to him
+
+One section per family member, filled in from the author only.
+
+### the Boy
+*Awaiting the author.*
+
+### the Girl
+*Awaiting the author.*
+
+### the Mother
+*Awaiting the author.*
+
+### the Father
+
+- Gumball was his best friend. His shadow.
+- He would sit outside the Father's office, keeping an eye out.
+- They went on hikes in the desert.
+- They went on rides in the car.
+- Gumball ate vegetable scraps when the Father cooked and prepared meals.
+
+## 5. The black cat
 
 An enigmatic black cat sows doubts in Gumball's mind along the way.
 
-## 5. Carrots
+## 6. Carrots
 
 Carrots are Gumball's power-ups and his health. He loved them.
 
-## 6. Structure
+## 7. Structure
 
 - Four family members, one set of levels each, each with their own personal
   theme.
@@ -72,7 +93,7 @@ Carrots are Gumball's power-ups and his health. He loved them.
 - After the boss, he finds them. He shies away for a moment. They pet his head
   and hug him and tell him he is a good boy.
 
-## 7. What is actually true about Gumball
+## 8. What is actually true about Gumball
 
 - He died in his sleep, at home.
 - None of the family had a chance to say goodbye.
@@ -115,6 +136,52 @@ A food that hurts him and that he ate anyway and survived. Mechanically that is 
 pickup that costs health instead of restoring it, and it is the only one in the
 game. Whether to use it at all is the author's call, because it is close to the
 bone. **OPEN.**
+
+## 8a. What the Father's material gives us
+
+Reading only section 4, without adding to it.
+
+### Three settings for three levels
+The office, the desert, and the car are three places, and the world needs three
+levels. That mapping comes from the author's list rather than from a designer's
+guess. Whether the car is a level or the thing that connects them is **OPEN**.
+
+The desert is also the only outdoor, non-domestic setting given so far. On a
+4-shade screen it is the one world that can be mostly empty, which is worth
+having when the other three sound like interiors.
+
+### "His shadow" is a mechanic, not a description
+Gumball's whole behaviour with the Father was following. The entire game is
+Gumball looking for people who are not there. If the author wants it, the
+Father's world is the one that names that: he was a shadow, and a shadow needs
+somebody in front of it.
+
+Nothing in this document decides how that gets used. **OPEN.**
+
+### Keeping an eye out
+He sat outside the office on his own initiative. He had a job he gave himself.
+That is a posture, an idle animation, and possibly a verb, and it is the only
+thing in the material where Gumball is being good on purpose rather than being
+bad by accident.
+
+### The carrots may already belong to the Father
+Two GIVEN facts touch:
+
+- Carrots are health, because he loved them (section 6).
+- He ate vegetable scraps when the Father cooked (section 4).
+
+If the author wants the connection, the health system originates in the Father's
+kitchen, and the player has been picking up his food since the first screen
+without knowing it. It costs nothing to implement, because the mechanic already
+exists; it is purely a matter of what the last world reveals.
+
+**OPEN, and the author's call entirely.** It is noted here only because it is a
+consequence of two things the author already said, not an addition to them.
+
+### The closest one got the worst of it
+Section 3 says Gumball bit the Father and ate his Easter cakes. Section 4 says
+the Father was his best friend. Both are the author's. The design does not need
+to comment on it, and should not.
 
 ## 9. The three-level shape
 
@@ -290,8 +357,10 @@ Everything after is a proven shape in different art.
 
 Waiting on the author.
 
-1. **The four world themes.** Each family member's own personal theme. The bosses
-   and the level art follow from these and nothing else should be guessed.
+1. **The world themes for the Boy, the Girl and the Mother.** The Father's is
+   given (office, desert, car). The bosses and level art follow from these and
+   nothing else should be guessed.
+1a. **Is the car a level, or the thing that connects the Father's three?**
 2. **World order.** BITE and EAT suggest the Father last, since he is the only
    one who got both. Confirm or overrule.
 3. **The opening.** He wakes in the field with the fresh-turned soil. How much of
@@ -300,6 +369,9 @@ Waiting on the author.
 5. **The ending.** After the fourth reunion.
 6. **The eating tension.** Whether carrots-as-health against eating-as-sin gets
    leaned on or left alone.
+6a. **Whether the carrots come from the Father**, per section 8a.
+6b. **Whether "his shadow" and "keeping an eye out" become mechanics** or stay
+   as character.
 7. **The chocolates.** Whether they appear in the game at all.
 8. **All dialogue.**
 
