@@ -75,6 +75,32 @@ One section per family member, filled in from the author only.
 - They went on rides in the car.
 - Gumball ate vegetable scraps when the Father cooked and prepared meals.
 
+## 4a. Who Gumball was
+
+The author's account of the dog himself.
+
+- He was a grumpy dog.
+- He was not always kind to everyone.
+- He growled, and he would snap.
+- **He was not the best dog. But he did love them all.**
+- When they came home he would hop up and sniff their faces intently.
+- He would almost never lick.
+- He would paw at the back door to go out. This was often a trick, because he
+  would then lead you to the fridge for a carrot.
+
+### The thesis
+
+> He was not the best dog. But he did love them all.
+
+That line is the game. It is the author's, it is quoted here verbatim, and the
+design answers to it.
+
+It means the reunions must not say "you were never bad." He was difficult, and
+the record is not in dispute. What the family gives him is not a correction. It
+is love that already knew.
+
+Any writing that softens him is wrong.
+
 ## 5. The black cat
 
 An enigmatic black cat sows doubts in Gumball's mind along the way.
@@ -183,6 +209,51 @@ Section 3 says Gumball bit the Father and ate his Easter cakes. Section 4 says
 the Father was his best friend. Both are the author's. The design does not need
 to comment on it, and should not.
 
+## 8b. What Gumball's character gives us
+
+Reading only section 4a, without adding to it.
+
+### GROWL is a verb, and it is not BITE
+He growled *and* he snapped. Those are two different things a dog does, and the
+second is what he is ashamed of. A growl is a warning that stops short. That is a
+real mechanic: make a thing back off without hurting it.
+
+If the game has both, then every encounter has a version where Gumball threatens
+and a version where he bites, and the player chooses. The game never has to score
+that choice or comment on it. **OPEN.**
+
+### The back door trick is a puzzle
+He pawed the back door to go out. He did not want to go out. He wanted you to
+follow him to the fridge.
+
+That is a complete puzzle mechanic already: **ask for the wrong thing on purpose
+so someone follows you to the right thing.** It is misdirection, it is
+non-violent, it is funny, and it is the one piece of the material where he is
+cleverer than the humans. It also pairs with "his shadow" from section 4 by
+inverting it, since here he is the one being followed.
+
+Whether it appears, and in whose world, is **OPEN**.
+
+### Carrots are load-bearing
+Carrots have now come up three separate times in the author's own account: as
+health, as the vegetable scraps at the Father's feet, and as the thing at the end
+of the back-door trick. They are not a themed pickup. They are the currency of
+the whole relationship, and the health system is already the right home for them.
+
+### The sins are a temperament, not four incidents
+Section 3 lists two bites. Section 4a says he growled and snapped and was not
+always kind. So the bites are not aberrations, they are who he was on a bad day.
+
+This is good for the design, because BITE can then be the core verb of the whole
+game rather than one world's gimmick, and the player is holding his temperament
+in their hands for twelve levels.
+
+### It also gives the black cat real material
+The cat sows doubt (section 5) and, per the mechanics below, works best saying
+true things. Section 4a is a supply of true things that are genuinely unkind.
+The design notes this and writes none of them. **The cat's dialogue is the
+author's.**
+
 ## 9. The three-level shape
 
 A template so each world reads the same way and anticipation does the work.
@@ -210,6 +281,11 @@ to them yourself. Most players hesitate, and the hesitation is the design.
 stops, ears flatten, head turns aside, tail tucks. He is bracing to be scolded.
 
 **Beat 5.** The hand comes down. He flinches into it. Pet, hug, and the line.
+
+**Beat 6. The greeting.** He hops up and sniffs their face, intently. This is
+what he actually did when they came home (section 4a) and it is the correct end
+of a reunion in a game about coming home. He does not lick. He almost never
+licked, so the game never shows it.
 
 Then: max carrots +1 and the bar visibly grows, the idle sprite upgrades, and the
 world theme never plays again.
@@ -266,6 +342,8 @@ A restraint guard, given section 7.
 - A funeral, a graveside, or a grave marker.
 - The words "died," "dead," or "heaven."
 - Gumball working it out and saying it aloud.
+- Gumball licking anyone. He almost never licked. The sniff is the greeting.
+- Gumball being sweetened. He growled and he snapped and that stays true.
 
 The game runs on the player knowing something the main character does not. One
 plain sentence collapses that.
@@ -372,6 +450,9 @@ Waiting on the author.
 6a. **Whether the carrots come from the Father**, per section 8a.
 6b. **Whether "his shadow" and "keeping an eye out" become mechanics** or stay
    as character.
+6c. **Whether GROWL exists alongside BITE**, per section 8b.
+6d. **Whether the back-door trick becomes a puzzle mechanic**, and in whose
+   world.
 7. **The chocolates.** Whether they appear in the game at all.
 8. **All dialogue.**
 
