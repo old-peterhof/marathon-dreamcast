@@ -7,6 +7,11 @@
  */
 
 #include "cseries.h"
+#ifdef DC
+#include "dc_vmu_hud.h"
+#else
+#define DC_MARK(tag) ((void)0)
+#endif
 
 #include <math.h>
 #include <ctype.h>
@@ -423,6 +428,7 @@ static void change_screen_mode(int width, int height, int depth, bool nogl)
 	if (main_surface->flags & SDL_OPENGL) {
 		if (dc_gl_generation++ > 0)
 			dc_trace(33, "pvr: re-initialised for GL re-entry (%d)", dc_pvr_reinit());
+		DC_MARK("S2");
 	}
 	// Report every mode change; the in-game switch is the one under suspicion.
 	dc_trace(dc_traced_mode, "mode %d: %dx%dx%d -> surf %dx%dx%d px=%p flags=%08x",

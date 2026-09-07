@@ -13,6 +13,11 @@
  */
 
 #include "cseries.h"
+#ifdef DC
+#include "dc_vmu_hud.h"
+#else
+#define DC_MARK(tag) ((void)0)
+#endif
 
 #include "sdl_dialogs.h"
 #include "sdl_fonts.h"
@@ -349,6 +354,7 @@ bool dc_continue_newest_game(void)
 	FileSpecifier file;
 	char path[128];
 	int slot = dc_vmu_newest_slot();
+	DC_MARK("C1");
 
 	/* Emulator-only: a SLOT marker on the disc (loadtest SLOT=n) picks the slot
 	   instead of the newest, so a specific save can be loaded unattended. */
@@ -356,6 +362,7 @@ bool dc_continue_newest_game(void)
 		FILE *m = fopen("/cd/AlephOne/SLOT", "r");
 		if (m) { int s = 0; if (fscanf(m, "%d", &s) == 1 && s >= 1 && s <= DC_SAVE_SLOTS) slot = s; fclose(m); }
 	}
+	DC_MARK("C2");
 
 	if (!slot)
 		return false;
@@ -368,7 +375,10 @@ bool dc_continue_newest_game(void)
 	snprintf(path, sizeof path, "/ram/%s", info[slot - 1].ram_name);
 	file = path;
 
-	return dc_vmu_restore_slot(slot) && load_and_start_game(file);
+	if (!dc_vmu_restore_slot(slot))
+		return false;
+	DC_MARK("C3");
+	return load_and_start_game(file);
 }
 
 bool dc_have_any_save(void)

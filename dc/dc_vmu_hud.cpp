@@ -85,6 +85,21 @@ void text(int x, int y, const char *s)
 }
 int textw(const char *s) { return (int)strlen(s) * 4 - 1; }
 
+// The same font at twice the size, for a code that has to be read across a room.
+void text2x(int x, int y, const char *s)
+{
+	for (; *s; ++s, x += 8)
+	{
+		const Glyph *g = NULL;
+		for (unsigned i = 0; i < sizeof Font / sizeof Font[0]; ++i)
+			if (Font[i].c == *s) { g = &Font[i]; break; }
+		if (!g) continue;
+		for (int r = 0; r < 5; ++r)
+			for (int c = 0; c < 3; ++c)
+				if (g->rows[r] & (4 >> c)) fill(x + 2*c, y + 2*r, x + 2*c + 1, y + 2*r + 1);
+	}
+}
+
 const char *const WeaponNames[MAXIMUM_NUMBER_OF_WEAPONS] = {
 	"FISTS", "MAGNUM", "FUSION", "MA-75B", "SPNKR", "TOZT-7", "ALIEN", "WSTE", "BALL", "KKV-7"
 };
@@ -234,6 +249,29 @@ extern "C" void dc_vmu_hud_set_ingame(int yes)
 	memset(Sent, 0xff, sizeof Sent);
 	if (InGame) Fresh = true;
 	else { compose_idle(); Pending = true; }
+}
+
+/*
+ *	A loading breadcrumb (see DC_MARK in dc_vmu_hud.h). Sent at once, with a
+ *	few retries if the bus is busy, and left showing until the HUD or the
+ *	title card next redraws. Nothing polls the pad during a load, so the code
+ *	stays up exactly as long as the stage it names.
+ */
+extern "C" void dc_vmu_mark(const char *tag)
+{
+	dc_trace(74, "mark %s", tag);
+	memset(Frame, 0, sizeof Frame);
+	text(10, 3, "LOADING");
+	text2x((W - ((int)strlen(tag) * 8 - 2)) / 2, 12, tag);
+	box(0, 0, W - 1, H - 1);
+	for (int tries = 0; tries < 4; ++tries)
+	{
+		if (dc_vmu_lcd_send(Frame) != -1) break;
+		unsigned long t = dc_ms();
+		while (dc_ms() - t < 8) ;
+	}
+	memset(Sent, 0xff, sizeof Sent);	// whatever comes next must be resent
+	if (!InGame) { compose_idle(); Pending = true; }
 }
 
 extern "C" void dc_vmu_hud_poll(void)

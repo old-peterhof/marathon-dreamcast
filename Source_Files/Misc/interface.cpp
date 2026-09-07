@@ -56,6 +56,11 @@ Jan 31, 2001 (Loren Petrich):
 // NEED VISIBLE FEEDBACK WHEN APPLETALK IS NOT AVAILABLE!!!
 
 #include "cseries.h" // sorry ryan, nov. 4
+#ifdef DC
+#include "dc_vmu_hud.h"
+#else
+#define DC_MARK(tag) ((void)0)
+#endif
 #include <string.h>
 #include <stdlib.h>
 #include <limits.h>
@@ -412,9 +417,11 @@ bool load_and_start_game(FileSpecifier& File)
 	{
 		interface_fade_out(MAIN_MENU_BASE, true);
 	}
+	DC_MARK("C4");
 	success= load_game_from_file(File);
 	if (success)
 	{
+		DC_MARK("C5");
 		dynamic_world->game_information.difficulty_level= get_difficulty_level();
 		start_game(_single_player, false);
 	} else {
@@ -1477,12 +1484,14 @@ static void start_game(
 	bool changing_level)
 {
 	/* Change our menus.. */
+	DC_MARK("S1");
 	toggle_menus(true);
 	
 	// LP change: reset screen so that extravision will not be persistent
 	if (!changing_level) reset_screen();
 	
 	enter_screen();
+	DC_MARK("S4");
 	
 	// LP: this is in case we are starting underneath a liquid
 	if (!OGL_IsActive() || !(TEST_FLAG(Get_OGL_ConfigureData().Flags,OGL_Flag_Fader)))
@@ -1495,6 +1504,7 @@ static void start_game(
 	validate_world_window();
 	
 	draw_interface();
+	DC_MARK("S5");
 
 #ifdef PERFORMANCE	
 	PerfControl(perf_globals, true);

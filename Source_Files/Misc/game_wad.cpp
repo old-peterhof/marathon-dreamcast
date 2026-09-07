@@ -60,6 +60,11 @@ Nov 26, 2000 (Loren Petrich):
 // This needs to do the right thing on save game, which is storing the precalculated crap.
 
 #include "cseries.h"
+#ifdef DC
+#include "dc_vmu_hud.h"
+#else
+#define DC_MARK(tag) ((void)0)
+#endif
 
 #include <string.h>
 #include <stdlib.h>
@@ -1110,9 +1115,11 @@ bool load_game_from_file(FileSpecifier& File)
 
 	/* Use the save game file.. */
 	set_map_file(File);
+	DC_MARK("L1");
 	
 	/* Load the level from the map */
 	success= load_level_from_map(NONE); /* Save games are ALWAYS index NONE */
+	DC_MARK("L2");
 #ifdef DC
 	dc_trace(23, "load: %s -> load_level_from_map=%d err=%d",
 	         File.GetPath(), (int)success, (int)get_game_error(NULL));
@@ -1127,7 +1134,9 @@ bool load_game_from_file(FileSpecifier& File)
 
 		/* Find the original scenario this saved game was a part of.. */
 		parent_checksum= read_wad_file_parent_checksum(File);
+		DC_MARK("L3");
 		bool map_found = use_map_file(parent_checksum);
+		DC_MARK("L4");
 #ifdef DC
 		// (An earlier trace called use_map_file() a second time inside its
 		// argument list, so every save load scanned the disc and switched the
@@ -1142,6 +1151,7 @@ bool load_game_from_file(FileSpecifier& File)
 			short SavedType, SavedError = SavedError = get_game_error(&SavedType);
 			RunLevelScript(dynamic_world->current_level_number);
 			set_game_error(SavedType,SavedError);
+			DC_MARK("L5");
 		}
 		else
 		{
@@ -1160,6 +1170,7 @@ bool load_game_from_file(FileSpecifier& File)
 		
 		/* Load the shapes and whatnot.. */		
 		entering_map(true);
+		DC_MARK("L6");
 	} 
 
 	return success;

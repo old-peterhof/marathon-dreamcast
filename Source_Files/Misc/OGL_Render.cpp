@@ -97,6 +97,11 @@ Dec 17, 2000 (Loren Petrich):
 #endif
 
 #include "cseries.h"
+#ifdef DC
+#include "dc_vmu_hud.h"
+#else
+#define DC_MARK(tag) ((void)0)
+#endif
 
 #ifdef HAVE_OPENGL
 
@@ -591,6 +596,7 @@ bool OGL_StartRun()
 	SetupShaders();
 #ifdef DC
 	dc_heap_trace(45, "StartRun done");
+	DC_MARK("S3");
 	{
 		GLint Free = 0;
 		glGetIntegerv(GL_FREE_TEXTURE_MEMORY_KOS, &Free);
