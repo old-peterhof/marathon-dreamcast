@@ -83,8 +83,7 @@ One section per family member, filled in from the author only.
   wanted. Usually carrots or bread.
 - He eagerly waited for the Boy and the Girl to come home from school.
 - They went on walks.
-- He hung out in her room while she listened to music, or drilled, or made
-  movies.
+- He hung out in her room while she listened to music, drew, or made movies.
 
 ### the Mother
 
@@ -443,12 +442,26 @@ desert, which costs nothing to exploit since they are different worlds in
 different banks.
 
 ### The Girl's world has a soundtrack in it
-She listened to music in her room and made movies there. On a four-channel chip
+She listened to music, drew, and made movies in her room. On a four-channel chip
 that is a hook nobody has to invent: hers is the world where music is a thing
 inside the level rather than a score over it.
 
-What that becomes is **OPEN**. It is noted because the author put a stereo and a
-camera in a bedroom, and those are both machines that make the world different.
+What that becomes is **OPEN**. It is noted because the author put a stereo, a
+sketchbook and a camera in a bedroom, and all three are machines for making
+something that was not there before.
+
+### Three textures of the same behaviour
+The waiting through-line (section 8c) shows up indoors three separate ways, and
+these are what keep the interior worlds from feeling like one house:
+
+| Who | How he was near them |
+|---|---|
+| the Girl | In the room with her while she made things. |
+| the Mother | On the couch beside her while she watched things. |
+| the Father | Outside the door while he worked. |
+
+Same dog, same instinct, three different rooms and three different level feels.
+None of that needed inventing; it is what the author described.
 
 ### What the kids share, and what they do not
 Walks and chase and the squeaking toys and waiting after school belong to both
@@ -640,9 +653,8 @@ Waiting on the author.
 
 1. ~~More material for the Boy.~~ **Answered.** The beach at Benicia and the
    water give him a world of his own. See section 8e.
-1z. **What "or drilled" means** in the Girl's room. Recorded verbatim and not
-   interpreted. Drill team, an instrument, a power drill and making things, or
-   something else entirely.
+1z. ~~What "or drilled" means.~~ **Answered.** Drew. She listened to music, drew,
+   and made movies.
 1a. **Is the car a level, or the thing that connects the Father's three?**
 1b. **Whether WAITING is ever acknowledged out loud.** It is now GIVEN as
    character (section 4a). The open part is only whether the game names it or
