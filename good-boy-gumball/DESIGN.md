@@ -173,6 +173,7 @@ A classic platformer.
 **Movement**
 - Jump onto platforms.
 - Jump over thorns, cactus, and similar hazards.
+- **Jumping on an enemy hurts the enemy.** Stomping works.
 
 **Power-ups**
 - Carrots are health (section 6).
@@ -605,6 +606,92 @@ That is coming to terms, it uses a mechanic that already exists, it needs no
 lines, and it does not soften him. He does not apologise and he is not forgiven.
 He is just allowed to stay, which is what tolerating somebody actually looks
 like.
+
+## 8h. Food, and the chocolates
+
+The verb scheme that used to live here is gone. Section 6a settles the mechanics:
+one attack, bark, in every world. What survives is thematic, not mechanical.
+
+### He bit two people and he ate everything
+Section 3, read as a set: two bites, and then the trash, the chocolates and the
+Easter cakes. Section 4a confirms it was temperament rather than three
+incidents.
+
+That is worth knowing when writing him and when placing enemies. It is not a
+control scheme.
+
+### The tension already in the material
+Carrots are health. Eating things he should not have is most of the recorded
+guilt. Gumball heals by doing the thing he is ashamed of, and the game does not
+have to say a word about it for a player to feel it. **OPEN** whether it is ever
+leaned on.
+
+### The chocolates
+A food that hurt him, that he ate anyway, and survived. Mechanically that is a
+pickup that costs health instead of restoring it, and it would be the only one
+in the game. Whether it appears at all is the author's call, because it is close
+to the bone. **OPEN.**
+
+## 8i. The enemies
+
+Section 6a gives the list: snakes, squirrels, Amazon drivers, birds, rats, a
+roomba vacuum, and possibly more.
+
+### There is a principle in that list
+
+**Every single one is something a real dog barks at.**
+
+Not one of them is a fantasy creature or a generic platformer goon. They are the
+things that actually set a dog off in a yard, on a walk, or through a window.
+That is a filter, not a theme, and it will fill "possibly more" faster than any
+brainstorm.
+
+It also means the enemies and the attack agree with each other. He barks at them
+because that is what he did.
+
+### It maps onto the worlds already
+
+| World | Fits |
+|---|---|
+| the Boy — beach, water, walks | birds, seagulls, crabs, squirrels, joggers, skateboards, bicycles |
+| the Girl — her room, the house, walks | rats, Amazon drivers, the doorbell, plastic bags, balloons |
+| the Mother — the couch, indoors | the roomba, the vacuum, a broom, the mail slot, the doorbell |
+| the Father — the desert, the office, the car | snakes, lizards, coyotes, tumbleweeds, cactus and thorns |
+
+### More candidates that pass the test
+Mail carriers. Garbage trucks. Motorcycles. Lawn mowers. Sprinklers and hoses.
+Other dogs behind fences. Helicopters. The car wash. Thunder. The vet.
+
+All of them are things a dog reacts to, all of them are cheap to draw, and any of
+them can be an enemy, a hazard, or just a noise in the background.
+
+### Stomping works, and that gives bark a problem
+
+Section 6a: jumping on an enemy hurts it. So there are two ways to kill things,
+stomp and bark.
+
+The standard failure mode for that setup is that stomp is always available and
+always free, so the player uses bark in level two and never presses A again. The
+attack that is the whole character concept becomes a button nobody touches.
+
+The fix is cheap and the author's own enemy list already supplies it. Some
+enemies simply have to be bad to land on:
+
+| Enemy | Stompable | Why |
+|---|---|---|
+| squirrels, rats | yes | the baseline, and the reason stomp feels good |
+| the roomba | yes | flat, on the floor, asking for it |
+| birds | no | they fly at head height, so you drop onto them and eat the hit |
+| snakes | no | they rear up, so the top of them is the dangerous end |
+| Amazon drivers | no | tall enough that you have to clear their head first |
+| cactus and thorns | never | hazards, and the only answer if any are destructible |
+
+Stomp stays the default and bark becomes what the player reaches for when the
+situation says no. Both buttons stay alive for twelve levels and neither one is a
+tutorial relic.
+
+The temporary long-range power-up (section 6a) gets more valuable under this
+too, since it is the ranged answer to exactly the enemies that punish jumping.
 
 ## 8h. Food, and the chocolates
 
