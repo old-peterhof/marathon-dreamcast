@@ -162,6 +162,27 @@ Also given:
 
 Carrots are Gumball's power-ups and his health. He loved them.
 
+## 6a. How the game plays
+
+A classic platformer.
+
+**Controls**
+- **A — bark.** This is the attack. It defeats enemies and has a slight range.
+- **B — jump.**
+
+**Movement**
+- Jump onto platforms.
+- Jump over thorns, cactus, and similar hazards.
+
+**Power-ups**
+- Carrots are health (section 6).
+- Some power-ups give temporary long-range attacks.
+- Some power-ups give temporary invincibility.
+
+**Enemies**
+Snakes, squirrels, Amazon drivers, birds, rats, a roomba vacuum, and possibly
+more.
+
 ## 7. Structure
 
 - Four family members, one set of levels each, each with their own personal
@@ -194,38 +215,6 @@ against that sentence.
 # PART TWO — PROPOSED
 
 Everything below this line is design work, not story. Cut freely.
-
-## 8. What the sins give us mechanically
-
-Reading only the four things in section 3, two verbs come out and nothing else
-does.
-
-**BITE.** The Boy's hand. The Father.
-**EAT.** The trash can. The chocolates. The Easter cakes.
-
-Two people got bitten. Everybody got eaten from. That is the actual shape of his
-guilt and it is a better shape than four unrelated mechanics, because it means
-the two verbs recur and deepen instead of being introduced and discarded.
-
-The Father is the only one who got both, which puts his world last by
-construction rather than by decision.
-
-### The tension already in the material
-
-Carrots are health. Eating is the sin. Gumball heals by doing the thing he is
-ashamed of, and the game does not have to say a word about that for a player to
-feel it.
-
-How hard to lean on this is an open question. The light version is that it simply
-sits there. The heavy version makes eating a resource the player has to spend
-guiltily. **OPEN.**
-
-### The chocolates
-
-A food that hurts him and that he ate anyway and survived. Mechanically that is a
-pickup that costs health instead of restoring it, and it is the only one in the
-game. Whether to use it at all is the author's call, because it is close to the
-bone. **OPEN.**
 
 ## 8a. What the Father's material gives us
 
@@ -276,27 +265,6 @@ to comment on it, and should not.
 ## 8b. What Gumball's character gives us
 
 Reading only section 4a, without adding to it.
-
-### GROWL is a verb, and it is not BITE
-He growled *and* he snapped. Those are two different things a dog does, and the
-second is what he is ashamed of. A growl is a warning that stops short. That is a
-real mechanic: make a thing back off without hurting it.
-
-If the game has both, then every encounter has a version where Gumball threatens
-and a version where he bites, and the player chooses. The game never has to score
-that choice or comment on it. **OPEN.**
-
-### The back door trick is a puzzle
-He pawed the back door to go out. He did not want to go out. He wanted you to
-follow him to the fridge.
-
-That is a complete puzzle mechanic already: **ask for the wrong thing on purpose
-so someone follows you to the right thing.** It is misdirection, it is
-non-violent, it is funny, and it is the one piece of the material where he is
-cleverer than the humans. It also pairs with "his shadow" from section 4 by
-inverting it, since here he is the one being followed.
-
-Whether it appears, and in whose world, is **OPEN**.
 
 ### Carrots are load-bearing
 Carrots have now come up three separate times in the author's own account: as
@@ -638,6 +606,77 @@ lines, and it does not soften him. He does not apologise and he is not forgiven.
 He is just allowed to stay, which is what tolerating somebody actually looks
 like.
 
+## 8h. Food, and the chocolates
+
+The verb scheme that used to live here is gone. Section 6a settles the mechanics:
+one attack, bark, in every world. What survives is thematic, not mechanical.
+
+### He bit two people and he ate everything
+Section 3, read as a set: two bites, and then the trash, the chocolates and the
+Easter cakes. Section 4a confirms it was temperament rather than three
+incidents.
+
+That is worth knowing when writing him and when placing enemies. It is not a
+control scheme.
+
+### The tension already in the material
+Carrots are health. Eating things he should not have is most of the recorded
+guilt. Gumball heals by doing the thing he is ashamed of, and the game does not
+have to say a word about it for a player to feel it. **OPEN** whether it is ever
+leaned on.
+
+### The chocolates
+A food that hurt him, that he ate anyway, and survived. Mechanically that is a
+pickup that costs health instead of restoring it, and it would be the only one
+in the game. Whether it appears at all is the author's call, because it is close
+to the bone. **OPEN.**
+
+## 8i. The enemies
+
+Section 6a gives the list: snakes, squirrels, Amazon drivers, birds, rats, a
+roomba vacuum, and possibly more.
+
+### There is a principle in that list
+
+**Every single one is something a real dog barks at.**
+
+Not one of them is a fantasy creature or a generic platformer goon. They are the
+things that actually set a dog off in a yard, on a walk, or through a window.
+That is a filter, not a theme, and it will fill "possibly more" faster than any
+brainstorm.
+
+It also means the enemies and the attack agree with each other. He barks at them
+because that is what he did.
+
+### It maps onto the worlds already
+
+| World | Fits |
+|---|---|
+| the Boy — beach, water, walks | birds, seagulls, crabs, squirrels, joggers, skateboards, bicycles |
+| the Girl — her room, the house, walks | rats, Amazon drivers, the doorbell, plastic bags, balloons |
+| the Mother — the couch, indoors | the roomba, the vacuum, a broom, the mail slot, the doorbell |
+| the Father — the desert, the office, the car | snakes, lizards, coyotes, tumbleweeds, cactus and thorns |
+
+### More candidates that pass the test
+Mail carriers. Garbage trucks. Motorcycles. Lawn mowers. Sprinklers and hoses.
+Other dogs behind fences. Helicopters. The car wash. Thunder. The vet.
+
+All of them are things a dog reacts to, all of them are cheap to draw, and any of
+them can be an enemy, a hazard, or just a noise in the background.
+
+### One question the design cannot answer
+**Does landing on an enemy hurt Gumball?**
+
+Bark is the attack (section 6a), which means this is not automatically a
+stomp-the-enemy platformer. Both answers work and they build different games:
+
+- **Contact hurts.** Bark becomes essential, spacing is the whole skill, and
+  enemies are things to keep at a distance. Closer to Mega Man.
+- **Stomping also works.** Two ways to kill everything, jumping stays offensive,
+  and the game is friendlier. Closer to Mario.
+
+This changes almost every level layout, so it wants deciding early. **OPEN.**
+
 ## 9. The three-level shape
 
 A template so each world reads the same way and anticipation does the work.
@@ -700,24 +739,18 @@ A handful of tiles each, no dialogue, and every player will notice.
 
 ## 13. The bosses
 
-Four are needed, one per world, standing between Gumball and the family member.
+Five needed. Bad Dog Gumball is given (section 7a) and how he works is the
+author's. The four that gate the reunions are undecided.
 
-The four I proposed earlier were built on themes I invented and those themes are
-now void. The slots stand empty pending the author's world themes.
+The one principle still standing, if the author wants it: **the sins are what
+Gumball did, and the bosses are what Gumball was afraid of.** It agrees with the
+enemy list in section 8i, which is already built entirely out of real dog
+reactions rather than invented creatures.
 
-One principle worth keeping, if the author wants it: **the sins are what Gumball
-did, and the bosses could be what Gumball was afraid of.** Real dog fears, made
-out of each world's material, rather than invented monsters. That keeps the whole
-game inside a dog's actual experience.
-
-**OPEN: all five bosses.** Bad Dog Gumball is given as the final boss (section
-7a) and how he works is the author's. The four that gate the reunions are not
-decided.
-
-### Boss constraints regardless of what they are
+### Constraints regardless of what they are
+- Beaten with bark, since that is the attack (section 6a).
 - Three phases, one hit per phase. The reward is the reunion, not the challenge.
-- Beaten using that world's verb, so the mechanic he is ashamed of is the
-  mechanic that saves them.
+- Drawn in the background layer, not out of sprites (section 15).
 
 ## 14. What the game should probably never show
 
@@ -760,6 +793,14 @@ The part that will humble you if you plan it late.
 - One boss tileset per world, swapped in when level 3 loads. Fits comfortably in
   512 KB.
 - Three phases, one hit each. No boss health bar.
+
+### One note on the buttons
+Section 6a assigns A to bark and B to jump. Most Game Boy platformers put jump on
+A, so a player arriving from Mario Land or Kirby will misfire for the first
+minute. Not a problem if it is deliberate, and trivially solved either way by a
+toggle in an options screen, which is a few bytes of state and one menu line.
+
+Raised once, and the author's call.
 
 ### Build the text engine first
 The emotional payload of this game is text. A variable-width font, a typewriter
