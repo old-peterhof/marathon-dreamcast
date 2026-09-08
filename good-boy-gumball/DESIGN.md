@@ -167,8 +167,8 @@ Carrots are Gumball's power-ups and his health. He loved them.
 A classic platformer.
 
 **Controls**
-- **A — bark.** This is the attack. It defeats enemies and has a slight range.
-- **B — jump.**
+- **A — jump.**
+- **B — bark.** This is the attack. It defeats enemies and has a slight range.
 
 **Movement**
 - Jump onto platforms.
@@ -880,14 +880,6 @@ The part that will humble you if you plan it late.
 - One boss tileset per world, swapped in when level 3 loads. Fits comfortably in
   512 KB.
 - Three phases, one hit each. No boss health bar.
-
-### One note on the buttons
-Section 6a assigns A to bark and B to jump. Most Game Boy platformers put jump on
-A, so a player arriving from Mario Land or Kirby will misfire for the first
-minute. Not a problem if it is deliberate, and trivially solved either way by a
-toggle in an options screen, which is a few bytes of state and one menu line.
-
-Raised once, and the author's call.
 
 ### Build the text engine first
 The emotional payload of this game is text. A variable-width font, a typewriter
