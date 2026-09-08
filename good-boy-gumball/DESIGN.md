@@ -174,6 +174,7 @@ A classic platformer.
 - Jump onto platforms.
 - **Jumping on an enemy hurts the enemy.** Stomping works.
 - **Some enemies cannot be stomped.**
+- **Some enemies are bark-proof.**
 
 **Hazards, as distinct from enemies**
 Thorns and cactus are environmental. They are not enemies, they cannot be
@@ -661,6 +662,65 @@ because that is what he did.
 | the Girl — her room, the house, walks | rats, Amazon drivers, the doorbell, plastic bags, balloons |
 | the Mother — the couch, indoors | the roomba, the vacuum, a broom, the mail slot, the doorbell |
 | the Father — the desert, the office, the car | snakes, lizards, coyotes, tumbleweeds, cactus and thorns |
+
+### More candidates that pass the test
+Mail carriers. Garbage trucks. Motorcycles. Lawn mowers. Sprinklers and hoses.
+Other dogs behind fences. Helicopters. The car wash. Thunder. The vet.
+
+All of them are things a dog reacts to, all of them are cheap to draw, and any of
+them can be an enemy, a hazard, or just a noise in the background.
+
+### The grid
+
+Two attacks, and enemies can be immune to either, which gives four kinds of thing
+plus hazards.
+
+| | Stomp works | Stomp-proof |
+|---|---|---|
+| **Bark works** | squirrels, rats | birds, snakes |
+| **Bark-proof** | the roomba | Amazon drivers |
+
+Plus **hazards**: thorns and cactus. Environmental, immune to everything, jumped
+over.
+
+### PROPOSED: what immunity means
+
+There is a rule available that decides the roster without any guessing, and it is
+true to being a small loud dog.
+
+> **Bark-proof means it does not care that he is barking.**
+
+- **The roomba** is a machine. It cannot hear him and it does not stop. Land on
+  it or get out of its way.
+- **Amazon drivers** are unbothered. They are also too tall to jump on, so they
+  are immune to both, and they simply keep walking to the door. Not an enemy to
+  beat. Weather.
+- **Birds and snakes** react to barking, which is why bark works on them, and
+  both are bad to land on: birds fly at head height, snakes rear up.
+- **Squirrels and rats** react to everything, which is why they are the baseline
+  and the reason stomping feels good.
+
+The same rule extends to anything added later. A garbage truck does not care. A
+jogger does not care. Another dog behind a fence very much cares.
+
+### Keep the immune-to-both category small
+One or two across the whole game. It is the strongest thing in the grid and it
+removes both verbs at once, so past a couple of enemies it stops being a
+platformer and becomes an obstacle course.
+
+### Why stomp-proof enemies have to exist
+
+Section 6a says both stomping and barking kill. The standard failure mode there
+is that stomp is always available and always free, so the player uses bark in
+level two and never presses B again, and the attack that is the whole character
+concept becomes a button nobody touches.
+
+Immunity is what keeps both buttons alive for twelve levels. Stomp stays the
+default; bark is what the player reaches for when the situation says no; and the
+handful of things immune to both are the ones the level itself has to answer.
+
+The temporary long-range power-up (section 6a) gains value under this, since it
+is the ranged answer to exactly the enemies that punish jumping.
 
 ### More candidates that pass the test
 Mail carriers. Garbage trucks. Motorcycles. Lawn mowers. Sprinklers and hoses.
