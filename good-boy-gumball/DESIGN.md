@@ -172,8 +172,12 @@ A classic platformer.
 
 **Movement**
 - Jump onto platforms.
-- Jump over thorns, cactus, and similar hazards.
 - **Jumping on an enemy hurts the enemy.** Stomping works.
+- **Some enemies cannot be stomped.**
+
+**Hazards, as distinct from enemies**
+Thorns and cactus are environmental. They are not enemies, they cannot be
+defeated by bark or by stomp, and they are jumped over.
 
 **Power-ups**
 - Carrots are health (section 6).
@@ -665,17 +669,30 @@ Other dogs behind fences. Helicopters. The car wash. Thunder. The vet.
 All of them are things a dog reacts to, all of them are cheap to draw, and any of
 them can be an enemy, a hazard, or just a noise in the background.
 
-### Stomping works, and that gives bark a problem
+### Three kinds of thing in a level
 
-Section 6a: jumping on an enemy hurts it. So there are two ways to kill things,
-stomp and bark.
+| Kind | Bark | Stomp | Examples |
+|---|---|---|---|
+| **Stompable enemy** | yes | yes | squirrels, rats, the roomba |
+| **Stomp-proof enemy** | yes | no | birds, snakes, Amazon drivers |
+| **Hazard** | no | no | thorns, cactus |
 
-The standard failure mode for that setup is that stomp is always available and
-always free, so the player uses bark in level two and never presses A again. The
-attack that is the whole character concept becomes a button nobody touches.
+Hazards are the pure platforming pressure. Neither button helps and the only
+answer is the jump arc.
 
-The fix is cheap and the author's own enemy list already supplies it. Some
-enemies simply have to be bad to land on:
+The three combine for free. A stomp-proof enemy standing next to a cactus means
+the player cannot land on it and cannot back away into the spikes, so bark is the
+only way through. That is a complete encounter built out of two tiles and one
+sprite, and it costs nothing to place.
+
+### Why stomp-proof enemies have to exist
+
+Section 6a says both stomping and barking kill. The standard failure mode there
+is that stomp is always available and always free, so the player uses bark in
+level two and never presses B again, and the attack that is the whole character
+concept becomes a button nobody touches.
+
+The author's own enemy list already supplies the fix:
 
 | Enemy | Stompable | Why |
 |---|---|---|
@@ -684,11 +701,11 @@ enemies simply have to be bad to land on:
 | birds | no | they fly at head height, so you drop onto them and eat the hit |
 | snakes | no | they rear up, so the top of them is the dangerous end |
 | Amazon drivers | no | tall enough that you have to clear their head first |
-| cactus and thorns | never | hazards, and the only answer if any are destructible |
+
 
 Stomp stays the default and bark becomes what the player reaches for when the
-situation says no. Both buttons stay alive for twelve levels and neither one is a
-tutorial relic.
+situation says no. Both stay alive for twelve levels and neither is a tutorial
+relic.
 
 The temporary long-range power-up (section 6a) gets more valuable under this
 too, since it is the ranged answer to exactly the enemies that punish jumping.
